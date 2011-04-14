@@ -1,0 +1,13 @@
+(nu a: rec $z.1=>2:1<String>;$z)
+( def X(x: rec %x. 1<< <String>;%x@(1of2)) =
+    x[1]<<"ping";
+    X(x)
+  in link(2,a,s,1);
+     X(s)
+| def X(x: rec %x. 1>> <String>;%x@(2of2)) =
+    x[1]>> text;
+    X(x)
+  in link(2,a,s,2);
+     link(2,a,t,2);
+     (X(s) | X(t))
+)

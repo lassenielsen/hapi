@@ -1,0 +1,23 @@
+((a1=>a2) and
+ (a1 and a2=>a3) and
+ (a1 and a2 and a3=>a4) and
+ (a1 and a2 and a3 and a4=>a5) and
+ (a1 and a2 and a3 and a4 and a5=>a6) and
+ (a1 and a2 and a3 and a4 and a5 and a6=>a7) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7=>a8) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8=>a9) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9=>a10) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10=>a11) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11=>a12) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12=>a13) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13=>a14) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13 and a14=>a15) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13 and a14 and a15=>a16) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13 and a14 and a15 and a16=>a17) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13 and a14 and a15 and a16 and a17=>a18) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13 and a14 and a15 and a16 and a17 and a18=>a19) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13 and a14 and a15 and a16 and a17 and a18 and a19=>a20) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13 and a14 and a15 and a16 and a17 and a18 and a19 and a20=>a21) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13 and a14 and a15 and a16 and a17 and a18 and a19 and a20 and a21=>a22) and
+ (a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13 and a14 and a15 and a16 and a17 and a18 and a19 and a20 and a21 and a22=>a23)
+)=>(a1=>a23)

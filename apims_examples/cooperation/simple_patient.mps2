@@ -1,0 +1,96 @@
+define $consultation = // {{{
+rec $state<data:Bool=false, schedule:Bool=false, result:Bool=false>.
+{ ^Pdata[[not (data and schedule and result)]]:
+    1=>2:2<String>; 1=>3:3<String>; $state<true,false,result>,
+  ^Dschedule[[data and not (data and schedule and result)]]:
+    2=>1:1<String>; 2=>3:3<String>; $state<data,true,false>,
+  ^Nschedule[[data and not (data and schedule and result)]]:
+    3=>1:1<String>; 3=>2:2<String>; $state<data,true,false>,
+  ^Dresult[[schedule and not (data and schedule and result)]]:
+    2=>1:1<String>; $state<data,schedule,true>,
+  ^STOP[[data and schedule and result]]:
+    Gend
+}
+in // }}}
+(nu a: $consultation)
+(
+  // Patient {{{
+  def State<sData: Bool, sSchedule: Bool, sResult: Bool>
+           (symptoms: String, session: $consultation@(1of3)) =
+    guisync(3,session,1)
+    { ^Pdata[[not (sData and sSchedule and sResult)]](symptoms:String=symptoms):
+        guivalue(3,session,1,"symptoms",symptoms);
+        session[2]<<symptoms;
+        session[3]<<symptoms;
+        State<true,false,sResult>(symptoms,session),
+      ^Dschedule[[sData and not (sData and sSchedule and sResult)]]():
+        session[1]>>schedule;
+        guivalue(3,session,1,"schedule",schedule);
+        State<sData,true,false>(symptoms,session),
+      ^Nschedule[[sData and not (sData and sSchedule and sResult)]]():
+        session[1]>>schedule;
+        guivalue(3,session,1,"schedule",schedule);
+        State<sData,true,false>(symptoms,session),
+      ^Dresult[[sSchedule and not (sData and sSchedule and sResult)]]():
+        session[1]>>result;
+        guivalue(3,session,1,"result",result);
+        State<sData,sSchedule,true>(symptoms,session),
+      ^STOP[[sData and sSchedule and sResult]](remarks:String=""):
+        end
+    }
+  in
+    link(3,a,s,1);
+    State<false,false,false>("",s) // }}}
+  // Doctor {{{
+| def State<sData: Bool, sSchedule: Bool, sResult: Bool>
+           (schedule: String, session: $consultation@(2of3)) =
+    guisync(3,session,2)
+    { ^Pdata[[not (sData and sSchedule and sResult)]]():
+        session[2]>>symptoms;
+        guivalue(3,session,2,"symptoms",symptoms);
+        State<true,false,sResult>(schedule,session),
+      ^Dschedule[[sData and not (sData and sSchedule and sResult)]](schedule:String=schedule):
+        guivalue(3,session,2,"schedule",schedule);
+        session[1]<<schedule;
+        session[3]<<schedule;
+        State<sData,true,false>(schedule,session),
+      ^Nschedule[[sData and not (sData and sSchedule and sResult)]]():
+        session[2]>>schedule;
+        guivalue(3,session,2,"schedule",schedule);
+        State<sData,true,false>(schedule,session),
+      ^Dresult[[sSchedule and not (sData and sSchedule and sResult)]](result:String=""):
+        session[1]<<result;
+        guivalue(3,session,2,"result",result);
+        State<sData,sSchedule,true>(schedule,session),
+      ^STOP[[sData and sSchedule and sResult]](remarks:String=""):
+        end
+    }
+  in
+    link(3,a,s,2);
+    State<false,false,false>("",s) // }}}
+  // Nurse {{{
+| def State<sData: Bool, sSchedule: Bool, sResult: Bool>
+           (schedule: String, session: $consultation@(3of3)) =
+    guisync(3,session,3)
+    { ^Pdata[[not (sData and sSchedule and sResult)]]():
+        session[3]>>symptoms;
+        guivalue(3,session,3,"symptoms",symptoms);
+        State<true,false,sResult>(schedule,session),
+      ^Dschedule[[sData and not (sData and sSchedule and sResult)]]():
+        session[3]>>schedule;
+        guivalue(3,session,3,"schedule",schedule);
+        State<sData,true,false>(schedule,session),
+      ^Nschedule[[sData and not (sData and sSchedule and sResult)]](schedule:String=schedule):
+        session[1]<<schedule;
+        session[2]<<schedule;
+        guivalue(3,session,3,"schedule",schedule);
+        State<sData,true,false>(schedule,session),
+      ^Dresult[[sSchedule and not (sData and sSchedule and sResult)]]():
+        State<sData,sSchedule,true>(schedule,session),
+      ^STOP[[sData and sSchedule and sResult]](remarks:String=""):
+        end
+    }
+  in
+    link(3,a,s,3);
+    State<false,false,false>("",s) // }}}
+)

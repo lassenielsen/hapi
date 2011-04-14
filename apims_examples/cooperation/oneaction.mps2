@@ -1,0 +1,33 @@
+define $workflow =
+  rec $state<state:Bool=false>.
+  { ^Do[[not state]]:
+      1=>2:1<Bool>; $state<true>,
+    ^STOP[[state]]:
+      Gend
+  } in
+(nu a: $workflow)
+( // First participant
+  def State<state: Bool>(session: $workflow@(1of2)) =
+    guisync(2,session,1)
+    { ^Do[[not state]](comment:String="No Comment"):
+        session[1]<<state;
+        State<true>(session),
+      ^STOP[[state]](comment:String="No Comment"):
+        end
+    }
+  in
+    link(2,a,s,1);
+    State<false>(s)
+| // Second participant
+  def State<state: Bool>(session: $workflow@(2of2)) =
+    guisync(2,session,2)
+    { ^Do[[not state]](comment:String="No Comment"):
+        session[1]>>value;
+        State<true>(session),
+      ^STOP[[state]](comment:String="No Comment"):
+        end
+    }
+  in
+    link(2,a,s,2);
+    State<false>(s)
+)
