@@ -1,3 +1,4 @@
+INTRODUCTION:
 This is the apims library. APIMS is an abreviation of Asynchronous
 PI-calculus with Multiparty session types and Symmetric synchronization.
 
@@ -10,3 +11,22 @@ software, as long as the same rights are given for the derived products.
 Information about the GNU GPL can be found at the Free Software Foundation
 (www.fsf.org) or more specifically at http://www.gnu.org/licenses/gpl.html
 
+INSTALLATION:
+To install the library, make sure the dependancies are installed, and then type
+-make config
+-make build
+-sudo make install
+This will install the library.
+
+To install the interpretor go to the programs folder and write
+-make config
+-make build
+-sudo make install
+This will install the interpretor.
+
+To test the installation simply write
+-apims 'end'
+This should typecheck and run the trivial (terminated imediately) program.
+Example programs are in the apims_examples folder, and can be executed with the
+-apims -f <filename>
+command.
