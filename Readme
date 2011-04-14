@@ -26,7 +26,7 @@ This will install the interpretor.
 
 To test the installation simply write
 -apims 'end'
-This should typecheck and run the trivial (terminated imediately) program.
+This should typecheck and run the trivial (terminates imediately) program.
 Example programs are in the apims_examples folder, and can be executed with the
 -apims -f <filename>
 command.
