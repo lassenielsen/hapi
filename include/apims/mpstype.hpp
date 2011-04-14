@@ -309,7 +309,7 @@ class MpsLocalSendType : public MpsLocalType // {{{
 
     // Accessors
     int GetChannel();
-    MpsLocalType *GetSucc();
+    const MpsLocalType *GetSucc() const;
     MpsMsgType *GetMsgType();
     bool GetAssertionType() const;
     const std::string &GetAssertionName() const;
@@ -349,7 +349,7 @@ class MpsLocalRcvType : public MpsLocalType // {{{
 
     // Accessors
     int GetChannel();
-    MpsLocalType *GetSucc();
+    const MpsLocalType *GetSucc() const;
     MpsMsgType *GetMsgType();
     bool GetAssertionType() const;
     const std::string &GetAssertionName() const;
@@ -389,7 +389,7 @@ class MpsLocalForallType : public MpsLocalType // {{{
     // Accessors
     const std::string &GetName() const;
     const MpsExp &GetAssertion() const;
-    MpsLocalType *GetSucc();
+    const MpsLocalType *GetSucc() const;
 
   private:
     std::string myName;

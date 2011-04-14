@@ -253,17 +253,17 @@ define $2114 xUrinering xAffoering
                     xMedicinMorgen:Bool=xMedicinMorgen,
                     xMedicinEftermiddag:Bool=xMedicinEftermiddag,
                     xMedicinAften:Bool=xMedicinAften>.
-        {^Operer:
+        {#Operer:
           2=>1:1<Bool> as newOperation;
           2=>3:3<Bool> as theOperation [[(newOperation or not theOperation) and (not newOperation or theOperation)]]; // =newOperation
           2=>1:1<Bool> as newInformeret; // [[newOperation or not newInformeret]];
           2=>3:3<Bool> as theInformeret [[(newInformeret or not theInformeret) and (not newInformeret or theInformeret)]]; // =newInformeret
-          $stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,newOperation,newInformeret,false,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
-         ^Udskriv:
+          $stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,newOperation,newInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
+         #Udskriv[[xUrinering and xAffoering]]:
           2=>1:1<Bool> as newUdskriv; // [[(xUrinering and xAffoering) or not newUdskriv]];
           2=>3:3<Bool> as theUdskriv [[(newUdskriv or not theUdskriv) and (not newUdskriv or theUdskriv)]]; // =newUdskriv
           $stuegang<xUrinering,xAffoering,newUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
-         ^Medicin:
+         #Medicin:
           2=>1:1<String>; // Læge informerer om medicinering
           2=>3:3<String>; // Læge informerer om medicinering
           2=>1:1<Bool> as newMedicinMorgen;
@@ -282,7 +282,7 @@ define $2114 xUrinering xAffoering
      ^SendJournal[[xJournalHer and xJournalOpdateret]]:
       $treatment<xUrinering,xAffoering,xUdskriv,false,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
      ^HentJournal[[not xJournalHer]]:
-      $treatment<xUrinering,xAffoering,xUdskriv,true,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
+      $treatment<xUrinering,xAffoering,xUdskriv,true,false,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
      #Flyt[[xJournalHer]]:
       // Nyt værelse skal noteres i Journalen
       $treatment<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
@@ -290,35 +290,35 @@ define $2114 xUrinering xAffoering
       //1=>3:4<String>; // Patient forklarer symptomer
       // Symptomerne skal tilføjes journalen
       1=>3:3<Bool> as newUrinering;
-      2=>3:3<Bool> as theUrinering [[(newUrinering or not theUrinering) and (not newUrinering or theUrinering)]]; // =newUrinering (not done physically)
-      1=>3:1<Bool> as newAffoering;
-      2=>3:3<Bool> as theAffoering [[(newAffoering or not theAffoering) and (not newAffoering or theAffoering)]]; // =newAffoering (not done physically)
+      3=>2:2<Bool> as theUrinering [[(newUrinering or not theUrinering) and (not newUrinering or theUrinering)]]; // =newUrinering (not done physically)
+      1=>3:3<Bool> as newAffoering;
+      3=>2:2<Bool> as theAffoering [[(newAffoering or not theAffoering) and (not newAffoering or theAffoering)]]; // =newAffoering (not done physically)
       //1=>3:3<String>; // Patient forklarer væskeindtag
       //1=>3:3<String>; // Patient forklarer energiindtag
       // Væske- og energi-indtag noteres i journalen
-      $treatment<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
+      $treatment<newUrinering,newAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
      ^TilsynEftermiddag[[xJournalHer]]: // Time Constraint?
       //1=>3:4<String>; // Patient forklarer symptomer
       // Symptomerne skal tilføjes journalen
       1=>3:3<Bool> as newUrinering;
-      2=>3:3<Bool> as theUrinering [[(newUrinering or not theUrinering) and (not newUrinering or theUrinering)]]; // =newUrinering (not done physically)
-      1=>3:1<Bool> as newAffoering;
-      2=>3:3<Bool> as theAffoering [[(newAffoering or not theAffoering) and (not newAffoering or theAffoering)]]; // =newAffoering (not done physically)
+      3=>2:2<Bool> as theUrinering [[(newUrinering or not theUrinering) and (not newUrinering or theUrinering)]]; // =newUrinering (not done physically)
+      1=>3:3<Bool> as newAffoering;
+      3=>2:2<Bool> as theAffoering [[(newAffoering or not theAffoering) and (not newAffoering or theAffoering)]]; // =newAffoering (not done physically)
       //1=>3:3<String>; // Patient forklarer væskeindtag
       //1=>3:3<String>; // Patient forklarer energiindtag
       // Væske- og energi-indtag noteres i journalen
-      $treatment<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
+      $treatment<newUrinering,newAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
      ^TilsynAften[[xJournalHer]]: // Time Constraint?
       //1=>3:4<String>; // Patient forklarer symptomer
       // Symptomerne skal tilføjes journalen
       1=>3:3<Bool> as newUrinering;
-      2=>3:3<Bool> as theUrinering [[(newUrinering or not theUrinering) and (not newUrinering or theUrinering)]]; // =newUrinering (not done physically)
-      1=>3:1<Bool> as newAffoering;
-      2=>3:3<Bool> as theAffoering [[(newAffoering or not theAffoering) and (not newAffoering or theAffoering)]]; // =newAffoering (not done physically)
+      3=>2:2<Bool> as theUrinering [[(newUrinering or not theUrinering) and (not newUrinering or theUrinering)]]; // =newUrinering (not done physically)
+      1=>3:3<Bool> as newAffoering;
+      3=>2:2<Bool> as theAffoering [[(newAffoering or not theAffoering) and (not newAffoering or theAffoering)]]; // =newAffoering (not done physically)
       //1=>3:3<String>; // Patient forklarer væskeindtag
       //1=>3:3<String>; // Patient forklarer energiindtag
       // Væske- og energi-indtag noteres i journalen
-      $treatment<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
+      $treatment<newUrinering,newAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
      ^MedicinMorgen[[xJournalHer and xMedicinMorgen]]: // Time Constraint?
       // Sygeplejer giver medicinen til patienten
       $treatment<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,false,xMedicinEftermiddag,xMedicinAften>,
@@ -331,8 +331,10 @@ define $2114 xUrinering xAffoering
       // reserver, operation
      ^Reserver[[xJournalHer and xOperation and not xReserveret]]:
       $treatment<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,true,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
-     ^Operer[[xJournalHer and xOperation and xReserveret]]:
-      $treatment<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,false,false,false,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
+     ^Operer[[xJournalHer and xOperation and xInformeret and xReserveret]]:
+      {^AfslutOperation:
+        $treatment<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,false,false,false,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>
+      },
      ^Udskriv[[xUdskriv and xJournalHer]]: Gend
     }
 in
@@ -352,17 +354,17 @@ define $2114_stuegang xUrinering xAffoering
                 xMedicinMorgen:Bool=xMedicinMorgen,
                 xMedicinEftermiddag:Bool=xMedicinEftermiddag,
                 xMedicinAften:Bool=xMedicinAften>.
-    {^Operer:
+    {#Operer:
       2=>1:1<Bool> as newOperation;
       2=>3:3<Bool> as theOperation [[(newOperation or not theOperation) and (not newOperation or theOperation)]]; // =newOperation
       2=>1:1<Bool> as newInformeret; // [[newOperation or not newInformeret]];
       2=>3:3<Bool> as theInformeret [[(newInformeret or not theInformeret) and (not newInformeret or theInformeret)]]; // =newInformeret
-      $stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,newOperation,newInformeret,false,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
-     ^Udskriv:
+      $stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,newOperation,newInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
+     #Udskriv[[xUrinering and xAffoering]]:
       2=>1:1<Bool> as newUdskriv; // [[(xUrinering and xAffoering) or not newUdskriv]];
       2=>3:3<Bool> as theUdskriv [[(newUdskriv or not theUdskriv) and (not newUdskriv or theUdskriv)]]; // =newUdskriv
       $stuegang<xUrinering,xAffoering,newUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>,
-     ^Medicin:
+     #Medicin:
       2=>1:1<String>; // Læge informerer om medicinering
       2=>3:3<String>; // Læge informerer om medicinering
       2=>1:1<Bool> as newMedicinMorgen;
@@ -384,10 +386,10 @@ in // }}}
 ( def Doctor() = // {{{
     link(3,behandling,s,2); // Forbind som Læge
     ( Doctor()
-    | def State<xUrinering:Bool,xAffoering:Bool,xUdskriv:Bool,
-                xJournalHer:Bool,xJournalOpdateret:Bool,
-                xOperation:Bool,xInformeret:Bool,xReserveret:Bool,
-                xMedicinMorgen:Bool,xMedicinEftermiddag:Bool,xMedicinAften:Bool>
+    | def Behandling<xUrinering:Bool,xAffoering:Bool,xUdskriv:Bool,
+                     xJournalHer:Bool,xJournalOpdateret:Bool,
+                     xOperation:Bool,xInformeret:Bool,xReserveret:Bool,
+                     xMedicinMorgen:Bool,xMedicinEftermiddag:Bool,xMedicinAften:Bool>
               (b:$2114<xUrinering,xAffoering,xUdskriv,
                        xJournalHer,xJournalOpdateret,
                        xOperation,xInformeret,xReserveret,
@@ -396,17 +398,95 @@ in // }}}
                      xJournalHer:Bool,xJournalOpdateret:Bool,
                      xOperation:Bool,xInformeret:Bool,xReserveret:Bool,
                      xMedicinMorgen:Bool,xMedicinEftermiddag:Bool,xMedicinAften:Bool>
-                     (b:$2114<xUrinering,xAffoering,xUdskriv,
+                     (b:$2114_stuegang<xUrinering,xAffoering,xUdskriv,
                               xJournalHer,xJournalOpdateret,
                               xOperation,xInformeret,xReserveret,
-                              xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>@(2of3)) =
-          Stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b)
+                              xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>@(2of3),
+                      j:$journal<true,xUrinering,xAffoering,
+                                 xOperation,xInformeret,xReserveret,
+                                 xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>@(1of2)) =
+          // FIXME Update GUI
+          guisync(3,b,2)
+          {#Operer(operer:Bool=xOperation,
+                   patientinformeret:Bool=false):
+            b[1]<<operer;
+            b[3]<<operer;
+            b[1]<<patientinformeret;
+            b[3]<<patientinformeret;
+            j[1]<<^WriteOperation;
+            j[1]<<operer;
+            j[1]<<^WriteInformeret;
+            j[1]<<patientinformeret;
+            Stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,operer,patientinformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b,j),
+           #Udskriv[[xUrinering and xAffoering]](udskriv:Bool=xUdskriv):
+            b[1]<<udskriv;
+            b[3]<<udskriv;
+            Stuegang<xUrinering,xAffoering,udskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b,j),
+           #Medicin(medicin:String="",
+                    morgen:Bool=xMedicinMorgen,
+                    eftermiddag:Bool=xMedicinEftermiddag,
+                    aften:Bool=xMedicinAften):
+            b[1]<<medicin;
+            b[3]<<medicin;
+            j[1]<<^WriteMedicin;
+            j[1]<<medicin;
+            b[1]<<morgen;
+            b[3]<<morgen;
+            b[1]<<eftermiddag;
+            b[3]<<eftermiddag;
+            b[1]<<aften;
+            b[3]<<aften;
+            j[1]<<^WriteMedicinering;
+            j[1]<<morgen;
+            j[1]<<eftermiddag;
+            j[1]<<aften;
+            Stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,morgen,eftermiddag,aften>(b,j),
+           ^AfslutStuegang(kommentar:String=""):
+            b[3]<<j;
+            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b)
+          }
         in
-          guisync(3,s,2)
-          {^Stuegang()
-          State<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b)
+          guisync(3,b,2)
+          {^Stuegang[[xJournalHer and not xMedicinMorgen and not xMedicinEftermiddag and not xMedicinAften]](kommentar:String=""):
+            b[2]>>j;
+            Stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b,j),
+           #Dikter[[xJournalHer]]():
+            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,true,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+           ^SendJournal[[xJournalHer and xJournalOpdateret]]():
+            Behandling<xUrinering,xAffoering,xUdskriv,false,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+           ^HentJournal[[not xJournalHer]]():
+            Behandling<xUrinering,xAffoering,xUdskriv,true,false,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+           #Flyt[[xJournalHer]]():
+            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+           ^TilsynMorgen[[xJournalHer]]():
+            b[2]>>xUrinering;
+            b[2]>>xAffoering;
+            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+           ^TilsynEftermiddag[[xJournalHer]]():
+            b[2]>>xUrinering;
+            b[2]>>xAffoering;
+            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+           ^TilsynAften[[xJournalHer]]():
+            b[2]>>xUrinering;
+            b[2]>>xAffoering;
+            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+           ^MedicinMorgen[[xJournalHer and xMedicinMorgen]]():
+            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,false,xMedicinEftermiddag,xMedicinAften>(b),
+           ^MedicinEftermiddag[[xJournalHer and xMedicinEftermiddag]]():
+            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,false,xMedicinAften>(b),
+           ^MedicinAften[[xJournalHer and xMedicinAften]]():
+            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,false>(b),
+           ^Reserver[[xJournalHer and xOperation and not xReserveret]]():
+            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,true,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+           ^Operer[[xJournalHer and xOperation and xInformeret and xReserveret]](kommentar:String=""):
+            guisync(3,b,2)
+            {^AfslutOperation(kommentar:String=kommentar):
+              Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,false,false,false,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b)
+            },
+           ^Udskriv[[xUdskriv and xJournalHer]](): end
+          }
       in
-        State<false,false,false,true,false,false,false,false,false,false,false>(s)
+        Behandling<false,false,false,true,false,false,false,false,false,false,false>(s)
     )
   in Doctor() | // }}}
 // Skranke (reception) Interface {{{
@@ -417,8 +497,10 @@ define $skranke =
   1=>2:2<String>; // Send Navn
   1=>2:2<String>; // Send CPR
   1=>2:2<String>; // Send Symptomer
-  2=>1:1<$2114<false,false,false,true,false,false,false,false,false,false,false>@(1of3)>;
-  Gend
+  {^Indlaeg:
+    2=>1:1<$2114<false,false,false,true,false,false,false,false,false,false,false>@(1of3)>;
+    Gend
+  }
 in // }}}
 // Opret Kanal: skranke {{{
 (nu skranke : $skranke) // }}}
@@ -432,13 +514,11 @@ in // }}}
       link(2,journal,j,1); // Opret Journal
       j[1]<<navn;
       j[1]<<cpr;
-      (nu gui: {^Opret: Gend}) // Opret brugerflade type
-      link(1,gui,g,1); // Opret brugerflade
-      guivalue(1,g,1,"Navn:",navn);
-      guivalue(1,g,1,"CPR:",cpr);
-      guivalue(1,g,1,"Symptomer:",symptomer);
-      guisync(1,g,1)
-      {^Opret(vaerelse:String="Værelse12"): // Indlæs vaerelse fra brugerflade
+      guivalue(2,s,2,"Navn:",navn);
+      guivalue(2,s,2,"CPR:",cpr);
+      guivalue(2,s,2,"Symptomer:",symptomer);
+      guisync(2,s,2)
+      {^Indlaeg(vaerelse:String="Værelse12"): // Indlæs vaerelse fra brugerflade
         j[1]<<vaerelse;
         j[1]<<symptomer;
         link(3,behandling,b,1); // Opret Behandling
@@ -448,5 +528,98 @@ in // }}}
       }
     )
   in Receptionist() | // }}}
+//( def Patient(navn: String,cpr: String,symptomer: String) = // {{{
+//    def Behandling<xUrinering:Bool,xAffoering:Bool,xUdskriv:Bool,
+//                   xJournalHer:Bool,xJournalOpdateret:Bool,
+//                   xOperation:Bool,xInformeret:Bool,xReserveret:Bool,
+//                   xMedicinMorgen:Bool,xMedicinEftermiddag:Bool,xMedicinAften:Bool>
+//            (b:$2114<xUrinering,xAffoering,xUdskriv,
+//                     xJournalHer,xJournalOpdateret,
+//                     xOperation,xInformeret,xReserveret,
+//                     xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>@(1of3))=
+//      def Stuegang<xUrinering:Bool,xAffoering:Bool,xUdskriv:Bool,
+//                   xJournalHer:Bool,xJournalOpdateret:Bool,
+//                   xOperation:Bool,xInformeret:Bool,xReserveret:Bool,
+//                   xMedicinMorgen:Bool,xMedicinEftermiddag:Bool,xMedicinAften:Bool>
+//                   (b:$2114_stuegang<xUrinering,xAffoering,xUdskriv,
+//                            xJournalHer,xJournalOpdateret,
+//                            xOperation,xInformeret,xReserveret,
+//                            xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>@(1of3)) =
+//        guisync(3,b,1)
+//        {#Operer():
+//          b[1]>>operer;
+//          b[1]>>patientinformeret;
+//          Stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,operer,patientinformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+//         #Udskriv[[xUrinering and xAffoering]]():
+//          b[1]>>udskriv;
+//          // Update GUI
+//          guivalue(3,b,1,"Klar til udskrivning",if udskrevet then "Ja" else "Nej");
+//          Stuegang<xUrinering,xAffoering,udskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+//         #Medicin():
+//          b[1]>>medicin;
+//          b[1]>>xMedicinMorgen;
+//          b[1]>>xMedicinEftermiddag;
+//          b[1]>>xMedicinAften;
+//          // Update GUI
+//          guivalue(3,b,1,"Medicin",medicin);
+//          guivalue(3,b,1,"Medicin-Morgen",xMedicinMorgen);
+//          guivalue(3,b,1,"Medicin-Eftermiddag",xMedicinEftermiddag);
+//          guivalue(3,b,1,"Medicin-Aften",xMedicinAften);
+//          Stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+//         ^AfslutStuegang():
+//          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b)
+//        }
+//      in
+//        Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b)
+////        guisync(3,b,2)
+////        {^Stuegang[[xJournalHer and not xMedicinMorgen and not xMedicinEftermiddag and not xMedicinAften]](kommentar:String=""):
+////          b[2]>>j;
+////          Stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b,j),
+////         #Dikter[[xJournalHer]]():
+////          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,true,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+////         ^SendJournal[[xJournalHer and xJournalOpdateret]]():
+////          Behandling<xUrinering,xAffoering,xUdskriv,false,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+////         ^HentJournal[[not xJournalHer]]():
+////          Behandling<xUrinering,xAffoering,xUdskriv,true,false,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+////         #Flyt[[xJournalHer]]():
+////          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+////         ^TilsynMorgen[[xJournalHer]]():
+////          b[2]>>xUrinering;
+////          b[2]>>xAffoering;
+////          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+////         ^TilsynEftermiddag[[xJournalHer]]():
+////          b[2]>>xUrinering;
+////          b[2]>>xAffoering;
+////          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+////         ^TilsynAften[[xJournalHer]]():
+////          b[2]>>xUrinering;
+////          b[2]>>xAffoering;
+////          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+////         ^MedicinMorgen[[xJournalHer and xMedicinMorgen]]():
+////          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,false,xMedicinEftermiddag,xMedicinAften>(b),
+////         ^MedicinEftermiddag[[xJournalHer and xMedicinEftermiddag]]():
+////          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,false,xMedicinAften>(b),
+////         ^MedicinAften[[xJournalHer and xMedicinAften]]():
+////          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,false>(b),
+////         ^Reserver[[xJournalHer and xOperation and not xReserveret]]():
+////          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,true,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+////         ^Operer[[xJournalHer and xOperation and xInformeret and xReserveret]](kommentar:String=""):
+////          guisync(3,b,2)
+////          {^AfslutOperation(kommentar:String=kommentar):
+////            Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,false,false,false,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b)
+////          },
+////         ^Udskriv[[xUdskriv and xJournalHer]](): end
+////        }
+//    in
+//      link(2,skranke,s,1); // Forbind som Patient
+//      s[2]<<navn;
+//      s[2]<<cpr;
+//      s[2]<<symptomer;
+//      sync(2,s)
+//      {^Indlaeg:
+//        s[1]>>b;
+//        Behandling<false,false,false,true,false,false,false,false,false,false,false>(b)
+//      }
+//  in //Patient("Lasse Nielsen","170681....","Ondt i mavsen") | // }}}
 end
-) ) )
+) ) ) // )

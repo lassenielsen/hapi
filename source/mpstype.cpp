@@ -1931,6 +1931,56 @@ MpsLocalSyncType *MpsLocalSyncType::Copy() const // {{{
 
 // FIXME: Improve equality to co-inductive type equality and subtyping
 // Compare
+// Helper function, to eliminate exceeding foralls
+bool CompareForall(const MpsLocalType &lhs, const MpsLocalType &rhs) // {{{
+{ 
+  const MpsLocalForallType *lhsptr=dynamic_cast<const MpsLocalForallType*>(&lhs);
+  const MpsLocalForallType *rhsptr=dynamic_cast<const MpsLocalForallType*>(&rhs);
+  if (lhsptr==NULL && rhsptr==NULL)
+    return (*lhsptr==*rhsptr);
+  else if (lhsptr!=NULL && rhsptr!=NULL)
+  { if (lhsptr->GetName() != rhsptr->GetName())
+    { // Rename
+      string newName = MpsExp::NewVar(lhsptr->GetName());
+      // Compare Assertions
+      MpsExp *lhsAssertion=lhsptr->GetAssertion().Rename(lhsptr->GetName(),newName);
+      MpsExp *rhsAssertion=rhsptr->GetAssertion().Rename(rhsptr->GetName(),newName);
+      bool checkAssertion = *lhsAssertion==*rhsAssertion;
+      delete lhsAssertion;
+      delete rhsAssertion;
+      if (not checkAssertion)
+        return false;
+      // Compare Successors
+      MpsLocalType *lhsSucc=lhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
+      MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(rhsptr->GetName(),newName);
+      bool checkSucc = *lhsSucc==*rhsSucc;
+      delete lhsSucc;
+      delete rhsSucc;
+      if (not checkSucc)
+        return false;
+    }
+    else if (not (*lhsptr->GetSucc()==*rhsptr->GetSucc() &&
+                  lhsptr->GetAssertion()==rhsptr->GetAssertion()))
+      return false;
+    return true;
+  }
+  else if (lhsptr!=NULL)
+  {
+    string newName = MpsExp::NewVar(lhsptr->GetName());
+    MpsLocalType *lhsSucc=lhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
+    bool result = *lhsSucc==rhs;
+    delete lhsSucc;
+    return result;
+  }
+  else if (rhsptr!=NULL)
+  {
+    string newName = MpsExp::NewVar(rhsptr->GetName());
+    MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(rhsptr->GetName(),newName);
+    bool result = lhs==*rhsSucc;
+    delete rhsSucc;
+    return result;
+  }
+} // }}}
 bool MpsLocalSendType::operator==(const MpsLocalType &rhs) const // {{{
 {
   const MpsLocalSendType *rhsptr=dynamic_cast<const MpsLocalSendType*>(&rhs);
@@ -3940,15 +3990,15 @@ int MpsLocalBranchType::GetChannel() // {{{
 {
   return myChannel;
 } // }}}
-MpsLocalType *MpsLocalSendType::GetSucc() // {{{
+const MpsLocalType *MpsLocalSendType::GetSucc() const // {{{
 {
   return mySucc;
 } // }}}
-MpsLocalType *MpsLocalRcvType::GetSucc() // {{{
+const MpsLocalType *MpsLocalRcvType::GetSucc() const // {{{
 {
   return mySucc;
 } // }}}
-MpsLocalType *MpsLocalForallType::GetSucc() // {{{
+const MpsLocalType *MpsLocalForallType::GetSucc() const // {{{
 {
   return mySucc;
 } // }}}

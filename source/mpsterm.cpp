@@ -1063,7 +1063,7 @@ bool PrintTypeError(const string &message, const MpsTerm &term, const MpsExp &Th
 } // }}}
 
 // Helpfunction for when unfolding is necessary
-inline bool TypeCheckUnfolded(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma, const MpsProcEnv &Omega, MpsTerm &term, const string &session) // Using new rule unfold (or eq) {{{
+inline bool TypeCheckRec(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma, const MpsProcEnv &Omega, MpsTerm &term, const string &session) // Using new rule unfold (or eq) {{{
 {
   MpsLocalEnv::const_iterator it=Delta.find(session);
   if (it==Delta.end())
@@ -1099,6 +1099,31 @@ inline bool TypeCheckUnfolded(const MpsExp &Theta, const MpsGlobalEnv &Gamma, co
   delete newType;
   return result;
 } // }}}
+inline bool TypeCheckForall(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma, const MpsProcEnv &Omega, MpsTerm &term, const string &session) // Using new rule forall {{{
+{
+  MpsLocalEnv::const_iterator it=Delta.find(session);
+  if (it==Delta.end())
+    return PrintTypeError((string)"Forall on closed session: " + session,term,Theta,Gamma,Delta,Sigma,Omega);
+  const MpsLocalForallType *type = dynamic_cast<const MpsLocalForallType*>(it->second.type);
+  if (type==NULL)
+    return PrintTypeError((string)"Forall on non-forall type: " + it->second.type->ToString(),term,Theta,Gamma,Delta,Sigma,Omega);
+  // Find new name for bound variable
+  string newName = MpsExp::NewVar(type->GetName());
+  // Create type for substitution
+  MpsLocalType *newType = type->GetSucc()->ERename(type->GetName(),newName);
+  // Create new Theta
+  MpsExp *newAssertion = type->GetAssertion().Rename(type->GetName(),newName);
+  MpsExp *newTheta=new MpsBinOpExp("and",Theta,*newAssertion);
+  delete newAssertion;
+  // Create new Delta
+  MpsLocalEnv newDelta = Delta;
+  newDelta[session].type = newType;
+  bool result = term.TypeCheck(*newTheta,Gamma,newDelta,Sigma,Omega);
+  // Clean Up
+  delete newType;
+  delete newTheta;
+  return result;
+} // }}}
 
 // TODO: Copy-Cleanup and collect all environments in one MpsMsgEnv &env
 bool MpsEnd::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma, const MpsProcEnv &Omega) // Use rule Inact {{{
@@ -1117,7 +1142,9 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
     return PrintTypeError((string)"Sending on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check if unfolding is necessary
   if (typeid(*session->second.type)==typeid(MpsLocalRecType))
-    return TypeCheckUnfolded(Theta, Gamma, Delta, Sigma, Omega, *this, session->first);
+    return TypeCheckRec(Theta, Gamma, Delta, Sigma, Omega, *this, session->first);
+  if (typeid(*session->second.type)==typeid(MpsLocalForallType))
+    return TypeCheckForall(Theta, Gamma, Delta, Sigma, Omega, *this, session->first);
   // Check session has send type
   MpsLocalSendType *typeptr = dynamic_cast<MpsLocalSendType*>(session->second.type);
   if (typeptr==NULL)
@@ -1169,7 +1196,9 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
     return PrintTypeError((string)"Receiving on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check if unfolding is necessary
   if (typeid(*session->second.type)==typeid(MpsLocalRecType))
-    return TypeCheckUnfolded(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+  if (typeid(*session->second.type)==typeid(MpsLocalForallType))
+    return TypeCheckForall(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
   // Check session has receive type
   MpsLocalRcvType *typeptr = dynamic_cast<MpsLocalRcvType*>(session->second.type);
   if (typeptr==NULL)
@@ -1192,9 +1221,16 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
     newDelta[it->first].maxpid=it->second.maxpid;
     if (it->first==myChannel.GetName())
     { if (typeptr->GetAssertionType())
-        newDelta[it->first].type=typeptr->GetSucc()->ERename(typeptr->GetAssertionName(),myDest);
+      { if (typeptr->GetAssertionName()==myDest)
+          newDelta[it->first].type=typeptr->GetSucc()->Copy();
+        else // rename myDest and rename Assertionname to myDest
+        { MpsLocalType *tmpType=typeptr->Copy();// ***FIXME***: WHAT IS THE PROBLEM? typeptr->GetSucc()->ERename(myDest,dest);
+          newDelta[it->first].type=tmpType->ERename(typeptr->GetAssertionName(),myDest);
+          delete tmpType;
+        }
+      }
       else
-        newDelta[it->first].type=typeptr->GetSucc()->Copy();
+        newDelta[it->first].type=typeptr->GetSucc()->ERename(myDest,dest);
     }
     else
     { if (rename)
@@ -1288,7 +1324,9 @@ bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
   }
   // Check if unfolding is necessary
   if (typeid(*session->second.type)==typeid(MpsLocalRecType))
-    return TypeCheckUnfolded(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+  if (typeid(*session->second.type)==typeid(MpsLocalForallType))
+    return TypeCheckForall(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
   // Check session has select type
   MpsLocalSelectType *typeptr = dynamic_cast<MpsLocalSelectType*>(session->second.type);
   if (typeptr==NULL)
@@ -1324,7 +1362,9 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
     return PrintTypeError((string)"Branching on closed session " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check if unfolding is necessary
   if (typeid(*session->second.type)==typeid(MpsLocalRecType))
-    return TypeCheckUnfolded(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+  if (typeid(*session->second.type)==typeid(MpsLocalForallType))
+    return TypeCheckForall(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
   // Check session has branch type
   MpsLocalBranchType *typeptr = dynamic_cast<MpsLocalBranchType*>(session->second.type);
   if (typeptr==NULL)
@@ -1551,7 +1591,9 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
     return PrintTypeError((string)"Synchonising on closed session " + mySession,*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check if unfolding is necessary
   if (typeid(*session->second.type)==typeid(MpsLocalRecType))
-    return TypeCheckUnfolded(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+  if (typeid(*session->second.type)==typeid(MpsLocalForallType))
+    return TypeCheckForall(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
   // Check session has sync type
   MpsLocalSyncType *typeptr = dynamic_cast<MpsLocalSyncType*>(session->second.type);
   if (typeptr==NULL)
@@ -1678,7 +1720,9 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const
     return PrintTypeError((string)"Synchonising on closed session " + mySession,*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check if unfolding is necessary
   if (typeid(*session->second.type)==typeid(MpsLocalRecType))
-    return TypeCheckUnfolded(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+  if (typeid(*session->second.type)==typeid(MpsLocalForallType))
+    return TypeCheckForall(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
   // Check session has sync type
   MpsLocalSyncType *typeptr = dynamic_cast<MpsLocalSyncType*>(session->second.type);
   if (typeptr==NULL)
