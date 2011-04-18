@@ -1206,14 +1206,19 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
   // Check channel index is correct
   if (myChannel.GetIndex() != typeptr->GetChannel())
     return PrintTypeError((string)"Receiving on session(wrong index): " + myChannel.ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
-  set<string> fv=Theta.FV();
-  bool rename = fv.find(myDest)!=fv.end();
-  for (MpsLocalEnv::const_iterator it=Delta.begin(); (not rename) && it!=Delta.end(); ++it)
-  { fv = it->second.type->FEV();
+  // Is renaming of myDest necessary?
+  bool rename = false;
+  if (typeptr->GetAssertionType())
+  { set<string> fv=Theta.FV();
     if (fv.find(myDest)!=fv.end())
       rename=true;
+    for (MpsLocalEnv::const_iterator it=Delta.begin(); (not rename) && it!=Delta.end(); ++it)
+    { fv = it->second.type->FEV();
+      if (fv.find(myDest)!=fv.end())
+        rename=true;
+    }
   }
-  string dest=rename?MpsExp::NewVar(myDest):myDest;
+  string newDest=rename?MpsExp::NewVar(myDest):myDest;
   // Make new Delta
   MpsLocalEnv newDelta;
   for (MpsLocalEnv::const_iterator it=Delta.begin(); it!=Delta.end(); ++it)
@@ -1221,28 +1226,28 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
     newDelta[it->first].maxpid=it->second.maxpid;
     if (it->first==myChannel.GetName())
     { if (typeptr->GetAssertionType())
-      { if (typeptr->GetAssertionName()==myDest)
-          newDelta[it->first].type=typeptr->GetSucc()->Copy();
-        else // rename myDest and rename Assertionname to myDest
-        { MpsLocalType *tmpType=typeptr->Copy();// ***FIXME***: WHAT IS THE PROBLEM? typeptr->GetSucc()->ERename(myDest,dest);
-          newDelta[it->first].type=tmpType->ERename(typeptr->GetAssertionName(),myDest);
-          delete tmpType;
-        }
+      { MpsLocalType *tmpType=NULL;
+        if (rename && typeptr->GetAssertionName()!=myDest) // Rename in succ
+          tmpType=typeptr->GetSucc()->ERename(myDest,newDest);
+        else
+          tmpType=typeptr->GetSucc()->Copy();
+        newDelta[it->first].type=tmpType->ERename(typeptr->GetAssertionName(),myDest);
       }
       else
-        newDelta[it->first].type=typeptr->GetSucc()->ERename(myDest,dest);
+        newDelta[it->first].type=typeptr->GetSucc()->Copy();
     }
     else
     { if (rename)
-        newDelta[it->first].type=it->second.type->ERename(myDest,dest);
+        newDelta[it->first].type=it->second.type->ERename(myDest,newDest);
       else
         newDelta[it->first].type=it->second.type;
     }
   }
-  // Create new Gamma
+  // Save created type for deletion
+  MpsLocalType *newType=newDelta[myChannel.GetName()].type;
+  // Create new Gamma (and Sigma)
   MpsGlobalEnv newGamma = Gamma;
   MpsMsgEnv newSigma = Sigma;
-  MpsLocalType *newType=newDelta[myChannel.GetName()].type;
   // Check if assertion domain is respected
   if (typeptr->GetAssertionType() && typeid(*typeptr->GetMsgType()) != typeid(MpsBoolMsgType))
     return PrintTypeError((string)"Assertion of non-boolean type: " + typeptr->ToString("!!!!!      "),*this,Theta,Gamma,Delta,Sigma,Omega);
@@ -1273,31 +1278,28 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
     newDelta[myDest].pid = mtptr->GetPid();
     newDelta[myDest].maxpid = mtptr->GetMaxpid();
   }
-  // Unknown MsgType
-  else
+  else // Unknown MsgType
     return PrintTypeError((string)"Unknown Message-Type: " + typeptr->GetMsgType()->ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Create new Assumptions
   MpsExp *newTheta=NULL;
   if (typeptr->GetAssertionType())
-  { if (rename)
-    { MpsExp *tmpAssertion=typeptr->GetAssertion().Rename(typeptr->GetAssertionName(),myDest);
-      MpsExp *tmpTheta=Theta.Rename(myDest,dest);
-      newTheta=new MpsBinOpExp("and",*tmpTheta,*tmpAssertion);
+  { MpsExp *newAssertion=NULL;
+    if (typeptr->GetAssertionName()!=myDest)
+    { MpsExp *tmpAssertion=NULL;
+      if (rename)
+        tmpAssertion=typeptr->GetAssertion().Rename(myDest,newDest);
+      else
+        tmpAssertion=typeptr->GetAssertion().Copy();
+      newAssertion=tmpAssertion->Rename(typeptr->GetAssertionName(),myDest);
       delete tmpAssertion;
-      delete tmpTheta;
     }
     else
-    { MpsExp *tmpAssertion=typeptr->GetAssertion().Rename(typeptr->GetAssertionName(),myDest);
-      newTheta=new MpsBinOpExp("and",Theta,*tmpAssertion);
-      delete tmpAssertion;
-    }
+      newAssertion=typeptr->GetAssertion().Copy();
+    newTheta=new MpsBinOpExp("and",Theta,*newAssertion);
+    delete newAssertion;
   }
   else
-  { if (rename)
-      newTheta=Theta.Rename(myDest,dest);
-    else
-      newTheta=Theta.Copy();
-  }
+    newTheta=Theta.Copy();
   // Check rest of program
   bool result = mySucc->TypeCheck(*newTheta,newGamma,newDelta,newSigma,Omega);
   // Clean Up

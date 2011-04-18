@@ -1932,57 +1932,42 @@ MpsLocalSyncType *MpsLocalSyncType::Copy() const // {{{
 // FIXME: Improve equality to co-inductive type equality and subtyping
 // Compare
 // Helper function, to eliminate exceeding foralls
-bool CompareForall(const MpsLocalType &lhs, const MpsLocalType &rhs) // {{{
+bool CompareForall(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalType &rhs) // {{{
 { 
   const MpsLocalForallType *lhsptr=dynamic_cast<const MpsLocalForallType*>(&lhs);
   const MpsLocalForallType *rhsptr=dynamic_cast<const MpsLocalForallType*>(&rhs);
-  if (lhsptr==NULL && rhsptr==NULL)
-    return (*lhsptr==*rhsptr);
-  else if (lhsptr!=NULL && rhsptr!=NULL)
-  { if (lhsptr->GetName() != rhsptr->GetName())
-    { // Rename
-      string newName = MpsExp::NewVar(lhsptr->GetName());
-      // Compare Assertions
-      MpsExp *lhsAssertion=lhsptr->GetAssertion().Rename(lhsptr->GetName(),newName);
-      MpsExp *rhsAssertion=rhsptr->GetAssertion().Rename(rhsptr->GetName(),newName);
-      bool checkAssertion = *lhsAssertion==*rhsAssertion;
-      delete lhsAssertion;
-      delete rhsAssertion;
-      if (not checkAssertion)
-        return false;
-      // Compare Successors
-      MpsLocalType *lhsSucc=lhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
-      MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(rhsptr->GetName(),newName);
-      bool checkSucc = *lhsSucc==*rhsSucc;
-      delete lhsSucc;
-      delete rhsSucc;
-      if (not checkSucc)
-        return false;
-    }
-    else if (not (*lhsptr->GetSucc()==*rhsptr->GetSucc() &&
-                  lhsptr->GetAssertion()==rhsptr->GetAssertion()))
-      return false;
-    return true;
-  }
-  else if (lhsptr!=NULL)
+  if (lhsptr!=NULL)
   {
     string newName = MpsExp::NewVar(lhsptr->GetName());
     MpsLocalType *lhsSucc=lhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
-    bool result = *lhsSucc==rhs;
+    MpsExp *newAssertion = lhsptr->GetAssertion().Rename(lhsptr->GetName(),newName);
+    MpsExp *newTheta = new MpsBinOpExp(*Theta,*newAssertion);
+    delete newAssertion;
+    bool result = CompareForall(newTheta,*lhsSucc,rhs);
     delete lhsSucc;
+    delete newTheta;
     return result;
   }
   else if (rhsptr!=NULL)
   {
     string newName = MpsExp::NewVar(rhsptr->GetName());
     MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(rhsptr->GetName(),newName);
-    bool result = lhs==*rhsSucc;
+    MpsExp *newAssertion = rhsptr->GetAssertion().Rename(rhsptr->GetName(),newName);
+    MpsExp *newTheta = new MpsBinOpExp(*Theta,*newAssertion);
+    delete newAssertion;
+    bool result = CompareForall(newTheta,lhs,*rhsSucc);
     delete rhsSucc;
+    delete newTheta;
     return result;
   }
+  return lhs.Equal(Theta,rhs);
 } // }}}
-bool MpsLocalSendType::operator==(const MpsLocalType &rhs) const // {{{
+bool MpsLocalSendType::Equal(const MpsExp &Theta,const MpsLocalType &rhs) const // {{{
 {
+  // Remove forall instances
+  if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
+    return CompareForall(*this,rhs);
+  // Compare
   const MpsLocalSendType *rhsptr=dynamic_cast<const MpsLocalSendType*>(&rhs);
   if (rhsptr==NULL)
     return false;
@@ -2024,6 +2009,10 @@ bool MpsLocalSendType::operator==(const MpsLocalType &rhs) const // {{{
 } // }}}
 bool MpsLocalRcvType::operator==(const MpsLocalType &rhs) const // {{{
 {
+  // Remove forall instances
+  if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
+    return CompareForall(*this,rhs);
+  // Compare
   const MpsLocalRcvType *rhsptr=dynamic_cast<const MpsLocalRcvType*>(&rhs);
   if (rhsptr==NULL)
     return false;
@@ -2064,36 +2053,14 @@ bool MpsLocalRcvType::operator==(const MpsLocalType &rhs) const // {{{
 } // }}}
 bool MpsLocalForallType::operator==(const MpsLocalType &rhs) const // {{{
 {
-  const MpsLocalForallType *rhsptr=dynamic_cast<const MpsLocalForallType*>(&rhs);
-  if (rhsptr==NULL)
-    return false;
-  if (myName != rhsptr->myName)
-  { // Rename
-    string newName = MpsExp::NewVar(myName);
-    // Compare Assertions
-    MpsExp *lhsAssertion=myAssertion->Rename(myName,newName);
-    MpsExp *rhsAssertion=rhsptr->myAssertion->Rename(rhsptr->myName,newName);
-    bool checkAssertion = *lhsAssertion==*rhsAssertion;
-    delete lhsAssertion;
-    delete rhsAssertion;
-    if (not checkAssertion)
-      return false;
-    // Compare Successors
-    MpsLocalType *lhsSucc=mySucc->ERename(myName,newName);
-    MpsLocalType *rhsSucc=rhsptr->mySucc->ERename(rhsptr->myName,newName);
-    bool checkSucc = *lhsSucc==*rhsSucc;
-    delete lhsSucc;
-    delete rhsSucc;
-    if (not checkSucc)
-      return false;
-  }
-  else if (not (*mySucc==*rhsptr->mySucc && *myAssertion==*rhsptr->myAssertion))
-    return false;
-
-  return true;
+  return CompareForall(*this,rhs);
 } // }}}
 bool MpsLocalSelectType::operator==(const MpsLocalType &rhs) const // {{{
 {
+  // Remove forall instances
+  if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
+    return CompareForall(*this,rhs);
+  // Compare
   // Check top-level type and channel
   if (typeid(rhs)!=typeid(MpsLocalSelectType))
     return false;
@@ -2136,6 +2103,10 @@ bool MpsLocalSelectType::operator==(const MpsLocalType &rhs) const // {{{
 } // }}}
 bool MpsLocalBranchType::operator==(const MpsLocalType &rhs) const // {{{
 {
+  // Remove forall instances
+  if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
+    return CompareForall(*this,rhs);
+  // Compare
   // Check top-level type and channel
   const MpsLocalBranchType *rhsptr=dynamic_cast<const MpsLocalBranchType*>(&rhs);
   if (rhsptr==NULL)
@@ -2178,6 +2149,10 @@ bool MpsLocalBranchType::operator==(const MpsLocalType &rhs) const // {{{
 } // }}}
 bool MpsLocalRecType::operator==(const MpsLocalType &rhs) const // {{{
 {
+  // Remove forall instances
+  if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
+    return CompareForall(*this,rhs);
+  // Compare
   const MpsLocalRecType *rhsptr=dynamic_cast<const MpsLocalRecType*>(&rhs);
   if (rhsptr==NULL) // RHS is not recursive type
     return false;
@@ -2225,6 +2200,10 @@ bool MpsLocalRecType::operator==(const MpsLocalType &rhs) const // {{{
 } // }}}
 bool MpsLocalVarType::operator==(const MpsLocalType &rhs) const // {{{
 {
+  // Remove forall instances
+  if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
+    return CompareForall(*this,rhs);
+  // Compare
   if (typeid(rhs)!=typeid(MpsLocalVarType))
     return false;
   MpsLocalVarType *rhsptr=(MpsLocalVarType*)&rhs;
@@ -2232,10 +2211,18 @@ bool MpsLocalVarType::operator==(const MpsLocalType &rhs) const // {{{
 } // }}}
 bool MpsLocalEndType::operator==(const MpsLocalType &rhs) const // {{{
 {
+  // Remove forall instances
+  if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
+    return CompareForall(*this,rhs);
+  // Compare
   return typeid(rhs)==typeid(MpsLocalEndType);
 } // }}}
 bool MpsLocalSyncType::operator==(const MpsLocalType &rhs) const // {{{
 {
+  // Remove forall instances
+  if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
+    return CompareForall(*this,rhs);
+  // Compare
   // Check top-level type and channel
   if (typeid(rhs)!=typeid(MpsLocalSyncType))
     return false;

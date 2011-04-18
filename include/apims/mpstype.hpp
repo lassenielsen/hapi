@@ -258,7 +258,8 @@ class MpsLocalType // {{{
     // Constructor, Copy and operator methods
     virtual ~MpsLocalType();
     virtual MpsLocalType *Copy() const=0;
-    virtual bool operator==(const MpsLocalType &rhs) const=0;
+    //virtual bool operator==(const MpsLocalType &rhs) const=0;
+    virtual bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const=0;
     // FIXME: virtual bool operator<=(const MpsLocalType &rhs) const = 0;
 
     // Substitution (and helper functions)
