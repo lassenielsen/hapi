@@ -622,7 +622,32 @@ MpsGlobalSyncType *MpsGlobalSyncType::Copy() const // {{{
 // TODO: Improve equality to co-inductive type equality and subtyping
 // FIXME: Test Assertions
 // Compare
-bool MpsGlobalMsgType::operator==(const MpsGlobalType &rhs) const // {{{
+bool ERROR_GLOBALEQ(const MpsExp &Theta, const MpsGlobalType &lhs, const MpsGlobalType &rhs, string msg) // {{{
+{ cerr << "!!!!Types are not equal:" << endl
+       << "!!!!Theta: " << Theta.ToString() << endl
+       << "!!!!!!LHS: " << lhs.ToString("!!!!!!!!!! ") << endl
+       << "!!!!!!RHS: " << rhs.ToString("!!!!!!!!!! ") << endl
+       << "!!!!!!MSG: " << msg << endl;
+  return false;
+} // }}}
+bool CompareAssertions(const MpsExp &Theta, const MpsExp &lhs, const MpsExp &rhs) // {{{
+{ MpsExp *notLhs = new MpsUnOpExp("not",lhs);
+  MpsExp *notRhs = new MpsUnOpExp("not",rhs);
+  MpsExp *check1 = new MpsBinOpExp("or",*notLhs,rhs);
+  MpsExp *check2 = new MpsBinOpExp("or",*notRhs,lhs);
+  MpsExp *check = new MpsBinOpExp("and",*check1,*check2);
+  delete notLhs;
+  delete notRhs;
+  delete check1;
+  delete check2;
+  vector<const MpsExp*> hyps;
+  hyps.push_back(&Theta);
+  bool result = check->ValidExp(hyps);
+  hyps.pop_back();
+  delete check;
+  return result;
+} // }}}
+bool MpsGlobalMsgType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const // {{{
 {
   const MpsGlobalMsgType *rhsptr=dynamic_cast<const MpsGlobalMsgType*>(&rhs);
   if (rhsptr==NULL)
@@ -630,7 +655,7 @@ bool MpsGlobalMsgType::operator==(const MpsGlobalType &rhs) const // {{{
   if (myChannel != rhsptr->myChannel ||
       mySender != rhsptr->mySender ||
       myReceiver != rhsptr->myReceiver ||
-      not (*myMsgType == *rhsptr->myMsgType))
+      not (myMsgType->Equal(Theta,*rhsptr->myMsgType))
     return false;
 
   if (myAssertionType != rhsptr->myAssertionType)
@@ -640,7 +665,15 @@ bool MpsGlobalMsgType::operator==(const MpsGlobalType &rhs) const // {{{
       not (myAssertion == rhsptr->myAssertion))
     return false;
 
-  return *mySucc == *rhsptr->mySucc;
+  string newId=MpsExp::NewVar(myId);
+  string lhsAssertion=myAssertion->Rename(myId,newId);
+  string rhsAssertion=rhsptr->myAssertion->Rename(myId,newId);
+  if (not CompareAssertions(Theta,lhsAssertion,rhsAssertion))
+  { delete lhsAssertion;
+    delete rhsAssertion;
+    return ERROR_GLOBALEQ(Theta,lhs,rhs,"Assertion mismatch");
+  }
+  return mySucc->Equal(newTheta,*rhsptr->mySucc);
 } // }}}
 bool MpsGlobalBranchType::operator==(const MpsGlobalType &rhs) const // {{{
 {
@@ -1932,18 +1965,47 @@ MpsLocalSyncType *MpsLocalSyncType::Copy() const // {{{
 // FIXME: Improve equality to co-inductive type equality and subtyping
 // Compare
 // Helper function, to eliminate exceeding foralls
+bool ERROR_LOCALEQ(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
+{ cerr << "!!!!Types are not equal:" << endl
+       << "!!!!Theta: " << Theta.ToString() << endl
+       << "!!!!!!LHS: " << lhs.ToString("!!!!!!!!!! ") << endl
+       << "!!!!!!RHS: " << rhs.ToString("!!!!!!!!!! ") << endl
+       << "!!!!!!MSG: " << msg << endl;
+  return false;
+} // }}}
 bool CompareForall(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalType &rhs) // {{{
 { 
   const MpsLocalForallType *lhsptr=dynamic_cast<const MpsLocalForallType*>(&lhs);
   const MpsLocalForallType *rhsptr=dynamic_cast<const MpsLocalForallType*>(&rhs);
-  if (lhsptr!=NULL)
+  if (lhsptr!=NULL && rhsptr!=NULL)
+  {
+    string newName = MpsExp::NewVar(lhsptr->GetName());
+    MpsExp *lhsAssertion = lhsptr->GetAssertion().Rename(lhsptr->GetName(),newName);
+    MpsExp *rhsAssertion = rhsptr->GetAssertion().Rename(lhsptr->GetName(),newName);
+    bool checkAssertions = CompareAssertions(Theta,*lhsAssertion,*rhsAssertion);
+    delete rhsAssertion;
+    if (not checkAssertions)
+    { delete lhsAssertion;
+      return false;
+    }
+    MpsLocalType *lhsSucc=lhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
+    MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
+    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*lhsAssertion);
+    delete lhsAssertion;
+    bool result = CompareForall(*newTheta,*lhsSucc,*rhsSucc);
+    delete lhsSucc;
+    delete rhsSucc;
+    delete newTheta;
+    return result;
+  }
+  else if (lhsptr!=NULL)
   {
     string newName = MpsExp::NewVar(lhsptr->GetName());
     MpsLocalType *lhsSucc=lhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
     MpsExp *newAssertion = lhsptr->GetAssertion().Rename(lhsptr->GetName(),newName);
-    MpsExp *newTheta = new MpsBinOpExp(*Theta,*newAssertion);
+    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*newAssertion);
     delete newAssertion;
-    bool result = CompareForall(newTheta,*lhsSucc,rhs);
+    bool result = CompareForall(*newTheta,*lhsSucc,rhs);
     delete lhsSucc;
     delete newTheta;
     return result;
@@ -1953,9 +2015,9 @@ bool CompareForall(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalT
     string newName = MpsExp::NewVar(rhsptr->GetName());
     MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(rhsptr->GetName(),newName);
     MpsExp *newAssertion = rhsptr->GetAssertion().Rename(rhsptr->GetName(),newName);
-    MpsExp *newTheta = new MpsBinOpExp(*Theta,*newAssertion);
+    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*newAssertion);
     delete newAssertion;
-    bool result = CompareForall(newTheta,lhs,*rhsSucc);
+    bool result = CompareForall(*newTheta,lhs,*rhsSucc);
     delete rhsSucc;
     delete newTheta;
     return result;
@@ -1966,31 +2028,35 @@ bool MpsLocalSendType::Equal(const MpsExp &Theta,const MpsLocalType &rhs) const 
 {
   // Remove forall instances
   if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
-    return CompareForall(*this,rhs);
+    return CompareForall(Theta,*this,rhs);
   // Compare
   const MpsLocalSendType *rhsptr=dynamic_cast<const MpsLocalSendType*>(&rhs);
   if (rhsptr==NULL)
-    return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"Different head");
   if (myAssertionType != rhsptr->myAssertionType)
-    return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"Different assertion type");
   if (myChannel != rhsptr->myChannel ||
       not (*myMsgType == *rhsptr->myMsgType))
-    return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"Different message type");
   if (myAssertionType && myId != rhsptr->myId)
   { // Rename
     string newId = MpsExp::NewVar(myId);
     // Compare Assertions
     MpsExp *lhsAssertion=myAssertion->Rename(myId,newId);
     MpsExp *rhsAssertion=rhsptr->myAssertion->Rename(rhsptr->myId,newId);
-    bool checkAssercion = *lhsAssertion==*rhsAssertion;
+    bool checkAssercion = CompareAssertions(Theta,*lhsAssertion,*rhsAssertion);
+    MpsExp *newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion);
     delete lhsAssertion;
     delete rhsAssertion;
     if (not checkAssercion)
-      return false;
+    { delete newTheta;
+      return ERROR_LOCALEQ(Theta,*this,rhs,"Different assertions");
+    }
     // Compare Successors
     MpsLocalType *lhsSucc=mySucc->ERename(myId,newId);
     MpsLocalType *rhsSucc=rhsptr->mySucc->ERename(rhsptr->myId,newId);
-    bool checkSucc = *lhsSucc==*rhsSucc;
+    bool checkSucc = lhsSucc->Equal(*newTheta,*rhsSucc);
+    delete newTheta;
     delete lhsSucc;
     delete rhsSucc;
     if (not checkSucc)
@@ -1998,43 +2064,53 @@ bool MpsLocalSendType::Equal(const MpsExp &Theta,const MpsLocalType &rhs) const 
   }
   else
   {
-    if (myAssertionType && // Compare Assertions
-        not (*myAssertion==*rhsptr->myAssertion))
-      return false;
-    if (not (*mySucc==*rhsptr->mySucc)) // Compare Successors
-      return false;
+    if (myAssertionType)
+    { if ( not CompareAssertions(Theta,*myAssertion,*rhsptr->myAssertion))
+        return ERROR_LOCALEQ(Theta,*this,rhs,"Different assertions");
+      MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion);
+      bool checkSucc=mySucc->Equal(*newTheta,*rhsptr->mySucc);
+      delete newTheta;
+      if (not checkSucc)
+        return false;
+    }
+    else
+      if (not (mySucc->Equal(Theta,*rhsptr->mySucc))) // Compare Successors
+        return false;
   }
-
   return true;
 } // }}}
-bool MpsLocalRcvType::operator==(const MpsLocalType &rhs) const // {{{
+bool MpsLocalRcvType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const // {{{
 {
   // Remove forall instances
   if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
-    return CompareForall(*this,rhs);
+    return CompareForall(Theta,*this,rhs);
   // Compare
   const MpsLocalRcvType *rhsptr=dynamic_cast<const MpsLocalRcvType*>(&rhs);
   if (rhsptr==NULL)
-    return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"Different head");
   if (myAssertionType != rhsptr->myAssertionType)
-    return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"Different assertion type");
   if (myChannel != rhsptr->myChannel ||
       not (*myMsgType == *rhsptr->myMsgType))
-    return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
   if (myAssertionType && myId != rhsptr->myId)
   { // Rename
     string newId = MpsExp::NewVar(myId);
     // Compare Assertions
     MpsExp *lhsAssertion=myAssertion->Rename(myId,newId);
     MpsExp *rhsAssertion=rhsptr->myAssertion->Rename(rhsptr->myId,newId);
-    bool checkAssercion = *lhsAssertion==*rhsAssertion;
+    bool checkAssercion = CompareAssertions(Theta,*lhsAssertion,*rhsAssertion);
+    MpsExp *newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion);
     delete lhsAssertion;
     delete rhsAssertion;
     if (not checkAssercion)
-      return false;
+    { delete newTheta;
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+    }
     MpsLocalType *lhsSucc=mySucc->ERename(myId,newId);
     MpsLocalType *rhsSucc=rhsptr->mySucc->ERename(rhsptr->myId,newId);
-    bool checkSucc = *lhsSucc==*rhsSucc;
+    bool checkSucc = lhsSucc->Equal(*newTheta,*rhsSucc);
+    delete newTheta;
     delete lhsSucc;
     delete rhsSucc;
     if (not checkSucc)
@@ -2042,46 +2118,37 @@ bool MpsLocalRcvType::operator==(const MpsLocalType &rhs) const // {{{
   }
   else
   {
-    if (myAssertionType && // Compare Assertions
-        not (*myAssertion==*rhsptr->myAssertion))
-      return false;
-    if (not (*mySucc==*rhsptr->mySucc)) // Compare Successors
-      return false;
+    if (myAssertionType)
+    { if ( not CompareAssertions(Theta,*myAssertion,*rhsptr->myAssertion))
+        return ERROR_LOCALEQ(Theta,*this,rhs,"");
+      MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion);
+      bool checkSucc=mySucc->Equal(*newTheta,*rhsptr->mySucc);
+      delete newTheta;
+      if (not checkSucc)
+        return false;
+    }
+    else
+      if (not (mySucc->Equal(Theta,*rhsptr->mySucc))) // Compare Successors
+        return false;
   }
-
   return true;
 } // }}}
-bool MpsLocalForallType::operator==(const MpsLocalType &rhs) const // {{{
+bool MpsLocalForallType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const // {{{
 {
-  return CompareForall(*this,rhs);
+  return CompareForall(Theta,*this,rhs);
 } // }}}
-bool MpsLocalSelectType::operator==(const MpsLocalType &rhs) const // {{{
+bool MpsLocalSelectType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const // {{{
 {
   // Remove forall instances
   if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
-    return CompareForall(*this,rhs);
+    return CompareForall(Theta,*this,rhs);
   // Compare
   // Check top-level type and channel
-  if (typeid(rhs)!=typeid(MpsLocalSelectType))
-    return false;
-  MpsLocalSelectType *rhsptr=(MpsLocalSelectType*)&rhs;
+  const MpsLocalSelectType *rhsptr=dynamic_cast<const MpsLocalSelectType*>(&rhs);
+  if (rhsptr==NULL)
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
   if (myChannel != rhsptr->myChannel)
-    return false;
-
-  // Check Branch Processes
-  // Check label in lhs means label in rhs and their types correspond
-  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
-  {
-    map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.find(it->first);
-    if (it2 == rhsptr->myBranches.end())
-      return false;
-    if (not (*it->second == *it2->second))
-      return false;
-  }
-  // Check label in rhs means label in lhs
-  for (map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.begin();it2!=rhsptr->myBranches.end();++it2)
-    if (myBranches.find(it2->first) == myBranches.end())
-      return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
 
   // Check Branch Assertions
   // Check label in lhs means label in rhs and their types correspond
@@ -2089,45 +2156,54 @@ bool MpsLocalSelectType::operator==(const MpsLocalType &rhs) const // {{{
   {
     map<string,MpsExp*>::const_iterator it2=rhsptr->myAssertions.find(it->first);
     if (it2 == rhsptr->myAssertions.end())
-      return false;
-    if (not (*it->second == *it2->second))
-      return false;
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+    if (not CompareAssertions(Theta,*it->second,*it2->second))
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
   }
   // Check label in rhs means label in lhs
   for (map<string,MpsExp*>::const_iterator it2=rhsptr->myAssertions.begin();it2!=rhsptr->myAssertions.end();++it2)
     if (myAssertions.find(it2->first) == myAssertions.end())
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+
+  // Check Branch Processes
+  // Check label in lhs means label in rhs and their types correspond
+  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+  {
+    map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.find(it->first);
+    if (it2 == rhsptr->myBranches.end())
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+
+    map<string,MpsExp*>::const_iterator assertion=myAssertions.find(it->first);
+    MpsExp *newTheta=NULL;
+    if (assertion==myAssertions.end())
+      newTheta=Theta.Copy();
+    else
+      newTheta=new MpsBinOpExp("and",Theta,*assertion->second);
+    bool checkSucc=it->second->Equal(*newTheta,*it2->second);
+    delete newTheta;
+    if (not checkSucc)
       return false;
+  }
+  // Check label in rhs means label in lhs
+  for (map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.begin();it2!=rhsptr->myBranches.end();++it2)
+    if (myBranches.find(it2->first) == myBranches.end())
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
 
   // All checks passed
   return true;
 } // }}}
-bool MpsLocalBranchType::operator==(const MpsLocalType &rhs) const // {{{
+bool MpsLocalBranchType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const // {{{
 {
   // Remove forall instances
   if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
-    return CompareForall(*this,rhs);
+    return CompareForall(Theta,*this,rhs);
   // Compare
   // Check top-level type and channel
   const MpsLocalBranchType *rhsptr=dynamic_cast<const MpsLocalBranchType*>(&rhs);
-  if (rhsptr==NULL)
-    return false;
+  if (typeid(rhs)!=typeid(MpsLocalBranchType))
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
   if (myChannel != rhsptr->myChannel)
-    return false;
-
-  // Check Branch Processes
-  // Check label in lhs means label in rhs and their types correspond
-  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
-  {
-    map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.find(it->first);
-    if (it2 == rhsptr->myBranches.end())
-      return false;
-    if (not (*it->second == *it2->second))
-      return false;
-  }
-  // Check label in rhs means label in lhs
-  for (map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.begin();it2!=rhsptr->myBranches.end();++it2)
-    if (myBranches.find(it2->first) == myBranches.end())
-      return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
 
   // Check Branch Assertions
   // Check label in lhs means label in rhs and their types correspond
@@ -2135,35 +2211,59 @@ bool MpsLocalBranchType::operator==(const MpsLocalType &rhs) const // {{{
   {
     map<string,MpsExp*>::const_iterator it2=rhsptr->myAssertions.find(it->first);
     if (it2 == rhsptr->myAssertions.end())
-      return false;
-    if (not (*it->second == *it2->second))
-      return false;
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+    if (not CompareAssertions(Theta,*it->second,*it2->second))
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
   }
   // Check label in rhs means label in lhs
   for (map<string,MpsExp*>::const_iterator it2=rhsptr->myAssertions.begin();it2!=rhsptr->myAssertions.end();++it2)
     if (myAssertions.find(it2->first) == myAssertions.end())
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+
+  // Check Branch Processes
+  // Check label in lhs means label in rhs and their types correspond
+  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+  {
+    map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.find(it->first);
+    if (it2 == rhsptr->myBranches.end())
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+
+    map<string,MpsExp*>::const_iterator assertion=myAssertions.find(it->first);
+    MpsExp *newTheta=NULL;
+    if (assertion==myAssertions.end())
+      newTheta=Theta.Copy();
+    else
+      newTheta=new MpsBinOpExp("and",Theta,*assertion->second);
+    bool checkSucc=it->second->Equal(*newTheta,*it2->second);
+    delete newTheta;
+    if (not checkSucc)
       return false;
+  }
+  // Check label in rhs means label in lhs
+  for (map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.begin();it2!=rhsptr->myBranches.end();++it2)
+    if (myBranches.find(it2->first) == myBranches.end())
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
 
   // All checks passed
   return true;
 } // }}}
-bool MpsLocalRecType::operator==(const MpsLocalType &rhs) const // {{{
+bool MpsLocalRecType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const // {{{
 {
   // Remove forall instances
   if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
-    return CompareForall(*this,rhs);
+    return CompareForall(Theta,*this,rhs);
   // Compare
   const MpsLocalRecType *rhsptr=dynamic_cast<const MpsLocalRecType*>(&rhs);
   if (rhsptr==NULL) // RHS is not recursive type
-    return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
   if (myArgs.size()!=rhsptr->GetArgs().size()) // Different number of arguments
-    return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
 
   for (int i=0; i<myArgs.size(); ++i)
   { if (not (*myArgs[i].myType == *rhsptr->GetArgs()[i].myType))
-      return false;
-    if (not (*myArgs[i].myValue == *rhsptr->GetArgs()[i].myValue))
-      return false;
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+    if (not CompareAssertions(Theta,*myArgs[i].myValue,*rhsptr->GetArgs()[i].myValue))
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
   }
   MpsLocalType *newlhs = GetSucc()->Copy();
   MpsLocalType *newrhs = rhsptr->GetSucc()->Copy();
@@ -2190,7 +2290,7 @@ bool MpsLocalRecType::operator==(const MpsLocalType &rhs) const // {{{
     newrhs=newType;
   }
   // Now compare resulting successors
-  bool result = *newlhs == *newrhs;
+  bool result = newlhs->Equal(Theta,*newrhs);
 
   // Clean Up
   delete newlhs;
@@ -2198,51 +2298,81 @@ bool MpsLocalRecType::operator==(const MpsLocalType &rhs) const // {{{
 
   return result;
 } // }}}
-bool MpsLocalVarType::operator==(const MpsLocalType &rhs) const // {{{
+bool MpsLocalVarType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const // {{{
 {
   // Remove forall instances
   if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
-    return CompareForall(*this,rhs);
+    return CompareForall(Theta,*this,rhs);
   // Compare
   if (typeid(rhs)!=typeid(MpsLocalVarType))
-    return false;
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
   MpsLocalVarType *rhsptr=(MpsLocalVarType*)&rhs;
+  if (myValues.size() != rhsptr->myValues.size())
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
+  for (int i=0; i<myValues.size(); ++i)
+    if (not CompareAssertions(Theta,*myValues[i],*rhsptr->myValues[i]))
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
   return myName == rhsptr->myName;
 } // }}}
-bool MpsLocalEndType::operator==(const MpsLocalType &rhs) const // {{{
+bool MpsLocalEndType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const // {{{
 {
   // Remove forall instances
   if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
-    return CompareForall(*this,rhs);
+    return CompareForall(Theta,*this,rhs);
   // Compare
-  return typeid(rhs)==typeid(MpsLocalEndType);
+  if (dynamic_cast<const MpsLocalEndType*>(&rhs)==NULL)
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
+  return true;
 } // }}}
-bool MpsLocalSyncType::operator==(const MpsLocalType &rhs) const // {{{
+bool MpsLocalSyncType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const // {{{
 {
   // Remove forall instances
   if (dynamic_cast<const MpsLocalForallType*>(&rhs)!=NULL)
-    return CompareForall(*this,rhs);
+    return CompareForall(Theta,*this,rhs);
   // Compare
   // Check top-level type and channel
-  if (typeid(rhs)!=typeid(MpsLocalSyncType))
-    return false;
-  MpsLocalSyncType *rhsptr=(MpsLocalSyncType*)&rhs;
+  const MpsLocalSyncType *rhsptr=dynamic_cast<const MpsLocalSyncType*>(&rhs);
+  if (rhsptr==NULL)
+    return ERROR_LOCALEQ(Theta,*this,rhs,"");
+
+  // Check Branch Assertions
+  // Check label in lhs means label in rhs and their types correspond
+  for (map<string,MpsExp*>::const_iterator it=myAssertions.begin();it!=myAssertions.end();++it)
+  {
+    map<string,MpsExp*>::const_iterator it2=rhsptr->myAssertions.find(it->first);
+    if (it2 == rhsptr->myAssertions.end())
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+    if (not CompareAssertions(Theta,*it->second,*it2->second))
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+  }
+  // Check label in rhs means label in lhs
+  for (map<string,MpsExp*>::const_iterator it2=rhsptr->myAssertions.begin();it2!=rhsptr->myAssertions.end();++it2)
+    if (myAssertions.find(it2->first) == myAssertions.end())
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+
+  // Check Branch Processes
   // Check label in lhs means label in rhs and their types correspond
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
   {
     map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.find(it->first);
     if (it2 == rhsptr->myBranches.end())
-      return false;
-    if (not (*it->second == *it2->second))
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
+
+    map<string,MpsExp*>::const_iterator assertion=myAssertions.find(it->first);
+    MpsExp *newTheta=NULL;
+    if (assertion==myAssertions.end())
+      newTheta=Theta.Copy();
+    else
+      newTheta=new MpsBinOpExp("and",Theta,*assertion->second);
+    bool checkSucc=it->second->Equal(*newTheta,*it2->second);
+    delete newTheta;
+    if (not checkSucc)
       return false;
   }
   // Check label in rhs means label in lhs
   for (map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.begin();it2!=rhsptr->myBranches.end();++it2)
-  {
-    map<string,MpsLocalType*>::const_iterator it=myBranches.find(it2->first);
-    if (it == myBranches.end())
-      return false;
-  }
+    if (myBranches.find(it2->first) == myBranches.end())
+      return ERROR_LOCALEQ(Theta,*this,rhs,"");
 
   // All checks passed
   return true;
@@ -4213,7 +4343,7 @@ bool MpsDelegateMsgType::operator==(const MpsMsgType &rhs) const // {{{
     return false;
   return GetPid() == rhsptr->GetPid() &&
          GetMaxpid() == rhsptr->GetMaxpid() &&
-         *GetLocalType() == *rhsptr->GetLocalType();
+         GetLocalType()->Equal(MpsBoolVal(true),*rhsptr->GetLocalType());
 } // }}}
 
 // Free Global Type Variables

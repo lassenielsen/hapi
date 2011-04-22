@@ -43,7 +43,8 @@ class MpsGlobalType // {{{
     // Constructor, Copy and operator methods
     virtual ~MpsGlobalType();
     virtual MpsGlobalType *Copy() const = 0;
-    virtual bool operator==(const MpsGlobalType &rhs) const=0;
+    virtual bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const=0;
+    //virtual bool operator==(const MpsGlobalType &rhs) const=0;
     // FIXME: Improve to semantical equality
     // FIXME: Implement subtyping virtual bool operator<=(const MpsGlobalType &rhs) const = 0;
 
@@ -87,7 +88,8 @@ class MpsGlobalMsgType : public MpsGlobalType // {{{
     MpsGlobalMsgType(int sender, int receiver, int channel, const MpsMsgType &msg, const MpsGlobalType &succ, const MpsExp &assertion, const std::string &id);
     virtual ~MpsGlobalMsgType();
     MpsGlobalMsgType *Copy() const;
-    bool operator==(const MpsGlobalType &rhs) const;
+    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -120,7 +122,8 @@ class MpsGlobalBranchType : public MpsGlobalType // {{{
     MpsGlobalBranchType(int sender, int receiver, int channel, const std::map<std::string,MpsGlobalType*> &branches, const std::map<std::string,MpsExp*> &assertions);
     virtual ~MpsGlobalBranchType();
     MpsGlobalBranchType *Copy() const;
-    bool operator==(const MpsGlobalType &rhs) const;
+    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -149,7 +152,8 @@ class MpsGlobalRecType : public MpsGlobalType // {{{
     MpsGlobalRecType(const std::string &name, const MpsGlobalType &succ, const std::vector<TypeArg> &myArgs);
     virtual ~MpsGlobalRecType();
     MpsGlobalRecType *Copy() const;
-    bool operator==(const MpsGlobalType &rhs) const;
+    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -176,7 +180,8 @@ class MpsGlobalVarType : public MpsGlobalType // {{{
     MpsGlobalVarType(const std::string &name, const std::vector<MpsExp*> &args);
     virtual ~MpsGlobalVarType();
     MpsGlobalVarType *Copy() const;
-    bool operator==(const MpsGlobalType &rhs) const;
+    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -202,7 +207,8 @@ class MpsGlobalEndType : public MpsGlobalType // {{{
     MpsGlobalEndType();
     virtual ~MpsGlobalEndType();
     MpsGlobalEndType *Copy() const;
-    bool operator==(const MpsGlobalType &rhs) const;
+    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -224,7 +230,8 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
     MpsGlobalSyncType(const std::map<std::string,MpsGlobalType*> &branches, const std::map<std::string,MpsExp*> &assertions);
     virtual ~MpsGlobalSyncType();
     MpsGlobalSyncType *Copy() const;
-    bool operator==(const MpsGlobalType &rhs) const;
+    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -293,7 +300,8 @@ class MpsLocalSendType : public MpsLocalType // {{{
     MpsLocalSendType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ, const MpsExp &assertion, const std::string &id);
     virtual ~MpsLocalSendType();
     MpsLocalSendType *Copy() const;
-    bool operator==(const MpsLocalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    //bool operator==(const MpsLocalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -333,7 +341,8 @@ class MpsLocalRcvType : public MpsLocalType // {{{
     MpsLocalRcvType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ, const MpsExp &assertion, const std::string &id);
     virtual ~MpsLocalRcvType();
     MpsLocalRcvType *Copy() const;
-    bool operator==(const MpsLocalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    //bool operator==(const MpsLocalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -372,7 +381,8 @@ class MpsLocalForallType : public MpsLocalType // {{{
     MpsLocalForallType(const std::string &name, const MpsExp &assertion, const MpsLocalType &succ);
     virtual ~MpsLocalForallType();
     MpsLocalForallType *Copy() const;
-    bool operator==(const MpsLocalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    //bool operator==(const MpsLocalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -404,7 +414,8 @@ class MpsLocalSelectType : public MpsLocalType // {{{
     MpsLocalSelectType(int channel, const std::map<std::string,MpsLocalType*> &branches, const std::map<std::string,MpsExp*> &assertions);
     virtual ~MpsLocalSelectType();
     MpsLocalSelectType *Copy() const;
-    bool operator==(const MpsLocalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    //bool operator==(const MpsLocalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -435,7 +446,8 @@ class MpsLocalBranchType : public MpsLocalType // {{{
     MpsLocalBranchType(int channel, const std::map<std::string,MpsLocalType*> &branches, const std::map<std::string, MpsExp*> &assertions);
     virtual ~MpsLocalBranchType();
     MpsLocalBranchType *Copy() const;
-    bool operator==(const MpsLocalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    //bool operator==(const MpsLocalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -466,7 +478,8 @@ class MpsLocalRecType : public MpsLocalType // {{{
     MpsLocalRecType(std::string name, const MpsLocalType &succ, const std::vector<TypeArg> &args);
     virtual ~MpsLocalRecType();
     MpsLocalRecType *Copy() const;
-    bool operator==(const MpsLocalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    //bool operator==(const MpsLocalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -497,7 +510,8 @@ class MpsLocalVarType : public MpsLocalType // {{{
     MpsLocalVarType(std::string name, const std::vector<MpsExp*> &values);
     virtual ~MpsLocalVarType();
     MpsLocalVarType *Copy() const;
-    bool operator==(const MpsLocalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    //bool operator==(const MpsLocalType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -522,7 +536,8 @@ class MpsLocalEndType : public MpsLocalType // {{{
     MpsLocalEndType();
     virtual ~MpsLocalEndType();
     MpsLocalEndType *Copy() const;
-    bool operator==(const MpsLocalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    //bool operator==(const MpsLocalType &rhs) const;
 
     std::set<std::string> FEV() const;
     std::set<std::string> FGV() const;
@@ -543,7 +558,8 @@ class MpsLocalSyncType : public MpsLocalType // {{{
     MpsLocalSyncType(const std::map<std::string,MpsLocalType*> &branches, const std::map<std::string,MpsExp*> &assertions);
     virtual ~MpsLocalSyncType();
     MpsLocalSyncType *Copy() const;
-    bool operator==(const MpsLocalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    //bool operator==(const MpsLocalType &rhs) const;
 
     std::set<std::string> FEV() const;
     std::set<std::string> FGV() const;
