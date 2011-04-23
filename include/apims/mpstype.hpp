@@ -43,7 +43,7 @@ class MpsGlobalType // {{{
     // Constructor, Copy and operator methods
     virtual ~MpsGlobalType();
     virtual MpsGlobalType *Copy() const = 0;
-    virtual bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const=0;
+    virtual bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const=0;
     //virtual bool operator==(const MpsGlobalType &rhs) const=0;
     // FIXME: Improve to semantical equality
     // FIXME: Implement subtyping virtual bool operator<=(const MpsGlobalType &rhs) const = 0;
@@ -88,7 +88,7 @@ class MpsGlobalMsgType : public MpsGlobalType // {{{
     MpsGlobalMsgType(int sender, int receiver, int channel, const MpsMsgType &msg, const MpsGlobalType &succ, const MpsExp &assertion, const std::string &id);
     virtual ~MpsGlobalMsgType();
     MpsGlobalMsgType *Copy() const;
-    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const;
     //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
@@ -122,7 +122,7 @@ class MpsGlobalBranchType : public MpsGlobalType // {{{
     MpsGlobalBranchType(int sender, int receiver, int channel, const std::map<std::string,MpsGlobalType*> &branches, const std::map<std::string,MpsExp*> &assertions);
     virtual ~MpsGlobalBranchType();
     MpsGlobalBranchType *Copy() const;
-    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const;
     //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
@@ -152,7 +152,7 @@ class MpsGlobalRecType : public MpsGlobalType // {{{
     MpsGlobalRecType(const std::string &name, const MpsGlobalType &succ, const std::vector<TypeArg> &myArgs);
     virtual ~MpsGlobalRecType();
     MpsGlobalRecType *Copy() const;
-    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const;
     //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
@@ -180,7 +180,7 @@ class MpsGlobalVarType : public MpsGlobalType // {{{
     MpsGlobalVarType(const std::string &name, const std::vector<MpsExp*> &args);
     virtual ~MpsGlobalVarType();
     MpsGlobalVarType *Copy() const;
-    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const;
     //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
@@ -207,7 +207,7 @@ class MpsGlobalEndType : public MpsGlobalType // {{{
     MpsGlobalEndType();
     virtual ~MpsGlobalEndType();
     MpsGlobalEndType *Copy() const;
-    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const;
     //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
@@ -230,7 +230,7 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
     MpsGlobalSyncType(const std::map<std::string,MpsGlobalType*> &branches, const std::map<std::string,MpsExp*> &assertions);
     virtual ~MpsGlobalSyncType();
     MpsGlobalSyncType *Copy() const;
-    bool Equal(const mpsExp &Theta, const MpsGlobalType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const;
     //bool operator==(const MpsGlobalType &rhs) const;
 
     std::set<std::string> FGV() const;
@@ -597,7 +597,8 @@ class MpsMsgType // {{{
     // Constructor, Copy and operator methods
     virtual ~MpsMsgType();
     virtual MpsMsgType *Copy() const=0;
-    virtual bool operator==(const MpsMsgType &rhs) const=0;
+    virtual bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const=0;
+    //virtual bool operator==(const MpsMsgType &rhs) const=0;
     // TODO: virtual bool operator<=(const MpsMsgType &rhs) const = 0;
 
     // Substitution methods
@@ -627,7 +628,8 @@ class MpsMsgNoType : public MpsMsgType // {{{
     MpsMsgNoType();
     virtual ~MpsMsgNoType();
     MpsMsgNoType *Copy() const;
-    bool operator==(const MpsMsgType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    //bool operator==(const MpsMsgType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -647,7 +649,8 @@ class MpsIntMsgType : public MpsMsgType // {{{
     MpsIntMsgType();
     virtual ~MpsIntMsgType();
     MpsIntMsgType *Copy() const;
-    bool operator==(const MpsMsgType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    //bool operator==(const MpsMsgType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -667,7 +670,8 @@ class MpsStringMsgType : public MpsMsgType // {{{
     MpsStringMsgType();
     virtual ~MpsStringMsgType();
     MpsStringMsgType *Copy() const;
-    bool operator==(const MpsMsgType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    //bool operator==(const MpsMsgType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -687,7 +691,8 @@ class MpsBoolMsgType : public MpsMsgType // {{{
     MpsBoolMsgType();
     virtual ~MpsBoolMsgType();
     MpsBoolMsgType *Copy() const;
-    bool operator==(const MpsMsgType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    //bool operator==(const MpsMsgType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -707,7 +712,8 @@ class MpsTupleMsgType : public MpsMsgType // {{{
     MpsTupleMsgType(const std::vector<MpsMsgType*> &elements);
     virtual ~MpsTupleMsgType();
     MpsTupleMsgType *Copy() const;
-    bool operator==(const MpsMsgType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    //bool operator==(const MpsMsgType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -732,7 +738,8 @@ class MpsChannelMsgType : public MpsMsgType // {{{
     MpsChannelMsgType(const MpsGlobalType &type);
     virtual ~MpsChannelMsgType();
     MpsChannelMsgType *Copy() const;
-    bool operator==(const MpsMsgType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    //bool operator==(const MpsMsgType &rhs) const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -757,7 +764,8 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
     MpsDelegateMsgType(int pid, int maxpid);
     virtual ~MpsDelegateMsgType();
     virtual MpsDelegateMsgType *Copy() const=0;
-    bool operator==(const MpsMsgType &rhs) const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    //bool operator==(const MpsMsgType &rhs) const;
 
     virtual std::set<std::string> FGV() const=0;
     virtual std::set<std::string> FLV() const=0;

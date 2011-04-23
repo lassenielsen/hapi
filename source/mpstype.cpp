@@ -651,48 +651,77 @@ bool MpsGlobalMsgType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) cons
 {
   const MpsGlobalMsgType *rhsptr=dynamic_cast<const MpsGlobalMsgType*>(&rhs);
   if (rhsptr==NULL)
-    return false;
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"RHS not message-type");
   if (myChannel != rhsptr->myChannel ||
       mySender != rhsptr->mySender ||
       myReceiver != rhsptr->myReceiver ||
       not (myMsgType->Equal(Theta,*rhsptr->myMsgType))
-    return false;
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"Head mismatch");
 
   if (myAssertionType != rhsptr->myAssertionType)
-    return false;
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"Assertion-type mismatch");
 
-  if (myAssertionType &&
-      not (myAssertion == rhsptr->myAssertion))
-    return false;
-
+  // Rename to common name in Assertions
   string newId=MpsExp::NewVar(myId);
   string lhsAssertion=myAssertion->Rename(myId,newId);
   string rhsAssertion=rhsptr->myAssertion->Rename(myId,newId);
+  // Compare Assertions
   if (not CompareAssertions(Theta,lhsAssertion,rhsAssertion))
   { delete lhsAssertion;
     delete rhsAssertion;
-    return ERROR_GLOBALEQ(Theta,lhs,rhs,"Assertion mismatch");
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"Assertion mismatch");
   }
-  return mySucc->Equal(newTheta,*rhsptr->mySucc);
+  delete rhsAssertion;
+  MpsExp *newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion);
+  delete lhsAssertion;
+  // Rename to common name in Succ
+  MpsGlobalType *lhsSucc=mySucc->ERename(myId,newId);
+  MpsGlobalType *rhsSucc=rhsptr->mySucc->ERename(rhsptr->myId,newId);
+  bool checkSucc=lhsSucc->Equal(*newTheta,*rhsSucc);
+  delete lhsSucc;
+  delete rhsSucc;
+  delete newTheta;
+
+  return checkSucc;
 } // }}}
-bool MpsGlobalBranchType::operator==(const MpsGlobalType &rhs) const // {{{
+bool MpsGlobalBranchType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const // {{{
 {
   // Check top-level type and channel
-  if (typeid(rhs)!=typeid(MpsGlobalBranchType))
-    return false;
-  MpsGlobalBranchType *rhsptr=(MpsGlobalBranchType*)&rhs;
+  const MpsGlobalBranchType *rhsptr=dynamic_cast<const MpsGlobalBranchType*>(&rhs);
+  if (rhsptr==NULL)
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"RHS not branch-type");
   if (myChannel != rhsptr->myChannel ||
       mySender != rhsptr->mySender ||
       myReceiver != rhsptr->myReceiver)
-    return false;
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"Head mismatch");
 
-  // Check label in lhs means label in rhs and their types correspond
+  // Check label in lhs means label in rhs
+  // and their assertions and types correspond
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
   {
     map<string,MpsGlobalType*>::const_iterator it2=rhsptr->myBranches.find(it->first);
     if (it2 == rhsptr->myBranches.end())
-      return false;
-    if (not (*it->second == *it2->second))
+      return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"No RHS branch for label: " + it->first);
+    // Find Assertions
+    map<string,MpsExp*>::const_iterator lhsAssertion=myAssertion.find(it->first);
+    map<string,MpsExp*>::const_iterator rhsAssertion=rhsptr->myAssertion.find(it->first);
+    // Compare Assertions
+    bool lhsHasA=lhsAssertion!=myAssertions.end();
+    bool rhsHasA=rhsAssertion!=rhsptr->myAssertions.end();
+    if (lhsHasA!=rhsHasA)
+      return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"Assertion-type for label: " + it->first);
+    MpsExp *newTheta=NULL;
+    if (lhsHasA)
+    { if (not CompareAssertions(Theta,*lhsAssertion->second,*rhsAssertion->second))
+        return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"Assertion not equivalent for label: " + it->first);
+      newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion->second);
+    }
+    else
+      newTheta=Theta.Copy();
+    // Compare Branch Processes
+    bool checkBranch = it->second->Equal(*newTheta,it2->second);
+    delete newTheta;
+    if (not checkBranch)
       return false;
   }
   // Check label in rhs means label in lhs
@@ -700,63 +729,120 @@ bool MpsGlobalBranchType::operator==(const MpsGlobalType &rhs) const // {{{
   {
     map<string,MpsGlobalType*>::const_iterator it=myBranches.find(it->first);
     if (it == myBranches.end())
-      return false;
+      return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"No RHS branch for label: " + it->first);
   }
 
   // All checks passed
   return true;
 } // }}}
-bool MpsGlobalRecType::operator==(const MpsGlobalType &rhs) const // {{{
+bool MpsGlobalRecType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const // {{{
 {
-  if (typeid(rhs)!=typeid(MpsGlobalRecType))
-    return false;
-  MpsGlobalRecType *rhsptr=(MpsGlobalRecType*)&rhs;
+  const MpsGlobalRecType *rhsptr=dynamic_cast<const MpsGlobalRecType*>(&rhs);
+  if (rhsptr==NULL) // RHS is not recursive type
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"RHS not rec-type");
+  if (myArgs.size()!=rhsptr->myArgs.size()) // Different number of arguments
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"Different number of arguments");
+
+  for (int i=0; i<myArgs.size(); ++i)
+  { if (not myArgs[i].myType->Equal(Theta,*rhsptr->myArgs[i].myType))
+      return ERROR_LOCALEQ(Theta,*this,rhs,(string)"Not same type for argument: " + i);
+    if (not CompareAssertions(Theta,*myArgs[i].myValue,*rhsptr->myArgs[i].myValue))
+      return ERROR_LOCALEQ(Theta,*this,rhs,"Not equivalent value for argument: " + i);
+  }
+  MpsGlobalType *newlhs = mySucc->Copy();
+  MpsGlobalType *newrhs = rhsptr->mySucc->Copy();
+   
+  for (int i=0; i<myArgs.size(); ++i)
+  { if (not (myArgs[i].myName == rhsptr->myArgs[i].myName)) // Rename to common name
+    { string newName=MpsExp::NewVar(myArgs[i].myName);
+      MpsGlobalType *newType = newlhs->ERename(myArgs[i].myName,newName);
+      delete newlhs;
+      newlhs=newType;
+      newType = newrhs->ERename(rhsptr->myArgs[i].myName,newName);
+      delete newrhs;
+      newrhs=newType;
+    }
+  }
   if (myName != rhsptr->myName) // Rename to common name
   {
-    string newName = NewGVar();
-    MpsGlobalType *newlhs = mySucc->GRename(myName,newName);
-    MpsGlobalType *newrhs = rhsptr->mySucc->GRename(rhsptr->myName,newName);
-    bool result = (*newlhs == *newrhs);
+    string newName = NewGVar(myName);
+    MpsGlobalType *newType = newlhs->LRename(myName,newName);
     delete newlhs;
+    newlhs=newType;
+    newType = newrhs->LRename(rhsptr->myName,newName);
     delete newrhs;
-    return result;
+    newrhs=newType;
   }
-  else
-    return *mySucc == *rhsptr->mySucc;
+  // Now compare resulting successors
+  bool result = newlhs->Equal(Theta,*newrhs);
+
+  // Clean Up
+  delete newlhs;
+  delete newrhs;
 } // }}}
-bool MpsGlobalVarType::operator==(const MpsGlobalType &rhs) const // {{{
+bool MpsGlobalVarType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const // {{{
 {
-  if (typeid(rhs)!=typeid(MpsGlobalVarType))
-    return false;
-  MpsGlobalVarType *rhsptr=(MpsGlobalVarType*)&rhs;
-  return myName == rhsptr->myName;
+  const MpsGlobalVarType *rhsptr=dynamic_cast<const MpsGlobalVarType*>(&rhs);
+  if (rhsptr==NULL)
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"RHS not VAR-type");
+  // Check name
+  if (myName != rhsptr->myName)
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"Differend variable name");
+  // Check arguments
+  if (myValues.size()!=rhsptr->myValues.size())
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"Different number of arguments");
+  for (int i=0; i<myValues.size(); ++i)
+    if (not CompareAssertions(Theta,myValues[i],rhsptr->myValues[i]))
+      return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"Not equivalent values for argument: " +i);
+  // All checks passed
+  return true;
 } // }}}
-bool MpsGlobalEndType::operator==(const MpsGlobalType &rhs) const // {{{
+bool MpsGlobalEndType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const // {{{
 {
   return typeid(rhs)==typeid(MpsGlobalEndType);
 } // }}}
-bool MpsGlobalSyncType::operator==(const MpsGlobalType &rhs) const // {{{
+bool MpsGlobalSyncType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const // {{{
 {
   // Check top-level type and channel
-  if (typeid(rhs)!=typeid(MpsGlobalSyncType))
-    return false;
-  MpsGlobalSyncType *rhsptr=(MpsGlobalSyncType*)&rhs;
+  const MpsGlobalSyncType *rhsptr=dynamic_cast<const MpsGlobalSyncType*>(&rhs);
+  if (rhsptr==NULL)
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"RHS not sync-type");
 
-  // Check label in lhs means label in rhs and their types correspond
+  // Check label in lhs means label in rhs
+  // and their assertions and types correspond
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
   {
     map<string,MpsGlobalType*>::const_iterator it2=rhsptr->myBranches.find(it->first);
     if (it2 == rhsptr->myBranches.end())
-      return false;
-    if (not (*it->second == *it2->second))
+      return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"No RHS branch for label: " + it->first);
+    // Find Assertions
+    map<string,MpsExp*>::const_iterator lhsAssertion=myAssertion.find(it->first);
+    map<string,MpsExp*>::const_iterator rhsAssertion=rhsptr->myAssertion.find(it->first);
+    // Compare Assertions
+    bool lhsHasA=lhsAssertion!=myAssertions.end();
+    bool rhsHasA=rhsAssertion!=rhsptr->myAssertions.end();
+    if (lhsHasA!=rhsHasA)
+      return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"Assertion-type for label: " + it->first);
+    MpsExp *newTheta=NULL;
+    if (lhsHasA)
+    { if (not CompareAssertions(Theta,*lhsAssertion->second,*rhsAssertion->second))
+        return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"Assertion not equivalent for label: " + it->first);
+      newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion->second);
+    }
+    else
+      newTheta=Theta.Copy();
+    // Compare Branch Processes
+    bool checkBranch = it->second->Equal(*newTheta,it2->second);
+    delete newTheta;
+    if (not checkBranch)
       return false;
   }
   // Check label in rhs means label in lhs
   for (map<string,MpsGlobalType*>::const_iterator it2=rhsptr->myBranches.begin();it2!=rhsptr->myBranches.end();++it2)
   {
-    map<string,MpsGlobalType*>::const_iterator it=myBranches.find(it2->first);
+    map<string,MpsGlobalType*>::const_iterator it=myBranches.find(it->first);
     if (it == myBranches.end())
-      return false;
+      return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"No RHS branch for label: " + it->first);
   }
 
   // All checks passed
@@ -4297,23 +4383,23 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::Copy() const // {{{
 } // }}}
 
 // Compare
-bool MpsMsgNoType::operator==(const MpsMsgType &rhs) const // {{{
+bool MpsMsgNoType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
   return dynamic_cast<const MpsMsgNoType*>(&rhs) != NULL;
 } // }}}
-bool MpsIntMsgType::operator==(const MpsMsgType &rhs) const // {{{
+bool MpsIntMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
   return dynamic_cast<const MpsIntMsgType*>(&rhs) != NULL;
 } // }}}
-bool MpsStringMsgType::operator==(const MpsMsgType &rhs) const // {{{
+bool MpsStringMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
   return dynamic_cast<const MpsStringMsgType*>(&rhs) != NULL;
 } // }}}
-bool MpsBoolMsgType::operator==(const MpsMsgType &rhs) const // {{{
+bool MpsBoolMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
   return dynamic_cast<const MpsBoolMsgType*>(&rhs) != NULL;
 } // }}}
-bool MpsTupleMsgType::operator==(const MpsMsgType &rhs) const // {{{
+bool MpsTupleMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
   const MpsTupleMsgType *rhsptr = dynamic_cast<const MpsTupleMsgType*>(&rhs);
   if (rhsptr==NULL) // Not toupe
@@ -4322,20 +4408,19 @@ bool MpsTupleMsgType::operator==(const MpsMsgType &rhs) const // {{{
   if (GetSize() != rhsptr->GetSize()) // Size mismatch
     return false;
 
-  bool result=true;
   for (int i=0; i<GetSize(); ++i) // Check each index
-    if (not (*GetElement(i) == *rhsptr->GetElement(i)))
-      result = false;
-  return result;
+    if (not GetElement(i)->Equal(Theta,*rhsptr->GetElement(i)))
+      return false;
+  return true;
 } // }}}
-bool MpsChannelMsgType::operator==(const MpsMsgType &rhs) const // {{{
+bool MpsChannelMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
   const MpsChannelMsgType *rhsptr = dynamic_cast<const MpsChannelMsgType*>(&rhs);
   if (rhsptr==NULL)
     return false;
-  return *myType == *rhsptr->myType;
+  return myType->Equal(Theta,*rhsptr->myType);
 } // }}}
-bool MpsDelegateMsgType::operator==(const MpsMsgType &rhs) const // {{{
+bool MpsDelegateMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
 
   const MpsDelegateMsgType *rhsptr=dynamic_cast<const MpsDelegateMsgType*>(&rhs);
@@ -4343,7 +4428,7 @@ bool MpsDelegateMsgType::operator==(const MpsMsgType &rhs) const // {{{
     return false;
   return GetPid() == rhsptr->GetPid() &&
          GetMaxpid() == rhsptr->GetMaxpid() &&
-         GetLocalType()->Equal(MpsBoolVal(true),*rhsptr->GetLocalType());
+         GetLocalType()->Equal(Theta,*rhsptr->GetLocalType());
 } // }}}
 
 // Free Global Type Variables

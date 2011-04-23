@@ -1162,7 +1162,7 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
   newDelta[myChannel.GetName()].type=newType;
   // Check message type
   MpsMsgType *exptype = myExp->TypeCheck(Gamma,newDelta,Sigma);
-  bool msgtypematch = (*exptype==*typeptr->GetMsgType());
+  bool msgtypematch = exptype->Equal(Theta,*typeptr->GetMsgType());
   delete exptype;
   if (not msgtypematch)
     return PrintTypeError((string)"Message does not have type:\n!!" + typeptr->GetMsgType()->ToString("!!"),*this,Theta,Gamma,Delta,Sigma,Omega);
@@ -1491,7 +1491,7 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
   for (int i=0;i<myState.size();++i)
   {
     MpsMsgType *statetype = myState[i]->TypeCheck(Gamma, Delta, Sigma);
-    bool statetypematch = (*statetype == *omega->second.stypes[i]);
+    bool statetypematch = statetype->Equal(Theta,*omega->second.stypes[i]);
     delete statetype;    
     if (!statetypematch)
       return PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
@@ -1506,7 +1506,7 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
       delete callType;
       callType=tmpType;
     }
-    bool argtypematch = (*argType == *callType);
+    bool argtypematch = argType->Equal(Theta,*callType);
     string callTypeString = callType->ToString();
     delete argType;
     delete callType;
@@ -1696,7 +1696,7 @@ bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
 {
   MpsBoolMsgType booltype;
   MpsMsgType *condtype = myCond->TypeCheck(Gamma,Delta,Sigma);
-  bool condtypematch = (*condtype==booltype);
+  bool condtypematch = booltype.Equal(Theta,*condtype);
   delete condtype;
   if (!condtypematch)
     return PrintTypeError("Condition not of type Bool",*this,Theta,Gamma,Delta,Sigma,Omega);
@@ -1788,7 +1788,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const
     for (int brancharg=0; brancharg<myBranch->second.args.size(); ++brancharg)
     {
       MpsMsgType *branchargtype = myBranch->second.values[brancharg]->TypeCheck(Gamma, Delta, Sigma);
-      bool branchargtypematch = (*branchargtype==*myBranch->second.types[brancharg]);
+      bool branchargtypematch = branchargtype->Equal(Theta,*myBranch->second.types[brancharg]);
       delete branchargtype;
       if (!branchargtypematch)
         return PrintTypeError((string)"Ill typed argument: " + myBranch->second.args[brancharg] + " in branch: " + myBranch->first,*this,Theta,Gamma,Delta,Sigma,Omega);
