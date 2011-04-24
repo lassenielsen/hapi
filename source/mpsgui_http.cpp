@@ -798,7 +798,7 @@ bool MpsGuiParticipant::SetChoiceValue(const string &choice, const string &arg, 
           apims::MpsMsgEnv Sigma;
           Sigma.clear();
           MpsMsgType *inputtype=exp->TypeCheck(Gamma,Delta,Sigma);
-          bool inputtypematch=(*inputtype==*it2->type);
+          bool inputtypematch=inputtype->Equal(MpsBoolVal(true),*it2->type);
           delete inputtype;
           if (inputtypematch)
           {

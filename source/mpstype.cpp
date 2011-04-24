@@ -72,7 +72,7 @@ string MpsLocalType::NewLVar(string basename) // {{{
   result += int2string(ourNextId);
   return result;
 } // }}}
-string MpsGlobalType::NewGVar() const // {{{
+string MpsGlobalType::NewGVar(string orig) // {{{
 {
   string result = "~$x";
   result += int2string(ourNextId);
@@ -655,7 +655,7 @@ bool MpsGlobalMsgType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) cons
   if (myChannel != rhsptr->myChannel ||
       mySender != rhsptr->mySender ||
       myReceiver != rhsptr->myReceiver ||
-      not (myMsgType->Equal(Theta,*rhsptr->myMsgType))
+      not myMsgType->Equal(Theta,*rhsptr->myMsgType))
     return ERROR_GLOBALEQ(Theta,*this,rhs,"Head mismatch");
 
   if (myAssertionType != rhsptr->myAssertionType)
@@ -663,10 +663,10 @@ bool MpsGlobalMsgType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) cons
 
   // Rename to common name in Assertions
   string newId=MpsExp::NewVar(myId);
-  string lhsAssertion=myAssertion->Rename(myId,newId);
-  string rhsAssertion=rhsptr->myAssertion->Rename(myId,newId);
+  MpsExp *lhsAssertion=myAssertion->Rename(myId,newId);
+  MpsExp *rhsAssertion=rhsptr->myAssertion->Rename(myId,newId);
   // Compare Assertions
-  if (not CompareAssertions(Theta,lhsAssertion,rhsAssertion))
+  if (not CompareAssertions(Theta,*lhsAssertion,*rhsAssertion))
   { delete lhsAssertion;
     delete rhsAssertion;
     return ERROR_GLOBALEQ(Theta,*this,rhs,"Assertion mismatch");
@@ -703,8 +703,8 @@ bool MpsGlobalBranchType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) c
     if (it2 == rhsptr->myBranches.end())
       return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"No RHS branch for label: " + it->first);
     // Find Assertions
-    map<string,MpsExp*>::const_iterator lhsAssertion=myAssertion.find(it->first);
-    map<string,MpsExp*>::const_iterator rhsAssertion=rhsptr->myAssertion.find(it->first);
+    map<string,MpsExp*>::const_iterator lhsAssertion=myAssertions.find(it->first);
+    map<string,MpsExp*>::const_iterator rhsAssertion=rhsptr->myAssertions.find(it->first);
     // Compare Assertions
     bool lhsHasA=lhsAssertion!=myAssertions.end();
     bool rhsHasA=rhsAssertion!=rhsptr->myAssertions.end();
@@ -719,7 +719,7 @@ bool MpsGlobalBranchType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) c
     else
       newTheta=Theta.Copy();
     // Compare Branch Processes
-    bool checkBranch = it->second->Equal(*newTheta,it2->second);
+    bool checkBranch = it->second->Equal(*newTheta,*it2->second);
     delete newTheta;
     if (not checkBranch)
       return false;
@@ -745,9 +745,9 @@ bool MpsGlobalRecType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) cons
 
   for (int i=0; i<myArgs.size(); ++i)
   { if (not myArgs[i].myType->Equal(Theta,*rhsptr->myArgs[i].myType))
-      return ERROR_LOCALEQ(Theta,*this,rhs,(string)"Not same type for argument: " + i);
+      return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"Not same type for argument: " + int2string(i));
     if (not CompareAssertions(Theta,*myArgs[i].myValue,*rhsptr->myArgs[i].myValue))
-      return ERROR_LOCALEQ(Theta,*this,rhs,"Not equivalent value for argument: " + i);
+      return ERROR_GLOBALEQ(Theta,*this,rhs,"Not equivalent value for argument: " + int2string(i));
   }
   MpsGlobalType *newlhs = mySucc->Copy();
   MpsGlobalType *newrhs = rhsptr->mySucc->Copy();
@@ -792,8 +792,8 @@ bool MpsGlobalVarType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) cons
   if (myValues.size()!=rhsptr->myValues.size())
     return ERROR_GLOBALEQ(Theta,*this,rhs,"Different number of arguments");
   for (int i=0; i<myValues.size(); ++i)
-    if (not CompareAssertions(Theta,myValues[i],rhsptr->myValues[i]))
-      return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"Not equivalent values for argument: " +i);
+    if (not CompareAssertions(Theta,*myValues[i],*rhsptr->myValues[i]))
+      return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"Not equivalent values for argument: " + int2string(i));
   // All checks passed
   return true;
 } // }}}
@@ -816,8 +816,8 @@ bool MpsGlobalSyncType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) con
     if (it2 == rhsptr->myBranches.end())
       return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"No RHS branch for label: " + it->first);
     // Find Assertions
-    map<string,MpsExp*>::const_iterator lhsAssertion=myAssertion.find(it->first);
-    map<string,MpsExp*>::const_iterator rhsAssertion=rhsptr->myAssertion.find(it->first);
+    map<string,MpsExp*>::const_iterator lhsAssertion=myAssertions.find(it->first);
+    map<string,MpsExp*>::const_iterator rhsAssertion=rhsptr->myAssertions.find(it->first);
     // Compare Assertions
     bool lhsHasA=lhsAssertion!=myAssertions.end();
     bool rhsHasA=rhsAssertion!=rhsptr->myAssertions.end();
@@ -832,7 +832,7 @@ bool MpsGlobalSyncType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) con
     else
       newTheta=Theta.Copy();
     // Compare Branch Processes
-    bool checkBranch = it->second->Equal(*newTheta,it2->second);
+    bool checkBranch = it->second->Equal(*newTheta,*it2->second);
     delete newTheta;
     if (not checkBranch)
       return false;
@@ -2122,7 +2122,7 @@ bool MpsLocalSendType::Equal(const MpsExp &Theta,const MpsLocalType &rhs) const 
   if (myAssertionType != rhsptr->myAssertionType)
     return ERROR_LOCALEQ(Theta,*this,rhs,"Different assertion type");
   if (myChannel != rhsptr->myChannel ||
-      not (*myMsgType == *rhsptr->myMsgType))
+      not myMsgType->Equal(Theta,*rhsptr->myMsgType))
     return ERROR_LOCALEQ(Theta,*this,rhs,"Different message type");
   if (myAssertionType && myId != rhsptr->myId)
   { // Rename
@@ -2177,7 +2177,7 @@ bool MpsLocalRcvType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const 
   if (myAssertionType != rhsptr->myAssertionType)
     return ERROR_LOCALEQ(Theta,*this,rhs,"Different assertion type");
   if (myChannel != rhsptr->myChannel ||
-      not (*myMsgType == *rhsptr->myMsgType))
+      not myMsgType->Equal(Theta,*rhsptr->myMsgType))
     return ERROR_LOCALEQ(Theta,*this,rhs,"");
   if (myAssertionType && myId != rhsptr->myId)
   { // Rename
@@ -2346,7 +2346,7 @@ bool MpsLocalRecType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const 
     return ERROR_LOCALEQ(Theta,*this,rhs,"");
 
   for (int i=0; i<myArgs.size(); ++i)
-  { if (not (*myArgs[i].myType == *rhsptr->GetArgs()[i].myType))
+  { if (not myArgs[i].myType->Equal(Theta,*rhsptr->GetArgs()[i].myType))
       return ERROR_LOCALEQ(Theta,*this,rhs,"");
     if (not CompareAssertions(Theta,*myArgs[i].myValue,*rhsptr->GetArgs()[i].myValue))
       return ERROR_LOCALEQ(Theta,*this,rhs,"");
@@ -3735,7 +3735,7 @@ MpsLocalType *MpsLocalSendType::Merge(MpsLocalType &rhs) const // {{{
   MpsLocalSendType *rhsptr = dynamic_cast<MpsLocalSendType*>(&rhs);
   if (rhsptr==NULL ||
       myChannel != rhsptr->myChannel ||
-      not (*myMsgType == *rhsptr->myMsgType) ||
+      not myMsgType->Equal(MpsBoolVal(true),*rhsptr->myMsgType) ||
       myAssertionType != rhsptr->myAssertionType)
   {
     cerr << "MpsLocalType Merge Error: Cannot merge" << endl
@@ -3800,7 +3800,7 @@ MpsLocalType *MpsLocalRcvType::Merge(MpsLocalType &rhs) const // {{{
   MpsLocalRcvType *rhsptr = dynamic_cast<MpsLocalRcvType*>(&rhs);
   if (rhsptr==NULL ||
       myChannel != rhsptr->myChannel ||
-      not (*myMsgType == *rhsptr->myMsgType) ||
+      not myMsgType->Equal(MpsBoolVal(true),*rhsptr->myMsgType) ||
       myAssertionType != rhsptr->myAssertionType)
   {
     cerr << "MpsLocalType Merge Error: Cannot merge" << endl

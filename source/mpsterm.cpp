@@ -1871,7 +1871,7 @@ bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, cons
   MpsStringMsgType stringtype;
   // Check label is a string
   MpsMsgType *nametype = myName->TypeCheck(Gamma,Delta,Sigma);
-  bool nametypematch = (*nametype==stringtype);
+  bool nametypematch = stringtype.Equal(Theta,*nametype);
   delete nametype;
   if (!nametypematch)
     return PrintTypeError("Name for guivalue must be of type String",*this,Theta,Gamma,Delta,Sigma,Omega);
@@ -1899,7 +1899,7 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
   if (dynamic_cast<MpsDelegateMsgType*>(myType)!=NULL)
     return PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Delta,Sigma,Omega);
   MpsMsgType *exptype=myExp->TypeCheck(Gamma,Delta,Sigma);
-  bool exptypematch = (*exptype==*myType);
+  bool exptypematch = exptype->Equal(Theta,*myType);
   delete exptype;
   if (not exptypematch)
     return PrintTypeError((string)"Expression does not have type: " + myType->ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);

@@ -640,7 +640,7 @@ MpsMsgType *MpsCondExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &
   {
     MpsMsgType *truetype=myTrueBranch->TypeCheck(Gamma,Delta,Sigma);
     MpsMsgType *falsetype=myFalseBranch->TypeCheck(Gamma,Delta,Sigma);
-    if (*truetype == *falsetype)
+    if (truetype->Equal(MpsBoolVal(true),*falsetype))
     {
       result=truetype;
       delete falsetype;
@@ -710,7 +710,7 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv 
     MpsMsgType *righttype=myRight->TypeCheck(Gamma,Delta,Sigma);
     if (((not dynamic_cast<MpsMsgNoType*>(lefttype)) ||
          (not dynamic_cast<MpsMsgNoType*>(righttype))) &&
-        *lefttype == *righttype)
+        lefttype->Equal(MpsBoolVal(true),*righttype))
     { delete lefttype;
       delete righttype;
       return new MpsBoolMsgType();

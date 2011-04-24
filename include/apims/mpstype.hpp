@@ -63,7 +63,7 @@ class MpsGlobalType // {{{
     virtual std::string ToString(const std::string &indent="") const = 0;
     virtual MpsLocalType *Project(int pid) const = 0;
     virtual int GetMaxPid() const=0;
-    std::string NewGVar() const;
+    static std::string NewGVar(std::string orig="$X");
     
     // Grammar
     const static std::string BNF_TVALS;
