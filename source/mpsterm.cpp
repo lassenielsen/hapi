@@ -179,14 +179,22 @@ void SetAssertion(const std::string &id, const parsed_tree *tree,  map<string,Mp
   else if (tree->type_name == "Assertion" && tree->case_name == "case2") // 
     assertions[id] = new MpsBoolVal(true);
   else 
+  {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "ERROR: Set Assertion called on node: " << tree->type_name << "." << tree->case_name << endl;
+#endif
+  }
 } // }}}
 void SetAssertion(const parsed_tree *tree,  map<string,MpsExp*> &assertions) // {{{
 {
   if (tree->type_name == "Label" && tree->case_name == "case1") // bid Assertion
     SetAssertion(tree->content[0]->root.content,tree->content[1],assertions);
   else 
+  {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "ERROR: Set Assertion called on node: " << tree->type_name << "." << tree->case_name << endl;
+#endif
+  }
 } // }}}
 MpsExp *CreateAssertion(const parsed_tree *tree) // {{{
 {
@@ -197,7 +205,11 @@ MpsExp *CreateAssertion(const parsed_tree *tree) // {{{
   else if (tree->type_name == "Assertion" && tree->case_name == "case2") //
     return new MpsBoolVal(true);
   else
+  {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown assertion constructor: " << tree->type_name << "." << tree->case_name << endl;
+#endif
+  }
   return new MpsBoolVal(false);
 } // }}}
 void AddBranch(const parsed_tree *exp, map<string,MpsTerm*> &dest,  map<string,MpsExp*> &assertions) // {{{
@@ -208,7 +220,11 @@ void AddBranch(const parsed_tree *exp, map<string,MpsTerm*> &dest,  map<string,M
     SetAssertion(exp->content[0],assertions);
   }
   else
+  {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown branch constructor: " << exp->type_name << "." << exp->case_name << endl;
+#endif
+  }
   return;
 } // }}}
 void FindBranches(const parsed_tree *exp, map<string,MpsTerm*> &dest, map<string,MpsExp*> &assertions) // {{{
@@ -221,7 +237,11 @@ void FindBranches(const parsed_tree *exp, map<string,MpsTerm*> &dest, map<string
     FindBranches(exp->content[2], dest, assertions);
   }
   else
+  {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown branches constructor: " << exp->type_name << "." << exp->case_name << endl;
+#endif
+  }
   return;
 } // }}}
 void FindArgs(const parsed_tree *exp, vector<string> &args, vector<MpsMsgType*> &types) // {{{
@@ -246,7 +266,11 @@ void FindArgs(const parsed_tree *exp, vector<string> &args, vector<MpsMsgType*> 
   else if (exp->type_name == "dargs" && exp->case_name == "case2") //
     ; // Do nothing
   else
+  {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown args constructor: " << exp->type_name << "." << exp->case_name << endl;
+#endif
+  }
   return;
 } // }}}
 void FindGUIArgs(const parsed_tree *exp, vector<string> &args, vector<MpsMsgType*> &types, vector<MpsExp*> &values) // {{{
@@ -269,7 +293,11 @@ void FindGUIArgs(const parsed_tree *exp, vector<string> &args, vector<MpsMsgType
     values.push_back(MpsExp::Create(exp->content[4]));
   }
   else
+  {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown args constructor: " << exp->type_name << "." << exp->case_name << endl;
+#endif
+  }
   return;
 } // }}}
 void AddInputBranch(const parsed_tree *exp, map<string,inputbranch> &dest) // {{{
@@ -288,7 +316,11 @@ void AddInputBranch(const parsed_tree *exp, map<string,inputbranch> &dest) // {{
     dest[exp->content[0]->content[0]->root.content] = branch;
   }
   else
+  {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown inputbranch constructor: " << exp->type_name << "." << exp->case_name << endl;
+#endif
+  }
   return;
 } // }}}
 void FindInputBranches(const parsed_tree *exp, map<string,inputbranch> &dest) // {{{
@@ -301,7 +333,11 @@ void FindInputBranches(const parsed_tree *exp, map<string,inputbranch> &dest) //
     FindInputBranches(exp->content[2],dest);
   }
   else
+  {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown branches constructor: " << exp->type_name << "." << exp->case_name << endl;
+#endif
+  }
   return;
 } // }}}
 void FindExps(const parsed_tree *exp, vector<MpsExp*> &dest) // {{{
@@ -322,7 +358,11 @@ void FindExps(const parsed_tree *exp, vector<MpsExp*> &dest) // {{{
   else if (exp->type_name == "dexps" && exp->case_name == "case2") //
     ;
   else
+  {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown exps constructor: " << exp->type_name << " . " << exp->case_name << endl;
+#endif
+  }
   return;
 } // }}}
 MpsChannel ParseChannel(const parsed_tree *ch) // {{{
@@ -339,7 +379,9 @@ MpsChannel ParseChannel(const parsed_tree *ch) // {{{
   }
   else
   {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Parsing error: ParseChannel on non-channel: " << ch->type_name << "." << ch->case_name << endl;
+#endif
     return MpsChannel("_ERROR");
   }
 } // }}}
@@ -352,7 +394,9 @@ vector<string> FindNames(const parsed_tree *names) // {{{
     return result;
   }
 
+#if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown name list parsetree: " << names->type_name << "." << names->case_name << endl;
+#endif
   return vector<string>();
 } // }}}
 MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
@@ -511,7 +555,9 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
         delete *args.begin();
         args.erase(args.begin());
       }
+#if APIMS_DEBUG_LEVEL>1
       cerr << "Parsing error: Arguments for link must be: int, id, id, int" << endl;
+#endif
       return new MpsEnd();
     }
   } // }}}
@@ -561,7 +607,9 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
         delete *args.begin();
         args.erase(args.begin());
       }
+#if APIMS_DEBUG_LEVEL>1
       cerr << "Parsing error: Arguments for sync must be: int, id" << endl;
+#endif
       return new MpsEnd();
     }
   } // }}}
@@ -631,7 +679,9 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
         delete *args.begin();
         args.erase(args.begin());
       }
+#if APIMS_DEBUG_LEVEL>1
       cerr << "Parsing error: Arguments for sync must be: int, id" << endl;
+#endif
       return new MpsEnd();
     }
   } // }}}
@@ -670,7 +720,9 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
         delete *args.begin();
         args.erase(args.begin());
       }
+#if APIMS_DEBUG_LEVEL>1
       cerr << "Parsing error: Arguments for guivalue must be: int, session, int, exp, exp" << endl;
+#endif
       return new MpsEnd();
     }
   } // }}}
@@ -714,7 +766,9 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     return result;
   } // }}}
 
+#if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown term parsetree: " << exp->type_name << "." << exp->case_name << endl;
+#endif
   return new MpsEnd();
 } // }}}
 
@@ -1051,6 +1105,7 @@ string PrintOmega(const MpsProcEnv &Omega, const string &indent) // {{{
 } // }}}
 bool PrintTypeError(const string &message, const MpsTerm &term, const MpsExp &Theta, const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma, const MpsProcEnv &Omega) // {{{
 {
+#if APIMS_DEBUG_LEVEL>1
   cerr << "!!!!!!!!!!!!!!! Type Error: !!!!!!!!!!!!!!!" << endl
        << "!!!!!Term: " << term.ToString("!!!!!      ") << endl
        << "!!!!Theta: " << Theta.ToString() << endl
@@ -1059,6 +1114,7 @@ bool PrintTypeError(const string &message, const MpsTerm &term, const MpsExp &Th
        << "!!!!Sigma: " << PrintSigma(Sigma,"!!!!       ") << endl
        << "!!!!Omega: " << PrintOmega(Omega,"!!!!       ") << endl
        << "!!Message: " << message << endl;
+#endif
   return false;
 } // }}}
 
@@ -1491,6 +1547,12 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
   for (int i=0;i<myState.size();++i)
   {
     MpsMsgType *statetype = myState[i]->TypeCheck(Gamma, Delta, Sigma);
+#if APIMS_DEBUG_LEVEL>99
+    cerr << ">>>>Comparing: " << endl
+         << ">>>>>>>>Theta: " << Theta.ToString() << endl
+         << ">>>>>>>>>>LHS: " << statetype->ToString(">>>>>>>>>>>>>>") << endl
+         << ">>>>>>>>>>RHS: " << omega->second.stypes[i]->ToString(">>>>>>>>>>>>>>") << endl;
+#endif
     bool statetypematch = statetype->Equal(Theta,*omega->second.stypes[i]);
     delete statetype;    
     if (!statetypematch)
@@ -1506,6 +1568,12 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
       delete callType;
       callType=tmpType;
     }
+#if APIMS_DEBUG_LEVEL>99
+    cerr << ">>>>Comparing: " << endl
+         << ">>>>>>>>Theta: " << Theta.ToString() << endl
+         << ">>>>>>>>>>LHS: " << argType->ToString(">>>>>>>>>>>>>>") << endl
+         << ">>>>>>>>>>RHS: " << callType->ToString(">>>>>>>>>>>>>>") << endl;
+#endif
     bool argtypematch = argType->Equal(Theta,*callType);
     string callTypeString = callType->ToString();
     delete argType;
@@ -2087,12 +2155,20 @@ void MpsTerm::Steps(MpsEnv &env, const vector<MpsFunction> &defs, vector<MpsStep
     {
       if (mpsgui::GuiEnabeled())
       {
+#if APIMS_DEBUG_LEVEL>4
         cout << "*********** Waiting for GUI ***********" << endl;
+#endif
         mpsgui::GuiWait();
+#if APIMS_DEBUG_LEVEL>4
         cout << "*********** GUI Event *****************" << endl;
+#endif
       }
       else
+      {
+#if APIMS_DEBUG_LEVEL>4
         cout << "******* Stuck: GUI not enabeled *******" << endl;
+#endif
+      }
     }
   }
 } // }}}
@@ -2676,7 +2752,11 @@ bool MpsGuiSync::SubSteps(vector<MpsStep> &dest) // {{{
       }
     }
     else
+    {
+#if APIMS_DEBUG_LEVEL>10
       cerr << "Illegal choice: " << choice->name << endl;
+#endif
+    }
   }
   return true;
 } // }}}
@@ -3336,10 +3416,19 @@ MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<str
   if (myName == var)
   {
     if (myState.size() != stateargs.size())
+    {
+#if APIMS_DEBUG_LEVEL>2
       cerr << "MpsCall::PSubst wrong number of state arguments in match" << endl;
+#endif
+      return new MpsEnd();
+    }
     if (myArgs.size() != args.size())
+    {
+#if APIMS_DEBUG_LEVEL>2
       cerr << "MpsCall::PSubst wrong number of arguments in match" << endl;
-
+#endif
+      return new MpsEnd();
+    }
     // Create new Variable Names
     vector<string> stateNames;
     stateNames.clear();

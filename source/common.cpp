@@ -10,6 +10,20 @@
 #include <typeinfo>
 #include <algorithm>
 
+// FIXME: Move to actual Debug Class
+// DEBUG_LEVEL:
+// 0: ABSOLUTELY NO OUTPUT
+// 1: OUTPUT FATAL (PARSER, TYPE, ...) ERRORS
+// 2: ALSO OUTPUT SOUNDNESS ERRORS
+// 3: ALSO OUTPUT COMPLETENESS ERRORS
+// 4: ALSO OUTPUT UI MESSAGES
+//10: ALSO NON FATAL ERRORS
+//50: ALSO OUTPUT PARSED PROGRAM
+//59: ALSO OUTPUT EACH STEP IN EXECUTION
+//99: ALSO OUTPUT CALTREE TRACING WITH BEBUG INFORMATION, ...
+#define APIMS_DEBUG_LEVEL 5
+
+
 /* Simple help functions
  */
 inline std::string int2string(int i) // {{{

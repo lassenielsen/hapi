@@ -99,7 +99,9 @@ void FindGlobalBranches(const parsed_tree *tree, map<string,MpsGlobalType*> &des
   } // }}}
   else // unknown {{{
   {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown globalbranch constructor: " << tree->type_name << "." << tree->case_name << endl;
+#endif
   } // }}}
 } // }}}
 void FindLocalBranches(const parsed_tree *tree, map<string,MpsLocalType*> &dest, map<string,MpsExp*> &assertions) // {{{
@@ -117,7 +119,9 @@ void FindLocalBranches(const parsed_tree *tree, map<string,MpsLocalType*> &dest,
   } // }}}
   else // unknown {{{
   {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown localbranch constructor: " << tree->type_name << "." << tree->case_name << endl;
+#endif
   } // }}}
 } // }}}
 void FindMsgTypes(const parsed_tree *tree, vector<MpsMsgType*> &dest) // {{{
@@ -140,7 +144,9 @@ void FindMsgTypes(const parsed_tree *tree, vector<MpsMsgType*> &dest) // {{{
   } // }}}
   else // unknown {{{
   {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "Unknown MsgTuple constructor: " << tree->type_name << "." << tree->case_name << endl;
+#endif
   } // }}}
 } // }}}
 MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
@@ -211,7 +217,9 @@ MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
     }
   } // }}}
   
+#if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown msg-type parsetree: " << tree->type_name << "." << tree->case_name << endl;
+#endif
   return new MpsIntMsgType();
 } // }}}
 void CreateStateArgs(const parsed_tree *tree, vector<TypeArg> &dest) // {{{
@@ -241,7 +249,9 @@ void CreateStateArgs(const parsed_tree *tree, vector<TypeArg> &dest) // {{{
     return;
   } // }}}
 
+#if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown State Argument: " << tree->type_name << "." << tree->case_name << endl;
+#endif
   return;
 } // }}}
 void CreateStateValues(const parsed_tree *tree, vector<MpsExp*> &dest) // {{{
@@ -251,7 +261,9 @@ void CreateStateValues(const parsed_tree *tree, vector<MpsExp*> &dest) // {{{
   if (tree->type_name == "Tvals" && tree->case_name == "case2") // epsilon {{{
     return; // }}}
 
+#if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown State Value: " << tree->type_name << "." << tree->case_name << endl;
+#endif
   return;
 } // }}}
 MpsExp *CreateNamedAssertion(const parsed_tree *tree) // {{{
@@ -265,7 +277,9 @@ MpsExp *CreateNamedAssertion(const parsed_tree *tree) // {{{
     return new MpsBoolVal(true);
   } // }}}
   // else
+#if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown Assertion parsetree: " << tree->type_name << "." << tree->case_name << endl;
+#endif
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *CreateNamedAssertion(const parsed_tree *tree, bool &used, std::string &name) // {{{
@@ -281,7 +295,9 @@ MpsExp *CreateNamedAssertion(const parsed_tree *tree, bool &used, std::string &n
     used=false;
     return new MpsBoolVal(true);
   } // }}}
+#if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown NamedAssertion parsetree: " << tree->type_name << "." << tree->case_name << endl;
+#endif
   return new MpsBoolVal(false);
 } // }}}
 MpsGlobalType *MpsGlobalType::Create(const parsed_tree *tree) // {{{
@@ -365,7 +381,9 @@ MpsGlobalType *MpsGlobalType::Create(const parsed_tree *tree) // {{{
     return result;
   } // }}}
   
+#if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown global-type parsetree: " << tree->type_name << "." << tree->case_name << endl;
+#endif
   return new MpsGlobalEndType();
 } // }}}
 MpsLocalType *MpsLocalType::Create(const parsed_tree *tree) // {{{
@@ -490,7 +508,9 @@ MpsLocalType *MpsLocalType::Create(const parsed_tree *tree) // {{{
     return result;
   } // }}}
   
+#if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown local-type constructor: " << tree->type_name << "." << tree->case_name << endl;
+#endif
   return new MpsLocalEndType();
 } // }}}
 
@@ -623,11 +643,14 @@ MpsGlobalSyncType *MpsGlobalSyncType::Copy() const // {{{
 // FIXME: Test Assertions
 // Compare
 bool ERROR_GLOBALEQ(const MpsExp &Theta, const MpsGlobalType &lhs, const MpsGlobalType &rhs, string msg) // {{{
-{ cerr << "!!!!Types are not equal:" << endl
+{
+#if APIMS_DEBUG_LEVEL>20
+  cerr << "!!!!Types are not equal:" << endl
        << "!!!!Theta: " << Theta.ToString() << endl
        << "!!!!!!LHS: " << lhs.ToString("!!!!!!!!!! ") << endl
        << "!!!!!!RHS: " << rhs.ToString("!!!!!!!!!! ") << endl
        << "!!!!!!MSG: " << msg << endl;
+#endif
   return false;
 } // }}}
 bool CompareAssertions(const MpsExp &Theta, const MpsExp &lhs, const MpsExp &rhs) // {{{
@@ -1353,7 +1376,10 @@ MpsGlobalType *MpsGlobalVarType::GSubst(const string &source, const MpsGlobalTyp
   if (source != myName)
     return Copy();
   if (myValues.size() != args.size())
-  { cerr << "GSubst ERROR: argument size mismatch" << endl;
+  { 
+#if APIMS_DEBUG_LEVEL>2
+    cerr << "GSubst ERROR: argument size mismatch" << endl;
+#endif
     return new MpsGlobalVarType("ERROR",vector<MpsExp*>());
   }
   MpsGlobalType *result=dest.Copy();
@@ -1861,15 +1887,6 @@ int MpsGlobalSyncType::GetMaxPid() const // {{{
  *
  */
 
-// Generate error value
-MpsLocalType *ErrorType(string msg) // {{{
-{
-  vector<MpsExp*> values;
-  values.clear();
-  values.push_back(new MpsStringVal(msg));
-  return new MpsLocalVarType("~ERROR: " + msg,values);
-} // }}}
-
 // Constructors
 MpsLocalSendType::MpsLocalSendType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ) // {{{
 {
@@ -2052,11 +2069,14 @@ MpsLocalSyncType *MpsLocalSyncType::Copy() const // {{{
 // Compare
 // Helper function, to eliminate exceeding foralls
 bool ERROR_LOCALEQ(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
-{ cerr << "!!!!Types are not equal:" << endl
+{
+#if APIMS_DEBUG_LEVEL>20
+  cerr << "!!!!Types are not equal:" << endl
        << "!!!!Theta: " << Theta.ToString() << endl
        << "!!!!!!LHS: " << lhs.ToString("!!!!!!!!!! ") << endl
        << "!!!!!!RHS: " << rhs.ToString("!!!!!!!!!! ") << endl
        << "!!!!!!MSG: " << msg << endl;
+#endif
   return false;
 } // }}}
 bool CompareForall(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalType &rhs) // {{{
@@ -2075,7 +2095,7 @@ bool CompareForall(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalT
       return false;
     }
     MpsLocalType *lhsSucc=lhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
-    MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
+    MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(rhsptr->GetName(),newName);
     MpsExp *newTheta = new MpsBinOpExp("and",Theta,*lhsAssertion);
     delete lhsAssertion;
     bool result = CompareForall(*newTheta,*lhsSucc,*rhsSucc);
@@ -3328,7 +3348,10 @@ MpsLocalType *MpsLocalVarType::LSubst(const string &source, const MpsLocalType &
   if (source != myName)
     return Copy();
   if (args.size()!=myValues.size())
-  { cerr << "LSubst error: argument and value list have different sizes" << endl;
+  {
+#if APIMS_DEBUG_LEVEL>2
+    cerr << "LSubst error: argument and value list have different sizes" << endl;
+#endif
     return new MpsLocalVarType("ERROR",vector<MpsExp*>());
   }
   MpsLocalType *result = dest.Copy();
@@ -3625,7 +3648,11 @@ string MpsLocalSelectType::ToString(const string &indent) const // {{{
     if (ass != myAssertions.end())
       result += (string)"[[" + ass->second->ToString() + "]]";
     else
+    {
+#if APIMS_DEBUG_LEVEL>99
       cerr << "ERROR: Missing assertion for breanch " << it->first << endl;
+#endif
+    }
     result += (string)":\n" + newIndent + it->second->ToString(newIndent);
   }
   result += "\n" + indent + "}";
@@ -3651,8 +3678,11 @@ string MpsLocalBranchType::ToString(const string &indent) const // {{{
     if (ass != myAssertions.end())
       result += (string)"[[" + ass->second->ToString() + "]]";
     else
+    {
+#if APIMS_DEBUG_LEVEL>99
       cerr << "ERROR: Missing assertion for breanch " << it->first << endl;
-
+#endif
+    }
     result += (string)":\n"
             + newIndent + it->second->ToString(newIndent);
   }
@@ -3728,6 +3758,28 @@ string MpsLocalSyncType::ToString(const string &indent) const // {{{
 } // }}}
 
 // Merge two types to find greatest common subtype
+MpsLocalType *MERGE_ERROR(const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
+{
+#if APIMS_DEBUG_LEVEL>2
+  cerr << "!!!!MERGE ERROR: " << msg << endl
+       << "!!!!!!!!!!!!LHS: " << lhs.ToString("!!!!!!!!!!!!LHS: ") << endl
+       << "!!!!!!!!!!!!RHS: " << lhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
+#endif
+  vector<MpsExp*> values;
+  values.clear();
+  values.push_back(new MpsStringVal(msg));
+  return new MpsLocalVarType(MpsLocalType::NewLVar("ERROR"),values);
+} // }}}
+MpsExp *MERGE_ERROR_EXP(const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
+{
+#if APIMS_DEBUG_LEVEL>2
+  cerr << "!!!!MERGE ERROR: " << msg << endl
+       << "!!!!!!!!!!!!LHS: " << lhs.ToString("!!!!!!!!!!!!LHS: ") << endl
+       << "!!!!!!!!!!!!RHS: " << lhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
+#endif
+  return new MpsVarExp(MpsExp::NewVar("ERROR"));
+} // }}}
+
 // FIXME: Merge Assersions
 MpsLocalType *MpsLocalSendType::Merge(MpsLocalType &rhs) const // {{{
 {
@@ -3737,12 +3789,7 @@ MpsLocalType *MpsLocalSendType::Merge(MpsLocalType &rhs) const // {{{
       myChannel != rhsptr->myChannel ||
       not myMsgType->Equal(MpsBoolVal(true),*rhsptr->myMsgType) ||
       myAssertionType != rhsptr->myAssertionType)
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
 
   string newId;
   MpsExp *lhsAssertion;
@@ -3773,12 +3820,7 @@ MpsLocalType *MpsLocalSendType::Merge(MpsLocalType &rhs) const // {{{
 
   MpsLocalType *result = NULL;
   if (not (lhsAssertion == rhsAssertion))
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    result = ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
   else
   { MpsLocalType *succ = mySucc->Merge(*rhsptr->mySucc);
     if (myAssertionType)
@@ -3802,12 +3844,7 @@ MpsLocalType *MpsLocalRcvType::Merge(MpsLocalType &rhs) const // {{{
       myChannel != rhsptr->myChannel ||
       not myMsgType->Equal(MpsBoolVal(true),*rhsptr->myMsgType) ||
       myAssertionType != rhsptr->myAssertionType)
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
 
   string newId;
   MpsExp *lhsAssertion;
@@ -3838,12 +3875,7 @@ MpsLocalType *MpsLocalRcvType::Merge(MpsLocalType &rhs) const // {{{
 
   MpsLocalType *result = NULL;
   if (not (lhsAssertion == rhsAssertion))
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    result = ErrorType("MergeError");
-  }
+    result = MERGE_ERROR(*this,rhs,"MergeError");
   else
   { MpsLocalType *succ = mySucc->Merge(*rhsptr->mySucc);
     if (myAssertionType)
@@ -3863,12 +3895,7 @@ MpsLocalType *MpsLocalForallType::Merge(MpsLocalType &rhs) const // {{{
 {
   MpsLocalForallType *rhsptr = dynamic_cast<MpsLocalForallType*>(&rhs);
   if (rhsptr==NULL)
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
   string newName;
   MpsExp *lhsAssertion;
   MpsExp *rhsAssertion;
@@ -3891,12 +3918,7 @@ MpsLocalType *MpsLocalForallType::Merge(MpsLocalType &rhs) const // {{{
 
   MpsLocalType *result = NULL;
   if (not (lhsAssertion == rhsAssertion))
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    result = ErrorType("MergeError");
-  }
+    result = MERGE_ERROR(*this,rhs,"MergeError");
   else
   {
     MpsLocalType *succ = lhsSucc->Merge(*rhsSucc);
@@ -3913,20 +3935,10 @@ MpsLocalType *MpsLocalForallType::Merge(MpsLocalType &rhs) const // {{{
 MpsLocalType *MpsLocalSelectType::Merge(MpsLocalType &rhs) const // {{{
 {
   if (typeid(rhs) != typeid(MpsLocalSelectType))
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
   MpsLocalSelectType *rhsptr = (MpsLocalSelectType*)&rhs;
   if (myChannel != rhsptr->myChannel)
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
   map<string,MpsLocalType*> branches;
   branches.clear();
   map<string,MpsExp*> assertions;
@@ -3944,7 +3956,7 @@ MpsLocalType *MpsLocalSelectType::Merge(MpsLocalType &rhs) const // {{{
     else if (as1!=myAssertions.end() && as2!=rhsptr->myAssertions.end() && (*as1->second)==(*as2->second))
       assertions[as1->first] = as1->second->Copy();
     else
-      assertions[it->first] = new MpsVarExp("_ERROR");
+      assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
   }
   MpsLocalSelectType *result = new MpsLocalSelectType(myChannel,branches,assertions);
 
@@ -3957,20 +3969,10 @@ MpsLocalType *MpsLocalSelectType::Merge(MpsLocalType &rhs) const // {{{
 MpsLocalType *MpsLocalBranchType::Merge(MpsLocalType &rhs) const // {{{
 {
   if (typeid(rhs) != typeid(MpsLocalBranchType))
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
   MpsLocalBranchType *rhsptr = (MpsLocalBranchType*)&rhs;
   if (myChannel != rhsptr->myChannel)
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
 
   map<string,MpsLocalType*> branches;
   branches.clear();
@@ -3987,14 +3989,14 @@ MpsLocalType *MpsLocalBranchType::Merge(MpsLocalType &rhs) const // {{{
       map<string,MpsExp*>::const_iterator ass2=rhsptr->myAssertions.find(it->first);
       if (ass1 == myAssertions.end()) // LHS: No assertion given for branch
         if (ass2 != rhsptr->myAssertions.end()) // RHS: Assertion given for branch
-          assertions[it->first] = new MpsVarExp("_ERROR");
+          assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
       else // LHS: Assertion given for branch
         if (ass2 == rhsptr->myAssertions.end()) // RHS: No assertion given for branch
-          assertions[it->first] = new MpsVarExp("_ERROR");
+          assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
         else if (ass1->second == ass2->second) // Assertion on LHS and RHS is the same
           assertions[it->first] = ass1->second->Copy();
         else
-          assertions[it->first] = new MpsVarExp("_ERROR");
+          assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
     }
     else
     {
@@ -4027,12 +4029,7 @@ MpsLocalType *MpsLocalBranchType::Merge(MpsLocalType &rhs) const // {{{
 MpsLocalType *MpsLocalRecType::Merge(MpsLocalType &rhs) const // {{{
 {
   if (typeid(rhs) != typeid(MpsLocalRecType))
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
   // FIXME: Check same args and vals
   MpsLocalRecType *rhsptr = (MpsLocalRecType*)&rhs;
   string newName = NewLVar();
@@ -4052,42 +4049,23 @@ MpsLocalType *MpsLocalRecType::Merge(MpsLocalType &rhs) const // {{{
 MpsLocalType *MpsLocalVarType::Merge(MpsLocalType &rhs) const // {{{
 {
   if (typeid(rhs) != typeid(MpsLocalVarType))
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
   MpsLocalVarType *rhsptr = (MpsLocalVarType*)&rhs;
   if (myName != rhsptr->myName)
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
+  // FIXME: Check same or equivalent args
   return Copy();
 } // }}}
 MpsLocalType *MpsLocalEndType::Merge(MpsLocalType &rhs) const // {{{
 {
   if (typeid(rhs) != typeid(MpsLocalEndType))
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
   return Copy();
 } // }}}
 MpsLocalType *MpsLocalSyncType::Merge(MpsLocalType &rhs) const // {{{
 {
   if (typeid(rhs) != typeid(MpsLocalSyncType))
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
   MpsLocalSyncType *rhsptr = (MpsLocalSyncType*)&rhs;
   // Check mandatory labels are the same
   bool same_mandatory = true;
@@ -4110,12 +4088,7 @@ MpsLocalType *MpsLocalSyncType::Merge(MpsLocalType &rhs) const // {{{
     }
   }
   if (not same_mandatory)
-  {
-    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-         << "    " << ToString("    ") << endl
-         << "and " << rhs.ToString("    ") << endl;
-    return ErrorType("MergeError");
-  }
+    return MERGE_ERROR(*this,rhs,"MergeError");
   // Create type
   map<string,MpsLocalType*> branches;
   branches.clear();
@@ -4131,32 +4104,20 @@ MpsLocalType *MpsLocalSyncType::Merge(MpsLocalType &rhs) const // {{{
       map<string,MpsExp*>::const_iterator ass1=myAssertions.find(it->first);
       map<string,MpsExp*>::const_iterator ass2=rhsptr->myAssertions.find(it->first);
       if (ass1 != myAssertions.end())
+      {
 	if (ass2 == rhsptr->myAssertions.end())
-        {
-	  cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-               << "    " << ToString("    ") << endl
-	       << "and " << rhs.ToString("    ") << endl;
-	  assertions[it->first] = new MpsVarExp("_ERROR");
-	}
+	  assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"Merge Error");
+      }
       else
+      {
 	if (ass2 == rhsptr->myAssertions.end())
-        {
-	  cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-               << "    " << ToString("    ") << endl
-	       << "and " << rhs.ToString("    ") << endl;
-	  assertions[it->first] = new MpsVarExp("_ERROR");
-	}
+	  assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"Merge Error");
 	else
 	  if ((*ass1->second) == (*ass2->second))
 	    assertions[it->first] = ass1->second->Copy();
 	  else
-          {
-	    cerr << "MpsLocalType Merge Error: Cannot merge" << endl
-                 << "    " << ToString("    ") << endl
-	         << "and " << rhs.ToString("    ") << endl;
-	    assertions[it->first] = new MpsVarExp("_ERROR");
-	  }
-	
+	    assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"Merge Error");
+      }
     }
   }
   MpsLocalSyncType *result = new MpsLocalSyncType(branches,assertions);
@@ -4921,7 +4882,7 @@ string MpsDelegateLocalMsgType::ToString(const string &indent) const // {{{
 } // }}}
 string MpsDelegateGlobalMsgType::ToString(const string &indent) const // {{{
 {
-  string result=myGlobalType->ToString(indent) + "@(" + int2string(GetPid()) + " of " + int2string(GetMaxpid()) + ")";
+  string result=myLocalType->ToString(indent) + "@(" + int2string(GetPid()) + " of " + int2string(GetMaxpid()) + ")";
   return result;
 } // }}}
 
@@ -4934,7 +4895,9 @@ const MpsMsgType *MpsTupleMsgType::GetElement(int index) const // {{{
 {
   if (index<0 || index >=GetSize())
   {
+#if APIMS_DEBUG_LEVEL>1
     cerr << "ERROR: Tuple Exp Type index out of bounds!" << endl;
+#endif
     return new MpsMsgNoType(); 
   }
   return myElements[index];

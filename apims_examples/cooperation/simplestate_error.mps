@@ -21,8 +21,8 @@ in
   def State<x:Bool>(s: $type<x>@(3of3)) =
     guisync(3,s,3)
     {^X[[x]]():
-      s[3]>>newX;
-      State<newX>(s),
+      s[3]>>anX;
+      State<x>(s),
      ^Y[[not x]](): end
     }
   in State<true>(s)
