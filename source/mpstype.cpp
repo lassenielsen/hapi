@@ -2071,11 +2071,10 @@ MpsLocalSyncType *MpsLocalSyncType::Copy() const // {{{
 bool ERROR_LOCALEQ(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
 {
 #if APIMS_DEBUG_LEVEL>20
-  cerr << "!!!!Types are not equal:" << endl
+  cerr << "!!!!Types are not equal:" << msg << endl
        << "!!!!Theta: " << Theta.ToString() << endl
        << "!!!!!!LHS: " << lhs.ToString("!!!!!!!!!! ") << endl
-       << "!!!!!!RHS: " << rhs.ToString("!!!!!!!!!! ") << endl
-       << "!!!!!!MSG: " << msg << endl;
+       << "!!!!!!RHS: " << rhs.ToString("!!!!!!!!!! ") << endl;
 #endif
   return false;
 } // }}}
@@ -2087,12 +2086,12 @@ bool CompareForall(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalT
   {
     string newName = MpsExp::NewVar(lhsptr->GetName());
     MpsExp *lhsAssertion = lhsptr->GetAssertion().Rename(lhsptr->GetName(),newName);
-    MpsExp *rhsAssertion = rhsptr->GetAssertion().Rename(lhsptr->GetName(),newName);
+    MpsExp *rhsAssertion = rhsptr->GetAssertion().Rename(rhsptr->GetName(),newName);
     bool checkAssertions = CompareAssertions(Theta,*lhsAssertion,*rhsAssertion);
     delete rhsAssertion;
     if (not checkAssertions)
     { delete lhsAssertion;
-      return false;
+      return ERROR_LOCALEQ(Theta,lhs,rhs,"Assertions not quivalent");
     }
     MpsLocalType *lhsSucc=lhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
     MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(rhsptr->GetName(),newName);
