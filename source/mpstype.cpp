@@ -3762,7 +3762,7 @@ MpsLocalType *MERGE_ERROR(const MpsLocalType &lhs, const MpsLocalType &rhs, stri
 #if APIMS_DEBUG_LEVEL>2
   cerr << "!!!!MERGE ERROR: " << msg << endl
        << "!!!!!!!!!!!!LHS: " << lhs.ToString("!!!!!!!!!!!!LHS: ") << endl
-       << "!!!!!!!!!!!!RHS: " << lhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
+       << "!!!!!!!!!!!!RHS: " << rhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
 #endif
   vector<MpsExp*> values;
   values.clear();
@@ -3774,11 +3774,10 @@ MpsExp *MERGE_ERROR_EXP(const MpsLocalType &lhs, const MpsLocalType &rhs, string
 #if APIMS_DEBUG_LEVEL>2
   cerr << "!!!!MERGE ERROR: " << msg << endl
        << "!!!!!!!!!!!!LHS: " << lhs.ToString("!!!!!!!!!!!!LHS: ") << endl
-       << "!!!!!!!!!!!!RHS: " << lhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
+       << "!!!!!!!!!!!!RHS: " << rhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
 #endif
   return new MpsVarExp(MpsExp::NewVar("ERROR"));
 } // }}}
-
 // FIXME: Merge Assersions
 MpsLocalType *MpsLocalSendType::Merge(MpsLocalType &rhs) const // {{{
 {
@@ -4057,7 +4056,8 @@ MpsLocalType *MpsLocalVarType::Merge(MpsLocalType &rhs) const // {{{
 } // }}}
 MpsLocalType *MpsLocalEndType::Merge(MpsLocalType &rhs) const // {{{
 {
-  if (typeid(rhs) != typeid(MpsLocalEndType))
+  const MpsLocalEndType *rhsptr=dynamic_cast<const MpsLocalEndType*>(&rhs);
+  if (rhsptr==NULL)
     return MERGE_ERROR(*this,rhs,"MergeError");
   return Copy();
 } // }}}
