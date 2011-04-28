@@ -244,22 +244,21 @@ in // }}}
 ( // Sekretær Service Implementation {{{
   def Sekretaer() =
     link(2,sekretaer,s,2);
-    ( Sekretaer()
-    | s[1]>>xUrinering;
-      s[1]>>xAffoering;
-      s[1]>>xOperation;
-      s[1]>>xInformeret;
-      s[1]>>xReserveret;
-      s[1]>>xMedicinMorgen;
-      s[1]>>xMedicinEftermiddag;
-      s[1]>>xMedicinAften;
-      s[1]>>j;
-      // FIXME: Skriv opdateringer ind i journalen
-      s[2]<<j;
-      end
-    )
+    s[1]>>xUrinering;
+    s[1]>>xAffoering;
+    s[1]>>xOperation;
+    s[1]>>xInformeret;
+    s[1]>>xReserveret;
+    s[1]>>xMedicinMorgen;
+    s[1]>>xMedicinEftermiddag;
+    s[1]>>xMedicinAften;
+    s[1]>>j;
+    // FIXME: Skriv opdateringer ind i journalen
+    s[2]<<j;
+    // Håndter næste opgave
+    Sekretaer()
   in
-    Sekretaer() | // }}}
+    ( Sekretaer() | Sekretaer() | Sekretaer() ) | // Opret 3 sekretærer }}}
 // }}}
 // Behandling {{{
 // Behandlings Interface {{{
@@ -764,27 +763,25 @@ in // }}}
 ( // Receptionist {{{
   def Receptionist() =
     link(2,skranke,s,2);
-    ( Receptionist()
-    | s[2]>>navn;
-      s[2]>>cpr;
-      s[2]>>symptomer;
-      guivalue(2,s,2,"Navn:",navn);
-      guivalue(2,s,2,"CPR:",cpr);
-      guivalue(2,s,2,"Symptomer:",symptomer);
-      guisync(2,s,2)
-      {^Indlaeg(vaerelse:String="Værelse12"): // Indlæs vaerelse fra brugerflade
-        link(2,journal,j,1); // Opret Journal
-        j[1]<<navn;
-        j[1]<<cpr;
-        j[1]<<vaerelse;
-        j[1]<<symptomer;
-        link(3,behandling,b,1); // Opret Behandling
-        b[3]<<j; // Send journal til sygeplejer
-        s[1]<<b; // Send behandling(s session) til patient
-        end
-      }
-    )
-  in Receptionist() | // }}}
+    s[2]>>navn;
+    s[2]>>cpr;
+    s[2]>>symptomer;
+    guivalue(2,s,2,"Navn:",navn);
+    guivalue(2,s,2,"CPR:",cpr);
+    guivalue(2,s,2,"Symptomer:",symptomer);
+    guisync(2,s,2)
+    {^Indlaeg(vaerelse:String="Værelse12"): // Indlæs vaerelse fra brugerflade
+      link(2,journal,j,1); // Opret Journal
+      j[1]<<navn;
+      j[1]<<cpr;
+      j[1]<<vaerelse;
+      j[1]<<symptomer;
+      link(3,behandling,b,1); // Opret Behandling
+      b[3]<<j; // Send journal til sygeplejer
+      s[1]<<b; // Send behandling(s session) til patient
+      Receptionist()
+    }
+  in Receptionist() | // Opret 1 receptionist }}}
 // }}}
 ( def Patient(navn: String,cpr: String,symptomer: String) = // {{{
     def Behandling<xUrinering:Bool,xAffoering:Bool,xUdskriv:Bool,
@@ -795,42 +792,57 @@ in // }}}
                      xJournalHer,xJournalOpdateret,
                      xOperation,xInformeret,xReserveret,
                      xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>@(1of3))=
-      def Stuegang<xUrinering:Bool,xAffoering:Bool,xUdskriv:Bool,
-                   xJournalHer:Bool,xJournalOpdateret:Bool,
+      def Stuegang<xUrinering:Bool,xAffoering:Bool,xUdskriv:Bool, // {{{
+                   xJournalOpdateret:Bool,
                    xOperation:Bool,xInformeret:Bool,xReserveret:Bool,
                    xMedicinMorgen:Bool,xMedicinEftermiddag:Bool,xMedicinAften:Bool>
                    (b:$2114_stuegang<xUrinering,xAffoering,xUdskriv,
-                            xJournalHer,xJournalOpdateret,
+                            true,xJournalOpdateret,
                             xOperation,xInformeret,xReserveret,
                             xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>@(1of3)) =
-        // FIXME: Update GUI
-        guivalue(3,b,1,"Klar til udskrivning",if xUdskriv then "Ja" else "Nej");
-        guivalue(3,b,1,"Medicin-Morgen",xMedicinMorgen);
-        guivalue(3,b,1,"Medicin-Eftermiddag",xMedicinEftermiddag);
-        guivalue(3,b,1,"Medicin-Aften",xMedicinAften);
+        guivalue(3,b,1,"Urinering",if xUrinering then "Ja" else "Nej");
+        guivalue(3,b,1,"Afføring",if xAffoering then "Ja" else "Nej");
+        guivalue(3,b,1,"Udskrives",if xUdskriv then "Ja" else "Nej");
+        guivalue(3,b,1,"Journal skal opdateres",if xJournalOpdateret then "Ja" else "Nej");
+        guivalue(3,b,1,"Opereres",if xOperation then "Ja" else "Nej");
+        guivalue(3,b,1,"Patient er informeret",if xInformeret then "Ja" else "Nej");
+        guivalue(3,b,1,"Operationsstue er reserveret",if xReserveret then "Ja" else "Nej");
+        guivalue(3,b,1,"Medicineres til Morgen",if xMedicinMorgen then "Ja" else "Nej");
+        guivalue(3,b,1,"Medicineres til Eftermiddag",if xMedicinEftermiddag then "Ja" else "Nej");
+        guivalue(3,b,1,"Medicineres til Aften",if xMedicinAften then "Ja" else "Nej");
         guisync(3,b,1)
         {#Operer():
           b[1]>>operer;
           b[1]>>patientinformeret;
-          Stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,operer,patientinformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+          Stuegang<xUrinering,xAffoering,xUdskriv,xJournalOpdateret,operer,patientinformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
          #Udskriv[[xUrinering and xAffoering]]():
           b[1]>>udskriv;
-          Stuegang<xUrinering,xAffoering,udskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+          Stuegang<xUrinering,xAffoering,udskriv,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
          #Medicin():
           b[1]>>medicin;
           guivalue(3,b,1,"Medicin",medicin);
           b[1]>>xMedicinMorgen;
           b[1]>>xMedicinEftermiddag;
           b[1]>>xMedicinAften;
-          Stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+          Stuegang<xUrinering,xAffoering,xUdskriv,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
          ^AfslutStuegang():
-          Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b)
-        }
+          Behandling<xUrinering,xAffoering,xUdskriv,true,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b)
+        } // }}}
       in
-        // FIXME: Update GUI
+        guivalue(3,b,1,"Urinering",if xUrinering then "Ja" else "Nej");
+        guivalue(3,b,1,"Afføring",if xAffoering then "Ja" else "Nej");
+        guivalue(3,b,1,"Udskrives",if xUdskriv then "Ja" else "Nej");
+        guivalue(3,b,1,"Journal er her",if xJournalHer then "Ja" else "Nej");
+        guivalue(3,b,1,"Journal skal opdateres",if xJournalOpdateret then "Ja" else "Nej");
+        guivalue(3,b,1,"Opereres",if xOperation then "Ja" else "Nej");
+        guivalue(3,b,1,"Patient er informeret",if xInformeret then "Ja" else "Nej");
+        guivalue(3,b,1,"Operationsstue er reserveret",if xReserveret then "Ja" else "Nej");
+        guivalue(3,b,1,"Medicineres til Morgen",if xMedicinMorgen then "Ja" else "Nej");
+        guivalue(3,b,1,"Medicineres til Eftermiddag",if xMedicinEftermiddag then "Ja" else "Nej");
+        guivalue(3,b,1,"Medicineres til Aften",if xMedicinAften then "Ja" else "Nej");
         guisync(3,b,1)
-        {^Stuegang[[xJournalHer and not xMedicinMorgen and not xMedicinEftermiddag and not xMedicinAften]](kommentar:String=""):
-          Stuegang<xUrinering,xAffoering,xUdskriv,xJournalHer,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
+        {^Stuegang[[xJournalHer and not xMedicinMorgen and not xMedicinEftermiddag and not xMedicinAften]]():
+          Stuegang<xUrinering,xAffoering,xUdskriv,xJournalOpdateret,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
          #Dikter[[xJournalHer]]():
           Behandling<xUrinering,xAffoering,xUdskriv,xJournalHer,true,xOperation,xInformeret,xReserveret,xMedicinMorgen,xMedicinEftermiddag,xMedicinAften>(b),
          ^SendJournal[[xJournalHer and xJournalOpdateret]]():
@@ -878,5 +890,8 @@ in // }}}
       }
   in // }}}
 // Opretter Patienter
-Patient("Lasse Nielsen","170681....","Ondt i mavsen")
-) ) ) ) ) )
+( Patient("Lasse Nielsen","170681....","Ondt i mavsen")
+| Patient("X","0102030001","Opkast")
+| Patient("Y","0102030002","Diarre")
+| Patient("Z","0102030003","Mavesmerter")
+) ) ) ) ) ) )
