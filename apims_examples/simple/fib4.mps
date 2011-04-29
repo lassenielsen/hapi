@@ -3,7 +3,6 @@
            1=>2:1<Int>;
            1=>2:1<2<<<Int>;Lend@(2of2)>;
            Gend)
-(nu fib : 2=>1:2<Int>;Gend)             // Result protocol
 ( def FibCont() =
       link(2,cont,s,2);                 // Receive Connection
       ( FibCont()                       // Start new Server
@@ -24,16 +23,17 @@
   ( link(1,gui,user,1);                 // Create User Interface
     guisync(1,user,1)                   // Wait for User Input
     {^Fib(n:Int=5):                     // Request n
-      ( link(2,fib,r,2);
+      (nu result: 2=>1:2<Int>;Gend)     // Result protocol
+      ( link(2,result,r,2);
         link(2,cont,s,1);               // Connect to Fib Server
         s[1]<<n;                        // Send n
         s[1]<<1;                        // Send fib(0)
         s[1]<<1;                        // Send fib(1)
         s[1]<<r; end                    // Send receiving session
-      | link(2,fib,r,1);
+      | link(2,result,r,1);
         r[2]>>result;                   // Receive fib(n)
-        guivalue(1,user,1,"Fib:",result); // Add result to User Interface
-        guisync(1,user,1)                 // Wait for user to quit
+        guivalue(1,user,1,"Fib",result);// Add result to User Interface
+        guisync(1,user,1)               // Wait for user to quit
         {^Quit(comment:String=""): end }
       )
     }

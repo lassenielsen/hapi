@@ -5,6 +5,6 @@
 ( link(2,a,s,2);
   s[1]>>y;
   s[1]>>x;
-  s[2]<<true;
+  s[2]<<y or x;
   end
 )
