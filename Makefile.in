@@ -104,13 +104,12 @@ uninstall:
 clean:
 	touch clean~
 	touch packages
-	touch objects/clean.o
 	touch include/$(name)/config.hpp
 	touch $(libname)$(libversion)
 #	touch $(name)_window
 	rm *~
 	rm -Rf packages
-	rm objects/*.o
+	rm -Rf objects
 	rm include/$(name)/config.hpp
 	rm $(libname)$(libversion)
 #	rm $(name)_window
@@ -168,6 +167,7 @@ $(libname)$(libversion): $(library_objects)
 #OS_MAC	$(compiler) -dynamiclib -o $(libname) $(library_objects) $(libs)
 
 objects/%.o: source/%.cpp include/$(name)/*.hpp  include/$(name)/config.hpp
+	mkdir -p objects
 	$(compiler) -c source/$*.cpp $(args) -o objects/$*.o
 
 tags: $(name)/*.hpp $(name)/*.cpp
