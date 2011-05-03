@@ -1,4 +1,5 @@
 #include <apims/mpsexp.hpp>
+#include <sys/timeb.h>
 
 using namespace std;
 using namespace dpl;
@@ -785,49 +786,6 @@ MpsMsgType *MpsTupleExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv 
   return result;
 } // }}}
 
-/* Inference
- */
-bool MpsVarExp::Infer(const vector<MpsExp*> &hyps) const // {{{
-{
-  return false;
-} // }}}
-bool MpsIntVal::Infer(const vector<MpsExp*> &hyps) const // {{{
-{
-  return false;
-} // }}}
-bool MpsStringVal::Infer(const vector<MpsExp*> &hyps) const // {{{
-{
-  return false;
-} // }}}
-bool MpsBoolVal::Infer(const vector<MpsExp*> &hyps) const // {{{
-{
-  // Only inconsistency is when myValue=False but hyps are inconsistent, and this case is not relevant
-  return myValue;
-} // }}}
-bool MpsCondExp::Infer(const vector<MpsExp*> &hyps) const // {{{
-{
-  if (myCond->Infer(hyps) && myTrueBranch->Infer(hyps))
-    return true;
-  MpsUnOpExp negCond("not",*myCond);
-  if (negCond.Infer(hyps) && myFalseBranch->Infer(hyps))
-    return true;
-  return false;
-} // }}}
-bool MpsUnOpExp::Infer(const vector<MpsExp*> &hyps) const // {{{
-{
-  // FIXME
-  return false;
-} // }}}
-bool MpsBinOpExp::Infer(const vector<MpsExp*> &hyps) const // {{{
-{
-  // FIXME
-  return false;
-} // }}}
-bool MpsTupleExp::Infer(const vector<MpsExp*> &hyps) const // {{{
-{
-  return false;
-} // }}}
-
 /* Expression equality
  */
 bool MpsVarExp::operator==(const MpsExp &rhs) const // {{{
@@ -1140,18 +1098,100 @@ string MpsTupleExp::ToString() const // {{{
 
 /* Decide if Valid
  */
-
+int __COUNT_PROOFS=0;
+int __SUM_ATOMS=0;
+int __MAX_ATOMS=-1;
+int __MIN_ATOMS=-1;
+int __SUM_ANDS=0;
+int __SUM_ORS=0;
+int __SUM_NOTS=0;
+double __MAX_TIME=0;
+double __SUM_TIME=0;
+set<string> hypatoms(const vector<const MpsExp*> &hyps) // {{{
+{ set<string> atoms;
+  for (int i=0; i<hyps.size(); ++i)
+  { set<string> fv=hyps[i]->FV();
+    atoms.insert(fv.begin(),fv.end());
+  }
+  return atoms;
+} // }}}
+void CountConnectives(const MpsExp* exp, int &ands, int &ors, int &nots) // {{{
+{ const MpsUnOpExp *unop = dynamic_cast<const MpsUnOpExp*>(exp);
+  const MpsBinOpExp *binop = dynamic_cast<const MpsBinOpExp*>(exp);
+  if (unop!=NULL && unop->GetOp()=="not")
+    CountConnectives(&unop->GetRight(),ands,ors,++nots);
+  else if (binop!=NULL && binop->GetOp()=="and")
+  { CountConnectives(&binop->GetLeft(),++ands,ors,nots);
+    CountConnectives(&binop->GetRight(),ands,ors,nots);
+  }
+  else if (binop!=NULL && binop->GetOp()=="or")
+  { CountConnectives(&binop->GetLeft(),ands,++ors,nots);
+    CountConnectives(&binop->GetRight(),ands,ors,nots);
+  }
+  return;
+} // }}}
+void CountHypConnectives(const vector<const MpsExp*> &hyps, int &ands, int &ors, int &nots) // {{{
+{ for (int i=0; i<hyps.size(); ++i)
+    CountConnectives(hyps[i],ands,ors,nots);
+  return;
+} // }}}
+double gettime() // {{{
+{ struct timeb tb;
+  ftime(&tb);
+  double result = tb.millitm;
+  result /= 1000;
+  result+= (tb.time % (60*60));
+  return result;
+} // }}}
 bool MpsExp::ValidExp(vector<const MpsExp*> hyps) const // {{{
-{ return ValidExp_CFLKF(hyps);
+{
+  // STATISTICS {{{
+  cout << "PROOFS: " << ++__COUNT_PROOFS << endl;
+  set<string> atoms=hypatoms(hyps);
+  set<string> fv=FV();
+  atoms.insert(fv.begin(),fv.end());
+  int size=atoms.size();
+  __SUM_ATOMS+=size;
+  cout << "ATOMS SUM: " << __SUM_ATOMS << endl;
+  if (__MIN_ATOMS==-1 || size<__MIN_ATOMS)
+    __MIN_ATOMS=size;
+  cout << "MIN ATOMS: " << __MIN_ATOMS << endl;
+  if (size>__MAX_ATOMS)
+    __MAX_ATOMS=size;
+  cout << "MAX ATOMS: " << __MAX_ATOMS << endl;
+  int ands=0;
+  int ors=0;
+  int nots=0;
+  CountHypConnectives(hyps,ands,ors,nots);
+  CountConnectives(this,ands,ors,nots);
+  __SUM_ANDS+=ands;
+  cout << "ANDS SUM: " << __SUM_ANDS << endl;
+  __SUM_ORS+=ors;
+  cout << "ORS SUM: " << __SUM_ORS << endl;
+  __SUM_NOTS+=nots;
+  cout << "NOTS SUM: " << __SUM_NOTS << endl;
+  double starttime=gettime();
+  // END STATISTICS }}}
+  bool result=ValidExp_CFLKF(hyps);
+  // STATISTICS {{{
+  double endtime=gettime();
+  double runtime=endtime-starttime;
+  __SUM_TIME+=runtime;
+  if (runtime>__MAX_TIME)
+    __MAX_TIME=runtime;
+  cout << "RUNTIME SUM: " << __SUM_TIME << endl;
+  cout << "RUNTIME MAX: " << __MAX_TIME << endl;
+  // END STATISTICS }}}
+  return result;
 } // }}}
 
-bool isP(const MpsExp *e) // {{{
+inline bool isP(const MpsExp *e) // {{{
 { const MpsVarExp *varE = dynamic_cast<const MpsVarExp*>(e);
   const MpsBoolVal *valE = dynamic_cast<const MpsBoolVal*>(e);
   const MpsBinOpExp *binE = dynamic_cast<const MpsBinOpExp*>(e);
   return valE!=NULL || varE!=NULL || (binE!=NULL && binE->GetOp()=="and");
 } // }}}
-bool isL(const MpsExp *e, string &name, bool &negated) // {{{
+inline bool isL(const MpsExp *e, string &name, bool &negated) // {{{
 { const MpsVarExp *varE = dynamic_cast<const MpsVarExp*>(e);
   if (varE!=NULL)
   { name=varE->ToString();
@@ -1170,24 +1210,24 @@ bool isL(const MpsExp *e, string &name, bool &negated) // {{{
   }
   return false;
 } // }}}
-bool isC(const MpsExp *e) // {{{
+inline bool isC(const MpsExp *e) // {{{
 { const MpsVarExp *varE = dynamic_cast<const MpsVarExp*>(e);
   const MpsBoolVal *valE = dynamic_cast<const MpsBoolVal*>(e);
   const MpsBinOpExp *binE = dynamic_cast<const MpsBinOpExp*>(e);
   const MpsUnOpExp *unE = dynamic_cast<const MpsUnOpExp*>(e);
   return valE!=NULL || varE!=NULL || (binE!=NULL && binE->GetOp()=="and") || (unE!=NULL && unE->GetOp()=="not");
 } // }}}
-bool isN(const MpsExp *e) // {{{
+inline bool isN(const MpsExp *e) // {{{
 { const MpsBinOpExp *binE = dynamic_cast<const MpsBinOpExp*>(e);
   const MpsUnOpExp *unE = dynamic_cast<const MpsUnOpExp*>(e);
   return (unE!=NULL && unE->GetOp()=="not") || (binE!=NULL && binE->GetOp()=="or");
 } // }}}
-bool CFLKF(set<string> &theta1, set<string> &theta2, vector<MpsExp*> &theta, vector<MpsExp*> &gamma);
+bool CFLKF(set<string> &theta1, set<string> &theta2, vector<const MpsExp*> &theta, vector<const MpsExp*> &gamma);
 // Theta is split into:
 // theta1: atoms
 // theta2: negated atoms
 // theta: positive expressions (conjunctions)
-bool CFLKF_Focus(set<string> &theta1, set<string> &theta2, vector<MpsExp*> &theta, const MpsExp *e) // {{{
+bool CFLKF_Focus(set<string> &theta1, set<string> &theta2, vector<const MpsExp*> &theta, const MpsExp *e) // {{{
 {
   const MpsVarExp *varE = dynamic_cast<const MpsVarExp*>(e);
   const MpsBoolVal *valE = dynamic_cast<const MpsBoolVal*>(e);
@@ -1197,8 +1237,8 @@ bool CFLKF_Focus(set<string> &theta1, set<string> &theta2, vector<MpsExp*> &thet
   if (varE!=NULL && theta2.find(varE->ToString())!=theta2.end()) // Id Rule
     return true;
   if (isN(e)) // Release Rule
-  { vector<MpsExp*> gamma;
-    gamma.push_back((MpsExp*)e); // FIXME
+  { vector<const MpsExp*> gamma;
+    gamma.push_back(e);
     bool result = CFLKF(theta1,theta2,theta,gamma);
     gamma.pop_back();
     if (result)
@@ -1212,11 +1252,11 @@ bool CFLKF_Focus(set<string> &theta1, set<string> &theta2, vector<MpsExp*> &thet
     return true;
   return false;
 } // }}}
-bool CFLKF(set<string> &theta1, set<string> &theta2, vector<MpsExp*> &theta, vector<MpsExp*> &gamma) // {{{
+bool CFLKF(set<string> &theta1, set<string> &theta2, vector<const MpsExp*> &theta, vector<const MpsExp*> &gamma) // {{{
 { if (gamma.size()==0)
   { // Use Focus2 Rule
     for (int pos=0; pos<theta.size(); ++pos)
-    { MpsExp *p=theta[pos];
+    { const MpsExp *p=theta[pos];
       theta.erase(theta.begin()+pos);
       bool result = isP(p) && CFLKF_Focus(theta1,theta2,theta,p);
       theta.insert(theta.begin()+pos,p);
@@ -1226,9 +1266,9 @@ bool CFLKF(set<string> &theta1, set<string> &theta2, vector<MpsExp*> &theta, vec
     return false;
   }
   bool test=false;
-  MpsExp *e=gamma.back();
+  const MpsExp *e=gamma.back();
   gamma.pop_back();
-  MpsBoolVal *valE = dynamic_cast<MpsBoolVal*>(e);
+  const MpsBoolVal *valE = dynamic_cast<const MpsBoolVal*>(e);
   if ((not test) && valE!=NULL)
   { if (valE->GetValue()) // Use Shortcut
       test=true;
@@ -1261,7 +1301,7 @@ bool CFLKF(set<string> &theta1, set<string> &theta2, vector<MpsExp*> &theta, vec
       }
     }
   }
-  MpsBinOpExp *binE = dynamic_cast<MpsBinOpExp*>(e);
+  const MpsBinOpExp *binE = dynamic_cast<const MpsBinOpExp*>(e);
   if ((not test) && binE!=NULL && binE->GetOp()=="and")
   { // Try [] Rule
     theta.push_back(e);
@@ -1288,8 +1328,8 @@ bool CFLKF(set<string> &theta1, set<string> &theta2, vector<MpsExp*> &theta, vec
   return false;
 } // }}}
 bool MpsExp::ValidExp_CFLKF(vector<const MpsExp*> hyps) const // {{{
-{ vector<MpsExp*> theta;
-  vector<MpsExp*> gamma;
+{ vector<const MpsExp*> theta;
+  vector<const MpsExp*> gamma;
   for (vector<const MpsExp*>::const_iterator it=hyps.begin(); it!=hyps.end(); ++it)
   { MpsExp *tmp = (*it)->Negate();
     gamma.push_back(tmp->MakeNNF());
@@ -1310,23 +1350,7 @@ void CopyExpVector(vector<MpsExp*> &lhs, vector<MpsExp*> &rhs) // {{{
 } // }}}
 bool LK_Axiom(vector<MpsExp*> &exps, set<string> pos, set<string> neg) // {{{
 { while (exps.size()>0)
-  { //cout << "State: \n\tpos:";
-    //for (set<string>::const_iterator it=pos.begin(); it!=pos.end(); ++it)
-    //{ cout << *it;
-    //  cout << ", ";
-    //}
-    //cout << ".\n\tneg: ";
-    //for (set<string>::const_iterator it=neg.begin(); it!=neg.end(); ++it)
-    //{ cout << *it;
-    //  cout << ", ";
-    //}
-    //cout << ".\n\texps: ";
-    //for (vector<MpsExp*>::const_iterator it=exps.begin(); it!=exps.end(); ++it)
-    //{ cout << (*it)->ToString();
-    //  cout << ", ";
-    //}
-    //cout << "." << endl;
-    MpsExp *exp = exps.back();
+  { MpsExp *exp = exps.back();
     MpsVarExp *varexp=dynamic_cast<MpsVarExp*>(exp);
     MpsBoolVal *valexp=dynamic_cast<MpsBoolVal*>(exp);
     MpsBinOpExp *binexp=dynamic_cast<MpsBinOpExp*>(exp);

@@ -640,7 +640,6 @@ MpsGlobalSyncType *MpsGlobalSyncType::Copy() const // {{{
 } // }}}
 
 // TODO: Improve equality to co-inductive type equality and subtyping
-// FIXME: Test Assertions
 // Compare
 bool ERROR_GLOBALEQ(const MpsExp &Theta, const MpsGlobalType &lhs, const MpsGlobalType &rhs, string msg) // {{{
 {
@@ -2065,7 +2064,7 @@ MpsLocalSyncType *MpsLocalSyncType::Copy() const // {{{
   return new MpsLocalSyncType(myBranches,myAssertions);
 } // }}}
 
-// FIXME: Improve equality to co-inductive type equality and subtyping
+// TODO: Improve equality to co-inductive type equality and subtyping
 // Compare
 // Helper function, to eliminate exceeding foralls
 bool ERROR_LOCALEQ(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
@@ -3778,7 +3777,6 @@ MpsExp *MERGE_ERROR_EXP(const MpsLocalType &lhs, const MpsLocalType &rhs, string
 #endif
   return new MpsVarExp(MpsExp::NewVar("ERROR"));
 } // }}}
-// FIXME: Merge Assersions
 MpsLocalType *MpsLocalSendType::Merge(MpsLocalType &rhs) const // {{{
 {
   // Check same Construct, channel, message-type and assertiontype

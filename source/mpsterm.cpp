@@ -35,7 +35,6 @@ MpsTerm *MpsTerm::Error(const string &msg) // {{{
  */
 // OPTIONAL: Add xml-expressions
 // FIXME: Implement rand
-// FIXME: Implement assign(id,exp)
 // FIXME: Add expression operations (<,>,<=,>=,s1++s2,head,tail) [+,-,*,/,and,or,not,=]
 MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
 {
@@ -2253,7 +2252,6 @@ MpsTerm *MpsPar::ApplyBRcv(const std::string &path, const std::string &label) co
 MpsTerm *MpsBranch::ApplyBRcv(const std::string &path, const std::string &label) const // {{{
 { if (path.size()>0)
     return Error((string)"Applying BRcv on "+ToString()+" with nonempty path "+path);
-  // FIXME: Verify assertions
   map<string,MpsTerm*>::const_iterator branch = myBranches.find(label);
   if (branch==myBranches.end())
     return Error((string)"Applying BRcv on "+ToString()+" with unknown label "+label);
@@ -2531,8 +2529,6 @@ MpsTerm *MpsAssign::ApplyOther(const std::string &path) const // {{{
 
 /* Create list of possible internal steps
  */
-// FIXME: Implement rename functions for Rcv, GuiBranch, Nu and Def
-// FIXME: Check for captured variables in defs
 bool MpsEnd::SubSteps(vector<MpsStep> &dest) // {{{
 {
   return false; // No steps
