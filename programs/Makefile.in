@@ -1,6 +1,6 @@
 programs = apims apims_verify apims_run
 name = apims
-version = 2.1.0
+version = 2.2.0
 compiler = g++
 opt = -O3
 args = $(opt) `sdl-config --cflags`

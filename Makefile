@@ -1,7 +1,7 @@
 #=====================================================================#
-#                                IPVM                                 #
+#                                APIMS                                #
 # Makefile.in                                                         #
-# This is the Makefile-template for IPVM.                             #
+# This is the Makefile-template for the APIMS library.                #
 # If the Makefile has been lost, copy this file to Makefile and type  #
 # make config. This will generate a Makefile that is configured for   #
 # your system. You can then use                                       #
@@ -11,7 +11,7 @@
 # - Lasse Nielsen.                                                    #
 #=====================================================================#
 name = apims
-version = 2.1.0
+version = 2.2.0
 libname = lib$(name).so
 #OS_LINUXlibname = lib$(name).so
 #OS_MAClibname = lib$(name).dylib
@@ -116,7 +116,8 @@ clean:
 	cp Makefile.in Makefile
 
 package:
-	svn export . ./$(name)-$(version)
+	git clone . ./$(name)-$(version)
+	rm -Rf ./$(name)-$(version)/.git
 	mkdir -p packages/
 	tar -czf packages/$(name)-$(version).tgz $(name)-$(version)
 	rm -Rf $(name)-$(version)
@@ -130,10 +131,10 @@ deb: $(libname)$(libversion)
 	mkdir -p debs/lib$(name)_$(version)_i386/usr/lib
 	cp $(libname)$(libversion) debs/lib$(name)_$(version)_i386/usr/lib/
 	mkdir -p debs/lib$(name)_$(version)_i386/usr/include
-	svn export include/$(name) debs/lib$(name)_$(version)_i386/usr/include/$(libname)
+	cp -R include/$(name) debs/lib$(name)_$(version)_i386/usr/include/$(name)
 	mkdir -p debs/lib$(name)_$(version)_i386/opt
 	mkdir -p debs/lib$(name)_$(version)_i386/opt/$(name)
-	svn export gfx debs/lib$(name)_$(version)_i386/opt/$(name)/gfx
+	cp -R gfx debs/lib$(name)_$(version)_i386/opt/$(name)/gfx
 	echo "Making control"
 	mkdir -p debs/lib$(name)_$(version)_i386/DEBIAN
 	echo "Package: libapims"                                       > debs/lib$(name)_$(version)_i386/DEBIAN/control
