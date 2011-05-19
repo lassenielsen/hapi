@@ -514,80 +514,8 @@ MpsExp *MpsBinOpExp::Eval() const// {{{
   {
     MpsExp *leftval = myLeft->Eval();
     MpsExp *rightval = myRight->Eval();
-    if (typeid(*leftval) == typeid(MpsBoolVal) && // Boolean equality {{{
-        typeid(*rightval) == typeid(MpsBoolVal))
-    {
-      MpsBoolVal *leftptr = (MpsBoolVal*)leftval;
-      MpsBoolVal *rightptr = (MpsBoolVal*)rightval;
-      bool result = (leftptr->GetValue() && rightptr->GetValue()) ||
-                    not (leftptr->GetValue() || rightptr->GetValue());
-      delete leftval;
-      delete rightval;
-      return new MpsBoolVal(result);
-    } // }}}
-    if (typeid(*leftval) == typeid(MpsIntVal) && // Integer equality {{{
-        typeid(*rightval) == typeid(MpsIntVal))
-    {
-      MpsIntVal *leftptr = (MpsIntVal*)leftval;
-      MpsIntVal *rightptr = (MpsIntVal*)rightval;
-      bool result = (mpz_cmp(leftptr->GetValue(),rightptr->GetValue())==0);
-      delete leftval;
-      delete rightval;
-      return new MpsBoolVal(result);
-    } // }}}
-    if (typeid(*leftval) == typeid(MpsStringVal) && // String equality {{{
-        typeid(*rightval) == typeid(MpsStringVal))
-    {
-      MpsStringVal *leftptr = (MpsStringVal*)leftval;
-      MpsStringVal *rightptr = (MpsStringVal*)rightval;
-      bool result = leftptr->GetValue() == rightptr->GetValue();
-      delete leftval;
-      delete rightval;
-      return new MpsBoolVal(result);
-    } // }}}
-    return new MpsVarExp("_ERROR: Undefined equality-testing");
-  } // }}}
-  if (myName == "<=") // LEQ testing {{{
-  {
-    MpsExp *leftval = myLeft->Eval();
-    MpsExp *rightval = myRight->Eval();
-    if (typeid(*leftval) == typeid(MpsIntVal) && // Integer equality {{{
-        typeid(*rightval) == typeid(MpsIntVal))
-    {
-      MpsIntVal *leftptr = (MpsIntVal*)leftval;
-      MpsIntVal *rightptr = (MpsIntVal*)rightval;
-      bool result = (mpz_cmp(leftptr->GetValue(),rightptr->GetValue())<=0);
-      delete leftval;
-      delete rightval;
-      return new MpsBoolVal(result);
-    } // }}}
-    else return new MpsVarExp("_ERROR: LEQ Undefined for the given types");
-  } // }}}
-  if (myName == "&") // Tuple indexing {{{
-  {
-    MpsExp *leftval = myLeft->Eval();
-    MpsExp *rightval = myRight->Eval();
-    MpsTupleExp *lefttuple = dynamic_cast<MpsTupleExp*>(leftval);
-    MpsIntVal *rightint = dynamic_cast<MpsIntVal*>(rightval);
-    if (lefttuple == NULL || rightint==NULL)
-    { delete leftval;
-      delete rightval;
-      return new MpsVarExp("_ERROR: & applied to non tuple or ono int");
-    }
-    int index = mpz_get_ui(rightint->GetValue());
-    if (index<0 || lefttuple->GetSize()<=index)
-    { delete leftval;
-      delete rightval;
-      return new MpsVarExp("_ERROR: & index out of bounds");
-    }
-
-    MpsExp *result=lefttuple->GetElement(index)->Copy();
-    delete leftval;
-    delete rightval;
-    return result;
-  } // }}}
-  else
-    return new MpsVarExp("_ERROR: Undefined binary operator " + myName);
+    return new MpsBoolVal((*leftval)==(*rightval));
+  }
 } // }}}
 MpsTupleExp *MpsTupleExp::Eval() const// {{{
 {
@@ -838,9 +766,9 @@ bool MpsBinOpExp::operator==(const MpsExp &rhs) const // {{{
   if (typeid(rhs) != typeid(MpsBinOpExp))
     return false;
   MpsBinOpExp *rhsptr=(MpsBinOpExp*)&rhs;
-  return (myName == rhsptr->myName
+  return (myName == rhsptr->myName)
        && (*myLeft) == (*rhsptr->myLeft)
-       && (*myRight) == (*rhsptr->myRight));
+       && (*myRight) == (*rhsptr->myRight);
 } // }}}
 bool MpsTupleExp::operator==(const MpsExp &rhs) const // {{{
 {

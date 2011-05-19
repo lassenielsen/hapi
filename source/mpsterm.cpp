@@ -2697,6 +2697,8 @@ bool MpsCond::SubSteps(vector<MpsStep> &dest) // {{{
     paths.push_back("");
     dest.push_back(MpsStep(event,paths));
   }
+  else
+    cerr << "ERROR: unable to evaluate condition: " << myCond->ToString() << endl;
   delete exp;
   return false;
 } // }}}
