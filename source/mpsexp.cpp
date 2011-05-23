@@ -420,6 +420,7 @@ MpsExp *MpsBinOpExp::Eval() const// {{{
   MpsIntVal *rightIntVal=dynamic_cast<MpsIntVal*>(rightVal);
   MpsBoolVal *leftBoolVal=dynamic_cast<MpsBoolVal*>(leftVal);
   MpsBoolVal *rightBoolVal=dynamic_cast<MpsBoolVal*>(rightVal);
+  MpsTupleExp *leftTupleVal=dynamic_cast<MpsTupleExp*>(leftVal);
   if (myName=="+" && leftIntVal!=NULL && rightIntVal!=NULL) // Integer addition {{{
   {
     mpz_t sum;
@@ -471,19 +472,31 @@ MpsExp *MpsBinOpExp::Eval() const// {{{
     delete rightVal;
     return new MpsBoolVal(result);
   } // }}}
-  else if (myName == "or" && leftBoolVal!=NULL && rightBoolVal!=NULL) // Boolean disjunction {{{
+  else if (myName=="or" && leftBoolVal!=NULL && rightBoolVal!=NULL) // Boolean disjunction {{{
   {
     bool result = leftBoolVal->GetValue() || rightBoolVal->GetValue();
     delete leftVal;
     delete rightVal;
     return new MpsBoolVal(result);
   } // }}}
-  else if (myName == "=") // Equality testing {{{
+  else if (myName=="=") // Equality testing {{{
   {
     bool result = (*leftVal)==(*rightVal);
     delete leftVal;
     delete rightVal;
     return new MpsBoolVal(result);
+  } // }}}
+  else if (myName=="<=" && leftIntVal!=NULL && rightIntVal!=NULL) // INTEGER LEQ {{{
+  { bool result = (mpz_cmp(leftIntVal->GetValue(),rightIntVal->GetValue())<=0);
+    delete leftVal;
+    delete rightVal;
+    return new MpsBoolVal(result);
+  } // }}}
+  else if (myName=="&" && leftTupleVal!=NULL && rightIntVal!=NULL && leftTupleVal->GetSize()>mpz_get_ui(rightIntVal->GetValue())) // Tuple projection {{{
+  { MpsExp *result=leftTupleVal->GetElement(mpz_get_ui(rightIntVal->GetValue()))->Copy();
+    delete leftVal;
+    delete rightVal;
+    return result;
   } // }}}
   else // {{{
   { MpsExp *result = new MpsBinOpExp(myName,*leftVal,*rightVal);
