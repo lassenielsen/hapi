@@ -3461,7 +3461,7 @@ MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<str
          ++stateName,++stateExp)
     { // Substitute the argNames for the arguments one by one
       MpsExp *value=(*stateExp)->Eval();
-      MpsTerm *tmpTerm=newTerm->ESubst(*stateName,**stateExp);
+      MpsTerm *tmpTerm=newTerm->ESubst(*stateName,*value);
       delete value;
       delete newTerm;
       newTerm = tmpTerm;
