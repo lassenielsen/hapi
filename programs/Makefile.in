@@ -1,4 +1,4 @@
-programs = apims apims_verify apims_run
+programs = apims
 name = apims
 version = 2.2.0
 compiler = g++
