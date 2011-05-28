@@ -515,7 +515,7 @@ MpsExp *MpsBinOpExp::Eval() const// {{{
     MpsExp *leftval = myLeft->Eval();
     MpsExp *rightval = myRight->Eval();
     return new MpsBoolVal((*leftval)==(*rightval));
-  }
+  } // }}}
 } // }}}
 MpsTupleExp *MpsTupleExp::Eval() const// {{{
 {
@@ -1073,43 +1073,43 @@ double gettime() // {{{
 } // }}}
 bool MpsExp::ValidExp(vector<const MpsExp*> hyps) const // {{{
 {
-  // STATISTICS {{{
-  cout << "PROOFS: " << ++__COUNT_PROOFS << endl;
-  set<string> atoms=hypatoms(hyps);
-  set<string> fv=FV();
-  atoms.insert(fv.begin(),fv.end());
-  int size=atoms.size();
-  __SUM_ATOMS+=size;
-  cout << "ATOMS SUM: " << __SUM_ATOMS << endl;
-  if (__MIN_ATOMS==-1 || size<__MIN_ATOMS)
-    __MIN_ATOMS=size;
-  cout << "MIN ATOMS: " << __MIN_ATOMS << endl;
-  if (size>__MAX_ATOMS)
-    __MAX_ATOMS=size;
-  cout << "MAX ATOMS: " << __MAX_ATOMS << endl;
-  int ands=0;
-  int ors=0;
-  int nots=0;
-  CountHypConnectives(hyps,ands,ors,nots);
-  CountConnectives(this,ands,ors,nots);
-  __SUM_ANDS+=ands;
-  cout << "ANDS SUM: " << __SUM_ANDS << endl;
-  __SUM_ORS+=ors;
-  cout << "ORS SUM: " << __SUM_ORS << endl;
-  __SUM_NOTS+=nots;
-  cout << "NOTS SUM: " << __SUM_NOTS << endl;
-  double starttime=gettime();
-  // END STATISTICS }}}
+//  // STATISTICS {{{
+//  cout << "PROOFS: " << ++__COUNT_PROOFS << endl;
+//  set<string> atoms=hypatoms(hyps);
+//  set<string> fv=FV();
+//  atoms.insert(fv.begin(),fv.end());
+//  int size=atoms.size();
+//  __SUM_ATOMS+=size;
+//  cout << "ATOMS SUM: " << __SUM_ATOMS << endl;
+//  if (__MIN_ATOMS==-1 || size<__MIN_ATOMS)
+//    __MIN_ATOMS=size;
+//  cout << "MIN ATOMS: " << __MIN_ATOMS << endl;
+//  if (size>__MAX_ATOMS)
+//    __MAX_ATOMS=size;
+//  cout << "MAX ATOMS: " << __MAX_ATOMS << endl;
+//  int ands=0;
+//  int ors=0;
+//  int nots=0;
+//  CountHypConnectives(hyps,ands,ors,nots);
+//  CountConnectives(this,ands,ors,nots);
+//  __SUM_ANDS+=ands;
+//  cout << "ANDS SUM: " << __SUM_ANDS << endl;
+//  __SUM_ORS+=ors;
+//  cout << "ORS SUM: " << __SUM_ORS << endl;
+//  __SUM_NOTS+=nots;
+//  cout << "NOTS SUM: " << __SUM_NOTS << endl;
+//  double starttime=gettime();
+//  // END STATISTICS }}}
   bool result=ValidExp_CFLKF(hyps);
-  // STATISTICS {{{
-  double endtime=gettime();
-  double runtime=endtime-starttime;
-  __SUM_TIME+=runtime;
-  if (runtime>__MAX_TIME)
-    __MAX_TIME=runtime;
-  cout << "RUNTIME SUM: " << __SUM_TIME << endl;
-  cout << "RUNTIME MAX: " << __MAX_TIME << endl;
-  // END STATISTICS }}}
+//  // STATISTICS {{{
+//  double endtime=gettime();
+//  double runtime=endtime-starttime;
+//  __SUM_TIME+=runtime;
+//  if (runtime>__MAX_TIME)
+//    __MAX_TIME=runtime;
+//  cout << "RUNTIME SUM: " << __SUM_TIME << endl;
+//  cout << "RUNTIME MAX: " << __MAX_TIME << endl;
+//  // END STATISTICS }}}
   return result;
 } // }}}
 
