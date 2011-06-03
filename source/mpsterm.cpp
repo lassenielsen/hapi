@@ -1183,9 +1183,10 @@ inline bool TypeCheckForall(const MpsExp &Theta, const MpsGlobalEnv &Gamma, cons
 // TODO: Copy-Cleanup and collect all environments in one MpsMsgEnv &env
 bool MpsEnd::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma, const MpsProcEnv &Omega) // Use rule Inact {{{
 {
+  MpsLocalEndType endType;
   // Check that Delta is completed
   for (MpsLocalEnv::const_iterator session=Delta.begin();session!=Delta.end();++session)
-    if (typeid(*session->second.type)!=typeid(MpsLocalEndType))
+    if (!session->second.type->Equal(Theta,endType))
       return PrintTypeError((string)"Unfinished Session: " + session->first,*this,Theta,Gamma,Delta,Sigma,Omega);
   return true;
 } // }}}

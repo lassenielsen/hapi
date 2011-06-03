@@ -13,6 +13,7 @@ int main(int argc, char **argv)
   bool cfgBuffers=false;
   bool cfgChoices=false;
   bool cfgTypecheck=true;
+  bool cfgEval=true;
   string term="";
 
   bool argFault=true;
@@ -25,6 +26,8 @@ int main(int argc, char **argv)
       cfgChoices=true;
     else if ((string)argv[i]=="-nocheck")
       cfgTypecheck=false;
+    else if ((string)argv[i]=="-check")
+    { cfgEval=false; cfgTypecheck=true; }
     else if ((string)argv[i]=="-f" && i+1<argc)
     { ++i;
       // Read program from file
@@ -54,7 +57,15 @@ int main(int argc, char **argv)
   if (argFault) // {{{
   {
     cerr << "Syntax: apims '<term>'" << endl;
-    cerr << "    or: apims [-steps] [-buffers] [-choices] [-nocheck] (-f <file.mps>|<program>)" << endl;
+    cerr << "    or: apims [-steps] [-buffers] [-choices] [-check] [-nocheck] (-f <file.mps>|<program>)" << endl
+         << "Options:" << endl
+         << " -steps: Print each step of the evaluation for debugging" << endl
+         << " -buffers: Print the content of the communication buffers" << endl
+         << " -choices: Print the step choices" << endl
+         << " -check: Perform typecheck but not evaluation" << endl
+         << " -nocheck: Perform evaluation without typechecking" << endl
+         << " -f <file>: Read program source from <file>" << endl
+         << " <program>: Give the program source as a command line argument" << endl;
     return -1;
   } // }}}
   // Parse program
@@ -89,8 +100,7 @@ int main(int argc, char **argv)
            << DefEnv2string(defs) << " in\n"
            << current->ToString() << endl;
     else if (cfgBuffers)
-      cout << "***************** Buffers: ******************\n"
-           << Env2string(env) << endl;
+      cout << Env2string(env) << endl;
     // Find next state
     int choices = -1;
     int choice = -1;
