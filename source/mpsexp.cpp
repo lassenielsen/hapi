@@ -379,15 +379,20 @@ MpsBoolVal *MpsBoolVal::Eval() const// {{{
 } // }}}
 MpsExp *MpsCondExp::Eval() const// {{{
 {
-  MpsExp *condval = myCond->Eval();
-  if (typeid(*condval) != typeid(MpsBoolVal))
+  MpsExp *condVal = myCond->Eval();
+  MpsBoolVal *condBoolVal=dynamic_cast<MpsBoolVal*>(condVal);
+  if (condBoolVal==NULL)
   {
-    delete condval;
-    return new MpsVarExp("_ERROR: Condition type error");
+    MpsExp *trueVal=myTrueBranch->Eval();
+    MpsExp *falseVal=myFalseBranch->Eval();
+    MpsExp *result=new MpsCondExp(*condVal,*trueVal,*falseVal);
+    delete condVal;
+    delete trueVal;
+    delete falseVal;
+    return result;
   }
-  MpsBoolVal *ptr = (MpsBoolVal*)condval;
-  bool cond = ptr->GetValue();
-  delete condval;
+  bool cond = condBoolVal->GetValue();
+  delete condVal;
   if (cond)
     return myTrueBranch->Eval();
   else
@@ -395,126 +400,109 @@ MpsExp *MpsCondExp::Eval() const// {{{
 } // }}}
 MpsExp *MpsUnOpExp::Eval() const// {{{
 {
-  if (myName == "not") // Boolean negation {{{
+  MpsExp *rightval = myRight->Eval();
+  MpsBoolVal *rightBoolVal = dynamic_cast<MpsBoolVal*>(rightval);
+  if (myName=="not" && rightBoolVal!=NULL) // Boolean negation {{{
   {
-    MpsExp *rightval = myRight->Eval();
-    if (typeid(*rightval) != typeid(MpsBoolVal))
-      return new MpsVarExp("_ERROR: Negation child not boolean-expressions");
-    MpsBoolVal *rightptr = (MpsBoolVal*)rightval;
-    int result = not rightptr->GetValue();
+    int result = not rightBoolVal->GetValue();
     delete rightval;
     return new MpsBoolVal(result);
   } // }}}
-  else
-    return new MpsVarExp("_ERROR: Undefined binary operator " + myName);
+  MpsExp *result=new MpsUnOpExp(myName,*rightval);
+  delete rightval;
+  return result;
 } // }}}
 MpsExp *MpsBinOpExp::Eval() const// {{{
 {
-  if (myName == "+") // Integer addition {{{
+  MpsExp *leftVal = myLeft->Eval();
+  MpsExp *rightVal = myRight->Eval();
+  MpsIntVal *leftIntVal=dynamic_cast<MpsIntVal*>(leftVal);
+  MpsIntVal *rightIntVal=dynamic_cast<MpsIntVal*>(rightVal);
+  MpsBoolVal *leftBoolVal=dynamic_cast<MpsBoolVal*>(leftVal);
+  MpsBoolVal *rightBoolVal=dynamic_cast<MpsBoolVal*>(rightVal);
+  MpsTupleExp *leftTupleVal=dynamic_cast<MpsTupleExp*>(leftVal);
+  if (myName=="+" && leftIntVal!=NULL && rightIntVal!=NULL) // Integer addition {{{
   {
-    MpsExp *leftval = myLeft->Eval();
-    MpsExp *rightval = myRight->Eval();
-    if (typeid(*leftval) != typeid(MpsIntVal) ||
-        typeid(*rightval) != typeid(MpsIntVal))
-      return new MpsVarExp("_ERROR: Addition children not integer-expressions");
-    MpsIntVal *leftptr = (MpsIntVal*)leftval;
-    MpsIntVal *rightptr = (MpsIntVal*)rightval;
     mpz_t sum;
     mpz_init(sum);
-    mpz_add(sum,leftptr->GetValue(),rightptr->GetValue());
+    mpz_add(sum,leftIntVal->GetValue(),rightIntVal->GetValue());
     MpsExp *result = new MpsIntVal(sum);
     mpz_clear(sum);
-    delete leftval;
-    delete rightval;
+    delete leftVal;
+    delete rightVal;
     return result;
   } // }}}
-  if (myName == "-") // Integer addition {{{
+  else if (myName=="-" && leftIntVal!=NULL && rightIntVal!=NULL) // Integer addition {{{
   {
-    MpsExp *leftval = myLeft->Eval();
-    MpsExp *rightval = myRight->Eval();
-    if (typeid(*leftval) != typeid(MpsIntVal) ||
-        typeid(*rightval) != typeid(MpsIntVal))
-      return new MpsVarExp("_ERROR: Addition children not integer-expressions");
-    MpsIntVal *leftptr = (MpsIntVal*)leftval;
-    MpsIntVal *rightptr = (MpsIntVal*)rightval;
     mpz_t dif;
     mpz_init(dif);
-    mpz_sub(dif,leftptr->GetValue(),rightptr->GetValue());
+    mpz_sub(dif,leftIntVal->GetValue(),rightIntVal->GetValue());
     MpsExp *result = new MpsIntVal(dif);
     mpz_clear(dif);
-    delete leftval;
-    delete rightval;
+    delete leftVal;
+    delete rightVal;
     return result;
   } // }}}
-  if (myName == "*") // Integer addition {{{
+  else if (myName=="*" && leftIntVal!=NULL && rightIntVal!=NULL) // Integer addition {{{
   {
-    MpsExp *leftval = myLeft->Eval();
-    MpsExp *rightval = myRight->Eval();
-    if (typeid(*leftval) != typeid(MpsIntVal) ||
-        typeid(*rightval) != typeid(MpsIntVal))
-      return new MpsVarExp("_ERROR: Addition children not integer-expressions");
-    MpsIntVal *leftptr = (MpsIntVal*)leftval;
-    MpsIntVal *rightptr = (MpsIntVal*)rightval;
     mpz_t prod;
     mpz_init(prod);
-    mpz_mul(prod,leftptr->GetValue(),rightptr->GetValue());
+    mpz_mul(prod,leftIntVal->GetValue(),rightIntVal->GetValue());
     MpsExp *result = new MpsIntVal(prod);
     mpz_clear(prod);
-    delete leftval;
-    delete rightval;
+    delete leftVal;
+    delete rightVal;
     return result;
   } // }}}
-  if (myName == "/") // Integer addition {{{
+  else if (myName=="/" && leftIntVal!=NULL && rightIntVal!=NULL) // Integer addition {{{
   {
-    MpsExp *leftval = myLeft->Eval();
-    MpsExp *rightval = myRight->Eval();
-    if (typeid(*leftval) != typeid(MpsIntVal) ||
-        typeid(*rightval) != typeid(MpsIntVal))
-      return new MpsVarExp("_ERROR: Addition children not integer-expressions");
-    MpsIntVal *leftptr = (MpsIntVal*)leftval;
-    MpsIntVal *rightptr = (MpsIntVal*)rightval;
     mpz_t quot;
     mpz_init(quot);
-    mpz_fdiv_q(quot,leftptr->GetValue(),rightptr->GetValue());
+    mpz_fdiv_q(quot,leftIntVal->GetValue(),rightIntVal->GetValue());
     MpsExp *result = new MpsIntVal(quot);
     mpz_clear(quot);
-    delete leftval;
-    delete rightval;
+    delete leftVal;
+    delete rightVal;
     return result;
   } // }}}
-  if (myName == "and") // Boolean conjunction {{{
+  else if (myName=="and" && leftBoolVal!=NULL && rightBoolVal!=NULL) // Boolean conjunction {{{
   {
-    MpsExp *leftval = myLeft->Eval();
-    MpsExp *rightval = myRight->Eval();
-    if (typeid(*leftval) != typeid(MpsBoolVal) ||
-        typeid(*rightval) != typeid(MpsBoolVal))
-      return new MpsVarExp("_ERROR: Conjunction children not boolean-expressions");
-    MpsBoolVal *leftptr = (MpsBoolVal*)leftval;
-    MpsBoolVal *rightptr = (MpsBoolVal*)rightval;
-    bool result = leftptr->GetValue() && rightptr->GetValue();
-    delete leftval;
-    delete rightval;
+    bool result = leftBoolVal->GetValue() && rightBoolVal->GetValue();
+    delete leftVal;
+    delete rightVal;
     return new MpsBoolVal(result);
   } // }}}
-  if (myName == "or") // Boolean disjunction {{{
+  else if (myName=="or" && leftBoolVal!=NULL && rightBoolVal!=NULL) // Boolean disjunction {{{
   {
-    MpsExp *leftval = myLeft->Eval();
-    MpsExp *rightval = myRight->Eval();
-    if (typeid(*leftval) != typeid(MpsBoolVal) ||
-        typeid(*rightval) != typeid(MpsBoolVal))
-      return new MpsVarExp("_ERROR: Disjunction children not boolean-expressions");
-    MpsBoolVal *leftptr = (MpsBoolVal*)leftval;
-    MpsBoolVal *rightptr = (MpsBoolVal*)rightval;
-    bool result = leftptr->GetValue() || rightptr->GetValue();
-    delete leftval;
-    delete rightval;
+    bool result = leftBoolVal->GetValue() || rightBoolVal->GetValue();
+    delete leftVal;
+    delete rightVal;
     return new MpsBoolVal(result);
   } // }}}
-  if (myName == "=") // Equality testing {{{
+  else if (myName=="=") // Equality testing {{{
   {
-    MpsExp *leftval = myLeft->Eval();
-    MpsExp *rightval = myRight->Eval();
-    return new MpsBoolVal((*leftval)==(*rightval));
+    bool result = (*leftVal)==(*rightVal);
+    delete leftVal;
+    delete rightVal;
+    return new MpsBoolVal(result);
+  } // }}}
+  else if (myName=="<=" && leftIntVal!=NULL && rightIntVal!=NULL) // INTEGER LEQ {{{
+  { bool result = (mpz_cmp(leftIntVal->GetValue(),rightIntVal->GetValue())<=0);
+    delete leftVal;
+    delete rightVal;
+    return new MpsBoolVal(result);
+  } // }}}
+  else if (myName=="&" && leftTupleVal!=NULL && rightIntVal!=NULL && leftTupleVal->GetSize()>mpz_get_ui(rightIntVal->GetValue())) // Tuple projection {{{
+  { MpsExp *result=leftTupleVal->GetElement(mpz_get_ui(rightIntVal->GetValue()))->Copy();
+    delete leftVal;
+    delete rightVal;
+    return result;
+  } // }}}
+  else // {{{
+  { MpsExp *result = new MpsBinOpExp(myName,*leftVal,*rightVal);
+    delete leftVal;
+    delete rightVal;
+    return result;
   } // }}}
 } // }}}
 MpsTupleExp *MpsTupleExp::Eval() const// {{{
