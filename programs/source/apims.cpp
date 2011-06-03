@@ -69,45 +69,49 @@ int main(int argc, char **argv)
     return -1;
   } // }}}
   // Parse program
-  MpsTerm *next = MpsTerm::Create(term);
-  cout << "Program: " << endl << next->ToString() << endl;
-  MpsTerm *current = NULL;
+  MpsTerm *current = MpsTerm::Create(term);
+  cout << "******************* Program *******************" << endl
+       << current->ToString() << endl;
   if (cfgTypecheck)
   { // Typecheck program
     cout << "************ Type Checking Program ************" << endl;
-    if (not next->TypeCheck())
+    if (not current->TypeCheck())
       return 1;
     cout << "************ Type Check Succeeded! ************" << endl;
   }
   else
     cout << "************** NO TYPE CHECKEING **************" << endl;
-  // Apply semantics repeatedly (evaluate)
-  MpsEnv env;
-  vector<MpsFunction> defs;
-  srand((unsigned)time(0));
-  while (next != NULL) // While it can step, choose random step
-  {
-    if (current != NULL) // Clean up old state
-      delete current;
-    // Move to next state
-    current = next->Simplify(); // Goto next state (and remove dead processes)
-    delete next;
-    next = NULL;
-    // Print state
-    if (cfgSteps)
-      cout << "******************* Step: *******************\n"
-           << Env2string(env) << "\n"
-           << DefEnv2string(defs) << " in\n"
-           << current->ToString() << endl;
-    else if (cfgBuffers)
-      cout << Env2string(env) << endl;
-    // Find next state
-    int choices = -1;
-    int choice = -1;
-    next = current->Step(env,defs,choice,choices);
-    if (cfgChoices && choices>0)
-      cout << "*********** Selected Step: " << choice+1 << " of " << choices << " ***********" << endl;
+  if (cfgEval)
+  { // Apply semantics repeatedly (evaluate)
+    MpsTerm *next = current;
+    current=NULL;
+    MpsEnv env;
+    vector<MpsFunction> defs;
+    srand((unsigned)time(0));
+    while (next != NULL) // While it can step, choose random step
+    {
+      if (current != NULL) // Clean up old state
+        delete current;
+      // Move to next state
+      current = next->Simplify(); // Goto next state (and remove dead processes)
+      delete next;
+      next = NULL;
+      // Print state
+      if (cfgSteps)
+        cout << "******************* Step: *******************\n"
+             << Env2string(env) << "\n"
+             << DefEnv2string(defs) << " in\n"
+             << current->ToString() << endl;
+      else if (cfgBuffers)
+        cout << Env2string(env) << endl;
+      // Find next state
+      int choices = -1;
+      int choice = -1;
+      next = current->Step(env,defs,choice,choices);
+      if (cfgChoices && choices>0)
+        cout << "*********** Selected Step: " << choice+1 << " of " << choices << " ***********" << endl;
+    }
+    cout << "******************* Done! *******************" << endl;
   }
-  cout << "******************* Done! *******************" << endl;
   delete current;
 }
