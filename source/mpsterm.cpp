@@ -5093,14 +5093,14 @@ string MpsGuiSync::ToString(string indent) const // {{{
   {
     if (it != myBranches.begin())
       result += ",\n" + indent + "  ";
-    result += it->first + "[[" + it->second.assertion->ToString() + "]]{";
+    result += it->first + "[[" + it->second.assertion->ToString() + "]](";
     for (int i=0; i<it->second.args.size() && i<it->second.names.size() && i<it->second.types.size(); ++i)
     {
       if (i>0)
         result += ",";
       result += it->second.args[i] + "=" + it->second.values[i]->ToString() + ": " +it->second.types[i]->ToString();
     }
-    result += "]:\n" + newIndent + it->second.term->ToString(newIndent);
+    result += "):\n" + newIndent + it->second.term->ToString(newIndent);
   }
   result += "\n" + indent + "}";
   return result;

@@ -10,8 +10,8 @@
   s[1] >> dest;
   def X(s: rec %x.1>><Bool>;%x@(2of2),
         d: rec %x.1<<<Bool>;%x@(1of2),
-        b: Bool) =
-     d[1] << not b;
+        val: Bool) =
+     d[1] << not val;
      s[1] >> newB;
      X(s,d,newB)
   in X(source,dest,true)

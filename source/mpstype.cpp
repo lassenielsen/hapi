@@ -41,7 +41,7 @@ const string MpsGlobalType::BNF_GBRANCHES=
 // Local Type BNFs {{{
 const string MpsLocalType::BNF_LTYPE=
 "Ltype ::= int << < Mtype > NamedAssertion ; Ltype \
-         | int >> < Mtype > NamesAssertion ; Ltype \
+         | int >> < Mtype > NamedAssertion ; Ltype \
          | forall id [[ exp ]] ; Ltype \
          | int << { Lbranches } \
          | int >> { Lbranches } \
