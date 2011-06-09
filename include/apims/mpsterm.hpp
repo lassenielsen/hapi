@@ -37,6 +37,10 @@ class MpsTerm // {{{
                            const MpsMsgEnv &Sigma,
                            const MpsProcEnv &Omega) = 0;
 
+    // Create C code
+    std::string Compile();
+    virtual void Compile(std::string &decls, std::string &defs, std::string &main) = 0;
+
     // Makes random step, returns result and makes changes in env
     MpsTerm *Step(MpsEnv &env, 
                   std::vector<MpsFunction> &defs,
@@ -95,6 +99,7 @@ class MpsEnd : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
@@ -124,6 +129,7 @@ class MpsSnd : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySnd(const std::string &path, MpsExp **val, MpsChannel &ch) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -155,6 +161,7 @@ class MpsRcv : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyRcv(const std::string &path, const MpsExp *val) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -186,6 +193,7 @@ class MpsSelect : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyBSnd(const std::string &path, std::string &label, MpsChannel &ch) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -217,6 +225,7 @@ class MpsBranch : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyBRcv(const std::string &path, const std::string &label) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -248,6 +257,7 @@ class MpsPar : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyRcv(const std::string &path, const MpsExp *val) const;
     MpsTerm *ApplySnd(const std::string &path, MpsExp **val, MpsChannel &ch) const;
@@ -286,6 +296,7 @@ class MpsDef : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -321,6 +332,7 @@ class MpsCall : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyCall(const std::string &path, const std::vector<MpsFunction> &funs) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -352,6 +364,7 @@ class MpsNu : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -384,6 +397,7 @@ class MpsLink : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyLink(const std::vector<std::string> &paths, const std::string &session) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -417,6 +431,7 @@ class MpsSync : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySync(const std::vector<std::string> &paths, const std::string &label) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -434,9 +449,9 @@ class MpsSync : public MpsTerm // {{{
 
   private:
     std::string mySession;
-    std::map< std::string, MpsTerm*> myBranches;
+    std::map<std::string, MpsTerm*> myBranches;
     int myMaxpid;
-    std::map< std::string, MpsExp*> myAssertions;
+    std::map<std::string, MpsExp*> myAssertions;
 }; // }}}
 class MpsCond : public MpsTerm // {{{
 {
@@ -449,6 +464,7 @@ class MpsCond : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -492,6 +508,7 @@ class MpsGuiSync : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySync(const std::vector<std::string> &paths, const std::string &label) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -524,6 +541,7 @@ class MpsGuiValue : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
@@ -558,6 +576,7 @@ class MpsAssign : public MpsTerm // {{{
                    const MpsLocalEnv &Delta,
                    const MpsMsgEnv &Sigma,
                    const MpsProcEnv &Omega);
+    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsAssign *PRename(const std::string &src, const std::string &dst) const;

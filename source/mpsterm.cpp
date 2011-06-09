@@ -1982,6 +1982,81 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
   return result;
 } // }}}
 
+/* Compile to C code
+ */
+string MpsTerm::Compile () // {{{
+{ string decls;
+  string defs;
+  string main;
+  Compile(decls,defs,main);
+  return decls + defs + "int main()\n{\n" + main + "}";
+} // }}}
+void MpsEnd::Compile(std::string &decls, string &defs, string &main) // Use rule Inact {{{
+{
+  main += "  return 0;\n";
+  return;
+} // }}}
+void MpsSnd::Compile(std::string &decls, string &defs, string &main) // Use rules Send and Deleg (and new rule for delegaing the session itself) {{{
+{
+  main += "\n  MsgSend(" + myChannel.ToString() + ", " + myExp->ToString() + ");";
+  mySucc->Compile(decls,defs,main);
+  return;
+} // }}}
+void MpsRcv::Compile(std::string &decls, string &defs, string &main) // Use rules Rcv and Srec {{{
+{
+  main += "\n  MsgRcv(" + myChannel.ToString() + ", &" + myDest + ");";
+  mySucc->Compile(decls,defs,main);
+  return;
+} // }}}
+void MpsSelect::Compile(std::string &decls, string &defs, string &main) // Use rule Sel {{{
+{
+  return;
+} // }}}
+void MpsBranch::Compile(std::string &decls, string &defs, string &main) // Use rule Branch {{{
+{
+  return;
+} // }}}
+void MpsPar::Compile(std::string &decls, string &defs, string &main) // Use rule Par {{{
+{
+  return;
+} // }}}
+void MpsDef::Compile(std::string &decls, string &defs, string &main) // * Use rule Def {{{
+{
+  return;
+} // }}}
+void MpsCall::Compile(std::string &decls, string &defs, string &main) // * Use rule Var {{{
+{
+  return;
+} // }}}
+void MpsNu::Compile(std::string &decls, string &defs, string &main) // Use rule Nres {{{
+{
+  return;
+} // }}}
+void MpsLink::Compile(std::string &decls, string &defs, string &main) // * Use rules Mcast and Macc {{{
+{
+  return;
+} // }}}
+void MpsSync::Compile(std::string &decls, string &defs, string &main) // Use rule Sync {{{
+{
+  return;
+} // }}}
+void MpsCond::Compile(std::string &decls, string &defs, string &main) // Use rule Cond {{{
+{
+  return;
+} // }}}
+void MpsGuiSync::Compile(std::string &decls, string &defs, string &main) // * Use rule Sync (extended) {{{
+{
+  return;
+} // }}}
+void MpsGuiValue::Compile(std::string &decls, string &defs, string &main) // Type check name, value and session {{{
+{
+  return;
+} // }}}
+void MpsAssign::Compile(std::string &decls, string &defs, string &main) // * Check exp has correct type, and check succ in updated sigma {{{
+{
+  return;
+} // }}}
+
 /* Create list of possible steps
  */
 // Remove unused function definitions
