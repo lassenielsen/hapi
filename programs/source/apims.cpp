@@ -14,7 +14,9 @@ int main(int argc, char **argv)
   bool cfgChoices=false;
   bool cfgTypecheck=true;
   bool cfgEval=true;
+  bool cfgCompile=false;
   string term="";
+  string dest="";
 
   bool argFault=true;
   for (int i=1; i<argc; ++i) // {{{
@@ -28,6 +30,8 @@ int main(int argc, char **argv)
       cfgTypecheck=false;
     else if ((string)argv[i]=="-check")
     { cfgEval=false; cfgTypecheck=true; }
+    else if ((string)argv[i]=="-compile")
+      cfgCompile=false;
     else if ((string)argv[i]=="-f" && i+1<argc)
     { ++i;
       // Read program from file
@@ -44,6 +48,10 @@ int main(int argc, char **argv)
         term=memblock;
         delete[] memblock;
       }
+    }
+    else if ((string)argv[i]=="-o" && i+1<argc)
+    { ++i;
+      dest=argv[i];
     }
     else if (argv[i][0]!='-')
     { argFault=false;
