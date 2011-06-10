@@ -1984,16 +1984,24 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
 
 /* Compile to C code
  */
+int _compile_id;
+string Compile_NewVar(string base) // {{{
+{
+  string result = (string)"_"+base;
+  result += int2string(_compile_id++);
+  return result;
+} // }}}
 string MpsTerm::Compile () // {{{
-{ string decls;
+{ _compile_id=1;
+  string decls;
   string defs;
   string main;
   Compile(decls,defs,main);
-  return decls + defs + "int main()\n{\n" + main + "}";
+  return decls + defs + "int main()\n{" + main + "\n}";
 } // }}}
 void MpsEnd::Compile(std::string &decls, string &defs, string &main) // Use rule Inact {{{
 {
-  main += "  return 0;\n";
+  main += "\n  return 0;";
   return;
 } // }}}
 void MpsSnd::Compile(std::string &decls, string &defs, string &main) // Use rules Send and Deleg (and new rule for delegaing the session itself) {{{
@@ -2004,20 +2012,40 @@ void MpsSnd::Compile(std::string &decls, string &defs, string &main) // Use rule
 } // }}}
 void MpsRcv::Compile(std::string &decls, string &defs, string &main) // Use rules Rcv and Srec {{{
 {
-  main += "\n  MsgRcv(" + myChannel.ToString() + ", &" + myDest + ");";
-  mySucc->Compile(decls,defs,main);
+  string var = Compile_NewVar(myDest);
+  main += "\n string " + var + ";\n  MsgRcv(" + myChannel.ToString() + ", &" + var + ");";
+  MpsTerm *tmpSucc = mySucc->ERename(myDest,var);
+  tmpSucc->Compile(decls,defs,main);
+  delete tmpSucc;
   return;
 } // }}}
 void MpsSelect::Compile(std::string &decls, string &defs, string &main) // Use rule Sel {{{
 {
+  main += "\n  MsgSend(" + myChannel.ToString() + ", \"" + myLabel + "\");";
+  mySucc->Compile(decls,defs,main);
   return;
 } // }}}
 void MpsBranch::Compile(std::string &decls, string &defs, string &main) // Use rule Branch {{{
 {
+  string label=Compile_NewVar("label");
+  main += "\n  string " + label + ";\n  MsgRcv(" + myChannel.ToString() + ", &" + label + ");";
+  for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+  { if (branch!=myBranches.begin())
+      main += "\n  else";
+    main += "\n  if (" + label + "==\"" + branch->first + "\")\n  {";
+    branch->second->Compile(decls,defs,main);
+    main += "\n  }";
+  }
+  main += "\n  else cerr << \"ERROR: UNEXPECTED LABEL " + label + "\" << endl;\n  return -1;";
   return;
 } // }}}
 void MpsPar::Compile(std::string &decls, string &defs, string &main) // Use rule Par {{{
 {
+  main += "\n  if (fork()==0)\n  {";
+  myLeft->Compile(decls,defs,main);
+  main += "\n  }\n  else\n  {";
+  myRight->Compile(decls,defs,main);
+  main += "\n  }";
   return;
 } // }}}
 void MpsDef::Compile(std::string &decls, string &defs, string &main) // * Use rule Def {{{

@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     else if ((string)argv[i]=="-check")
     { cfgEval=false; cfgTypecheck=true; }
     else if ((string)argv[i]=="-compile")
-      cfgCompile=false;
+    { cfgCompile=true; cfgEval=false; }
     else if ((string)argv[i]=="-f" && i+1<argc)
     { ++i;
       // Read program from file
@@ -76,19 +76,28 @@ int main(int argc, char **argv)
          << " <program>: Give the program source as a command line argument" << endl;
     return -1;
   } // }}}
+
+  ostream *out=NULL;
+  if (dest=="")
+    out= &cout;
+  else
+    out = new ofstream(dest.c_str());
+
   // Parse program
   MpsTerm *current = MpsTerm::Create(term);
-  cout << "******************* Program *******************" << endl
+  (*out) << "******************* Program *******************" << endl
        << current->ToString() << endl;
   if (cfgTypecheck)
   { // Typecheck program
-    cout << "************ Type Checking Program ************" << endl;
+    (*out) << "************ Type Checking Program ************" << endl;
     if (not current->TypeCheck())
       return 1;
-    cout << "************ Type Check Succeeded! ************" << endl;
+    (*out) << "************ Type Check Succeeded! ************" << endl;
   }
   else
-    cout << "************** NO TYPE CHECKEING **************" << endl;
+    (*out) << "************** NO TYPE CHECKEING **************" << endl;
+  if (cfgCompile)
+    (*out) << current->Compile() << endl;
   if (cfgEval)
   { // Apply semantics repeatedly (evaluate)
     MpsTerm *next = current;
@@ -106,20 +115,22 @@ int main(int argc, char **argv)
       next = NULL;
       // Print state
       if (cfgSteps)
-        cout << "******************* Step: *******************\n"
-             << Env2string(env) << "\n"
-             << DefEnv2string(defs) << " in\n"
-             << current->ToString() << endl;
+        (*out) << "******************* Step: *******************\n"
+               << Env2string(env) << "\n"
+               << DefEnv2string(defs) << " in\n"
+               << current->ToString() << endl;
       else if (cfgBuffers)
-        cout << Env2string(env) << endl;
+        (*out) << Env2string(env) << endl;
       // Find next state
       int choices = -1;
       int choice = -1;
       next = current->Step(env,defs,choice,choices);
       if (cfgChoices && choices>0)
-        cout << "*********** Selected Step: " << choice+1 << " of " << choices << " ***********" << endl;
+        (*out) << "*********** Selected Step: " << choice+1 << " of " << choices << " ***********" << endl;
     }
-    cout << "******************* Done! *******************" << endl;
+    (*out) << "******************* Done! *******************" << endl;
   }
+  if (dest!="")
+    delete out;
   delete current;
 }
