@@ -65,13 +65,15 @@ int main(int argc, char **argv)
   if (argFault) // {{{
   {
     cerr << "Syntax: apims '<term>'" << endl;
-    cerr << "    or: apims [-steps] [-buffers] [-choices] [-check] [-nocheck] (-f <file.mps>|<program>)" << endl
+    cerr << "    or: apims [-steps] [-buffers] [-choices] [-check] [-nocheck] [-compile] [-o <file>] (-f <file.mps>|<program>)" << endl
          << "Options:" << endl
          << " -steps: Print each step of the evaluation for debugging" << endl
          << " -buffers: Print the content of the communication buffers" << endl
          << " -choices: Print the step choices" << endl
          << " -check: Perform typecheck but not evaluation" << endl
          << " -nocheck: Perform evaluation without typechecking" << endl
+         << " -compile: Create equivalent C-code" << endl
+         << " -o <file>: Save output to <file>" << endl
          << " -f <file>: Read program source from <file>" << endl
          << " <program>: Give the program source as a command line argument" << endl;
     return -1;

@@ -1997,7 +1997,13 @@ string MpsTerm::Compile () // {{{
   string defs;
   string main;
   Compile(decls,defs,main);
-  return decls + defs + "int main()\n{" + main + "\n}";
+  return (string) "/* Procedure declerations */"
+                + decls
+                + "\n\n/* Procedure definitions */"
+                + defs
+                + "\n\n/* Main process */\nint main()\n{"
+                + main
+                + "\n}";
 } // }}}
 void MpsEnd::Compile(std::string &decls, string &defs, string &main) // Use rule Inact {{{
 {
@@ -2036,7 +2042,7 @@ void MpsBranch::Compile(std::string &decls, string &defs, string &main) // Use r
     branch->second->Compile(decls,defs,main);
     main += "\n  }";
   }
-  main += "\n  else cerr << \"ERROR: UNEXPECTED LABEL " + label + "\" << endl;\n  return -1;";
+  main += "\n  else cerr << \"ERROR: UNEXPECTED LABEL \" << " + label + " << endl;\n  return -1;";
   return;
 } // }}}
 void MpsPar::Compile(std::string &decls, string &defs, string &main) // Use rule Par {{{
@@ -2049,39 +2055,113 @@ void MpsPar::Compile(std::string &decls, string &defs, string &main) // Use rule
   return;
 } // }}}
 void MpsDef::Compile(std::string &decls, string &defs, string &main) // * Use rule Def {{{
-{
+{ // Fixme: include extra arguments (free variables in body)
+  string name=Compile_NewVar("Proc");
+  decls += "\nvoid " + name + "(";
+  bool separator = false;
+  for (int i=0; i<myStateArgs.size(); ++i)
+  { if (separator)
+      decls += ", ";
+    else
+      separator=true;
+    decls += myStateTypes[i]->ToString();
+    decls += " " + myStateArgs[i];
+  }
+  for (int i=0; i<myArgs.size(); ++i)
+  { if (separator)
+      decls += ", ";
+    else
+      separator=true;
+    decls += myTypes[i]->ToString();
+    decls += " " + myArgs[i];
+  }
+  decls += ");";
+  string body;
+  MpsTerm *tmpBody=myBody->PRename(myName,name);
+  tmpBody->Compile(decls,defs,body);
+  delete tmpBody;
+  defs += "\nvoid " + name + "(";
+  separator = false;
+  for (int i=0; i<myStateArgs.size(); ++i)
+  { if (separator)
+      defs += ", ";
+    else
+      separator=true;
+    defs += myStateTypes[i]->ToString();
+    defs += " " + myStateArgs[i];
+  }
+  for (int i=0; i<myArgs.size(); ++i)
+  { if (separator)
+      defs += ", ";
+    else
+      separator=true;
+    defs += myTypes[i]->ToString();
+    defs += " " + myArgs[i];
+  }
+  defs += ")\n\{" + body + "\n}";
+  MpsTerm *tmpSucc=mySucc->PRename(myName,name);
+  tmpSucc->Compile(decls,defs,main);
+  delete tmpSucc;
   return;
 } // }}}
 void MpsCall::Compile(std::string &decls, string &defs, string &main) // * Use rule Var {{{
 {
+  // FIXME: Make call
+  main += "\n  return " + myName + "(";
+  bool separator=false;
+  for (int i=0; i<myState.size(); ++i)
+  { if (separator)
+      main +=", ";
+    else
+      separator=true;
+    main += myState[i]->ToString();
+  }
+  for (int i=0; i<myArgs.size(); ++i)
+  { if (separator)
+      main +=", ";
+    else
+      separator=true;
+    main += myArgs[i]->ToString();
+  }
+  main += ");";
   return;
 } // }}}
 void MpsNu::Compile(std::string &decls, string &defs, string &main) // Use rule Nres {{{
 {
+  // FIXME: Create queues
+  mySucc->Compile(decls,defs,main);
   return;
 } // }}}
 void MpsLink::Compile(std::string &decls, string &defs, string &main) // * Use rules Mcast and Macc {{{
 {
+  // FIXME: Create queues
+  mySucc->Compile(decls,defs,main);
   return;
 } // }}}
 void MpsSync::Compile(std::string &decls, string &defs, string &main) // Use rule Sync {{{
 {
+  // FIXME: Perform Synchronization
   return;
 } // }}}
 void MpsCond::Compile(std::string &decls, string &defs, string &main) // Use rule Cond {{{
 {
+  // FIXME: Create code
   return;
 } // }}}
 void MpsGuiSync::Compile(std::string &decls, string &defs, string &main) // * Use rule Sync (extended) {{{
 {
+  // FIXME: Create code
   return;
 } // }}}
 void MpsGuiValue::Compile(std::string &decls, string &defs, string &main) // Type check name, value and session {{{
 {
+  // FIXME: Create code
+  mySucc->Compile(decls,defs,main);
   return;
 } // }}}
 void MpsAssign::Compile(std::string &decls, string &defs, string &main) // * Check exp has correct type, and check succ in updated sigma {{{
 {
+  // FIXME: Create code
   return;
 } // }}}
 
