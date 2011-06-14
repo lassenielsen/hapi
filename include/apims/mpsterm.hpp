@@ -14,19 +14,20 @@
 namespace apims
 {
 
-/* MpsTerm represents a process in the pi-calculus
- * with multi party session types.
- * This is an abstract superclass.
- * There is a subclass for each process constructor,
- * including the parallel process constructor P | P.
+//! MpsTerm represents a process in the pi-calculus
+//! with multi party session types.
+/*! This is an abstract superclass.
+ *  There is a subclass for each process constructor,
+ *  including the parallel process constructor P | P.
  */
 
 class MpsTerm // {{{
 {
   public:
     virtual ~MpsTerm() {};
-    // Parsing functions
+    //! Function for creating a term from a parsetree
     static MpsTerm *Create(const std::string &exp);
+    //! Function for creating a term from source-code
     static MpsTerm *Create(const dpl::parsed_tree *exp);
 
     // Static verification of communication safety using explicit types
