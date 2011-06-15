@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" href="$classapims_1_1_mps_global_sync_type.html#a7b305ec610db5fec99f4e1e431edb696" title="apims::MpsGlobalSyncType::FEV" alt="" coords="261,5,480,32"/>
+<area shape="rect" href="$classapims_1_1_mps_global_rec_type.html#a7b8a2f4dcc3963a8adb4be9ab89bdb1d" title="apims::MpsGlobalRecType::FEV" alt="" coords="265,56,476,83"/>
+<area shape="rect" href="$classapims_1_1_mps_global_branch_type.html#a3d42c5f18fd95b5c74f4786cfa1064e2" title="apims::MpsGlobalBranchType::FEV" alt="" coords="256,107,485,133"/>
+</map>

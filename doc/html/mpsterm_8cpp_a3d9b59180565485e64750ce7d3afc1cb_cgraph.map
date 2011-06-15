@@ -1,0 +1,8 @@
+<map id="G" name="G">
+<area shape="rect" href="$mpsterm_8cpp.html#a4cab06af6343022f9878817e938659e3" title="AddInputBranch" alt="" coords="185,56,297,83"/>
+<area shape="rect" href="$classapims_1_1_mps_term.html#a44942e5ae1814e5beffde170199bf3f5" title="Function for creating a term from a parsetree." alt="" coords="348,5,511,32"/>
+<area shape="rect" href="$mpsterm_8cpp.html#a6c81fe1c9037f156a31699e6ed5ad76d" title="CreateAssertion" alt="" coords="372,56,487,83"/>
+<area shape="rect" href="$mpsterm_8cpp.html#ade45958faa68e0c25a6da5a5a3172ffd" title="FindGUIArgs" alt="" coords="381,107,477,133"/>
+<area shape="rect" href="$classapims_1_1_mps_exp.html#a8f3878724e148874c0a807843448310b" title="apims::MpsExp::Create" alt="" coords="576,56,733,83"/>
+<area shape="rect" href="$classapims_1_1_mps_msg_type.html#a2afcbc49bf7fc613beaa0841b82f61c8" title="apims::MpsMsgType::Create" alt="" coords="561,107,748,133"/>
+</map>

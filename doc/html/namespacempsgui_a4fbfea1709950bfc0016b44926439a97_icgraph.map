@@ -1,0 +1,6 @@
+<map id="G" name="G">
+<area shape="rect" href="$namespacempsgui.html#aa4eba04183401fe9a6b1294ea8efe5c7" title="mpsgui::gzip" alt="" coords="147,31,243,57"/>
+<area shape="rect" href="$namespacempsgui.html#ae9256269a15dd6f1be844a9e6db36e1b" title="mpsgui::net_send" alt="" coords="292,31,415,57"/>
+<area shape="rect" href="$namespacempsgui.html#a68baa27dc06eb086f318a04ae763d793" title="mpsgui::net_sendfile" alt="" coords="465,5,604,32"/>
+<area shape="rect" href="$namespacempsgui.html#a6cc28d9e8076309884cd0c293571250c" title="mpsgui::server" alt="" coords="655,31,759,57"/>
+</map>

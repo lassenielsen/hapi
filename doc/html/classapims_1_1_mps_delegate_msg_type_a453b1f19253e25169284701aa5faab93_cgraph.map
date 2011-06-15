@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" href="$classapims_1_1_mps_delegate_msg_type.html#a91d6d5e2d288f9b64c346b866a516635" title="apims::MpsDelegateMsgType::GetLocalType" alt="" coords="289,5,569,32"/>
+<area shape="rect" href="$classapims_1_1_mps_delegate_msg_type.html#aa637f86154cdc42cb9acc3feaa1c973f" title="apims::MpsDelegateMsgType::GetMaxpid" alt="" coords="297,56,561,83"/>
+<area shape="rect" href="$classapims_1_1_mps_delegate_msg_type.html#abae6b42c55bde82f77f50ea9bc03dfe4" title="apims::MpsDelegateMsgType::GetPid" alt="" coords="309,107,549,133"/>
+</map>

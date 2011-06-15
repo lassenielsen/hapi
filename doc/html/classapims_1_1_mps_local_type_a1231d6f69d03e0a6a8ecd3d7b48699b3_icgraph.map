@@ -1,0 +1,7 @@
+<map id="G" name="G">
+<area shape="rect" href="$classapims_1_1_mps_local_rec_type.html#abf75120d30aaabec988eea29e1bad51d" title="apims::MpsLocalRecType::Merge" alt="" coords="260,5,476,32"/>
+<area shape="rect" href="$classapims_1_1_mps_local_forall_type.html#a40fff8ed66dc826eb0a387c963d15536" title="apims::MpsLocalForallType::Merge" alt="" coords="256,56,480,83"/>
+<area shape="rect" href="$classapims_1_1_mps_local_rcv_type.html#aad1c2168dc0db22dd69dbd13c766747d" title="apims::MpsLocalRcvType::Merge" alt="" coords="261,107,475,133"/>
+<area shape="rect" href="$classapims_1_1_mps_local_send_type.html#a0c6a7d3898e6e71e7838b7fa9b0e0303" title="apims::MpsLocalSendType::Merge" alt="" coords="257,157,479,184"/>
+<area shape="rect" href="$classapims_1_1_mps_global_branch_type.html#a1fab50a4532cedd0a2424b2bde9e7779" title="apims::MpsGlobalBranchType::Project" alt="" coords="247,208,489,235"/>
+</map>

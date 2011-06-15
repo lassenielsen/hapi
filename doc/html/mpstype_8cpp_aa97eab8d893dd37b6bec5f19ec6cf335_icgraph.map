@@ -1,0 +1,11 @@
+<map id="G" name="G">
+<area shape="rect" href="$classapims_1_1_mps_local_sync_type.html#af28e72a258ca229261a51b4cb6c83157" title="apims::MpsLocalSyncType::Merge" alt="" coords="183,5,404,32"/>
+<area shape="rect" href="$classapims_1_1_mps_local_end_type.html#ac081aa0352eff899f36861ac3141550e" title="apims::MpsLocalEndType::Merge" alt="" coords="185,56,401,83"/>
+<area shape="rect" href="$classapims_1_1_mps_local_var_type.html#a45e7cc715a86d4ae5af83640a41c672d" title="apims::MpsLocalVarType::Merge" alt="" coords="188,107,399,133"/>
+<area shape="rect" href="$classapims_1_1_mps_local_rec_type.html#abf75120d30aaabec988eea29e1bad51d" title="apims::MpsLocalRecType::Merge" alt="" coords="185,157,401,184"/>
+<area shape="rect" href="$classapims_1_1_mps_local_branch_type.html#a30314af19c62f2a100af41938cbe3ec8" title="apims::MpsLocalBranchType::Merge" alt="" coords="177,208,409,235"/>
+<area shape="rect" href="$classapims_1_1_mps_local_select_type.html#adaa8a885dd094da5f9a8c4fb4d110640" title="apims::MpsLocalSelectType::Merge" alt="" coords="179,259,408,285"/>
+<area shape="rect" href="$classapims_1_1_mps_local_forall_type.html#a40fff8ed66dc826eb0a387c963d15536" title="apims::MpsLocalForallType::Merge" alt="" coords="181,309,405,336"/>
+<area shape="rect" href="$classapims_1_1_mps_local_rcv_type.html#aad1c2168dc0db22dd69dbd13c766747d" title="apims::MpsLocalRcvType::Merge" alt="" coords="187,360,400,387"/>
+<area shape="rect" href="$classapims_1_1_mps_local_send_type.html#a0c6a7d3898e6e71e7838b7fa9b0e0303" title="apims::MpsLocalSendType::Merge" alt="" coords="183,411,404,437"/>
+</map>

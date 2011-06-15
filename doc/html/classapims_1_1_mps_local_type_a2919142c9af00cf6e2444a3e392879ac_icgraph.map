@@ -1,0 +1,7 @@
+<map id="G" name="G">
+<area shape="rect" href="$classapims_1_1_mps_delegate_local_msg_type.html#a4502929f676121722d8505a43af9f09f" title="apims::MpsDelegateLocalMsgType::FGV" alt="" coords="239,5,497,32"/>
+<area shape="rect" href="$classapims_1_1_mps_local_rec_type.html#a4213eb15b9a9d0424da27612aaf4e22a" title="apims::MpsLocalRecType::FGV" alt="" coords="265,56,471,83"/>
+<area shape="rect" href="$classapims_1_1_mps_local_forall_type.html#a5b78c0033afe90c8123a0cbb7141706e" title="apims::MpsLocalForallType::FGV" alt="" coords="260,107,476,133"/>
+<area shape="rect" href="$classapims_1_1_mps_local_rcv_type.html#aba630ae9e4ddf2e5cc3d188cf5f312b0" title="apims::MpsLocalRcvType::FGV" alt="" coords="267,157,469,184"/>
+<area shape="rect" href="$classapims_1_1_mps_local_send_type.html#a8d353337b9d961953d0193a3306c2543" title="apims::MpsLocalSendType::FGV" alt="" coords="261,208,475,235"/>
+</map>
