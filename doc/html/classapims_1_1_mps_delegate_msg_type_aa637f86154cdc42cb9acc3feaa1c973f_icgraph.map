@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classapims_1_1_mps_delegate_global_msg_type.html#a1d5e358b9908df363f8a9f967165f3f0" title="apims::MpsDelegateGlobalMsgType::Copy" alt="" coords="319,5,585,32"/>
-<area shape="rect" href="$classapims_1_1_mps_delegate_local_msg_type.html#a0d876541b21cf3c9f4eb389a83e32fd5" title="apims::MpsDelegateLocalMsgType::Copy" alt="" coords="321,56,583,83"/>
-<area shape="rect" href="$classapims_1_1_mps_delegate_msg_type.html#a453b1f19253e25169284701aa5faab93" title="apims::MpsDelegateMsgType::Equal" alt="" coords="335,107,569,133"/>
-<area shape="rect" href="$classapims_1_1_mps_def.html#a701283e6eb4b7f715937c08fb3b7f5e5" title="apims::MpsDef::TypeCheck" alt="" coords="361,157,543,184"/>
-<area shape="rect" href="$classapims_1_1_mps_rcv.html#a5a3ff528e3d9a7979c235c6f807b1bb1" title="apims::MpsRcv::TypeCheck" alt="" coords="360,208,544,235"/>
-</map>

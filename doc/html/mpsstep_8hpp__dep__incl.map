@@ -1,9 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$mpsterm_8hpp.html" title="include/apims/mpsterm.hpp" alt="" coords="696,80,877,107"/>
-<area shape="rect" href="$mpsstep_8cpp.html" title="source/mpsstep.cpp" alt="" coords="1053,155,1192,181"/>
-<area shape="rect" href="$apims_8cpp.html" title="programs/source/apims.cpp" alt="" coords="5,155,187,181"/>
-<area shape="rect" href="$apims__step_8cpp.html" title="programs/source/apims_step.cpp" alt="" coords="211,155,424,181"/>
-<area shape="rect" href="$apims__validexp_8cpp.html" title="programs/source/apims_validexp.cpp" alt="" coords="448,155,683,181"/>
-<area shape="rect" href="$mpsfunction_8cpp.html" title="source/mpsfunction.cpp" alt="" coords="707,155,867,181"/>
-<area shape="rect" href="$mpsterm_8cpp.html" title="source/mpsterm.cpp" alt="" coords="891,155,1029,181"/>
-</map>

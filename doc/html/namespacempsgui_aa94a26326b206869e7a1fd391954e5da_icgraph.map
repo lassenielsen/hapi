@@ -1,6 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classapims_1_1_mps_gui_value.html#aa6af03791d6ecf662f6c6d1aaeeca837" title="apims::MpsGuiValue::ApplyOther" alt="" coords="185,5,399,32"/>
-<area shape="rect" href="$classmpsgui_1_1_mps_choice_gui.html#a720c819f3c80bf729723fae83a23c4da" title="mpsgui::MpsChoiceGui::GetChoice" alt="" coords="180,56,404,83"/>
-<area shape="rect" href="$classmpsgui_1_1_mps_participant_gui.html#a471c91a28c6ac425fb7718b58430092c" title="mpsgui::MpsParticipantGui::GetChoices" alt="" coords="455,56,708,83"/>
-<area shape="rect" href="$classmpsgui_1_1_mps_session_gui.html#a5c49ddc0bceb785de94fda42b998b9ef" title="mpsgui::MpsSessionGui::GetChoices" alt="" coords="757,56,997,83"/>
-</map>

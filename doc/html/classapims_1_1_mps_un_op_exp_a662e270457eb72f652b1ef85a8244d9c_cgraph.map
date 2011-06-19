@@ -1,5 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classapims_1_1_mps_exp.html#adbd4c2e2cd3074ccfecca4c4a97f1149" title="apims::MpsExp::Eval" alt="" coords="277,5,421,32"/>
-<area shape="rect" href="$classapims_1_1_mps_bool_val.html#af9e3f4c6cf3ef38a7f45af9a2550db0e" title="apims::MpsBoolVal::GetValue" alt="" coords="252,56,447,83"/>
-<area shape="rect" href="$classapims_1_1_mps_un_op_exp.html#a931b21b6895aaf80ade08538c53e7dfe" title="apims::MpsUnOpExp::MpsUnOpExp" alt="" coords="232,107,467,133"/>
-</map>

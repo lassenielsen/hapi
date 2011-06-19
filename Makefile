@@ -43,7 +43,15 @@ default:
 
 all: config build install clean
 
-phony: default config build install uninstall clean tags package deb
+phony: default doc config build install uninstall clean tags package deb
+
+doc: doc/html
+
+doc/html: include/apims/*.hpp source/*.cpp
+	mkdir -p doc/html
+	rm -Rf doc/html
+	mkdir -p doc/html
+	doxygen Doxyfile
 
 config:
 ifeq ($(OS),linux)

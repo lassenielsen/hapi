@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classapims_1_1_mps_bin_op_exp.html#a669ac4f4f4bc16536ab77dd73ecbf3d6" title="apims::MpsBinOpExp::GetLeft" alt="" coords="291,5,488,32"/>
-<area shape="rect" href="$classapims_1_1_mps_bin_op_exp.html#a1290f01713987a6a7e4e8a58820e00ae" title="apims::MpsBinOpExp::GetOp" alt="" coords="292,56,487,83"/>
-<area shape="rect" href="$classapims_1_1_mps_bin_op_exp.html#a78be60d83fb36f26be4d5956a05d1bf7" title="apims::MpsBinOpExp::GetRight" alt="" coords="285,107,493,133"/>
-<area shape="rect" href="$classapims_1_1_mps_exp.html#a9d534594d6c86d9f125d2d220a219a37" title="apims::MpsExp::MakeCNF" alt="" coords="300,157,479,184"/>
-<area shape="rect" href="$classapims_1_1_mps_bin_op_exp.html#af3b9ce25c2e338e46cbbf7dc99ee3cfa" title="apims::MpsBinOpExp::MpsBinOpExp" alt="" coords="269,208,509,235"/>
-</map>

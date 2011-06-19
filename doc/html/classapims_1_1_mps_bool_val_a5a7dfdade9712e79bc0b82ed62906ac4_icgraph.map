@@ -1,6 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classapims_1_1_mps_bool_val.html#adcd132d9cd32c9c3296f4f9ae08c0ec4" title="apims::MpsBoolVal::Copy" alt="" coords="271,31,441,57"/>
-<area shape="rect" href="$classapims_1_1_mps_bool_val.html#adecc69f5fc0021501a36eae48dc91f5f" title="apims::MpsBoolVal::Negate" alt="" coords="265,81,447,108"/>
-<area shape="rect" href="$classapims_1_1_mps_bool_val.html#a9bd56ceeb90a8a0c61690e4ecbfcb7a5" title="apims::MpsBoolVal::Eval" alt="" coords="513,5,679,32"/>
-<area shape="rect" href="$classapims_1_1_mps_bool_val.html#aaf69ac5bd7884a87ad9223c098bd75e5" title="apims::MpsBoolVal::MakeCNF" alt="" coords="496,56,696,83"/>
-</map>

@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classapims_1_1_mps_local_type.html#aa8fb9e00701283cd6a43cb7d8d8a611d" title="apims::MpsLocalType::LRename" alt="" coords="271,5,481,32"/>
-<area shape="rect" href="$classapims_1_1_mps_local_type.html#a1231d6f69d03e0a6a8ecd3d7b48699b3" title="apims::MpsLocalType::Merge" alt="" coords="280,56,472,83"/>
-<area shape="rect" href="$mpstype_8cpp.html#aa97eab8d893dd37b6bec5f19ec6cf335" title="MERGE_ERROR" alt="" coords="315,107,437,133"/>
-<area shape="rect" href="$classapims_1_1_mps_local_type.html#ab0e787e5a4fd9f7ee804f60c76d2032f" title="apims::MpsLocalType::NewLVar" alt="" coords="532,81,737,108"/>
-<area shape="rect" href="$classapims_1_1_mps_local_type.html#af08f22e03a1343a67ac5e6f82e12bf90" title="apims::MpsLocalType::ToString" alt="" coords="533,132,736,159"/>
-</map>

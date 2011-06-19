@@ -1,3 +1,4 @@
+// DOCUMENTATION: mpsterm.hpp {{{
 /*! \file
  * This file declares the MpsTerm class used to represent terms (processes) in
  * the Asynchronous PI-calculus with multiparty sessions ans symmetric
@@ -5,7 +6,23 @@
  *
  * The MpsTerm class is itself an abstract class, with a subclass for each
  * process constructor.
+ *
+ * MpsTerm objects can be created from a sourcecode string or parsetree using
+ * the static Create methods.
+ *
+ * The operations such as substitution, typechecking, finding the possible
+ * steps and finding the destination term after a step is declared as abstract
+ * methods in the MpsTerm class, and implemented for each subclass.
+ *
+ * The typical lifespan of MpsTerm objects is to be created from a sourcecode
+ * string using Create.
+ * Then the object it typechecked using the TypeCheck method.
+ * If the typechecking succeeds, then the possible steps are found.
+ * If the term can step, one of the possible steps is selected (posibly
+ * randomly), and the destination term is found using the Apply method on the
+ * step object. This is repeated until there are no possible steps.
  */
+// }}}
 #ifndef MPSTERM_HPP
 #define MPSTERM_HPP
 
@@ -19,9 +36,22 @@
 #include <apims/mpsstep.hpp>
 #include <apims/mpstype.hpp>
 
+// DOCUMENTATION: apims {{{
+/*! \namespace apims
+ * apims is the namespace containing the basic functionality of the libapims
+ * library.
+ *
+ * apims contains the classes for representing channels, expressions, events,
+ * types, terms (processes), procedures and steps.
+ *
+ * Extra functionality such as GUI implementations should use a different
+ * namespace such as mpsgui.
+ */
+// }}}
 namespace apims
 {
 
+// DOCUMENTATION: MpsTerm {{{
 /*!
  * MpsTerm represents a process in the asynchronous pi-calculus with multi
  * party session types.
@@ -29,59 +59,96 @@ namespace apims
  * The MpsTerm class is itself an abstract class, with a subclass for each
  * process constructor.
  */
+// }}}
 class MpsTerm // {{{
 {
   public:
     virtual ~MpsTerm() {};
+    // DOCUMENTATION: MpsTerm::Create {{{
     /*!
      * Creates a MpsTerm object frem a sourcecode string
+     * @param exp The sourcecode string describing a process.
+     * @result A MpsTerm object representing the described process.
      */
+    // }}}
     static MpsTerm *Create(const std::string &exp);
+    // DOCUMENTATION: MpsTerm::Create {{{
     /*!
      * Creates a MpsTerm object from a parsetree
+     * @param exp The parsetree describing a process.
+     * @result A MpsTerm object representing the described process.
      */
+    // }}}
     static MpsTerm *Create(const dpl::parsed_tree *exp);
 
-    /*!
-     * Static verification of communication safety using explicit types
-     */
+    // DOCUMENTATION: MpsTerm::TypeCheck {{{
+    //! Static verification of communication safety using explicit types
+    //! @result Returns true if the process is well typed, and false otherwise.
+    // }}}
     bool TypeCheck();
+    // DOCUMENTATION: MpsTerm::TypeCheck {{{
+    //!
+    //!Static verification of communication safety using explicit types
+    //!
+    //!Implementation of the judgement: Theta;Gamma |- P |> Delta.
+    //!Notice that the Gamma from the judgement has been split into
+    //!Gamma containing the global typeed names,
+    //!Sigma containing the simply typped names and
+    //!Omega containing the procedure names and types.
+    //!
+    //!@param Theta The current assertion (the currently asserted expression)
+    //!@param Gamma The global channel environment
+    //!@param Delta The session environment
+    //!@param Sigma The simple type environment
+    //!@param Omega The process environment
+    //!@result Returns true if the process is well typed, and false otherwise.
+    // }}}
     virtual bool TypeCheck(const MpsExp &Theta,
                            const MpsGlobalEnv &Gamma,
                            const MpsLocalEnv &Delta,
                            const MpsMsgEnv &Sigma,
                            const MpsProcEnv &Omega) = 0;
 
-    /*!
-     * Creates equivalent C code.
-     * This functionality is not yet fully implemented.
-     */
+    // DOCUMENTATION: MpsTerm::Compile {{{
+    //! Creates equivalent C code.
+    //! This functionality is not yet fully implemented.
+    // }}}
     std::string Compile();
+    // DOCUMENTATION: MpsTerm::Compile {{{
+    //! Creates  function declarations, function definitions and main body for equivalent C code.
+    //! This functionality is not yet fully implemented.
+    //! @param decls String to put the function declarations in.
+    //! @param defs String to tut the function definitions in.
+    //! @param main String to put the main body in.
+    // }}}
     virtual void Compile(std::string &decls, std::string &defs, std::string &main) = 0;
 
-    /*!
-     * Randomly selects one of the possible steps, and return the reached
-     * process.  The environments are updated according to the selected step.
-     * @param choice If choice is between 0 and the number of possible steps,
-     * then the given step is used. Otherwise a random step is used, and choice
-     * is updated to the used index.
-     * @param choices When returning, choices is set to the number of possible
-     * steps.
-     */
+    // DOCUMENTATION: MpsTerm::Step {{{
+    //! Selects one of the possible steps, and return the reached ! process.
+    //! The environments are updated according to the selected step.
+    //! @param env The environment of the process.
+    //! @param choice If choice is between 0 and the number of possible steps,
+    //! then the given step is used. Otherwise a random step is used, and choice
+    //! is updated to the used index.
+    //! @param choices When returning, choices is set to the number of possible
+    //! steps.
+    //! @result A term representing the destination process. This is a new
+    //! object, and not the original MpsTerm object with updates.
+    // }}}
     MpsTerm *Step(MpsEnv &env, 
                   std::vector<MpsFunction> &defs,
                   int &choice, int &choices);
-    /*!
-     * Create a complete list of possible steps.
-     * (env is const, but a technicality makes it unpractical to declare it)
-     */
+    // DOCUMENTATION: MpsTerm::Steps {{{
+    //! Create a complete list of possible steps.
+    //! (env is const, but a technicality makes it unpractical to declare it)
+    // }}}
     void Steps(MpsEnv &env,
                const std::vector<MpsFunction> &defs,
                std::vector<MpsStep> &dest);
-    /*!
-     * Create a complete list of all possible partial steps.
-     * (env is const, but a technicality makes it unpractical to declare it)
-     */
+    // DOCUMENTATION: MpsTerm::SubSteps {{{
+    //! Create a complete list of all possible partial steps.
+    //! (env is const, but a technicality makes it unpractical to declare it)
+    // }}}
     virtual bool SubSteps(std::vector<MpsStep> &dest) = 0;
 
     //! Apply a receive-message step.
@@ -133,15 +200,23 @@ class MpsTerm // {{{
     //! Make syntactic correct (parsable) string representation of the process
     virtual std::string ToString(std::string indent="") const = 0;
 
-    //! Create a (completely) new process name. This is obtained by creating names that cannot be used as process names in the syntax.
-    static std::string NewName(std::string="X");
+    // DOCUMENTATION: MpsTerm::NewName {{{
+    //! Create a (completely) new process name. This is obtained by creating
+    //! names that cannot be used as process names in the syntax.
+    //! @param base The basename used to generate the new name. The generated
+    //! name will contain the basename, and this is used for fast and intuitively
+    //! tracking a variable though steps involving alpha-renaming.
+    // }}}
+    static std::string NewName(std::string base="X");
     static MpsTerm *Error(const std::string &msg);
   protected:
     static int ourNextId;
 }; // }}}
+// DOCUMENTATION: MpsEnd {{{
 /*!
  * MpsEnd objects represent the (sucessfully) terminated process.
  */
+// }}}
 class MpsEnd : public MpsTerm // {{{
 {
   public:
@@ -172,9 +247,11 @@ class MpsEnd : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
 }; // }}}
+// DOCUMENTATION: MpsSnd {{{
 /*!
  * MpsSnd is a message-sending process.
  */
+// }}}
 class MpsSnd : public MpsTerm // {{{
 {
   public:
@@ -207,9 +284,11 @@ class MpsSnd : public MpsTerm // {{{
     MpsExp *myExp;
     MpsTerm *mySucc;
 }; // }}}
+// DOCUMENTATION: MpsRcv {{{
 /*!
  * MpsSnd is a message-receiving process.
  */
+// }}}
 class MpsRcv : public MpsTerm // {{{
 {
   public:
@@ -242,9 +321,11 @@ class MpsRcv : public MpsTerm // {{{
     std::string myDest;
     MpsTerm *mySucc;
 }; // }}}
+// DOCUMENTATION: MpsSelect {{{
 /*!
  * MpsSelect is a label-sending process.
  */
+// }}}
 class MpsSelect : public MpsTerm // {{{
 {
   public:
@@ -277,9 +358,11 @@ class MpsSelect : public MpsTerm // {{{
     std::string myLabel;
     MpsTerm *mySucc;
 }; // }}}
+// DOCUMENTATION: MpsBranch {{{
 /*!
  * MpsBranch is a label-receiving (and branching, like a case) process.
  */
+// }}}
 class MpsBranch : public MpsTerm // {{{
 {
   public:
@@ -312,9 +395,11 @@ class MpsBranch : public MpsTerm // {{{
     std::map< std::string, MpsTerm*> myBranches;
     std::map< std::string, MpsExp*> myAssertions;
 }; // }}}
+// DOCUMENTATION: MpsPar {{{
 /*!
  * MpsPar is the parallel compisition of two processes.
  */
+// }}}
 class MpsPar : public MpsTerm // {{{
 {
   public:
@@ -354,9 +439,11 @@ class MpsPar : public MpsTerm // {{{
     MpsTerm *myLeft;
     MpsTerm *myRight;
 }; // }}}
+// DOCUMENTATION: MpsDef {{{
 /*!
  * MpsDef defines a (possibly) recursive procedure.
  */
+// }}}
 class MpsDef : public MpsTerm // {{{
 {
   public:
@@ -393,9 +480,11 @@ class MpsDef : public MpsTerm // {{{
     MpsTerm *myBody;
     MpsTerm *mySucc;
 }; // }}}
+// DOCUMENTATION: MpsCall {{{
 /*!
  * MpsCall is a procedure-call.
  */
+// }}}
 class MpsCall : public MpsTerm // {{{
 {
   public:
@@ -428,9 +517,11 @@ class MpsCall : public MpsTerm // {{{
     std::vector<MpsExp*> myState;
     std::vector<MpsExp*> myArgs;
 }; // }}}
+// DOCUMENTATION: MpsNu {{{
 /*!
  * MpsNu defines a new channel. The scope of the channel is restricted to the contained process.
  */
+// }}}
 class MpsNu : public MpsTerm // {{{
 {
   public:
@@ -464,9 +555,11 @@ class MpsNu : public MpsTerm // {{{
     MpsTerm *mySucc;
     MpsGlobalType *myType;
 }; // }}}
+// DOCUMENTATION: MpsLink {{{
 /*!
  * MpsLink creates a new session. If the session involves n participant the process waits for the other (n-1) participants before proceeding.
  */
+// }}}
 class MpsLink : public MpsTerm // {{{
 {
   public:
@@ -501,9 +594,11 @@ class MpsLink : public MpsTerm // {{{
     int myMaxpid;
     int myPid;
 }; // }}}
+// DOCUMENTATION: MpsSync {{{
 /*!
  * MpsSync performs a symmetric synchronization with the other participants in the session.
  */
+// }}}
 class MpsSync : public MpsTerm // {{{
 {
   public:
@@ -537,9 +632,11 @@ class MpsSync : public MpsTerm // {{{
     int myMaxpid;
     std::map<std::string, MpsExp*> myAssertions;
 }; // }}}
+// DOCUMENTATION: MpsCond {{{
 /*!
  * MpsCond is a standard if-then-else branching.
  */
+// }}}
 class MpsCond : public MpsTerm // {{{
 {
   public:
@@ -584,9 +681,11 @@ class inputbranch // {{{
     std::vector< MpsMsgType* > types;
     std::vector< MpsExp* > values;
 }; // }}}
+// DOCUMENTATION: MpsGuiSync {{{
 /*!
- * MpsGuiCond is a symmetric synchronization, that integrated with the UI module.
+ * MpsGuiSync is a symmetric synchronization, that integrated with the UI module.
  */
+// }}}
 class MpsGuiSync : public MpsTerm // {{{
 {
   public:
@@ -620,9 +719,11 @@ class MpsGuiSync : public MpsTerm // {{{
     int myMaxpid;
     int myPid;
 }; // }}}
+// DOCUMENTATION: MpsGuiValue {{{
 /*!
  * MpsGuiValue sends information to the user via the UI module.
  */
+// }}}
 class MpsGuiValue : public MpsTerm // {{{
 {
   public:
@@ -658,9 +759,16 @@ class MpsGuiValue : public MpsTerm // {{{
     int myMaxpid;
     int myPid;
 }; // }}}
+// DOCUMENTATION: MpsAssign {{{
 /*!
  * MpsAssign represents a let x=E in P process.
+ *
+ * The assign construct is not explicit in the formal pi-calculus, but can be
+ * represented in the formal pi-calculus by the term P[E/x].
+ * The assign construct allows some processes to be constructed simpler and
+ * more intuitively.
  */
+// }}}
 class MpsAssign : public MpsTerm // {{{
 {
   public:

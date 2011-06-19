@@ -1,6 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classapims_1_1_mps_assign.html#a02e2a3650304b436b6e0d20955b91a8d" title="apims::MpsAssign::TypeCheck" alt="" coords="251,5,453,32"/>
-<area shape="rect" href="$classapims_1_1_mps_call.html#a52d4b9fedd2165880a67d78fe7b56771" title="apims::MpsCall::TypeCheck" alt="" coords="260,56,444,83"/>
-<area shape="rect" href="$classapims_1_1_mps_rcv.html#a5a3ff528e3d9a7979c235c6f807b1bb1" title="apims::MpsRcv::TypeCheck" alt="" coords="260,107,444,133"/>
-<area shape="rect" href="$classapims_1_1_mps_snd.html#a7cbc0a453bfd1b43d50bcc6fdfb645c4" title="apims::MpsSnd::TypeCheck" alt="" coords="260,157,444,184"/>
-</map>

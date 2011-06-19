@@ -1,5 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classapims_1_1_mps_local_rcv_type.html#a146b038cfb57181750a7b526a8c33804" title="apims::MpsLocalRcvType::FEV" alt="" coords="235,5,437,32"/>
-<area shape="rect" href="$classapims_1_1_mps_local_send_type.html#abd807f12e4d150aaf10f412c0dc7ec84" title="apims::MpsLocalSendType::FEV" alt="" coords="231,56,441,83"/>
-<area shape="rect" href="$classapims_1_1_mps_global_msg_type.html#af2153c86c9edd0bff8f0b295aa2089b5" title="apims::MpsGlobalMsgType::FEV" alt="" coords="229,107,443,133"/>
-</map>

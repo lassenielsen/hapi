@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$mpsterm_8cpp.html#a56276caef326b182efb6a62311b00454" title="AddBranch" alt="" coords="176,5,261,32"/>
-<area shape="rect" href="$mpstype_8cpp.html#a6bfc637dc93f6c282c450fe99c485eac" title="FindGlobalBranches" alt="" coords="149,56,288,83"/>
-<area shape="rect" href="$mpstype_8cpp.html#a7bd9b580b77d4338d9590bbb7a6e6e08" title="FindLocalBranches" alt="" coords="153,107,284,133"/>
-<area shape="rect" href="$mpstype_8cpp.html#ad7e47537432760c637fc066c2381dd15" title="SetAssertion" alt="" coords="171,157,267,184"/>
-<area shape="rect" href="$mpsterm_8cpp.html#a4017dc37cd872c54e26c07b563094832" title="FindBranches" alt="" coords="336,5,437,32"/>
-</map>

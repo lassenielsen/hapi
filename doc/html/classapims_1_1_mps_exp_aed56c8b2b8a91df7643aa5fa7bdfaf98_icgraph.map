@@ -1,8 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classapims_1_1_mps_assign.html#a02e2a3650304b436b6e0d20955b91a8d" title="apims::MpsAssign::TypeCheck" alt="" coords="247,5,449,32"/>
-<area shape="rect" href="$classapims_1_1_mps_gui_value.html#a6943af3752c08d49676b41bc9dd6b651" title="apims::MpsGuiValue::TypeCheck" alt="" coords="241,56,455,83"/>
-<area shape="rect" href="$classapims_1_1_mps_gui_sync.html#a2c945c22eedcd8ea8ad873406e02654e" title="apims::MpsGuiSync::TypeCheck" alt="" coords="243,107,453,133"/>
-<area shape="rect" href="$classapims_1_1_mps_cond.html#ab3f91194b917a084994be8e636c84b6a" title="apims::MpsCond::TypeCheck" alt="" coords="252,157,444,184"/>
-<area shape="rect" href="$classapims_1_1_mps_snd.html#a7cbc0a453bfd1b43d50bcc6fdfb645c4" title="apims::MpsSnd::TypeCheck" alt="" coords="256,208,440,235"/>
-<area shape="rect" href="$classmpsgui_1_1_mps_arg_gui.html#a9411d550a74d05b8a55a9b806c658cd2" title="mpsgui::MpsArgGui::ValidArg" alt="" coords="252,259,444,285"/>
-</map>

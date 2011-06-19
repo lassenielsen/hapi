@@ -1,8 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$mpsexp_8cpp.html#a4c94660c67a563a0782d7b90562fa690" title="LK_Axiom" alt="" coords="259,5,339,32"/>
-<area shape="rect" href="$classapims_1_1_mps_call.html#a42af5a6476c8b4a245235436db68c72e" title="apims::MpsCall::~MpsCall" alt="" coords="212,56,385,83"/>
-<area shape="rect" href="$classapims_1_1_mps_def.html#abb36096adec2e5bfa82dd5f67cd722e2" title="apims::MpsDef::~MpsDef" alt="" coords="215,107,383,133"/>
-<area shape="rect" href="$classapims_1_1_mps_global_var_type.html#a58f1e083fb00426a802d045f925773ee" title="apims::MpsGlobalVarType::~MpsGlobalVarType" alt="" coords="149,157,448,184"/>
-<area shape="rect" href="$classapims_1_1_mps_local_var_type.html#a1c6e51c9736cfd2a8571720b2654715b" title="apims::MpsLocalVarType::~MpsLocalVarType" alt="" coords="156,208,441,235"/>
-<area shape="rect" href="$classapims_1_1_mps_tuple_msg_type.html#a9088c37df66292d07ee67088a9f2b234" title="apims::MpsTupleMsgType::~MpsTupleMsgType" alt="" coords="149,259,448,285"/>
-</map>

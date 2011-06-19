@@ -1,9 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$mpsterm_8cpp.html#a882d58e7d4d5c0aeb4c482e08a376a96" title="TypeCheckRec" alt="" coords="288,132,397,159"/>
-<area shape="rect" href="$classapims_1_1_mps_gui_sync.html#a2c945c22eedcd8ea8ad873406e02654e" title="apims::MpsGuiSync::TypeCheck" alt="" coords="447,5,657,32"/>
-<area shape="rect" href="$classapims_1_1_mps_sync.html#a3b737736be353634e2ac8692ecea6a62" title="apims::MpsSync::TypeCheck" alt="" coords="456,56,648,83"/>
-<area shape="rect" href="$classapims_1_1_mps_branch.html#a29f51eb3e76878f0b98b38fbb62bca03" title="apims::MpsBranch::TypeCheck" alt="" coords="451,107,653,133"/>
-<area shape="rect" href="$classapims_1_1_mps_select.html#afcb61940c0e7249077d9a55a710d8719" title="apims::MpsSelect::TypeCheck" alt="" coords="452,157,652,184"/>
-<area shape="rect" href="$classapims_1_1_mps_rcv.html#a5a3ff528e3d9a7979c235c6f807b1bb1" title="apims::MpsRcv::TypeCheck" alt="" coords="460,208,644,235"/>
-<area shape="rect" href="$classapims_1_1_mps_snd.html#a7cbc0a453bfd1b43d50bcc6fdfb645c4" title="apims::MpsSnd::TypeCheck" alt="" coords="460,259,644,285"/>
-</map>

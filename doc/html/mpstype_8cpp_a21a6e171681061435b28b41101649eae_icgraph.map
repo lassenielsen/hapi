@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classapims_1_1_mps_global_sync_type.html#a522ebbfc2fcbd2790b102bffbe768c84" title="apims::MpsGlobalSyncType::Equal" alt="" coords="207,5,431,32"/>
-<area shape="rect" href="$classapims_1_1_mps_global_var_type.html#ac4b562b4b1c1a66bad118b9535444dda" title="apims::MpsGlobalVarType::Equal" alt="" coords="212,56,425,83"/>
-<area shape="rect" href="$classapims_1_1_mps_global_rec_type.html#a97c0c0bf2083ac3d94aa0df30b425e3c" title="apims::MpsGlobalRecType::Equal" alt="" coords="209,107,428,133"/>
-<area shape="rect" href="$classapims_1_1_mps_global_branch_type.html#a3d444edfb0a51052825dc4f710229a09" title="apims::MpsGlobalBranchType::Equal" alt="" coords="201,157,436,184"/>
-<area shape="rect" href="$classapims_1_1_mps_global_msg_type.html#a17374d618d79d6dacb5ec041b5f34206" title="apims::MpsGlobalMsgType::Equal" alt="" coords="209,208,428,235"/>
-</map>

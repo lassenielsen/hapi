@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$namespacempsgui.html#aac5579c73ea7f0ce129d41ab5b0a8c20" title="mpsgui::GetData" alt="" coords="173,31,293,57"/>
-<area shape="rect" href="$namespacempsgui.html#abae5e150388fe8c49cacdae715b3a403" title="mpsgui::extract_possibleid" alt="" coords="341,5,517,32"/>
-<area shape="rect" href="$namespacempsgui.html#a3e9e3fb9211548a9c848a0678160ae04" title="mpsgui::url_decode" alt="" coords="363,56,496,83"/>
-<area shape="rect" href="$namespacempsgui.html#a454b95d20d18e0b82abac72be3ba8051" title="mpsgui::hexval" alt="" coords="567,31,673,57"/>
-<area shape="rect" href="$namespacempsgui.html#a334408fde24d01a2f932b60c0ab7658e" title="mpsgui::ishex" alt="" coords="569,81,671,108"/>
-</map>

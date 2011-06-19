@@ -1,8 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$mpstype_8cpp.html#a10350df8a56bb3c86e807908ab9f1da3" title="CompareAssertions" alt="" coords="288,5,424,32"/>
-<area shape="rect" href="$classapims_1_1_mps_exp.html#ae06ff55fd896f39b435f2410548335f5" title="apims::MpsExp::Copy" alt="" coords="281,56,431,83"/>
-<area shape="rect" href="$mpstype_8cpp.html#a21a6e171681061435b28b41101649eae" title="ERROR_GLOBALEQ" alt="" coords="284,107,428,133"/>
-<area shape="rect" href="$classapims_1_1_mps_exp.html#a2bfdd3e88cd23f04cd3d7199b5207dcc" title="apims::MpsExp::ValidExp" alt="" coords="500,5,671,32"/>
-<area shape="rect" href="$classapims_1_1_mps_global_type.html#a6a608dbff02d90018e54fdf989320a3c" title="apims::MpsGlobalType::ToString" alt="" coords="481,81,689,108"/>
-<area shape="rect" href="$classapims_1_1_mps_exp.html#a74702f5dbe505faf85f7f0dfc6c4eb03" title="apims::MpsExp::ToString" alt="" coords="501,132,669,159"/>
-</map>
