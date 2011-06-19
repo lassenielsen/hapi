@@ -1,3 +1,27 @@
+// DOCUMENTATION: Main page {{{
+/*! \mainpage Introduction
+ * This is the documentation for the apims library. It is generated from the
+ * sourcecode comments using the Doxygen tool.
+ *
+ * \section What is libapims
+ * APIMS is an abreviation of Asynchronous PI-calculus with Multiparty session
+ * types and Symmetric synchronization. libAPIMS is a library written in C++,
+ * offering parsing, typechecking and stepping capabilities for the APIMS
+ * language.
+ * 
+ * \section ...
+ * This software is written by Lasse Nielsen(lasse.nielsen.dk<at>gmail<dot>com),
+ * and distributed under the GNU GPL v.3 or later.
+ * 
+ * This means that it is perfectly legal to obtain, use, study and develop this
+ * software, as long as the same rights are given for the derived products.
+ * 
+ * Information about the GNU GPL can be found at the Free Software Foundation
+ * (www.fsf.org) or more specifically at http://www.gnu.org/licenses/gpl.html
+ *
+ * This documentation is generated using Doxygen.
+ */
+// }}}
 // DOCUMENTATION: mpsterm.hpp {{{
 /*! \file
  * This file declares the MpsTerm class used to represent terms (processes) in

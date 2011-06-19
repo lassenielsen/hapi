@@ -49,8 +49,6 @@ doc: doc/html
 
 doc/html: include/apims/*.hpp source/*.cpp
 	mkdir -p doc/html
-	rm -Rf doc/html
-	mkdir -p doc/html
 	doxygen Doxyfile
 
 config:
@@ -114,13 +112,12 @@ clean:
 	touch packages
 	touch include/$(name)/config.hpp
 	touch $(libname)$(libversion)
-#	touch $(name)_window
 	rm *~
 	rm -Rf packages
 	rm -Rf objects
 	rm include/$(name)/config.hpp
 	rm $(libname)$(libversion)
-#	rm $(name)_window
+	rm -Rf doc/html
 	cp Makefile.in Makefile
 
 package:
