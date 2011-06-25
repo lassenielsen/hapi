@@ -3,22 +3,52 @@
  * This is the documentation for the apims library. It is generated from the
  * sourcecode comments using the Doxygen tool.
  *
- * \section basics What is APIMS
- * APIMS is an abreviation of Asynchronous PI-calculus with Multiparty session
- * types and Symmetric synchronization. libAPIMS is a library written in C++,
- * offering parsing, typechecking and stepping capabilities for the APIMS
- * language.
- * 
- * This software is written by Lasse Nielsen(lasse.nielsen.dk<at>gmail<dot>com),
- * and distributed under the GNU GPL v.3 or later.
- * 
- * This means that it is perfectly legal to obtain, use, study and develop this
- * software, as long as the same rights are given for the derived products.
- * 
- * Information about the GNU GPL can be found at the Free Software Foundation
- * (www.fsf.org) or more specifically at http://www.gnu.org/licenses/gpl.html
+ * \section libapims What is libapims?
+ * libAPIMS is a library written in C++, offering parsing, typechecking and
+ * stepping capabilities for the <em>apims</em> language.
  *
- * This documentation is generated using Doxygen.
+ * \section apims What is apims?
+ * <em>apims</em> is an abreviation of Asynchronous PI-calculus with Multiparty
+ * session types and Symmetric synchronization. It is a language based on the
+ * pi-calculus.
+ *
+ * \section why Why apims?
+ * In programming there are four fundamental classes of programming languages.
+ *
+ * Imperative languages, formalised by turing machines. <br>
+ * Functional languages, formalised by the lambda-calculus. <br>
+ * Logic languages, formalized by LF, and <br>
+ * Process oriented languages, formalised by the pi-calculus.
+ *
+ * Imperative languages are have state, and are structured much like the
+ * hardware that is used to execute the programs. This allows the programmer to
+ * write many explicit optimizations, because the the structure of the program
+ * is preserved by the compilation. Imperative languages include <b>C</b>,
+ * <b>Java</b> and <b>Visual Basic</b>.
+ *
+ * Functional languages avoids overspecification, which allows code that is
+ * more compact, easier to understand and - surprisingly - easier to
+ * automatically optimize for specific purposes.  There are many mature
+ * functional languages, including <b>SML</b>, <b>Haskell</b> and <b>F#</b>.
+ *
+ * Logic languages are not used for general purpose programming, but for
+ * special domains such as writing theorem provers or type-checkers. Still
+ * there are a number of logic languages including <b>Prolog</b> and
+ * <b>Twelf</b>.
+ *
+ * Process oriented languages are inherently distributed and uses channel based
+ * communication.  These features are becomming more and more important. The
+ * utilization of multiple cores, (GP)GPUs, multiple CPUs, supercomputers or
+ * even multiple servers across the internet is becomming more and more
+ * important, as the core frequencies have stalled, while the number of cores
+ * is growing rapidly.
+ * With the importance of this class of languages, on might suspect that there
+ * has been developed a lot of languages based on the pi-calculus, but this is
+ * not the case. <b>apims</b> will fix this ...
+ *
+ * 
+ * \section readme Readme
+ * \verbinclude Readme
  */
 // }}}
 // DOCUMENTATION: mpsterm.hpp {{{
