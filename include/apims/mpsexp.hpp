@@ -1,6 +1,26 @@
-/* MpsExp represents any expression in the pi-calculus
- * with multi party session types.
+// DOCUMENTATION: mpsexp.hpp {{{
+/*! \file
+ * This file declares the MpsExp class used to represent expressions to be used
+ * in the APIMS.
+ *
+ * The MpsExp class is itself an abstract class, with a subclass for each
+ * expression constructor.
+ *
+ * MpsExp objects can be created from a sourcecode string or parsetree using
+ * the static Create methods.
+ *
+ * The operations such as substitution, typechecking, finding the possible
+ * steps and finding the destination term after a step is declared as abstract
+ * methods in the MpsExp class, and implemented for each subclass.
+ *
+ * MpsExp objects can be created from a sourcecode string using Create.
+ *
+ * MpsExp object can be typechecked using the TypeCheck method which returns
+ * the infered type.
+ *
+ * Welltyped MpsExp objects can be evaluated to values using the Eval method.
  */
+// }}}
 
 #ifndef MPSEXP_HPP
 #define MPSEXP_HPP
@@ -12,6 +32,14 @@
 
 namespace apims
 {
+// DOCUMENTATION: MpsExp {{{
+/*!
+ * MpsExp represents an expression in APIMS.
+ *
+ * The MpsExp class is itself an abstract class, with a subclass for each
+ * process constructor.
+ */
+// }}}
 class MpsExp // {{{
 {
   public:
