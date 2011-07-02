@@ -29,11 +29,15 @@ class TypeArg // {{{
     MpsExp *myValue;
 }; // }}}
 
-/* MpsGlobalType represents a multiparty session type
- * describing the communication structure by orchestration.
+// DOCUMENTATION: MpsGlobalType {{{
+/*!
+ * MpsGlobalType represents a multiparty session type describing the
+ * communication structure by orchestration.
+ *
  * This is an abstract superclass.
  * There is a subclass for each expression constructor.
  */
+// }}}
 class MpsGlobalType // {{{
 {
   public:
@@ -252,10 +256,13 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
     std::map<std::string,MpsExp*> myAssertions;
 }; // }}}
 
+// DOCUMENTATION: MpsLocalType {{{
 /* MpsLocalType represents a session type for a single participant.
+ *
  * This is an abstract superclass.
  * There is a subclass for each expression constructor.
  */
+// }}}
 class MpsLocalType // {{{
 {
   public:
@@ -583,11 +590,13 @@ class MpsLocalSyncType : public MpsLocalType // {{{
     std::map<std::string,MpsExp*> myAssertions;
 }; // }}}
 
+// DOCUMENTATION: MpsMsgType {{{
 /* MpsMsgType represents the type of a single message.
+ *
  * This is an abstract superclass.
  * There is a subclass for each expression constructor.
  */
-
+// }}}
 class MpsMsgType // {{{
 {
   public:

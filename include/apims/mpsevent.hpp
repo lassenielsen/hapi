@@ -1,3 +1,15 @@
+// DOCUMENTATION: mpsevent.hpp {{{
+/*! \file
+ * This file declares the MpsEvent class used to represent the events omitted
+ * by the processes during evaluation. These events include message sending and reveiving,
+ * session creation, synchronization etc.
+ *
+ * MpsQueue is defined as a queue of events, and used to represent the message buffers.
+ *
+ * MpsEnv is defined as a map from channels to queues, and used to represent
+ * the buffer environment of a process.
+ */
+// }}}
 #ifndef MPSEVENT_HPP
 #define MPSEVENT_HPP
 
@@ -29,14 +41,16 @@ namespace apims
 enum event_type {tau=0, snd=10, rcv=11, bsnd=12, brcv=13, link=20, sync=21, guivalue=30, fundef=40, funcall=41, nu=42, cond=43, assign=44};
 
 // DOCUMENTATION: MpsEvent {{{
-/*! MpsEvent is an event type that allows
- * sending to and receiving from a queue including branching,
- * requesting and accepting multiparty sesssions on a channel
- * The content of an event is
- * The event type
- * The channel for communication
- * The value or label being communicated
- * For session init the participants currently accepted, and the session name
+/*! MpsEvent represents an event that can be omitted by a process during evaluation.
+ * The different kinds of events are: <br/>
+ * sending to and receiving from a queue including branching, creating a
+ * multiparty session and synchronizing on a session.
+ *
+ * The content of an event is <br/>
+ * The event type <br/>
+ * The channel for communication <br/>
+ * The value or label being communicated <br/>
+ * For session init the participants currently accepted, and the session name <br/>
  * For session sync the number of participants, and the number of required participants
  *
  * The Subtype property was added in order to send events to the GUI module
@@ -67,16 +81,20 @@ class MpsEvent // {{{
     int myStateArgs; // For Call event
 }; // }}}
 
-// DOCUMENTATION: MpaQueue {{{
+// DOCUMENTATION: MpsQueue {{{
 /*!
  * MpsQueue represents a message queue in a runtime process
  */
 // }}}
 typedef std::list<MpsEvent> MpsQueue;
 
-/* MpsEnv represents an environment in which to evaluate a term
+// DOCUMENTATION: MpsEnv {{{
+/*!
+ * MpsEnv represents a buffer environment in which to evaluate a process
  */
+// }}}
 typedef std::map<MpsChannel,MpsQueue> MpsEnv;
+
 inline std::string Env2string(const MpsEnv &env) // {{{
 {
   std::string result="[[";

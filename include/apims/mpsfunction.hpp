@@ -1,3 +1,15 @@
+// DOCUMENTATION: mpsterm.hpp {{{
+/*! \file
+ * This file declares the MpsFunction class used to represent procedure
+ * declarations, and MpsFuntionEnv used to represent a function
+ * envorinment.
+ *
+ * This enabels a more compact representation of recursion, because the
+ * mu-based representation requires some functions to be defined in multiple
+ * places. Using a function environment each function only has to be defined
+ * once.
+ */
+// }}}
 #ifndef MPSFUNCTION_HPP
 #define MPSFUNCTION_HPP
 
@@ -9,11 +21,15 @@ namespace apims
 
 class MpsTerm;
 
-/* MpsFunction represents an element in the function environment
- * used in the stepping relation.
- * This can be called like a function, and
- * allows a compact representation of recursion.
+// DOCUMENTATION: MpsFunction {{{
+/*!
+ * MpsFunction represents the definition of a procedure. These definitions are
+ * used to create a function environment used when evaluating a process.
+ *
+ * The procedures can be called like a function, and allows a compact
+ * representation of recursion. This is used to save memory during evaluation.
  */
+// }}}
 class MpsFunction // {{{
 { public:
     MpsFunction(const std::string &name,
@@ -36,10 +52,14 @@ class MpsFunction // {{{
     MpsTerm *myBody;
 }; // }}}
 
-/* MpsFunctionEnv represents a full function environment, where
- * each function is allowed to call all the functions in the environment.
+// DOCUMENTATION: MpsFunctionEnv {{{
+/*!
+ * MpsFunctionEnv represents a full function environment, where
+ * each procedure is allowed to use all the procedures in the environment.
  */
+// }}}
 typedef std::vector<MpsFunction> MpsFunctionEnv;
+
 std::string DefEnv2string(const MpsFunctionEnv &env);
 
 }

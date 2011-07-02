@@ -1,6 +1,8 @@
-/* MpsChannel represents both public and session channels
- *
+// DOCUMENTATION: mpschannel.hpp {{{
+/*! \file
+ * This file declares the MpsChannel class used to represent both public and session channels.
  */
+// }}}
 
 #ifndef MPSCHANNEL_HPP
 #define MPSCHANNEL_HPP
@@ -11,6 +13,23 @@
 namespace apims
 {
 
+// DOCUMENTATION: MpsChannel {{{
+/*!
+ * MpsChannel can represent both public (unindexed) channels and session channels.
+ *
+ * MpsChannel has a type field whic is used to identify wether the channel
+ * represented is a public channel or a session channel.
+ *
+ * A public channel is identified simply by its channel name.
+ * Therefore the only fields relevant for public channels are myType wich
+ * should be "public" and myName which should be the name of the channel.
+ *
+ * A session channel is identified by the session name, and the channel index.
+ * Therefore the fields relevant for session channels are myType which should
+ * be "session", myName which should be the name of the session and myIndex
+ * which should be the index of the channel in the session.
+ */
+// }}}
 class MpsChannel // {{{
 {
   public:
