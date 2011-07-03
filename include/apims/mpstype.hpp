@@ -257,7 +257,8 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
 }; // }}}
 
 // DOCUMENTATION: MpsLocalType {{{
-/* MpsLocalType represents a session type for a single participant.
+/*!
+ * MpsLocalType represents a session type for a single participant.
  *
  * This is an abstract superclass.
  * There is a subclass for each expression constructor.
@@ -591,7 +592,8 @@ class MpsLocalSyncType : public MpsLocalType // {{{
 }; // }}}
 
 // DOCUMENTATION: MpsMsgType {{{
-/* MpsMsgType represents the type of a single message.
+/*!
+ * MpsMsgType represents the type of a single message.
  *
  * This is an abstract superclass.
  * There is a subclass for each expression constructor.
