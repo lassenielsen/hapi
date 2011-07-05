@@ -135,26 +135,29 @@ class MpsTerm // {{{
     static MpsTerm *Create(const dpl::parsed_tree *exp);
 
     // DOCUMENTATION: MpsTerm::TypeCheck {{{
-    //! Static verification of communication safety using explicit types
-    //! @result Returns true if the process is well typed, and false otherwise.
+    /*!
+     * Static verification of communication safety using explicit types
+     * @result Returns true if the process is well typed, and false otherwise.
+     */
     // }}}
     bool TypeCheck();
     // DOCUMENTATION: MpsTerm::TypeCheck {{{
-    //!
-    //!Static verification of communication safety using explicit types
-    //!
-    //!Implementation of the judgement: Theta;Gamma |- P |> Delta.
-    //!Notice that the Gamma from the judgement has been split into
-    //!Gamma containing the global typeed names,
-    //!Sigma containing the simply typped names and
-    //!Omega containing the procedure names and types.
-    //!
-    //!@param Theta The current assertion (the currently asserted expression)
-    //!@param Gamma The global channel environment
-    //!@param Delta The session environment
-    //!@param Sigma The simple type environment
-    //!@param Omega The process environment
-    //!@result Returns true if the process is well typed, and false otherwise.
+    /*!
+     * Static verification of communication safety using explicit types
+     *
+     * Implementation of the judgement: Theta;Gamma |- P |> Delta.
+     * Notice that the Gamma from the judgement has been split into
+     * Gamma containing the global typeed names,
+     * Sigma containing the simply typped names and
+     * Omega containing the procedure names and types.
+     *
+     * @param Theta The current assertion (the currently asserted expression)
+     * @param Gamma The global channel environment
+     * @param Delta The session environment
+     * @param Sigma The simple type environment
+     * @param Omega The process environment
+     * @result Returns true if the process is well typed, and false otherwise.
+     */
     // }}}
     virtual bool TypeCheck(const MpsExp &Theta,
                            const MpsGlobalEnv &Gamma,
@@ -163,44 +166,54 @@ class MpsTerm // {{{
                            const MpsProcEnv &Omega) = 0;
 
     // DOCUMENTATION: MpsTerm::Compile {{{
-    //! Creates equivalent C code.
-    //! This functionality is not yet fully implemented.
+    /*!
+     * Creates equivalent C code.
+     * This functionality is not yet fully implemented.
+     */
     // }}}
     std::string Compile();
     // DOCUMENTATION: MpsTerm::Compile {{{
-    //! Creates  function declarations, function definitions and main body for equivalent C code.
-    //! This functionality is not yet fully implemented.
-    //! @param decls String to put the function declarations in.
-    //! @param defs String to tut the function definitions in.
-    //! @param main String to put the main body in.
+    /*!
+     * Creates  function declarations, function definitions and main body for equivalent C code.
+     * This functionality is not yet fully implemented.
+     * @param decls String to put the function declarations in.
+     * @param defs String to tut the function definitions in.
+     * @param main String to put the main body in.
+     */
     // }}}
     virtual void Compile(std::string &decls, std::string &defs, std::string &main) = 0;
 
     // DOCUMENTATION: MpsTerm::Step {{{
-    //! Selects one of the possible steps, and return the reached ! process.
-    //! The environments are updated according to the selected step.
-    //! @param env The environment of the process.
-    //! @param choice If choice is between 0 and the number of possible steps,
-    //! then the given step is used. Otherwise a random step is used, and choice
-    //! is updated to the used index.
-    //! @param choices When returning, choices is set to the number of possible
-    //! steps.
-    //! @result A term representing the destination process. This is a new
-    //! object, and not the original MpsTerm object with updates.
+    /*! 
+     * Selects one of the possible steps, and return the reached process.
+     * The environments are updated according to the selected step.
+     * @param env The environment of the process.
+     * @param choice If choice is between 0 and the number of possible steps,
+     * then the given step is used. Otherwise a random step is used, and choice
+     * is updated to the used index.
+     * @param choices When returning, choices is set to the number of possible
+     * steps.
+     * @result A term representing the destination process. This is a new
+     * object, and not the original MpsTerm object with updates.
+     */
     // }}}
     MpsTerm *Step(MpsEnv &env, 
                   std::vector<MpsFunction> &defs,
                   int &choice, int &choices);
     // DOCUMENTATION: MpsTerm::Steps {{{
-    //! Create a complete list of possible steps.
-    //! (env is const, but a technicality makes it unpractical to declare it)
+    /*!
+     * Create a complete list of possible steps.
+     * (env is const, but a technicality makes it unpractical to declare it)
+     */
     // }}}
     void Steps(MpsEnv &env,
                const std::vector<MpsFunction> &defs,
                std::vector<MpsStep> &dest);
     // DOCUMENTATION: MpsTerm::SubSteps {{{
-    //! Create a complete list of all possible partial steps.
-    //! (env is const, but a technicality makes it unpractical to declare it)
+    /*!
+     * Create a complete list of all possible partial steps.
+     * (env is const, but a technicality makes it unpractical to declare it)
+     */
     // }}}
     virtual bool SubSteps(std::vector<MpsStep> &dest) = 0;
 
@@ -254,11 +267,13 @@ class MpsTerm // {{{
     virtual std::string ToString(std::string indent="") const = 0;
 
     // DOCUMENTATION: MpsTerm::NewName {{{
-    //! Create a (completely) new process name. This is obtained by creating
-    //! names that cannot be used as process names in the syntax.
-    //! @param base The basename used to generate the new name. The generated
-    //! name will contain the basename, and this is used for fast and intuitively
-    //! tracking a variable though steps involving alpha-renaming.
+    /*!
+     * Create a (completely) new process name. This is obtained by creating
+     * names that cannot be used as process names in the syntax.
+     * @param base The basename used to generate the new name. The generated
+     * name will contain the basename, and this is used for fast and intuitively
+     * tracking a variable though steps involving alpha-renaming.
+     */
     // }}}
     static std::string NewName(std::string base="X");
     static MpsTerm *Error(const std::string &msg);
