@@ -265,7 +265,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[1]>>x;
   s[2]<<x;
   s[9]>>z;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -275,7 +275,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[1]>>x;
   s[3]<<x;
   s[17]>>z;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -285,7 +285,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[1]>>x;
   s[5]<<x;
   s[33]>>z;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -301,7 +301,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[10]>>x;
   s[2]>>z;
   s[9]<<x;
-  // Claculate z+x*omega^1
+  // Calculate z+x*omega^1
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega1;
@@ -315,7 +315,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[10]>>x;
   s[12]<<x;
   s[26]>>z;
-  // Claculate z+x*omega^1
+  // Calculate z+x*omega^1
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega1;
@@ -329,7 +329,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[10]>>x;
   s[14]<<x;
   s[42]>>z;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -345,7 +345,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[19]>>x;
   s[20]<<x;
   s[27]>>z;
-  // Claculate z+x*omega^2
+  // Calculate z+x*omega^2
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega2;
@@ -359,7 +359,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[19]>>x;
   s[3]>>z;
   s[17]<<x;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -369,7 +369,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[19]>>x;
   s[23]<<x;
   s[51]>>z;
-  // Claculate z+x*omega^0
+  // Calculate z+x*omega^0
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega2;
@@ -389,7 +389,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[28]>>x;
   s[20]>>z;
   s[27]<<x;
-  // Claculate z+x*omega^3
+  // Calculate z+x*omega^3
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega3;
@@ -403,7 +403,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[28]>>x;
   s[12]>>z;
   s[26]<<x;
-  // Claculate z+x*omega^1
+  // Calculate z+x*omega^1
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega1;
@@ -417,7 +417,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[28]>>x;
   s[32]<<x;
   s[60]>>z;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -433,7 +433,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[37]>>x;
   s[38]<<x;
   s[45]>>z;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -443,7 +443,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[37]>>x;
   s[39]<<x;
   s[53]>>z;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -453,7 +453,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[37]>>x;
   s[5]>>z;
   s[33]<<x;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -469,7 +469,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[46]>>x;
   s[38]>>z;
   s[45]<<x;
-  // Claculate z+x*omega^1
+  // Calculate z+x*omega^1
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega1;
@@ -483,7 +483,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[46]>>x;
   s[48]<<x;
   s[62]>>z;
-  // Claculate z+x*omega^1
+  // Calculate z+x*omega^1
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega1;
@@ -497,7 +497,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[46]>>x;
   s[14]>>z;
   s[42]<<x;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -513,7 +513,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[55]>>x;
   s[56]<<x;
   s[63]>>z;
-  // Claculate z+x*omega^2
+  // Calculate z+x*omega^2
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega2;
@@ -527,7 +527,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[55]>>x;
   s[39]>>z;
   s[53]<<x;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -537,7 +537,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[55]>>x;
   s[23]>>z;
   s[51]<<x;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
@@ -553,7 +553,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[64]>>x;
   s[56]>>z;
   s[63]<<x;
-  // Claculate z+x*omega^3
+  // Calculate z+x*omega^3
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega3;
@@ -567,7 +567,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[64]>>x;
   s[48]>>z;
   s[62]<<x;
-  // Claculate z+x*omega^1
+  // Calculate z+x*omega^1
   link(2,compmult,t,1);
   t[1]<<x;
   t[1]<<omega1;
@@ -581,7 +581,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   s[64]>>x;
   s[32]>>z;
   s[60]<<x;
-  // Claculate z+x*omega^0=z+x
+  // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
   t[1]<<z;
   t[1]<<x;
