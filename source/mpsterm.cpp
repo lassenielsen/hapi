@@ -5354,9 +5354,9 @@ string MpsDef::ToTex(int indent) const // {{{
       if (i>0)
         result += ",\\newline\n\\hspace*{" + int2string(typeIndent) + "mm}";
       int newTypeIndent = typeIndent + 2 + myStateArgs[i].size();
-      result += myStateArgs[i] + ": " + myStateTypes[i]->ToString((string)"\\newline\n\\hspace*{" + int2string(newTypeIndent) + "}");
+      result += myStateArgs[i] + ": " + myStateTypes[i]->ToString((string)"\\newline\n\\hspace*{" + int2string(newTypeIndent) + "mm}");
     }
-    result += "\\rangle\\newline\n\\hspace*{" + int2string(typeIndent-1);
+    result += "\\rangle\\newline\n\\hspace*{" + int2string(typeIndent-1) + "mm}";
   }
   if (myArgs.size()>0)
   {
@@ -5364,14 +5364,14 @@ string MpsDef::ToTex(int indent) const // {{{
     for (int i=0; i<myArgs.size() && i<myTypes.size(); ++i)
     {
       if (i>0)
-        result += ",\\newline\n\\hspace*{" + int2string(typeIndent) + "}";
+        result += ",\\newline\n\\hspace*{" + int2string(typeIndent) + "mm}";
       int newTypeIndent = typeIndent + 2 + myArgs[i].size();
-      result += myArgs[i] + ": " + myTypes[i]->ToString((string)"\\newline\n\\hspace*{" + int2string(newTypeIndent) + "}");
+      result += myArgs[i] + ": " + myTypes[i]->ToString((string)"\\newline\n\\hspace*{" + int2string(newTypeIndent) + "mm}");
     }
     result += ")";
   }
-  result += (string)"=\\newline\n\\hspace*{" + int2string(newIndent) + "}" + myBody->ToTex(newIndent);
-  result += (string)"\\newline\n\\hspace*{" + int2string(indent) + "}{\\tt\\color{blue}in} " + mySucc->ToTex(newIndent);
+  result += (string)"=\\newline\n\\hspace*{" + int2string(newIndent) + "mm}" + myBody->ToTex(newIndent);
+  result += (string)"\\newline\n\\hspace*{" + int2string(indent) + "mm}{\\tt\\color{blue}in} " + mySucc->ToTex(newIndent);
   return result;
 } // }}}
 string MpsCall::ToTex(int indent) const // {{{
@@ -5402,16 +5402,16 @@ string MpsNu::ToTex(int indent) const // {{{
 {
   int typeIndent = indent + 5 + myChannel.size();
   int newIndent = indent + 2;
-  return (string)"({\tt\\color{blue}nu} " + myChannel + ":" + myType->ToString((string)"\\newline\n\\hspace*{" + int2string(typeIndent) + "mm}") + ")\\newline\n\\hspace*{" + int2string(newIndent) + "mm}" + mySucc->ToTex(newIndent);
+  return (string)"({\\tt\\color{blue}nu} " + myChannel + ":" + myType->ToString((string)"\\newline\n\\hspace*{" + int2string(typeIndent) + "mm}") + ")\\newline\n\\hspace*{" + int2string(newIndent) + "mm}" + mySucc->ToTex(newIndent);
 } // }}}
 string MpsLink::ToTex(int indent) const // {{{
 {
-  return (string) "{\tt\\color{blue}link}(" + int2string(myMaxpid) + "," + myChannel + "," + mySession + "," + int2string(myPid) + ");\\newline\n\\hspace*{" + int2string(indent) + "mm}" + mySucc->ToTex(indent);
+  return (string) "{\\tt\\color{blue}link}(" + int2string(myMaxpid) + "," + myChannel + "," + mySession + "," + int2string(myPid) + ");\\newline\n\\hspace*{" + int2string(indent) + "mm}" + mySucc->ToTex(indent);
 } // }}}
 string MpsSync::ToTex(int indent) const // {{{
 {
   int newIndent = indent + 4;
-  string result = (string)"{\tt\\color{blue}sync}(" + int2string(myMaxpid) + "," + mySession + ")\\newline\n"
+  string result = (string)"{\\tt\\color{blue}sync}(" + int2string(myMaxpid) + "," + mySession + ")\\newline\n"
                 + "\\hspace*{" + int2string(indent) + "mm}\\{ ";
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
@@ -5421,7 +5421,7 @@ string MpsSync::ToTex(int indent) const // {{{
     map<string,MpsExp*>::const_iterator ass=myAssertions.find(it->first);
     if (ass != myAssertions.end())
       result += "\\llbracket" + ass->second->ToString() + "\\rrbracket";
-    result += (string)":\\newline\n\\hspace*{" + int2string(newIndent) + "}" + it->second->ToTex(newIndent);
+    result += (string)":\\newline\n\\hspace*{" + int2string(newIndent) + "mm}" + it->second->ToTex(newIndent);
   }
   result += "\\newline\n\\hspace*{" + int2string(indent) + "mm}\\}";
   return result;
@@ -5429,8 +5429,8 @@ string MpsSync::ToTex(int indent) const // {{{
 string MpsCond::ToTex(int indent) const // {{{
 {
   string result = (string)"{\\tt\\color{blue}if} " + myCond->ToString() + "\\newline\n\\hspace*{"
-  + int2string(indent) + "}{\\tt\\color{blue}then} " + myTrueBranch->ToTex(indent + 5) + "\\newline\n\\hspace*{"
-  + int2string(indent) + "}{\\tt\\color{blue}else} " + myFalseBranch->ToTex(indent + 5);
+  + int2string(indent) + "mm}{\\tt\\color{blue}then} " + myTrueBranch->ToTex(indent + 5) + "\\newline\n\\hspace*{"
+  + int2string(indent) + "mm}{\\tt\\color{blue}else} " + myFalseBranch->ToTex(indent + 5);
   return result;
 } // }}}
 string MpsGuiSync::ToTex(int indent) const // {{{

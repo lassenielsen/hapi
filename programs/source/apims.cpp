@@ -9,6 +9,8 @@ using namespace apims;
 int main(int argc, char **argv)
 {
   // Config Parameters
+  bool cfgPrint=true;
+  bool cfgPrintTex=false;
   bool cfgSteps=false;
   bool cfgBuffers=false;
   bool cfgChoices=false;
@@ -20,7 +22,17 @@ int main(int argc, char **argv)
 
   bool argFault=true;
   for (int i=1; i<argc; ++i) // {{{
-  { if ((string)argv[i]=="-steps")
+  { if ((string)argv[i]=="-texonly")
+    { cfgPrintTex=true;
+      cfgPrint=false;
+      cfgSteps=false;
+      cfgBuffers=false;
+      cfgChoices=false;
+      cfgTypecheck=false;
+      cfgEval=false;
+      cfgCompile=false;
+    }
+    else if ((string)argv[i]=="-steps")
       cfgSteps=true;
     else if ((string)argv[i]=="-buffers")
       cfgBuffers=true;
@@ -28,6 +40,10 @@ int main(int argc, char **argv)
       cfgChoices=true;
     else if ((string)argv[i]=="-nocheck")
       cfgTypecheck=false;
+    else if ((string)argv[i]=="-noeval")
+      cfgEval=false;
+    else if ((string)argv[i]=="-eval")
+      cfgEval=true;
     else if ((string)argv[i]=="-check")
     { cfgEval=false; cfgTypecheck=true; }
     else if ((string)argv[i]=="-compile")
@@ -87,8 +103,11 @@ int main(int argc, char **argv)
 
   // Parse program
   MpsTerm *current = MpsTerm::Create(term);
-  (*out) << "******************* Program *******************" << endl
-       << current->ToString() << endl;
+  if (cfgPrint)
+    (*out) << "******************* Program *******************" << endl
+           << current->ToString() << endl;
+  if (cfgPrintTex)
+    (*out) << current->ToTex()<< endl;
   if (cfgTypecheck)
   { // Typecheck program
     (*out) << "************ Type Checking Program ************" << endl;
@@ -96,8 +115,8 @@ int main(int argc, char **argv)
       return 1;
     (*out) << "************ Type Check Succeeded! ************" << endl;
   }
-  else
-    (*out) << "************** NO TYPE CHECKEING **************" << endl;
+//  else
+//    (*out) << "************** NO TYPE CHECKEING **************" << endl;
   if (cfgCompile)
     (*out) << current->Compile() << endl;
   if (cfgEval)
