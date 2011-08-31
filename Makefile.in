@@ -20,7 +20,7 @@ libname = lib$(name).so
 COMMENT = OS_
 OS_AUTO = $(shell uname -s)
 
-opt = -O3
+opt =
 compiler = g++
 ctags = ctags
 args = -fPIC `sdl-config --cflags` $(opt) -I./include/
@@ -48,7 +48,7 @@ phony: default doc config build install uninstall clean tags package deb
 doc: doc/html
 
 doc/html: include/apims/*.hpp source/*.cpp
-	mkdir -p doc/html
+	mkdir -p doc/
 	doxygen Doxyfile
 
 config:
@@ -117,7 +117,8 @@ clean:
 	rm -Rf objects
 	rm include/$(name)/config.hpp
 	rm $(libname)$(libversion)
-	rm -Rf doc/html
+#	rm -Rf doc/html/*
+	rm -Rf doc/latex
 	cp Makefile.in Makefile
 
 package:
