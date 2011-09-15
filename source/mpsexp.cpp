@@ -1464,6 +1464,15 @@ MpsExp *MpsBinOpExp::Negate() const// {{{
     delete newRight;
     return result;
   }
+  else if (GetOp()=="<=")
+  { mpz_t one;
+    mpz_init_set_str(one,"1",10);
+    MpsExp *newRight = new MpsBinOpExp("+",*myRight,MpsIntVal(one));
+    mpz_clear(one);
+    MpsExp *result = new MpsBinOpExp("and",*myLeft,*newRight);
+    delete newRight;
+    return result;
+  }
   else
   {
     throw (string)"ERROR: Negate applied to binary operator: "+GetOp();
@@ -1610,14 +1619,14 @@ MpsExp *MpsBoolVal::MakeNNF(bool negate) const// {{{
     return Copy();
 } // }}}
 MpsExp *MpsCondExp::MakeNNF(bool negate) const// {{{
-{ throw (string)"ERROR: MakeNNF applied to CondExp - NOT IMPLEMENTED";
+{ cerr << "WARNING: MakeNNF applied to CondExp - NOT IMPLEMENTED - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *MpsUnOpExp::MakeNNF(bool negate) const// {{{
 {
   if (GetOp()=="not")
     return myRight->MakeNNF(not negate);
-  throw (string)"ERROR: MakeNNF on unary operator: "+GetOp();
+  throw (string)"ERROR: MakeNNF on unknown unary operator: "+GetOp();
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *MpsBinOpExp::MakeNNF(bool negate) const// {{{
@@ -1638,7 +1647,7 @@ MpsExp *MpsBinOpExp::MakeNNF(bool negate) const// {{{
     return result;
   }
   else
-  { throw (string)"ERROR: MakeNNF applied to binary operator: "+GetOp();
+  { cerr << "WARNING: MakeNNF applied to binary operator: "+GetOp() << " - approximating as false!" << endl;
     return new MpsBoolVal(false);
   }
 } // }}}

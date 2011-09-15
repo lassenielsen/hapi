@@ -111,8 +111,14 @@ int main(int argc, char **argv)
   if (cfgTypecheck)
   { // Typecheck program
     (*out) << "************ Type Checking Program ************" << endl;
-    if (not current->TypeCheck())
+    try
+    { if (not current->TypeCheck())
+        return 1;
+    }
+    catch (string s)
+    { (*out) << "ERROR: " << s << endl;
       return 1;
+    }
     (*out) << "************ Type Check Succeeded! ************" << endl;
   }
 //  else
