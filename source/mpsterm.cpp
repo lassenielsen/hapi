@@ -750,7 +750,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
 
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case16") // define lvar ids = Ltype in pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case17") // define lvar ids = Ltype in pi2 {{{
   { 
     MpsTerm *term = MpsTerm::Create(exp->content[6]);
     MpsLocalType *ltype = MpsLocalType::Create(exp->content[4]);
