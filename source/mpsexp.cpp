@@ -1473,6 +1473,10 @@ MpsExp *MpsBinOpExp::Negate() const// {{{
     delete newRight;
     return result;
   }
+  else if (GetOp()=="=")
+  { MpsExp *result = new MpsBinOpExp("!=",*myLeft,*myRight);
+    return result;
+  }
   else
   {
     throw (string)"ERROR: Negate applied to binary operator: "+GetOp();

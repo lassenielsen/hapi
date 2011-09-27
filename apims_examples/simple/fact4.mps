@@ -1,7 +1,7 @@
 (nu prod : 1=>2:1<Int>;                  // Send argument: x1
            1=>2:1<Int>;                  // Send argument: x2
            2=>1:2<Int>;Gend)             // Send result: x1*...*x2
-def Prod() =                             // Define SubFact Service {{{
+( def Prod() =                             // Define SubFact Service {{{
     link(2,prod,s,2);                    // Receive Connection
     ( Prod()                             // Start new Server
     | s[1] >> x1;                        // Receive x1
@@ -23,9 +23,9 @@ def Prod() =                             // Define SubFact Service {{{
       else s[2] << 1;                    // Send 1 (if x1>x2)
            end
     )
-in ( Prod() |                            // Start Prod Server }}}
-(nu gui: {^Fact: {^Quit: Gend} })        // User Interface Behavior
-( link(1,gui,user,1);                    // Create User Interface
+  in Prod() |                              // Start Prod Server }}}
+  (nu gui: {^Fact: {^Quit: Gend} })        // User Interface Behavior
+  link(1,gui,user,1);                    // Create User Interface
   guisync(1,user,1)                      // Wait for User Input
   {^Fact(n: Int=5):                      // Request n
     link(2,prod,s,1);                    // Connect to Fact Server
@@ -36,4 +36,4 @@ in ( Prod() |                            // Start Prod Server }}}
     guisync(1,user,1)                    // Wait for user to quit
     {^Quit(comment: String=""): end }
   }
-) )
+)
