@@ -75,7 +75,6 @@ const string html_template= // {{{
   <a href=\"/\">Home</a>\n\
   <a href=\"#reload\" onClick=\"window.location.reload()\">Reload</a><br/>\n\
   [[BODY]]\
-  <img src=\"/data/logo.jpg\" width=\"100%\"/>\
 </body>\n\
 </html>"; // }}}
 const string html_redirect_template= // {{{
