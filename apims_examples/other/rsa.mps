@@ -118,34 +118,40 @@
         GCD(n,m,s)
     )
   in GCDService() | // }}}
-(nu rsa_makepair: 2=>1:1<Int>;
-                  2=>1:1<Int>;
-                  Gend)
-( def RSA_MakePairService() = // {{{
-    link(2,rsa_makepair,mp,2);
-    ( RSA_MakePairService()
-    | def RSA_MakePair(dest: 1<<<Int>;1<<<Int>;Lend@(2of2)) =
-        dest[1]<<24571;
-        dest[1]<<26227;
-        end
-//        link(2,rand,rand1,1);
-//        rand1[1]<<1024*1024;
-//        rand1[2]>>r1;
-//        link(2,rand,rand2,1);
-//        rand2[1]<<1024*1024;
-//        rand2[2]>>r2;
-//        link(2,gcd,gcd1,1);
-//        gcd1[2]<<(2*r1)+1;
-//        gcd1[2]<<(2*r2)+1;
-//        gcd1[1]>>div;
-//        if div=1
-//        then dest[1]<<(2*r1)+1;
-//             dest[1]<<(2*r2)+1;
-//             end
-//        else RSA_MakePair(dest)
-      in RSA_MakePair(mp)
+(nu rsa_makeprime: 2=>1:1<Int>;
+                   Gend)
+( def RSA_MakePrimeService() = // {{{
+//    link(2,rsa_makeprime,mp,2);
+//    mp[1]<<733;
+//    link(2,rsa_makeprime,mp,2);
+//    mp[1]<<1093;
+    link(2,rsa_makeprime,mp,2);
+    ( RSA_MakePrimeService()
+    | def RSA_MakePrime(dest: 1<<<Int>;Lend@(2of2)) =
+        // Create random number (guess prime)
+        link(2,rand,rand1,1);
+        rand1[1]<<1024;
+        rand1[2]>>p;
+        def CheckPrime(checks: Int, dest: 1<<<Int>;Lend@(2of2)) =
+          if checks<=0
+          then dest[1]<<p;
+	       end
+	  else // Create random numbers to find factors
+	       link(2,rand,rand1,1);
+	       rand1[1]<<(2*p)-1;
+	       rand1[2]>>r;
+               link(2,expmod,em,1);
+               em[2]<<1+r;
+               em[2]<<2*p;
+               em[2]<<(2*p)+1;
+               em[1]>>x1;
+	       if x1=1
+	       then CheckPrime(checks-1,dest)
+	       else log<<p;RSA_MakePrime(dest)
+	in CheckPrime(15,dest)
+      in RSA_MakePrime(mp)
     )
-  in RSA_MakePairService() | // }}}
+  in RSA_MakePrimeService() | // }}}
 define $rsa_newkey = // {{{
   1=>2:2<Int>;
   1=>2:2<Int>;
@@ -213,18 +219,23 @@ in // }}}
       in Encode(s)
     )
   in RSA_Service() | // }}}
-link(2,rsa_makepair,mp,1);
-mp[1]>>p1;
-mp[1]>>p2;
+// Create two primes
+link(2,rsa_makeprime,mp1,1);
+mp1[1]>>p1;
+link(2,rsa_makeprime,mp2,1);
+mp2[1]>>p2;
+// Create public/private key pair
 link(2,rsa_newkey,nk,1);
 nk[2]<<p1;
 nk[2]<<p2;
 nk[1]>>n;
 nk[1]>>priv;
 nk[1]>>pub;
+// Create Encryption object
 link(2,rsa,encoder,1);
 encoder[2]<<n;
 encoder[2]<<pub;
+// Create Decryption object
 link(2,rsa,decoder,1);
 decoder[2]<<n;
 decoder[2]<<priv;
