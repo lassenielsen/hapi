@@ -1,6 +1,6 @@
 programs = apims
 name = apims
-version = 2.3.0
+version = 2.5.0
 compiler = g++
 opt = -O3
 args = $(opt) `sdl-config --cflags`
@@ -102,7 +102,7 @@ deb: $(programs)
 	echo "Maintainer: Lasse Nielsen <lasse.nielsen.dk@gmail.com>" >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Installed-Size: 1024"                                   >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Pre-Depends: dpkg (>= 1.14.12ubuntu3)"                  >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Depends: libapims (>= 2.0)"                             >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Depends: libapims (>= 2.5)"                             >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Recommends: "                                           >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Suggests: "                                             >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Conflicts: "                                            >> debs/$(name)_$(version)_i386/DEBIAN/control

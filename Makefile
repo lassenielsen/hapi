@@ -11,7 +11,7 @@
 # - Lasse Nielsen.                                                    #
 #=====================================================================#
 name = apims
-version = 2.3.0
+version = 2.5.0
 libname = lib$(name).so
 #OS_LINUXlibname = lib$(name).so
 #OS_MAClibname = lib$(name).dylib
@@ -149,7 +149,7 @@ deb: $(libname)$(libversion)
 	echo "Maintainer: Lasse Nielsen <lasse.nielsen.dk@gmail.com>" >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Installed-Size: 1024"                                   >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Pre-Depends: dpkg (>= 1.14.12ubuntu3)"                  >> debs/lib$(name)_$(version)_i386/DEBIAN/control
-	echo "Depends: libsdl-net1.2-dev (>= 1.2), libgmp3-dev, libdpl (>= 1.0)"   >> debs/lib$(name)_$(version)_i386/DEBIAN/control
+	echo "Depends: libsdl-net1.2-dev (>= 1.2), libgmp3-dev, libdpl (>= 1.5)"   >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Recommends: apims"                                      >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Suggests: apims"                                        >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Conflicts: "                                            >> debs/lib$(name)_$(version)_i386/DEBIAN/control
