@@ -70,6 +70,7 @@ void CreateSession(const std::string &session, int maxpid);
 /*!
  * ClearChoices is used to remove all choices for the UIs of
  * all participants of the given session.
+ * @param session the session of the UIs to clear.
  */
 void ClearChoices(const std::string &session);
 /*!
@@ -82,7 +83,7 @@ void SetChoices(const std::string &session,
                 int pid,
                 const std::vector<Choice> &choices);
 /*!
- * GetChoices is used send the interpretor a snapshot of the choices mad in a UI.
+ * GetChoices is used to send the interpretor a snapshot of the choices mad in a UI.
  * @param session the session of the UI.
  * @param pid the participant of the UI.
  * @result A snapshot of the choices in the UI.
