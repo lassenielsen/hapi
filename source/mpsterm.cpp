@@ -5354,7 +5354,7 @@ string MpsDef::ToTex(int indent) const // {{{
       if (i>0)
         result += ",\\newline\n\\hspace*{" + int2string(typeIndent) + "mm}";
       int newTypeIndent = typeIndent + 2 + myStateArgs[i].size();
-      result += myStateArgs[i] + ": " + myStateTypes[i]->ToString((string)"\\newline\n\\hspace*{" + int2string(newTypeIndent) + "mm}");
+      result += myStateArgs[i] + ": " + myStateTypes[i]->ToTex(newIndent);
     }
     result += "\\rangle\\newline\n\\hspace*{" + int2string(typeIndent-1) + "mm}";
   }
@@ -5366,7 +5366,7 @@ string MpsDef::ToTex(int indent) const // {{{
       if (i>0)
         result += ",\\newline\n\\hspace*{" + int2string(typeIndent) + "mm}";
       int newTypeIndent = typeIndent + 2 + myArgs[i].size();
-      result += myArgs[i] + ": " + myTypes[i]->ToString((string)"\\newline\n\\hspace*{" + int2string(newTypeIndent) + "mm}");
+      result += myArgs[i] + ": " + myTypes[i]->ToTex(newTypeIndent);
     }
     result += ")";
   }
@@ -5402,7 +5402,7 @@ string MpsNu::ToTex(int indent) const // {{{
 {
   int typeIndent = indent + 5 + myChannel.size();
   int newIndent = indent + 2;
-  return (string)"({\\tt\\color{blue}nu} " + myChannel + ":" + myType->ToString((string)"\\newline\n\\hspace*{" + int2string(typeIndent) + "mm}") + ")\\newline\n\\hspace*{" + int2string(newIndent) + "mm}" + mySucc->ToTex(newIndent);
+  return (string)"({\\tt\\color{blue}nu} " + myChannel + ":" + myType->ToTex(typeIndent) + ")" + mySucc->ToTex(newIndent);
 } // }}}
 string MpsLink::ToTex(int indent) const // {{{
 {

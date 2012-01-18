@@ -63,10 +63,15 @@ class MpsGlobalType // {{{
     virtual MpsGlobalType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const = 0;
     virtual MpsGlobalType *ESubst(const std::string &source, const MpsExp &dest) const = 0;
 
-    // Other methods
+    //! Make parsable string representation
     virtual std::string ToString(const std::string &indent="") const = 0;
+    //! Make string representation with latex markup
+    virtual std::string ToTex(int indent=0) const = 0;
+    //! Project type to obtain local type for given participant
     virtual MpsLocalType *Project(int pid) const = 0;
+    //! Return process id in type
     virtual int GetMaxPid() const=0;
+    //! Generate (totally) new global variable name
     static std::string NewGVar(std::string orig="$X");
     
     // Grammar
@@ -106,6 +111,7 @@ class MpsGlobalMsgType : public MpsGlobalType // {{{
     MpsGlobalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Project(int pid) const;
     int GetMaxPid() const;
 
@@ -140,6 +146,7 @@ class MpsGlobalBranchType : public MpsGlobalType // {{{
     MpsGlobalBranchType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Project(int pid) const;
     int GetMaxPid() const;
 
@@ -170,6 +177,7 @@ class MpsGlobalRecType : public MpsGlobalType // {{{
     MpsGlobalRecType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Project(int pid) const;
     int GetMaxPid() const;
 
@@ -198,6 +206,7 @@ class MpsGlobalVarType : public MpsGlobalType // {{{
     MpsGlobalVarType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Project(int pid) const;
     int GetMaxPid() const;
 
@@ -225,6 +234,7 @@ class MpsGlobalEndType : public MpsGlobalType // {{{
     MpsGlobalEndType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Project(int pid) const;
     int GetMaxPid() const;
 }; // }}}
@@ -248,6 +258,7 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
     MpsGlobalSyncType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Project(int pid) const;
     int GetMaxPid() const;
 
@@ -291,6 +302,7 @@ class MpsLocalType // {{{
     // Merge two types to make least supertype
     virtual MpsLocalType *Merge(MpsLocalType &rhs) const = 0;
     virtual std::string ToString(const std::string &indent="") const = 0;
+    virtual std::string ToTex(int indent=0) const = 0;
     static std::string NewLVar(std::string basename="FUN");
 
     // Grammar
@@ -323,6 +335,7 @@ class MpsLocalSendType : public MpsLocalType // {{{
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
 
     // Accessors
     int GetChannel();
@@ -364,6 +377,7 @@ class MpsLocalRcvType : public MpsLocalType // {{{
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
 
     // Accessors
     int GetChannel();
@@ -404,6 +418,7 @@ class MpsLocalForallType : public MpsLocalType // {{{
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
 
     // Accessors
     const std::string &GetName() const;
@@ -436,6 +451,7 @@ class MpsLocalSelectType : public MpsLocalType // {{{
     MpsLocalSelectType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Merge(MpsLocalType &rhs) const;
 
     // Accessors
@@ -468,6 +484,7 @@ class MpsLocalBranchType : public MpsLocalType // {{{
     MpsLocalBranchType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Merge(MpsLocalType &rhs) const;
 
     // Accessors
@@ -500,6 +517,7 @@ class MpsLocalRecType : public MpsLocalType // {{{
     MpsLocalRecType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Merge(MpsLocalType &rhs) const;
 
     // Accessors
@@ -532,6 +550,7 @@ class MpsLocalVarType : public MpsLocalType // {{{
     MpsLocalVarType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Merge(MpsLocalType &rhs) const;
 
   private:
@@ -558,6 +577,7 @@ class MpsLocalEndType : public MpsLocalType // {{{
     MpsLocalEndType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Merge(MpsLocalType &rhs) const;
 }; // }}}
 class MpsLocalSyncType : public MpsLocalType // {{{
@@ -580,6 +600,7 @@ class MpsLocalSyncType : public MpsLocalType // {{{
     MpsLocalSyncType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     MpsLocalType *Merge(MpsLocalType &rhs) const;
 
     // Accessors
@@ -625,6 +646,7 @@ class MpsMsgType // {{{
 
     // Other methods
     virtual std::string ToString(const std::string &indent="") const = 0;
+    virtual std::string ToTex(int indent=0) const = 0;
 
     // Grammar
     const static std::string BNF_STYPE;
@@ -653,6 +675,7 @@ class MpsMsgNoType : public MpsMsgType // {{{
     MpsMsgNoType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
 }; // }}}
 class MpsIntMsgType : public MpsMsgType // {{{
 {
@@ -674,6 +697,7 @@ class MpsIntMsgType : public MpsMsgType // {{{
     MpsIntMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
 }; // }}}
 class MpsStringMsgType : public MpsMsgType // {{{
 {
@@ -695,6 +719,7 @@ class MpsStringMsgType : public MpsMsgType // {{{
     MpsStringMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
 }; // }}}
 class MpsBoolMsgType : public MpsMsgType // {{{
 {
@@ -716,6 +741,7 @@ class MpsBoolMsgType : public MpsMsgType // {{{
     MpsBoolMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
 }; // }}}
 class MpsTupleMsgType : public MpsMsgType // {{{
 {
@@ -737,6 +763,7 @@ class MpsTupleMsgType : public MpsMsgType // {{{
     MpsTupleMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     int GetSize() const;
     const MpsMsgType *GetElement(int index) const;
 
@@ -763,6 +790,7 @@ class MpsChannelMsgType : public MpsMsgType // {{{
     MpsChannelMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
 
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
     const MpsGlobalType *GetGlobalType() const {return myType;}
     MpsGlobalType *GetGlobalType() {return myType;}
 
@@ -789,6 +817,7 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
     virtual MpsDelegateMsgType *ESubst(const std::string &source, const MpsExp &dest) const=0;
 
     virtual std::string ToString(const std::string &indent="") const=0;
+    std::string ToTex(int indent=0) const=0;
     virtual const MpsLocalType *GetLocalType() const=0;
     virtual MpsLocalType *GetLocalType()=0;
     int GetPid() const {return myPid;}
@@ -815,6 +844,7 @@ class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
     MpsDelegateLocalMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsDelegateLocalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
 
     // Accessors
     const MpsLocalType *GetLocalType() const; // {return myType;}
@@ -840,6 +870,7 @@ class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegat
     MpsDelegateGlobalMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsDelegateGlobalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
     std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0) const;
 
     // Accessors
     const MpsGlobalType *GetGlobalType() const {return myGlobalType;}

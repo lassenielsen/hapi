@@ -272,7 +272,7 @@ in // }}}
             RELiteral(this,literal),
            ^SOME:
             str[1]>>lit;
-            if (literal<=lit) and (lit<=literal)
+            if literal=lit
             then str[2]<<^Pop;
                  str[2]<<^Read;
                  str[1]>>
@@ -399,53 +399,102 @@ in // }}}
         RESum(connection,left,right)
     )
   in RESumService() | // }}}
-// LIST TEST  link(2,newlist,list1,1);
-// LIST TEST  link(2,cons,cs,1);cs[2]<<3;cs[2]<<list1;cs[1]>>list1;
-// LIST TEST  link(2,cons,cs,1);cs[2]<<2;cs[2]<<list1;cs[1]>>list1;
-// LIST TEST  link(2,cons,cs,1);cs[2]<<1;cs[2]<<list1;cs[1]>>list1;
-// LIST TEST  link(2,cons,cs,1);cs[2]<<0;cs[2]<<list1;cs[1]>>list1;
-// LIST TEST  link(2,cons,cs,1);cs[2]<<0-1;cs[2]<<list1;cs[1]>>list1;
-// LIST TEST  link(2,cons,cs,1);cs[2]<<0-2;cs[2]<<list1;cs[1]>>list1;
-// LIST TEST  link(2,newlist,list2,1);
-// LIST TEST  link(2,cons,cs,1);cs[2]<<9;cs[2]<<list2;cs[1]>>list2;
-// LIST TEST  link(2,cons,cs,1);cs[2]<<8;cs[2]<<list2;cs[1]>>list2;
-// LIST TEST  link(2,cons,cs,1);cs[2]<<7;cs[2]<<list2;cs[1]>>list2;
-// LIST TEST  link(2,cons,cs,1);cs[2]<<6;cs[2]<<list2;cs[1]>>list2;
-// LIST TEST  link(2,cons,cs,1);cs[2]<<5;cs[2]<<list2;cs[1]>>list2;
-// LIST TEST  link(2,cons,cs,1);cs[2]<<4;cs[2]<<list2;cs[1]>>list2;
-// LIST TEST  link(2,append,app,1);
-// LIST TEST  app[2]<<list1; // -2,-1,0,1,2,3
-// LIST TEST  app[2]<<list2; // 4,5,6,7,8,9
-// LIST TEST  app[1]>>list3; // -2,-1,0,1,2,3,4,5,6,7,8,9
-// LIST TEST  list3[2]<<^Delete;
-// TEST abba: a(a+b)(a+b)a  link(2,newlist,list1,1);
-// TEST abba: a(a+b)(a+b)a  link(2,cons,cs,1);cs[2]<<1;cs[2]<<list1;cs[1]>>list1;
-// TEST abba: a(a+b)(a+b)a  link(2,cons,cs,1);cs[2]<<2;cs[2]<<list1;cs[1]>>list1;
-// TEST abba: a(a+b)(a+b)a  link(2,cons,cs,1);cs[2]<<2;cs[2]<<list1;cs[1]>>list1;
-// TEST abba: a(a+b)(a+b)a  link(2,cons,cs,1);cs[2]<<1;cs[2]<<list1;cs[1]>>list1;
-// TEST abba: a(a+b)(a+b)a  link(2,re_literal,lit_a1,1);lit_a1[2]<<1;
-// TEST abba: a(a+b)(a+b)a  link(2,re_literal,lit_a2,1);lit_a2[2]<<1;
-// TEST abba: a(a+b)(a+b)a  link(2,re_literal,lit_a3,1);lit_a3[2]<<1;
-// TEST abba: a(a+b)(a+b)a  link(2,re_literal,lit_a4,1);lit_a4[2]<<1;
-// TEST abba: a(a+b)(a+b)a  link(2,re_literal,lit_b1,1);lit_b1[2]<<2;
-// TEST abba: a(a+b)(a+b)a  link(2,re_literal,lit_b2,1);lit_b2[2]<<2;
-// TEST abba: a(a+b)(a+b)a  link(2,re_sum,sum_ab1,1);sum_ab1[2]<<lit_a1;sum_ab1[2]<<lit_b1;
-// TEST abba: a(a+b)(a+b)a  link(2,re_sum,sum_ab2,1);sum_ab2[2]<<lit_a2;sum_ab2[2]<<lit_b2;
-// TEST abba: a(a+b)(a+b)a  link(2,re_sequence,re1,1);re1[2]<<lit_a3;re1[2]<<sum_ab1;
-// TEST abba: a(a+b)(a+b)a  link(2,re_sequence,re2,1);re2[2]<<re1;re2[2]<<sum_ab2;
-// TEST abba: a(a+b)(a+b)a  link(2,re_sequence,re3,1);re3[2]<<re2;re3[2]<<lit_a4;
-// TEST abba: a(a+b)(a+b)a  re3[2]<<^Match;
-// TEST abba: a(a+b)(a+b)a  re3[2]<<list1;
-// TEST abba: a(a+b)(a+b)a  re3[1]>>x;
-// TEST abba: a(a+b)(a+b)a  re3[2]<<^Delete;
+(nu re_star: 1=>2:2<$re@(1of2)>;$re) // RE_Star Decleration
+( def REStarService() = // RE_Star Implementation {{{
+    link(2,re_star,connection,2);
+    ( REStarService()
+    | def REStar(this: $re@(2of2), body: $re@(1of2)) =
+        this[2]>>
+        {^Match:
+	  def MatchStar(this: 2=>1:1<Bool>;$re@(2of2), body: $re@(1of2), str1: $list@(1of2), str2: $list@(1of2)) =
+	    str1[2]<<^Read;
+	    str1[1]>>
+	    {^NONE:
+	      link(2,listrev,r1,1);
+	      r1[2]<<str2;
+	      body[2]<<^Match;
+              str1[2]<<^Delete;
+	      r1[1]>>str2;
+	      body[2]<<str2;
+	      body[1]>>result;
+	      this[1]<<result;
+	      REStar(this,body),
+	     ^SOME:
+	      str1[1]>>head;
+	      // Copy both strings
+	      link(2,listcopy,cpy1,1);
+	      cpy1[2]<<str1;
+	      cpy1[1]>>str1;
+	      cpy1[1]>>str1cpy;
+	      link(2,listcopy,cpy2,1);
+	      cpy2[2]<<str2;
+	      cpy2[1]>>str2;
+	      cpy2[1]>>str2cpy;
+	      // Check if current division is correct
+	      left[2]<<^Match;
+	      left[2]<<str1;
+	      left[1]>>result1;
+	      link(2,listrev,r1,1);
+	      r1[2]<<str2;
+	      r1[1]>>str2;
+	      right[2]<<^Match;
+	      right[2]<<str2;
+	      right[1]>>result2;
+	      if (result1 and result2) // If match return
+	      then str1cpy[2]<<^Delete;
+	           str2cpy[2]<<^Delete;
+		   this[1]<<true;
+		   RESequence(this,left,right)
+	      else str1cpy[2]<<^Pop;   // Else try with later separations
+	           link(2,cons,cons1,1);
+		   cons1[2]<<head;
+		   cons1[2]<<str2cpy;
+		   cons1[1]>>str2cpy;
+                   MatchSeq(this,left,right,str1cpy,str2cpy)
+	    }
+          in
+	  this[2]>>str1;
+          left[2]<<^Match;
+          right[2]<<^Match;
+          link(2,listcopy,cpy,1);
+          cpy[2]<<str1;
+          cpy[1]>>str2;
+          left[2]<<str2;
+          cpy[1]>>str3;
+          right[2]<<str3;
+          left[1]>>r1;
+          right[1]>>r2;
+          this[1]<<r1 or r2;
+	  RESum(this,left,right),
+         ^Delete:
+          left[2]<<^Delete;
+          right[2]<<^Delete;
+          end
+        }
+      in
+        connection[2]>>body;
+        REStar(connection,body)
+    )
+  in REStarService() | // }}}
   link(2,newlist,list1,1);
-  link(2,cons,c1,1);c1[2]<<1;c1[2]<<list1;c1[1]>>list1;
-  link(2,re_literal,r1,1); r1[2]<<1;
-  link(2,re_literal,r2,1); r2[2]<<2;
-  link(2,re_sum,r,1); r[2]<<r1; r[2]<<r2;
-  r[2]<<^Match;
-  r[2]<<list1;
-  r[1]>>x;
-  r[2]<<^Delete;
+  link(2,cons,cs,1);cs[2]<<1;cs[2]<<list1;cs[1]>>list1;
+  link(2,cons,cs,1);cs[2]<<2;cs[2]<<list1;cs[1]>>list1;
+  link(2,cons,cs,1);cs[2]<<2;cs[2]<<list1;cs[1]>>list1;
+  link(2,cons,cs,1);cs[2]<<1;cs[2]<<list1;cs[1]>>list1;
+  link(2,re_literal,lit_a1,1);lit_a1[2]<<1;
+  link(2,re_literal,lit_a2,1);lit_a2[2]<<1;
+  link(2,re_literal,lit_a3,1);lit_a3[2]<<1;
+  link(2,re_literal,lit_a4,1);lit_a4[2]<<1;
+  link(2,re_literal,lit_b1,1);lit_b1[2]<<2;
+  link(2,re_literal,lit_b2,1);lit_b2[2]<<2;
+  link(2,re_sum,sum_ab1,1);sum_ab1[2]<<lit_a1;sum_ab1[2]<<lit_b1;
+  link(2,re_sum,sum_ab2,1);sum_ab2[2]<<lit_a2;sum_ab2[2]<<lit_b2;
+  link(2,re_sequence,re1,1);re1[2]<<lit_a3;re1[2]<<sum_ab1;
+  link(2,re_sequence,re2,1);re2[2]<<re1;re2[2]<<sum_ab2;
+  link(2,re_sequence,re3,1);re3[2]<<re2;re3[2]<<lit_a4;
+  re3[2]<<^Match;
+  re3[2]<<list1;
+  re3[1]>>x;
+  re3[2]<<^Delete;
   end
-) ) ) ) ) ) ) ) ) ) )
+) ) ) ) ) ) ) ) ) ) ) )
