@@ -266,7 +266,7 @@ class MpsTerm // {{{
     //! Make syntactic correct (parsable) string representation of the process
     virtual std::string ToString(std::string indent="") const = 0;
     //! Make string representation of the process with latex markup
-    virtual std::string ToTex(int indent=0) const = 0;
+    virtual std::string ToTex(int indent=0, int sw=2) const = 0;
 
     // DOCUMENTATION: MpsTerm::NewName {{{
     /*!
@@ -316,7 +316,7 @@ class MpsEnd : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 }; // }}}
 // DOCUMENTATION: MpsSnd {{{
 /*!
@@ -349,7 +349,7 @@ class MpsSnd : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     MpsChannel myChannel;
@@ -387,7 +387,7 @@ class MpsRcv : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     MpsChannel myChannel;
@@ -425,7 +425,7 @@ class MpsSelect : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     MpsChannel myChannel;
@@ -463,7 +463,7 @@ class MpsBranch : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     MpsChannel myChannel;
@@ -509,7 +509,7 @@ class MpsPar : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     MpsTerm *myLeft;
@@ -546,7 +546,7 @@ class MpsDef : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     std::string myName;
@@ -588,7 +588,7 @@ class MpsCall : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     std::string myName;
@@ -627,7 +627,7 @@ class MpsNu : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     std::string myChannel;
@@ -665,7 +665,7 @@ class MpsLink : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     std::string myChannel;
@@ -705,7 +705,7 @@ class MpsSync : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     std::string mySession;
@@ -744,7 +744,7 @@ class MpsCond : public MpsTerm // {{{
     bool Terminated() const;
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     MpsExp *myCond;
@@ -794,7 +794,7 @@ class MpsGuiSync : public MpsTerm // {{{
     bool Terminated() const;
     MpsGuiSync *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     std::string mySession;
@@ -833,7 +833,7 @@ class MpsGuiValue : public MpsTerm // {{{
     bool Terminated() const;
     MpsGuiValue *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     MpsExp *myName;
@@ -879,7 +879,7 @@ class MpsAssign : public MpsTerm // {{{
     bool Terminated() const;
     MpsAssign *Simplify() const;
     std::string ToString(std::string indent="") const;
-    std::string ToTex(int indent=0) const;
+    std::string ToTex(int indent=0, int sw=2) const;
 
   private:
     std::string myId;

@@ -5299,64 +5299,65 @@ string MpsAssign::ToString(string indent) const // {{{
 
 /* Make string representation of term with latex markup
  */
-string MpsEnd::ToTex(int indent) const // {{{
+string MpsEnd::ToTex(int indent, int sw) const // {{{
 {
-  return "{\\tt\\color{blue}end}";
+  return ToTex_KW("end");
 } // }}}
-string MpsSnd::ToTex(int indent) const // {{{
+string MpsSnd::ToTex(int indent, int sw) const // {{{
 {
-  return (string)"\\textbf{" + myChannel.ToString() + "} \\llangle " + myExp->ToString() + ";\\newline\n"
-               + "\\hspace*{" + int2string(indent) + "mm}" + mySucc->ToTex(indent);
+  return ToTex_Channel(myChannel) + "$\\ll$" + myExp->ToString() + ";\\newline\n"
+       + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsRcv::ToTex(int indent) const // {{{
+string MpsRcv::ToTex(int indent, int sw) const // {{{
 {
-  return (string)"\\textbf{" + myChannel.ToString() + "} \\rrangle " + myDest + ";\\newline\n"
-               + "\\hspace*{" + int2string(indent) + "mm}" + mySucc->ToTex(indent);
+  return ToTex_Channel(myChannel) + "$\\gg$" + myDest + ";\\newline\n"
+       + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsSelect::ToTex(int indent) const // {{{
+string MpsSelect::ToTex(int indent, int sw) const // {{{
 {
-  return (string)"\\textbf{" + myChannel.ToString() + "} \\llangle " + myLabel + ";\\newline\n"
-               + "\\hspace*{" + int2string(indent) + "mm}" + mySucc->ToTex(indent);
+  return (string)"\\textbf{" + myChannel.ToString() + "} \\llangle "
+       + ToTex_Label(myLabel) + ";\\newline\n"
+       + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsBranch::ToTex(int indent) const // {{{
+string MpsBranch::ToTex(int indent, int sw) const // {{{
 {
-  int newIndent = indent + 2;
   string result = (string)"\\textbf{" + myChannel.ToString() + "} \\rrangle\n"
-                        + "\\hspace*{" + int2string(indent) + "mm}\\{ ";
+                        + ToTex_Hspace(indent,sw) + "\\{ ";
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
-      result += ",\\newline\n\\hspace*{" + int2string(newIndent) + "mm}";
-    result += "\\textit{" + it->first + "}";
+      result += ",\\newline\n";
+    result += ToTex_Hspace(indent+2,sw) + ToTex_Label(it->first);
     map<string,MpsExp*>::const_iterator ass=myAssertions.find(it->first);
     if (ass != myAssertions.end())
-      result += + "\\llbracket" + ass->second->ToString() + "\\rrbracket";
-    result += (string)":\\newline\n\\hspace*{" + int2string(newIndent) + "mm}" + it->second->ToTex(newIndent);
+      result += + "$\\llbracket$" + ass->second->ToString() + "$\\rrbracket$";
+    result += (string)":\\newline\n"
+            + ToTex_Hspace(indent+2,sw) + it->second->ToTex(indent + 2,sw);
   }
-  result += "\\newline\n\\hspace{" + int2string(indent) + "mm}\\}";
+  result += ToTex_Hspace(indent,sw) + "\\}";
   return result;
 } // }}}
-string MpsPar::ToTex(int indent) const // {{{
+string MpsPar::ToTex(int indent, int sw) const // {{{
 {
-  int newIndent = indent + 2;
-  return (string)"( " + myLeft->ToTex(newIndent) + "\\newline\n\\hspace*{" + int2string(indent) + "mm}| " + myRight->ToTex(newIndent) + "\\newline\n\\hspace*{" + int2string(indent) + "mm})";
+  return (string)"( " + myLeft->ToTex(indent+2,sw) + "\\newline\n"
+       + ToTex_Hspace(indent,sw) + "| " + myRight->ToTex(indent+2,sw) + "\\newline\n"
+       + ToTex_Hspace(indent,sw) + ")";
 } // }}}
-string MpsDef::ToTex(int indent) const // {{{
+string MpsDef::ToTex(int indent, int sw) const // {{{
 {
-  int newIndent = indent + 4;
   int typeIndent = indent + 5 + myName.size();
-  string result = (string)"{\\tt\\color{blue}def} {\\bf\\color{green}" + myName + "}";
+  string result = ToTex_KW("def") + " " + ToTex_Var(myName);
   if (myStateArgs.size()>0)
   {
     result += "\\langle";
     for (int i=0; i<myStateArgs.size() && i<myStateTypes.size(); ++i)
     {
       if (i>0)
-        result += ",\\newline\n\\hspace*{" + int2string(typeIndent) + "mm}";
+        result += ",\\newline\n" + ToTex_Hspace(typeIndent,sw);
       int newTypeIndent = typeIndent + 2 + myStateArgs[i].size();
-      result += myStateArgs[i] + ": " + myStateTypes[i]->ToTex(newIndent);
+      result += myStateArgs[i] + ": " + myStateTypes[i]->ToTex(newTypeIndent,sw);
     }
-    result += "\\rangle\\newline\n\\hspace*{" + int2string(typeIndent-1) + "mm}";
+    result += "\\rangle\\newline\n" + ToTex_Hspace(typeIndent-1,sw);
   }
   if (myArgs.size()>0)
   {
@@ -5364,29 +5365,30 @@ string MpsDef::ToTex(int indent) const // {{{
     for (int i=0; i<myArgs.size() && i<myTypes.size(); ++i)
     {
       if (i>0)
-        result += ",\\newline\n\\hspace*{" + int2string(typeIndent) + "mm}";
+        result += ",\\newline\n" + ToTex_Hspace(typeIndent,sw);
       int newTypeIndent = typeIndent + 2 + myArgs[i].size();
-      result += myArgs[i] + ": " + myTypes[i]->ToTex(newTypeIndent);
+      result += myArgs[i] + ": " + myTypes[i]->ToTex(newTypeIndent,sw);
     }
     result += ")";
   }
-  result += (string)"=\\newline\n\\hspace*{" + int2string(newIndent) + "mm}" + myBody->ToTex(newIndent);
-  result += (string)"\\newline\n\\hspace*{" + int2string(indent) + "mm}{\\tt\\color{blue}in} " + mySucc->ToTex(newIndent);
+  result += (string)"=\\newline\n"
+          + ToTex_Hspace(indent+2,sw) + myBody->ToTex(indent+2,sw) + "\\newline\n"
+          + ToTex_Hspace(indent,sw) + ToTex_KW("in") + " " + mySucc->ToTex(indent+3,sw);
   return result;
 } // }}}
-string MpsCall::ToTex(int indent) const // {{{
+string MpsCall::ToTex(int indent, int sw) const // {{{
 {
-  string result = (string)"{\\bf\\color{green}" + myName + "}";
+  string result = ToTex_Var(myName);
   if (myState.size()>0)
   {
-    result += "\\langle";
+    result += "$\\langle$";
     for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it)
     {
       if (it != myState.begin())
         result += ", ";
       result += (*it)->ToString();
     }
-    result += "\\rangle";
+    result += "$\\rangle$";
   }
   result += "(";
   for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
@@ -5398,68 +5400,81 @@ string MpsCall::ToTex(int indent) const // {{{
   result += ")";
   return result;
 } // }}}
-string MpsNu::ToTex(int indent) const // {{{
+string MpsNu::ToTex(int indent, int sw) const // {{{
 {
   int typeIndent = indent + 5 + myChannel.size();
-  int newIndent = indent + 2;
-  return (string)"({\\tt\\color{blue}nu} " + myChannel + ":" + myType->ToTex(typeIndent) + ")" + mySucc->ToTex(newIndent);
+  return "(" + ToTex_KW("nu") + " " + ToTex_Session(myChannel) + ":" + myType->ToTex(typeIndent,sw) + ")\\newline\n"
+       + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsLink::ToTex(int indent) const // {{{
+string MpsLink::ToTex(int indent, int sw) const // {{{
 {
-  return (string) "{\\tt\\color{blue}link}(" + int2string(myMaxpid) + "," + myChannel + "," + mySession + "," + int2string(myPid) + ");\\newline\n\\hspace*{" + int2string(indent) + "mm}" + mySucc->ToTex(indent);
+  return ToTex_KW("link") + "(" + ToTex_PP(myMaxpid) + "," + ToTex_ChName(myChannel) + "," + ToTex_Session(mySession) + "," + ToTex_PP(myPid) + ");\\newline\n"
+       + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsSync::ToTex(int indent) const // {{{
+string MpsSync::ToTex(int indent, int sw) const // {{{
 {
   int newIndent = indent + 4;
-  string result = (string)"{\\tt\\color{blue}sync}(" + int2string(myMaxpid) + "," + mySession + ")\\newline\n"
-                + "\\hspace*{" + int2string(indent) + "mm}\\{ ";
+  string result = ToTex_KW("sync") + "(" + ToTex_PP(myMaxpid) + "," + ToTex_Session(mySession) + ")\\newline\n"
+                + ToTex_Hspace(indent,sw) + "\\{ ";
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
-      result += ",\\newline\n\\hspace*{" + int2string(indent+2) + "mm}";
-    result += it->first;
+      result += ",\\newline\n"
+              + ToTex_Hspace(indent+2,sw);
+    result += ToTex_Label(it->first);
     map<string,MpsExp*>::const_iterator ass=myAssertions.find(it->first);
     if (ass != myAssertions.end())
-      result += "\\llbracket" + ass->second->ToString() + "\\rrbracket";
-    result += (string)":\\newline\n\\hspace*{" + int2string(newIndent) + "mm}" + it->second->ToTex(newIndent);
+      result += "$\\llbracket$" + ass->second->ToString() + "$\\rrbracket$";
+    result += (string)":\\newline\n"
+            + ToTex_Hspace(newIndent,sw) + it->second->ToTex(newIndent,sw);
   }
-  result += "\\newline\n\\hspace*{" + int2string(indent) + "mm}\\}";
+  result += "\\newline\n"
+          + ToTex_Hspace(indent,sw) + "\\}";
   return result;
 } // }}}
-string MpsCond::ToTex(int indent) const // {{{
+string MpsCond::ToTex(int indent, int sw) const // {{{
 {
-  string result = (string)"{\\tt\\color{blue}if} " + myCond->ToString() + "\\newline\n\\hspace*{"
-  + int2string(indent) + "mm}{\\tt\\color{blue}then} " + myTrueBranch->ToTex(indent + 5) + "\\newline\n\\hspace*{"
-  + int2string(indent) + "mm}{\\tt\\color{blue}else} " + myFalseBranch->ToTex(indent + 5);
+  string result = ToTex_KW("if") +" " + myCond->ToString() + "\\newline\n"
+                + ToTex_Hspace(indent,sw) + ToTex_KW("then") + " " + myTrueBranch->ToTex(indent + 5,sw) + "\\newline\n"
+                + ToTex_Hspace(indent,sw) + ToTex_KW("else") + " " + myFalseBranch->ToTex(indent + 5,sw);
   return result;
 } // }}}
-string MpsGuiSync::ToTex(int indent) const // {{{
+string MpsGuiSync::ToTex(int indent, int sw) const // {{{
 {
   int newIndent = indent + 4;
-  string result = (string)"{\\tt\\color{blue}guisync}(" + int2string(myMaxpid) + "," + mySession + "," + int2string(myPid) + ")\\newline\n"
-                + "\\hspace*{" + int2string(indent) + "mm}\\{ ";
+  string result = ToTex_KW("guisync") + "(" + ToTex_PP(myMaxpid) + "," + ToTex_Session(mySession) + "," + ToTex_PP(myPid) + ")\\newline\n"
+                + ToTex_Hspace(indent,sw) + "\\{ ";
   for (map<string,inputbranch>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
-      result += ",\\newline\n\\hspace*{" + int2string(indent+2) + "mm}";
-    result += it->first + "\\llbracket" + it->second.assertion->ToString() + "\\rrbracket(";
+      result += ",\\newline\n"
+              + ToTex_Hspace(indent+2,sw);
+    result += ToTex_Label(it->first) + "$\\llbracket$" + it->second.assertion->ToString() + "$\\rrbracket$(";
     for (int i=0; i<it->second.args.size() && i<it->second.names.size() && i<it->second.types.size(); ++i)
     {
       if (i>0)
         result += ",";
       result += it->second.args[i] + "=" + it->second.values[i]->ToString() + ": " +it->second.types[i]->ToString();
     }
-    result += "):\\newline\n\\hspace*{" + int2string(newIndent) + "mm}" + it->second.term->ToTex(newIndent);
+    result += "):\\newline\n"
+            + ToTex_Hspace(newIndent,sw) + it->second.term->ToTex(newIndent,sw);
   }
-  result += "\\newline\n\\hspace*{" + int2string(indent) + "mm}\\}";
+  result += "\\newline\n"
+          + ToTex_Hspace(indent,sw) + "\\}";
   return result;
 } // }}}
-string MpsGuiValue::ToTex(int indent) const // {{{
+string MpsGuiValue::ToTex(int indent, int sw) const // {{{
 {
-  return (string)"{\\tt\\color{blue}guivalue}(" + int2string(myMaxpid) + "," + mySession + "," + int2string(myPid) + "," + myName->ToString() + "," + myValue->ToString() + ");\\newline\n\\hspace*{" + int2string(indent) + "mm}" + mySucc->ToTex(indent);
+  return ToTex_KW("guivalue") + "(" + ToTex_PP(myMaxpid) + ","
+       + ToTex_Session(mySession) + ","
+       + ToTex_PP(myPid) + ","
+       + myName->ToString() + ","
+       + myValue->ToString() + ");\\newline\n"
+       + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsAssign::ToTex(int indent) const // {{{
+string MpsAssign::ToTex(int indent, int sw) const // {{{
 {
-  return myId + ":" + myType->ToString() + "=" + myExp->ToString() + ";\\newline\n\\hspace*{" + int2string(indent) + "mm}" + mySucc->ToTex();
+  return ToTex_Var(myId) + ":" + myType->ToTex(indent + myId.size() + 1) + "=" + myExp->ToString() + ";\\newline\n"
+       + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
 

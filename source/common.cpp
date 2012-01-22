@@ -2,6 +2,7 @@
  */
 
 #include <apims/mpsexp.hpp>
+#include <apims/mpschannel.hpp>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -26,6 +27,23 @@
 
 /* Simple help functions
  */
+inline std::string double2string(double d) // {{{
+{
+  std::stringstream ss;
+  ss.clear();
+  ss << d;
+  std::string s = ss.str();
+  return s;
+} // }}}
+inline double string2double(std::string s) // {{{
+{
+  std::stringstream ss;
+  ss.clear();
+  ss << s;
+  double result;
+  ss >> result;
+  return result;
+} // }}}
 inline std::string int2string(int i) // {{{
 {
   std::stringstream ss;
@@ -104,7 +122,7 @@ inline bool disjoint(const std::set<int> &lhs, const std::set<int> &rhs) // {{{
 } // }}}
 
 template <class T>
-void DeleteVector(std::vector<T*> &container) // {{{
+inline void DeleteVector(std::vector<T*> &container) // {{{
 {
   while (container.size() > 0)
   {
@@ -113,11 +131,46 @@ void DeleteVector(std::vector<T*> &container) // {{{
   }
 } // }}}
 template <class T>
-void DeleteMap(std::map<std::string,T*> &container) // {{{
+inline void DeleteMap(std::map<std::string,T*> &container) // {{{
 {
   while (container.size() > 0)
   {
     delete container.begin()->second;
     container.erase(container.begin());
   }
+} // }}}
+
+// ToTex helper functions
+inline std::string ToTex_Hspace(int indent, int spacelength) // {{{
+{ return "$ $\\hspace*{" + double2string(((double)indent*spacelength)/100) + "mm}";
+} // }}}
+inline std::string ToTex_PP(int id) // {{{
+{ return "{\\tt\\color{green}" + int2string(id) + "}";
+} // }}}
+inline std::string ToTex_SID(int id) // {{{
+{ return "{\\tt\\color{purple}" + int2string(id) + "}";
+} // }}}
+inline std::string ToTex_KW(std::string name) // {{{
+{ return "{\\tt\\color{blue}" + name + "}";
+} // }}}
+inline std::string ToTex_Label(std::string name) // {{{
+{ if (name[0]=='^')
+    return "\\underline{\\tt\\color{orange}" + name.substr(1) + "}";
+  else
+    return "{\\tt\\color{orange}" + name.substr(1) + "}";
+} // }}}
+inline std::string ToTex_Var(std::string name) // {{{
+{ return "{\\tt\\color{yellow}" + name + "}";
+} // }}}
+inline std::string ToTex_ChName(std::string s) // {{{
+{ return (std::string)"{\\tt\\color{blue}" + s + "}";
+} // }}}
+inline std::string ToTex_Session(std::string s) // {{{
+{ return (std::string)"{\\tt\\color{Green}" + s + "}";
+} // }}}
+inline std::string ToTex_Channel(apims::MpsChannel ch) // {{{
+{ if (ch.GetType()=="session")
+    return ToTex_Session(ch.GetName()) + "[" + ToTex_SID(ch.GetIndex()) + "]";
+  else
+    return ToTex_ChName(ch.GetName());
 } // }}}

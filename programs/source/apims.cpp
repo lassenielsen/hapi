@@ -3,9 +3,22 @@
 #include <ctime>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+#include <sstream>
 
 using namespace std;
 using namespace apims;
+inline int string2int(std::string s) // {{{
+{
+  // Allow the use of '~' as minus
+  std::replace(s.begin(),s.end(),'~','-');
+  std::stringstream ss;
+  ss.clear();
+  ss << s;
+  int result;
+  ss >> result;
+  return result;
+} // }}}
 int main(int argc, char **argv)
 {
   // Config Parameters
@@ -19,6 +32,7 @@ int main(int argc, char **argv)
   bool cfgCompile=false;
   string term="";
   string dest="";
+  int spacewidth=185;
 
   bool argFault=true;
   for (int i=1; i<argc; ++i) // {{{
@@ -31,6 +45,10 @@ int main(int argc, char **argv)
       cfgTypecheck=false;
       cfgEval=false;
       cfgCompile=false;
+    }
+    else if ((string)argv[i]=="-spacewidth" && i+1<argc)
+    { ++i;
+      spacewidth=string2int(argv[i]);
     }
     else if ((string)argv[i]=="-steps")
       cfgSteps=true;
@@ -81,7 +99,7 @@ int main(int argc, char **argv)
   if (argFault) // {{{
   {
     cerr << "Syntax: apims '<term>'" << endl;
-    cerr << "    or: apims [-steps] [-buffers] [-choices] [-check] [-nocheck] [-compile] [-o <file>] (-f <file.mps>|<program>)" << endl
+    cerr << "    or: apims [-steps] [-buffers] [-choices] [-check] [-nocheck] [-compile] [-texonly] [-spacewidth <width>] [-o <file>] (-f <file.mps>|<program>)" << endl
          << "Options:" << endl
          << " -steps: Print each step of the evaluation for debugging" << endl
          << " -buffers: Print the content of the communication buffers" << endl
@@ -107,7 +125,7 @@ int main(int argc, char **argv)
     (*out) << "******************* Program *******************" << endl
            << current->ToString() << endl;
   if (cfgPrintTex)
-    (*out) << current->ToTex()<< endl;
+    (*out) << current->ToTex(0,spacewidth)<< endl;
   if (cfgTypecheck)
   { // Typecheck program
     (*out) << "************ Type Checking Program ************" << endl;

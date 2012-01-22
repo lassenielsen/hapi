@@ -1,0 +1,13 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Style file for apims code inclusion  %%
+%% Requires the -escape-shell parameter %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ProvidesPackage{apims}
+
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{stmaryrd}
+
+\newcommand{\apims}[1]{\tt\input{|"apims -texonly '#1'"}}
+\newcommand{\apimsinput}[1]{\tt\input{|"apims -texonly -f '#1'"}}
+\newcommand{\apimsinputsw}[2]{\tt\input{|"apims -texonly -spacewidth #2 -f '#1'"}}
