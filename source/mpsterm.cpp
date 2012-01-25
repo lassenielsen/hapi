@@ -5190,20 +5190,17 @@ string MpsDef::ToString(string indent) const // {{{
     }
     result += ">\n" + typeIndent.substr(1);
   }
-  if (myArgs.size()>0)
+  result += "(";
+  for (int i=0; i<myArgs.size() && i<myTypes.size(); ++i)
   {
-    result += "(";
-    for (int i=0; i<myArgs.size() && i<myTypes.size(); ++i)
-    {
-      if (i>0)
-        result += ",\n" + typeIndent;
-      string newTypeIndent = typeIndent + "  ";
-      for (int j=0; j<myArgs[i].size();++j)
-        newTypeIndent+=" ";
-      result += myArgs[i] + ": " + myTypes[i]->ToString(newTypeIndent);
-    }
-    result += ")";
+    if (i>0)
+      result += ",\n" + typeIndent;
+    string newTypeIndent = typeIndent + "  ";
+    for (int j=0; j<myArgs[i].size();++j)
+      newTypeIndent+=" ";
+    result += myArgs[i] + ": " + myTypes[i]->ToString(newTypeIndent);
   }
+  result += ")";
   result += (string)"=\n" + newIndent + myBody->ToString(newIndent);
   result += (string)"\n" + indent + "in " + mySucc->ToString(newIndent);
   return result;
@@ -5315,21 +5312,22 @@ string MpsRcv::ToTex(int indent, int sw) const // {{{
 } // }}}
 string MpsSelect::ToTex(int indent, int sw) const // {{{
 {
-  return (string)"\\textbf{" + myChannel.ToString() + "} \\llangle "
+  return ToTex_Channel(myChannel) + "$\\ll$ "
        + ToTex_Label(myLabel) + ";\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
 string MpsBranch::ToTex(int indent, int sw) const // {{{
 {
-  string result = (string)"\\textbf{" + myChannel.ToString() + "} \\rrangle\n"
-                        + ToTex_Hspace(indent,sw) + "\\{ ";
+  string result = ToTex_Channel(myChannel) + "$\\gg$\\newline\n"
+                + ToTex_Hspace(indent,sw) + "\\{ ";
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
-      result += ",\\newline\n";
-    result += ToTex_Hspace(indent+2,sw) + ToTex_Label(it->first);
+      result += ",\\newline\n"
+              + ToTex_Hspace(indent+2,sw);
+    result += ToTex_Label(it->first);
     map<string,MpsExp*>::const_iterator ass=myAssertions.find(it->first);
-    if (ass != myAssertions.end())
+    if (ass != myAssertions.end() && ass->second->ToString()!="true")
       result += + "$\\llbracket$" + ass->second->ToString() + "$\\rrbracket$";
     result += (string)":\\newline\n"
             + ToTex_Hspace(indent+2,sw) + it->second->ToTex(indent + 2,sw);
@@ -5349,7 +5347,7 @@ string MpsDef::ToTex(int indent, int sw) const // {{{
   string result = ToTex_KW("def") + " " + ToTex_Var(myName);
   if (myStateArgs.size()>0)
   {
-    result += "\\langle";
+    result += "$\\langle$";
     for (int i=0; i<myStateArgs.size() && i<myStateTypes.size(); ++i)
     {
       if (i>0)
@@ -5357,7 +5355,7 @@ string MpsDef::ToTex(int indent, int sw) const // {{{
       int newTypeIndent = typeIndent + 2 + myStateArgs[i].size();
       result += myStateArgs[i] + ": " + myStateTypes[i]->ToTex(newTypeIndent,sw);
     }
-    result += "\\rangle\\newline\n" + ToTex_Hspace(typeIndent-1,sw);
+    result += "$\\rangle$\\newline\n" + ToTex_Hspace(typeIndent-1,sw);
   }
   if (myArgs.size()>0)
   {
@@ -5423,7 +5421,7 @@ string MpsSync::ToTex(int indent, int sw) const // {{{
               + ToTex_Hspace(indent+2,sw);
     result += ToTex_Label(it->first);
     map<string,MpsExp*>::const_iterator ass=myAssertions.find(it->first);
-    if (ass != myAssertions.end())
+    if (ass != myAssertions.end() && ass->second->ToString()!="true")
       result += "$\\llbracket$" + ass->second->ToString() + "$\\rrbracket$";
     result += (string)":\\newline\n"
             + ToTex_Hspace(newIndent,sw) + it->second->ToTex(newIndent,sw);
@@ -5449,7 +5447,10 @@ string MpsGuiSync::ToTex(int indent, int sw) const // {{{
     if (it != myBranches.begin())
       result += ",\\newline\n"
               + ToTex_Hspace(indent+2,sw);
-    result += ToTex_Label(it->first) + "$\\llbracket$" + it->second.assertion->ToString() + "$\\rrbracket$(";
+    result += ToTex_Label(it->first);
+    if (it->second.assertion->ToString()!="true")
+      result += "$\\llbracket$" + it->second.assertion->ToString() + "$\\rrbracket$";
+    result += "(";
     for (int i=0; i<it->second.args.size() && i<it->second.names.size() && i<it->second.types.size(); ++i)
     {
       if (i>0)

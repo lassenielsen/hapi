@@ -160,7 +160,14 @@ inline std::string ToTex_Label(std::string name) // {{{
     return "{\\tt\\color{orange}" + name.substr(1) + "}";
 } // }}}
 inline std::string ToTex_Var(std::string name) // {{{
-{ return "{\\tt\\color{yellow}" + name + "}";
+{ if (name == "")
+    return "";
+  else if (name[0]=='$')
+    return "{\\tt\\color{BlueGreen}" + name.substr(1) + "}";
+  else if (name[0]=='%')
+    return "{\\tt\\color{Turquoise}" + name.substr(1) + "}";
+  else
+    return "{\\tt\\color{Cyan}" + name + "}";
 } // }}}
 inline std::string ToTex_ChName(std::string s) // {{{
 { return (std::string)"{\\tt\\color{blue}" + s + "}";

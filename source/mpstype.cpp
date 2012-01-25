@@ -1743,7 +1743,7 @@ string MpsGlobalMsgType::ToTex(int indent, int sw) const// {{{
 } // }}}
 string MpsGlobalBranchType::ToTex(int indent, int sw) const // {{{
 {
-  string result = ToTex_PP(mySender) + "$\to$" + ToTex_PP(myReceiver)
+  string result = ToTex_PP(mySender) + "$\\to$" + ToTex_PP(myReceiver)
                 + ":" + ToTex_SID(myChannel) + "\\newline"
                 + ToTex_Hspace(indent,sw) + "\\{ ";
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
@@ -1768,7 +1768,7 @@ string MpsGlobalBranchType::ToTex(int indent, int sw) const // {{{
 } // }}}
 string MpsGlobalRecType::ToTex(int indent, int sw) const// {{{
 {
-  string result = ToTex_KW("fix") + " " + ToTex_Var(myName);
+  string result = ToTex_KW("rec") + " " + ToTex_Var(myName);
   if (myArgs.size()>0)
   { // Declare all state variables
     result += "$\\langle$";
@@ -3872,55 +3872,89 @@ string MpsLocalSendType::ToTex(int indent, int sw) const // {{{
 } // }}}
 string MpsLocalRcvType::ToTex(int indent, int sw) const // {{{
 {
-  return ToString();
-//  string newIndent = indent + "  ";
-//  string result = int2string(myChannel) + " >> <" + myMsgType->ToString(newIndent) + ">";
-//  if (myAssertionType)
-//    result += (string)" as " + myId + "[[" + myAssertion->ToString() + "]]";
-//  result += (string)"\n"
-//          + indent + mySucc->ToString(indent);
-//  return result;
+  int newIndent = indent + 2;
+  string result = ToTex_SID(myChannel) + "$\\gg\\langle$" + myMsgType->ToTex(newIndent,sw) + "$\\rangle$";
+  if (myAssertionType)
+    result += (string)" as " + myId + "$\\llbracket$" + myAssertion->ToString() + "$\\rrbracket$";
+  result += (string)";\\newline\n"
+          + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
+  return result;
 } // }}}
 string MpsLocalForallType::ToTex(int indent, int sw) const // {{{
 {
-  string result = (string)"forall " + myName + " [[" +myAssertion->ToString() + "]];\n"
-            + int2string(indent) + mySucc->ToString();
+  string result = (string)"$\\forall$ " + myName + " $\\llbracket$" +myAssertion->ToString() + "$\\rrbracket$;\n"
+                + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
   return result;
 } // }}}
 string MpsLocalSelectType::ToTex(int indent, int sw) const // {{{
 {
-  return ToString();
+  int lblIndent = indent + 2;
+  int newIndent = indent + 4;
+  string result = ToTex_SID(myChannel) + "$\\ll$\\newline\n"
+                + ToTex_Hspace(indent,sw) + "\\{ ";
+  for (map<string,MpsLocalType*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+  { if (branch!=myBranches.begin())
+      result += ",\\newline\n"
+              + ToTex_Hspace(lblIndent,sw);
+    result += ToTex_Label(branch->first);
+    map<string,MpsExp*>::const_iterator assertion=myAssertions.find(branch->first);
+    if (assertion!=myAssertions.end() && assertion->second->ToString()!="true")
+      result += "$\\llbracket$" + assertion->second->ToString() + "$\\rrbracket$";
+    result += ":\\newline\n"
+            + ToTex_Hspace(newIndent,sw) + branch->second->ToTex(newIndent,sw);
+  }
+  result += "\\newline\n"
+          + ToTex_Hspace(indent,sw) + "\\}";
+  return result;
 } // }}}
 string MpsLocalBranchType::ToTex(int indent, int sw) const // {{{
 {
-  return ToString();
+  int lblIndent = indent + 2;
+  int newIndent = indent + 4;
+  string result = ToTex_SID(myChannel) + "$\\gg$\\newline\n"
+                + ToTex_Hspace(indent,sw) + "\\{ ";
+  for (map<string,MpsLocalType*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+  { if (branch!=myBranches.begin())
+      result += ",\\newline\n"
+              + ToTex_Hspace(lblIndent,sw);
+    result += ToTex_Label(branch->first);
+    map<string,MpsExp*>::const_iterator assertion=myAssertions.find(branch->first);
+    if (assertion!=myAssertions.end() && assertion->second->ToString()!="true")
+      result += "$\\llbracket$" + assertion->second->ToString() + "$\\rrbracket$";
+    result += ":\\newline\n"
+            + ToTex_Hspace(newIndent,sw) + branch->second->ToTex(newIndent,sw);
+  }
+  result += "\\newline\n"
+          + ToTex_Hspace(indent,sw) + "\\}";
+  return result;
 } // }}}
 string MpsLocalRecType::ToTex(int indent, int sw) const // {{{
 {
-  string result="rec " + myName;
+  string result= ToTex_KW("rec") + " " + ToTex_Var(myName);
   if (myArgs.size()>0)
   { // Declare all state variables
-    result += "<";
+    result += "$\\langle$";
     for (int i=0; i<myArgs.size(); ++i)
     { // Insert seperator
       if (i>0)
         result+=", ";
       // Declare NAME:TYPE=VALUE
-      result += myArgs[i].myName + ":"
-              + myArgs[i].myType->ToString() + "="
+      result += ToTex_Var(myArgs[i].myName) + ":"
+              + myArgs[i].myType->ToTex(indent+4,sw) + "="
               + myArgs[i].myValue->ToString();
     }
-    result += ">";
+    result += "$\\rangle$";
   }
-  result +=  ".\n" + int2string(indent) + mySucc->ToString();
+  result +=  ".\\newline\n"
+          + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
   return result;
 } // }}}
 string MpsLocalVarType::ToTex(int indent, int sw) const // {{{
 {
-  string result=myName;
+  string result=ToTex_Var(myName);
   if (myValues.size()>0)
   { // Declare all state variables
-    result += "<";
+    result += "$\\langle$";
     for (int i=0; i<myValues.size(); ++i)
     { // Insert seperator
       if (i>0)
@@ -3928,37 +3962,38 @@ string MpsLocalVarType::ToTex(int indent, int sw) const // {{{
       // Add value
       result += myValues[i]->ToString();
     }
-    result += ">";
+    result += "$\\rangle$";
   }
 
   return result;
 } // }}}
 string MpsLocalEndType::ToTex(int indent, int sw) const // {{{
 {
-  string result="Lend";
+  string result=ToTex_KW("end");
   return result;
 } // }}}
 string MpsLocalSyncType::ToTex(int indent, int sw) const // {{{
 {
-  string newIndent = indent + "    ";
-  string result = "{ ";
+  int lblIndent = indent + 2;
+  int newIndent = indent + 4;
+  string result = "\\{ ";
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
   {
     if (it != myBranches.begin())
-      result += ",\n" + int2string(indent) + "  ";
+      result += ",\n" + ToTex_Hspace(lblIndent,sw);
 
     // Print label
-    result += it->first;
+    result += ToTex_Label(it->first);
     // Print assertion if any
     map<string,MpsExp*>::const_iterator assertion = myAssertions.find(it->first);
     if (assertion != myAssertions.end())
-      result += + "[[" + assertion->second->ToString() + "]]";
+      result += + "$\\llbracket$" + assertion->second->ToString() + "$\\rrbracket$";
     // Print branch
-    result += ":\n"
-            + newIndent + it->second->ToString(newIndent);
+    result += ":\\newline\n"
+            + ToTex_Hspace(newIndent,sw) + it->second->ToTex(newIndent,sw);
   }
-  result += "\n" + int2string(indent) + "}";
-
+  result += "\\newline\n"
+          + ToTex_Hspace(indent,sw) + "\\}";
   return result;
 } // }}}
 
@@ -5093,17 +5128,17 @@ string MpsDelegateGlobalMsgType::ToString(const string &indent) const // {{{
 // Make string representation with latex markup
 string MpsMsgNoType::ToTex(int indent, int sw) const // {{{
 {
-  string result="Untyped";
+  string result=ToTex_KW("Untyped");
   return result;
 } // }}}
 string MpsIntMsgType::ToTex(int indent, int sw) const // {{{
 {
-  string result="Int";
+  string result=ToTex_KW("Int");
   return result;
 } // }}}
 string MpsStringMsgType::ToTex(int indent, int sw) const // {{{
 {
-  string result="String";
+  string result=ToTex_KW("String");
   return result;
 } // }}}
 string MpsBoolMsgType::ToTex(int indent, int sw) const // {{{
@@ -5118,25 +5153,26 @@ string MpsTupleMsgType::ToTex(int indent, int sw) const // {{{
   for (vector<MpsMsgType*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
   {
     if (it!=myElements.begin())
-      result += ",\n" + int2string(newIndent);
-    result += (*it)->ToTex(newIndent);
+      result += ",\\newline\n"
+              + ToTex_Hspace(newIndent,sw);
+    result += (*it)->ToTex(newIndent,sw);
   }
   result += " )";
   return result;
 } // }}}
 string MpsChannelMsgType::ToTex(int indent, int sw) const // {{{
 {
-  string result=(string)"<" + myType->ToTex(indent) + ">";
+  string result=(string)"$\\langle$" + myType->ToTex(indent,sw) + "$\\rangle$";
   return result;
 } // }}}
 string MpsDelegateLocalMsgType::ToTex(int indent, int sw) const // {{{
 {
-  string result=myType->ToTex(indent) + "@(" + int2string(GetPid()) + " of " + int2string(GetMaxpid()) + ")";
+  string result=myType->ToTex(indent,sw) + "@(" + ToTex_PP(GetPid()) + " of " + ToTex_PP(GetMaxpid()) + ")";
   return result;
 } // }}}
 string MpsDelegateGlobalMsgType::ToTex(int indent, int sw) const // {{{
 {
-  string result=myLocalType->ToTex(indent) + "@(" + int2string(GetPid()) + " of " + int2string(GetMaxpid()) + ")";
+  string result=myLocalType->ToTex(indent,sw) + "@(" + ToTex_PP(GetPid()) + " of " + ToTex_PP(GetMaxpid()) + ")";
   return result;
 } // }}}
 
