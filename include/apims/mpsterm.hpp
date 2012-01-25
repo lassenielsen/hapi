@@ -440,7 +440,7 @@ class MpsSelect : public MpsTerm // {{{
 class MpsBranch : public MpsTerm // {{{
 {
   public:
-    MpsBranch(const MpsChannel &channel, const std::map< std::string, MpsTerm*> &branches, const std::map<std::string,MpsExp*> &assertions);
+    MpsBranch(const MpsChannel &channel, const std::map< std::string, MpsTerm*> &branches);
     virtual ~MpsBranch();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -468,7 +468,6 @@ class MpsBranch : public MpsTerm // {{{
   private:
     MpsChannel myChannel;
     std::map< std::string, MpsTerm*> myBranches;
-    std::map< std::string, MpsExp*> myAssertions;
 }; // }}}
 // DOCUMENTATION: MpsPar {{{
 /*!

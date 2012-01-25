@@ -461,7 +461,8 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     assertions.clear();
     FindBranches(exp->content[3], branches, assertions);
     MpsChannel source=ParseChannel(exp->content[0]);
-    MpsTerm *result = new MpsBranch(source, branches, assertions);
+    // BRANCHE TERMS DOES NOT USE ASSERTIONS
+    MpsTerm *result = new MpsBranch(source, branches);
 
     // Clean up
     while (branches.size() > 0)
@@ -793,24 +794,15 @@ MpsSelect::MpsSelect(const MpsChannel &channel, const string &label, const MpsTe
   // Assert succ!=NULL
   mySucc = succ.Copy();
 } // }}}
-MpsBranch::MpsBranch(const MpsChannel &channel, const map<string,MpsTerm*> &branches, const map<string,MpsExp*> &assertions) // {{{
+MpsBranch::MpsBranch(const MpsChannel &channel, const map<string,MpsTerm*> &branches) // {{{
 : myChannel(channel)
 {
   myBranches.clear();
-  myAssertions.clear();
   for (map<string,MpsTerm*>::const_iterator it = branches.begin(); it != branches.end(); ++it)
   {
     // assert it->second != NULL
     MpsTerm *branch = it->second->Copy();
     myBranches[it->first] = branch;
-    // Copy assertion
-    map<string,MpsExp*>::const_iterator it2=assertions.find(it->first);
-    MpsExp *assertion=NULL;
-    if (it2==assertions.end())
-      assertion=new MpsBoolVal(true);
-    else
-      assertion=it2->second->Copy();
-    myAssertions[it->first] = assertion;
   }
 } // }}}
 MpsPar::MpsPar(const MpsTerm &left, const MpsTerm &right) // {{{
@@ -943,7 +935,6 @@ MpsBranch::~MpsBranch() // {{{
     delete myBranches.begin()->second;
     myBranches.erase(myBranches.begin());
   }
-  DeleteMap(myAssertions);
 } // }}}
 MpsPar::~MpsPar() // {{{
 {
@@ -3008,7 +2999,7 @@ MpsTerm *MpsBranch::PRename(const string &src, const string &dst) const // {{{
     MpsTerm *newBranch = it->second->PRename(src,dst);
     newBranches[it->first] = newBranch;
   }
-  MpsTerm *result = new MpsBranch(myChannel, newBranches, myAssertions);
+  MpsTerm *result = new MpsBranch(myChannel, newBranches);
   // Clean up
   DeleteMap(newBranches);
   return result;
@@ -3192,18 +3183,9 @@ MpsTerm *MpsBranch::ERename(const string &src, const string &dst) const // {{{
     MpsTerm *newBranch = it->second->ERename(src,dst);
     newBranches[it->first] = newBranch;
   }
-  map<string, MpsExp*> newAssertions;
-  newAssertions.clear();
-  // Rename each assersion
-  for (map<string,MpsExp*>::const_iterator it = myAssertions.begin(); it != myAssertions.end(); ++it)
-  {
-    MpsExp *newAssertion = it->second->Rename(src,dst);
-    newAssertions[it->first] = newAssertion;
-  }
-  MpsTerm *result = new MpsBranch(newChannel, newBranches, newAssertions);
+  MpsTerm *result = new MpsBranch(newChannel, newBranches);
   // Clean up
   DeleteMap(newBranches);
-  DeleteMap(newAssertions);
   return result;
 } // }}}
 MpsTerm *MpsPar::ERename(const string &src, const string &dst) const // {{{
@@ -3503,7 +3485,7 @@ MpsTerm *MpsBranch::PSubst(const string &var, const MpsTerm &exp, const vector<s
     MpsTerm *newBranch = it->second->PSubst(var,exp,args,stateargs);
     newBranches[it->first] = newBranch;
   }
-  MpsTerm *result = new MpsBranch(myChannel, newBranches, myAssertions);
+  MpsTerm *result = new MpsBranch(myChannel, newBranches);
   // Clean up
   while (newBranches.size() > 0)
   {
@@ -3851,23 +3833,13 @@ MpsTerm *MpsBranch::ESubst(const string &source, const MpsExp &dest) const // {{
     MpsTerm *newBranch = it->second->ESubst(source,dest);
     newBranches[it->first] = newBranch;
   }
-  map<string, MpsExp*> newAssertions;
-  newAssertions.clear();
-  // ESubst each branch
-  for (map<string,MpsExp*>::const_iterator it = myAssertions.begin(); it != myAssertions.end(); ++it)
-  {
-    // assert it->second != NULL
-    MpsExp *newAssertion = it->second->Subst(source,dest);
-    newAssertions[it->first] = newAssertion;
-  }
-  MpsTerm *result = new MpsBranch(newChannel, newBranches, newAssertions);
+  MpsTerm *result = new MpsBranch(newChannel, newBranches);
   // Clean up
   while (newBranches.size() > 0)
   {
     delete newBranches.begin()->second;
     newBranches.erase(newBranches.begin());
   }
-  DeleteMap(newAssertions);
   return result;
 } // }}}
 MpsTerm *MpsPar::ESubst(const string &source, const MpsExp &dest) const // {{{
@@ -4202,7 +4174,7 @@ MpsTerm *MpsBranch::GSubst(const string &source, const MpsGlobalType &dest, cons
   // GSubst each branch
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
     newBranches[it->first] = it->second->GSubst(source,dest,args);
-  MpsTerm *result = new MpsBranch(myChannel, newBranches, myAssertions);
+  MpsTerm *result = new MpsBranch(myChannel, newBranches);
 
   // Clean up
   DeleteMap(newBranches);
@@ -4409,7 +4381,7 @@ MpsTerm *MpsBranch::LSubst(const string &source, const MpsLocalType &dest, const
   // LSubst each branch
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
     newBranches[it->first] = it->second->LSubst(source,dest,args);
-  MpsTerm *result = new MpsBranch(myChannel, newBranches, myAssertions);
+  MpsTerm *result = new MpsBranch(myChannel, newBranches);
 
   // Clean up
   DeleteMap(newBranches);
@@ -4842,7 +4814,7 @@ MpsTerm *MpsSelect::Copy() const // {{{
 } // }}}
 MpsTerm *MpsBranch::Copy() const // {{{
 {
-  return new MpsBranch(myChannel,myBranches,myAssertions);
+  return new MpsBranch(myChannel,myBranches);
 } // }}}
 MpsTerm *MpsPar::Copy() const // {{{
 {
@@ -4991,7 +4963,7 @@ MpsTerm *MpsBranch::Simplify() const // {{{
   newBranches.clear();
   for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
     newBranches[it->first] = it->second->Simplify();
-  MpsTerm *result = new MpsBranch(myChannel,newBranches,myAssertions);
+  MpsTerm *result = new MpsBranch(myChannel,newBranches);
   // Clean up
   while (newBranches.size() > 0)
   {
@@ -5155,11 +5127,8 @@ string MpsBranch::ToString(string indent) const // {{{
   {
     if (it != myBranches.begin())
       result += ",\n" + newIndent;
-    result += it->first;
-    map<string,MpsExp*>::const_iterator ass=myAssertions.find(it->first);
-    if (ass != myAssertions.end())
-      result += + "[[" + ass->second->ToString() + "]]";
-    result += (string)":\n" + newIndent + it->second->ToString(newIndent);
+    result += it->first + ":\n"
+            + newIndent + it->second->ToString(newIndent);
   }
   result += "\n" + indent + "}";
   return result;
@@ -5326,9 +5295,6 @@ string MpsBranch::ToTex(int indent, int sw) const // {{{
       result += ",\\newline\n"
               + ToTex_Hspace(indent+2,sw);
     result += ToTex_Label(it->first);
-    map<string,MpsExp*>::const_iterator ass=myAssertions.find(it->first);
-    if (ass != myAssertions.end() && ass->second->ToString()!="true")
-      result += + "$\\llbracket$" + ass->second->ToString() + "$\\rrbracket$";
     result += (string)":\\newline\n"
             + ToTex_Hspace(indent+2,sw) + it->second->ToTex(indent + 2,sw);
   }
