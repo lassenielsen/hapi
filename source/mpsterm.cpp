@@ -2893,9 +2893,11 @@ bool MpsGuiSync::SubSteps(vector<MpsStep> &dest) // {{{
         newChoice.name = choice->first;
         for (int i=0; i<choice->second.names.size(); ++i)
         {
+          MpsExp *value = choice->second.values[i]->Eval();
           mpsgui::ChoiceArg newArg(choice->second.names[i],
               *choice->second.types[i],
-              *choice->second.values[i]);
+              *value);
+          delete value;
           newChoice.args.push_back(newArg);
         }
         newChoice.accept=(choice->second.names.size()==0); // Auto accept, if no input required
