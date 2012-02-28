@@ -37,7 +37,7 @@
   ( link(1,gui,user,1);                  // Create User Interface
     def X(u : rec %x.{#Fact: %x,
                       #Fib: %x,
-                      ^Quit: Lend}@(1of1)) =
+                      ^Quit: Lend}@(1 of 1)) =
         guisync(1,u,1)                   // Wait for User Input
         {#Fact(n: Int=5):                // Call Fact(n)
           link(2,fact,s,1);              // Connect to Fact Server

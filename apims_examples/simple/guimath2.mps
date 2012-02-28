@@ -2,7 +2,7 @@
 (nu fib  : 1=>2:1<Int>;2=>1:2<Int>;Gend)  // Fib Server protocol
 ( (nu factcont : 1=>2:1<Int>;             // Fact Continuation protocol
                  1=>2:1<Int>;
-                 1=>2:1<2<<<Int>;Lend@(2of2)>;
+                 1=>2:1<2<<<Int>;Lend@(2 of 2)>;
                  Gend)
   ( def FactCont() =                      // Fact Continuation Server
         link(2,factcont,s,2);                 // Receive Connection
@@ -30,7 +30,7 @@
 | (nu cont : 1=>2:1<Int>;                 // Fib Continuation Server Protocol
              1=>2:1<Int>;
              1=>2:1<Int>;
-             1=>2:1<2<<<Int>;Lend@(2of2)>;
+             1=>2:1<2<<<Int>;Lend@(2 of 2)>;
              Gend)
   ( def FibCont() =
         link(2,cont,s,2);                 // Receive Connection
@@ -67,7 +67,7 @@
   ( link(1,gui,user,1);                   // Create User Interface
     def X(u : rec %x.{#Fact: %x,
                       #Fib: %x,
-                      ^Quit: Lend}@(1of1)) =
+                      ^Quit: Lend}@(1 of 1)) =
         guisync(1,u,1)                    // Wait for User Input
         {#Fact(n: Int=5):                 // Choice: Faculty
           link(2,fact,s,1);               // Connect to Fact Server

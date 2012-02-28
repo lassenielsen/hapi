@@ -1,7 +1,7 @@
 (nu cont : 1=>2:1<Int>;                 // Fib Continuation Server Protocol
            1=>2:1<Int>;
            1=>2:1<Int>;
-           1=>2:1<2<<<Int>;Lend@(2of2)>;
+           1=>2:1<2<<<Int>;Lend@(2 of 2)>;
            Gend)
 (nu fib : 1=>2:1<Int>;                  // Fib Server Protocol
           2=>1:2<Int>;
