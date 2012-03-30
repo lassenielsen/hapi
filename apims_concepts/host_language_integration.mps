@@ -7,7 +7,10 @@
 // program structure may be compromised by the host language code snippets
 // without detection by the tokenizer, parer, typechecker and (first level)
 // compilation.
-\CHEADER{{ #include <iostream> }} // Add C header
+\CHEADER{{
+#include <iostream> 
+using namespace std;
+}} // Add C header
 define $cout =
 rec $x.
   1=>2:1
@@ -17,7 +20,13 @@ rec $x.
    ^close: end
   }
 in
-(public channel cout: $cout)
+// public means that its scope is unlimited.
+// the default is private, meaning that the channel can only bee used within
+// its scope unless it is transmitted to the processes outside the scope.
+//
+// dynamic (default) means that the channel port is unspecified, and a suitable port can be found at runtime.
+// alternatively a fixed channel port can be specified by (channel cout@12345: $cout).
+(public dynamic channel cout: $cout)
 def Service_cout() =
   def Cout(client:$cout@(2 of 2)) =
   client[1]>>
