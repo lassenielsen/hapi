@@ -4,7 +4,7 @@ def GCD() = // Greatest Common Divisor Service, used for fraction normalization 
   ( GCD()
   | def GcdFun(n: Int,
                m: Int,
-               s: 2<<<Int>;Lend@(2of2)) =
+               s: 2<<<Int>;Lend@(2 of 2)) =
       if (n+1)<=0
       then GcdFun(0-n,m,s)
       else if (m+1)<=0
