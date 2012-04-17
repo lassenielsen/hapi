@@ -15,8 +15,8 @@ define $cout =
 rec $x.
   1=>2:1
   {^print_string: 1=>2:1<String>;$x,
-   ^print_int:    1=>2:1<String>;$x,
-   ^print_bool:   1=>2:1<String>;$x,
+   ^print_int:    1=>2:1<Int>;$x,
+   ^print_bool:   1=>2:1<Bool>;$x,
    ^close: end
   }
 in
