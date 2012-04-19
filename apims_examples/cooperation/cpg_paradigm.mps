@@ -74,7 +74,7 @@ in // }}}
       Tests<true,result,t2,r2>(w),
      ^Test2[[not t2]]():
       w[2]>>result;
-      guivalue(4,w,2,"Result of second test",result);
+      guivalue(4,w,2,"Result of second test",if result then "Positive" else "Negative");
       Tests<t1,r1,true,result>(w),
      ^Treat[[t1 and t2]]():
       def Treat<r1:Bool,r2:Bool,adm:Bool>(w: $wf2<r1,r2,adm>@(2of4))=
@@ -97,14 +97,14 @@ in // }}}
   def Tests<t1:Bool,r1:Bool,t2:Bool,r2:Bool>(w: $wf<t1,r1,t2,r2>@(3of4))=
     guisync(4,w,3)
     {^Test1[[not t1]](result:Bool=true):
-      guivalue(4,w,3,"Result of first test",result);
+      guivalue(4,w,3,"Result of first test",if result then "Positive" else "Negative");
       w[4]<<result;
       w[2]<<result;
       w[1]<<result;
       Tests<true,result,t2,r2>(w),
      ^Test2[[not t2]]():
       w[3]>>result;
-      guivalue(4,w,3,"Result of second test",result);
+      guivalue(4,w,3,"Result of second test",if result then "Positive" else "Negative");
       Tests<t1,r1,true,result>(w),
      ^Treat[[t1 and t2]]():
       def Treat<r1:Bool,r2:Bool,adm:Bool>(w: $wf2<r1,r2,adm>@(3of4))=
@@ -127,13 +127,13 @@ in // }}}
     guisync(4,w,4)
     {^Test1[[not t1]]():
       w[4]>>result;
-      guivalue(4,w,4,"Result of first test",result);
+      guivalue(4,w,4,"Result of first test",if result then "Positive" else "Negative");
       Tests<true,result,t2,r2>(w),
      ^Test2[[not t2]](result:Bool=true):
       w[3]<<result;
       w[2]<<result;
       w[1]<<result;
-      guivalue(4,w,4,"Result of second test",result);
+      guivalue(4,w,4,"Result of second test",if result then "Positive" else "Negative");
       Tests<t1,r1,true,result>(w),
      ^Treat[[t1 and t2]]():
       def Treat<r1:Bool,r2:Bool,adm:Bool>(w: $wf2<r1,r2,adm>@(4of4))=

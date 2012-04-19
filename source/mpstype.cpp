@@ -1762,7 +1762,7 @@ string MpsGlobalBranchType::ToTex(int indent, int sw) const // {{{
     result += (string)":\\newline\n"
             + ToTex_Hspace(indent+4,sw) + it->second->ToTex(indent+4,sw);
   }
-  result += (string)"\n" + ToTex_Hspace(indent,sw) + "\\}\n";
+  result += (string)"\\newline\n" + ToTex_Hspace(indent,sw) + "\\}\n";
 
   return result;
 } // }}}
@@ -5143,7 +5143,7 @@ string MpsStringMsgType::ToTex(int indent, int sw) const // {{{
 } // }}}
 string MpsBoolMsgType::ToTex(int indent, int sw) const // {{{
 {
-  string result="Bool";
+  string result=ToTex_KW("Bool");
   return result;
 } // }}}
 string MpsTupleMsgType::ToTex(int indent, int sw) const // {{{

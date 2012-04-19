@@ -1,7 +1,7 @@
 (nu cont : 1=>2:1<Int>;                 // Fib Continuation Server Protocol
            1=>2:1<Int>;
            1=>2:1<Int>;
-           1=>2:1<2<<<Int>;Lend@(2of2)>;
+           1=>2:1<2<<<Int>;Lend@(2 of 2)>;
            Gend)
 ( def FibCont() =
       link(2,cont,s,2);                 // Receive Connection
