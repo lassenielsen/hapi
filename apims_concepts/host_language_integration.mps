@@ -7,17 +7,21 @@
 // program structure may be compromised by the host language code snippets
 // without detection by the tokenizer, parer, typechecker and (first level)
 // compilation.
-\CHEADER{{
+
+// Add C header
+\begin{CHEADER}
 #include <iostream> 
 using namespace std;
-}} // Add C header
+\end{CHEADER}
+
 define $cout =
 rec $x.
   1=>2:1
-  {^print_string: 1=>2:1<String>;$x,
-   ^print_int:    1=>2:1<Int>;$x,
-   ^print_bool:   1=>2:1<Bool>;$x,
-   ^close: end
+  {^string: 1=>2:1<String>;$x,
+   ^int:    1=>2:1<Int>;$x,
+   ^bool:   1=>2:1<Bool>;$x,
+   ^endl:   $x,
+   ^close:  end
   }
 in
 // public means that its scope is unlimited.
@@ -30,18 +34,27 @@ in
 def Service_cout() =
   def Cout(client:$cout@(2 of 2)) =
   client[1]>>
-  {^print_newline: $x
-  {^print_string:
+  {^endl: $x
+  {^string:
     client[1]>>s;
-    \C{{ cout << \EXP{{s}} }};
+    \begin{C}
+      cout << \begin{EXP} s \end{EXP};
+    \end{C};
     Cout(client),
-   ^print_int:
+   ^int:
     client[1]>>i;
-    \C{{ cout << \EXP{{i}} }}; // fixme: needs printing of multi precission value
+    \begin{C}
+      char *Str=NULL;
+      mpi_get_str(Str,10,\begin{EXP} i \end{EXP}); // Convertes MPI value to char*
+      cout << Str;
+      delete [] Str; // Clean up mem
+    \end{C};
     Cout(client),
-   ^print_bool:
+   ^bool:
     client[1]>>b;
-    \C{{ cout << \EXP{{if (b) then "True" else "False"}} }};
+    \begin{C}
+      cout << \begin{EXP}if (b) then "True" else "False"\end{EXP};
+    \end{C};
     Cout(client),
    ^close:
     Service_cout()
@@ -53,36 +66,31 @@ in Service_cout() |
 ( // Proccesses that will print a sequnce of strings,
   // and the outputs of the different processes will not be mixed!
   link(2,cout,out,1);
-  out[1]<<^print_string;
+  out[1]<<^string;
   out[1]<<"Hello World 1.1";
-  out[1]<<^print_newline;
-  out[1]<<^print_string;
+  out[1]<<^newline;
+  out[1]<<^string;
   out[1]<<"Hello World 1.2";
-  out[1]<<^print_newline;
-  out[1]<<^print_string;
+  out[1]<<^newline;
+  out[1]<<^string;
   out[1]<<"Hello World 1.3";
-  out[1]<<^print_newline;
+  out[1]<<^newline;
   out[1]<<^close;
 | link(2,cout,out,1);
-  out[1]<<^print_string;
+  out[1]<<^string;
   out[1]<<"Hello World 2.1";
-  out[1]<<^print_newline;
-  out[1]<<^print_string;
+  out[1]<<^newline;
+  out[1]<<^string;
   out[1]<<"Hello World 2.2";
-  out[1]<<^print_newline;
-  out[1]<<^print_string;
+  out[1]<<^newline;
+  out[1]<<^string;
   out[1]<<"Hello World 2.3";
-  out[1]<<^print_newline;
+  out[1]<<^newline;
   out[1]<<^close;
-| link(2,cout,out,1);
-  out[1]<<^print_string;
-  out[1]<<"Hello World 3.1";
-  out[1]<<^print_newline;
-  out[1]<<^print_string;
-  out[1]<<"Hello World 3.2";
-  out[1]<<^print_newline;
-  out[1]<<^print_string;
-  out[1]<<"Hello World 3.3";
-  out[1]<<^print_newline;
-  out[1]<<^close;
+| // Using another language extension (syntactic sugar):
+  link(2,cout,out,1);
+  out[1]<< ^string << "Hello World 3.1" << ^newline;
+  out[1]<< ^string << "Hello World 3.2" << ^newline;
+  out[1]<< ^string << "Hello World 3.3" << ^newline;
+  out[1]<< ^close;
 )
