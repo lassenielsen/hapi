@@ -1,14 +1,15 @@
-// This example defines the interface of - and implements - an ordered list.
-// The implementation can be optimized in many ways.
+// Adding type values to enable parametricaly polymorfic types
+// Showing example of polymorphic lists
 define $list= // The interface of a list {{{
+  1=>2:1<Type x>;
   rec $list. 
   1=>2:1
-  {^Insert: 1=>2:1<Int>;
+  {^Cons: 1=>2:1<x>;
             $list,
    ^Lookup: 1=>2:1<Int>;
             2=>1:2
             {^NONE: $list,
-             ^SOME: 2=>1:2<Int>;
+             ^SOME: 2=>1:2<x>;
                     $list
             },
    ^Delete: Gend
@@ -16,25 +17,23 @@ define $list= // The interface of a list {{{
 in // }}}
 // Declare channel (constructor) {{{
 (nu list: $list) // }}}
-// Implement ordered list {{{
+// Implement list {{{
 ( def List() =
     link(2,list,s,2);
     ( List()
-    | def NIL(this: $list@(2 of 2)) = // {{{
+    | s[1]>>type;
+      def NIL(this: $list@(2 of 2)) = // {{{
         this[1]>>
-        {^Insert:
+        {^Cons:
           this[1]>>val;
           link(2,list,s,1);
-          def CONS(this: $list@(2 of 2), next: $list@(1 of 2), v: Int) = // {{{
+          def CONS(this: $list@(2 of 2), next: $list@(1 of 2), v: type) = // {{{
             this[1]>>
-            {^Insert:
-              next[1]<<^Insert;
+            {^Cons:
+              next[1]<<^Cons;
               this[1]>>newVal;
-              if v<=newVal
-              then next[1]<<newVal;
-                   CONS(this,next,v)
-              else next[1]<<v;
-                   CONS(this,next,newVal),
+              next[1]<<v;
+              CONS(this,next,newVal),
              ^Lookup:
               this[1]>>pos;
               if pos<=0
@@ -68,19 +67,26 @@ in // }}}
       in NIL(s)
     )
   in List() // }}}
-| link(2,list,myList,1); // Create myList as list
-  myList[1]<<^Insert;
-  myList[1]<<5;          // myList = [0:5]
-  myList[1]<<^Insert;
-  myList[1]<<2;          // myList = [0:2, 1:5]
-  myList[1]<<^Insert;
-  myList[1]<<7;          // myList = [0:2, 1:5, 2:7]
-  myList[1]<<^Insert;
-  myList[1]<<3;          // myList = [0:2, 1:3, 2:5, 3:7]
-  myList[1]<<^Lookup;    // Retrieve element
-  myList[1]<<2;          // with index 2
-  myList[2]>>            // Returns ^SOME, 5
-  {^NONE: myList[1]<<^Delete; end,
-   ^SOME: myList[2]>>val; myList[1]<<^Delete; end
+| link(2,list,myIntList,1); // Create Int list
+  myIntList[1]<<Int;
+  myIntList[1]<<^Cons;
+  myIntList[1]<<3;          // myList = [0:3]
+  myIntList[1]<<^Cons;
+  myIntList[1]<<2;          // myList = [0:2, 1:3]
+  myIntList[1]<<^Cons;
+  myIntList[1]<<1;          // myList = [0:1, 1:2, 2:3]
+  link(2,list,myStrList,1); // Create String list
+  myStrList[1]<<String;
+  myStrList[1]<<^Cons;
+  myStrList[1]<<"Hello";    // myList = [0:3]
+  myStrList[1]<<^Cons;
+  myStrList[1]<<" ";        // myList = [0:2, 1:3]
+  myStrList[1]<<^Cons;
+  myStrList[1]<<"World";    // myList = [0:1, 1:2, 2:3]
+  myIntList[1]<<^Lookup;    // Retrieve element from myintList
+  myIntList[1]<<2;          // with index 2
+  myIntList[2]>>            // Returns ^SOME, 3
+  {^NONE: myIntList[1]<<^Delete; myStrList[1]<<^Delete; end,
+   ^SOME: myList[2]>>val; myIntList[1]<<^Delete; myStrList[1]<<^Delete; end
   }
 )
