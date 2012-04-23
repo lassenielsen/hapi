@@ -1,0 +1,18 @@
+Changes for version 1.x
+- Integrate with apims_thrift code
+  // This enables multiple ways to access the same UIs
+  // The user can change between tablet UI and browser UI
+  // depending on the users current access to hardware.
+-Improve tokenizer
+-Improve parser
+
+Changes for version 2.0
+*Concept code showing potential of different language extensions.
+ + Host language integration
+ + Parametrically polymorphic types
+ o Regular expression types
+ o Byte level protocols
+
+-Change from session channel spec to names session participants spec
+-Make C++ compiler
+Add selected language extensions
