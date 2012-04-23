@@ -78,11 +78,11 @@ in // }}}
   link(2,list,myStrList,1); // Create String list
   myStrList[1]<<String;
   myStrList[1]<<^Cons;
-  myStrList[1]<<"Hello";    // myList = [0:3]
+  myStrList[1]<<"Hello";    // myList = [0:"Hello"]
   myStrList[1]<<^Cons;
-  myStrList[1]<<" ";        // myList = [0:2, 1:3]
+  myStrList[1]<<" ";        // myList = [0:" ", 1:"Hello"]
   myStrList[1]<<^Cons;
-  myStrList[1]<<"World";    // myList = [0:1, 1:2, 2:3]
+  myStrList[1]<<"World";    // myList = [0:"World", 1:" ", 2:"Hello"]
   myIntList[1]<<^Lookup;    // Retrieve element from myintList
   myIntList[1]<<2;          // with index 2
   myIntList[2]>>            // Returns ^SOME, 3
