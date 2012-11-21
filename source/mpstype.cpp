@@ -28,8 +28,8 @@ const string MpsGlobalType::BNF_NAMEDASSERTION=
 const string MpsGlobalType::BNF_LABEL=
 "Label ::= bid Assertion";
 const string MpsGlobalType::BNF_GTYPE=
-"Gtype ::= int => int : int < Mtype > NamedAssertion ; Gtype \
-         | int => int : int { Gbranches } \
+"Gtype ::= int => int < Mtype > NamedAssertion ; Gtype \
+         | int => int { Gbranches } \
          | rec gvar Targs . Gtype \
          | gvar Tvals \
          | Gend \
@@ -302,37 +302,35 @@ MpsExp *CreateNamedAssertion(const parsed_tree *tree, bool &used, std::string &n
 } // }}}
 MpsGlobalType *MpsGlobalType::Create(const parsed_tree *tree) // {{{
 {
-  if (tree->type_name == "Gtype" && tree->case_name == "case1") // int => int : int < Mtype > NamedAssertion ; Gtype {{{
+  if (tree->type_name == "Gtype" && tree->case_name == "case1") // int => int < Mtype > NamedAssertion ; Gtype {{{
   {
-    MpsGlobalType *succ = MpsGlobalType::Create(tree->content[10]);
-    MpsMsgType *msgtype = MpsMsgType::Create(tree->content[6]);
+    MpsGlobalType *succ = MpsGlobalType::Create(tree->content[8]);
+    MpsMsgType *msgtype = MpsMsgType::Create(tree->content[4]);
     int from = string2int(tree->content[0]->root.content);
     int to = string2int(tree->content[2]->root.content);
-    int channel = string2int(tree->content[4]->root.content);
     bool a_used=false;
     string a_name;
-    MpsExp *assertion = CreateNamedAssertion(tree->content[8],a_used, a_name);
+    MpsExp *assertion = CreateNamedAssertion(tree->content[6],a_used, a_name);
     MpsGlobalType *result = NULL;
     if (a_used)
-      result = new MpsGlobalMsgType(from,to,channel,*msgtype,*succ,*assertion,a_name);
+      result = new MpsGlobalMsgType(from,to,*msgtype,*succ,*assertion,a_name);
     else
-      result = new MpsGlobalMsgType(from,to,channel,*msgtype,*succ);
+      result = new MpsGlobalMsgType(from,to,*msgtype,*succ);
     delete assertion;
     delete msgtype;
     delete succ;
     return result;
   } // }}}
-  else if (tree->type_name == "Gtype" && tree->case_name == "case2") // int => int : int { Gbranches } {{{
+  else if (tree->type_name == "Gtype" && tree->case_name == "case2") // int => int { Gbranches } {{{
   {
     int from = string2int(tree->content[0]->root.content);
     int to = string2int(tree->content[2]->root.content);
-    int channel = string2int(tree->content[4]->root.content);
     map<string,MpsGlobalType*> branches;
     branches.clear();
     map<string,MpsExp*> assertions;
     assertions.clear();
-    FindGlobalBranches(tree->content[6],branches,assertions);
-    MpsGlobalType *result = new MpsGlobalBranchType(from,to,channel,branches,assertions);
+    FindGlobalBranches(tree->content[4],branches,assertions);
+    MpsGlobalType *result = new MpsGlobalBranchType(from,to,branches,assertions);
     // Clean up
     DeleteMap(branches);
     DeleteMap(assertions);
@@ -519,32 +517,29 @@ MpsLocalType *MpsLocalType::Create(const parsed_tree *tree) // {{{
  */
 
 // Constructors
-MpsGlobalMsgType::MpsGlobalMsgType(int sender, int receiver, int channel, const MpsMsgType &msg, const MpsGlobalType &succ) // {{{
+MpsGlobalMsgType::MpsGlobalMsgType(int sender, int receiver, const MpsMsgType &msg, const MpsGlobalType &succ) // {{{
 {
   mySender = sender;
   myReceiver = receiver;
-  myChannel = channel;
   myMsgType = msg.Copy();
   mySucc = succ.Copy();
   myAssertionType=false;
   myAssertion=new MpsBoolVal(true);
 } // }}}
-MpsGlobalMsgType::MpsGlobalMsgType(int sender, int receiver, int channel, const MpsMsgType &msg, const MpsGlobalType &succ, const MpsExp &assertion, const string &id) // {{{
+MpsGlobalMsgType::MpsGlobalMsgType(int sender, int receiver, const MpsMsgType &msg, const MpsGlobalType &succ, const MpsExp &assertion, const string &id) // {{{
 {
   mySender = sender;
   myReceiver = receiver;
-  myChannel = channel;
   myMsgType = msg.Copy();
   mySucc = succ.Copy();
   myAssertionType=true;
   myAssertion=assertion.Copy();
   myId=id;
 } // }}}
-MpsGlobalBranchType::MpsGlobalBranchType(int sender, int receiver, int channel, const map<string,MpsGlobalType*> &branches, const map<string,MpsExp*> &assertions) // {{{
+MpsGlobalBranchType::MpsGlobalBranchType(int sender, int receiver, const map<string,MpsGlobalType*> &branches, const map<string,MpsExp*> &assertions) // {{{
 {
   mySender = sender;
   myReceiver = receiver;
-  myChannel = channel;
   myBranches.clear();
   for (map<string,MpsGlobalType*>::const_iterator it=branches.begin(); it!=branches.end(); ++it)
     myBranches[it->first] = it->second->Copy();
@@ -614,13 +609,13 @@ MpsGlobalSyncType::~MpsGlobalSyncType() // {{{
 MpsGlobalMsgType *MpsGlobalMsgType::Copy() const// {{{
 {
   if (myAssertionType)
-    return new MpsGlobalMsgType(mySender, myReceiver, myChannel, *myMsgType, *mySucc, *myAssertion, myId);
+    return new MpsGlobalMsgType(mySender, myReceiver, *myMsgType, *mySucc, *myAssertion, myId);
   else
-    return new MpsGlobalMsgType(mySender, myReceiver, myChannel, *myMsgType, *mySucc);
+    return new MpsGlobalMsgType(mySender, myReceiver, *myMsgType, *mySucc);
 } // }}}
 MpsGlobalBranchType *MpsGlobalBranchType::Copy() const // {{{
 {
-  return new MpsGlobalBranchType(mySender, myReceiver, myChannel, myBranches, myAssertions);
+  return new MpsGlobalBranchType(mySender, myReceiver, myBranches, myAssertions);
 } // }}}
 MpsGlobalRecType *MpsGlobalRecType::Copy() const // {{{
 {
@@ -674,8 +669,7 @@ bool MpsGlobalMsgType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) cons
   const MpsGlobalMsgType *rhsptr=dynamic_cast<const MpsGlobalMsgType*>(&rhs);
   if (rhsptr==NULL)
     return ERROR_GLOBALEQ(Theta,*this,rhs,"RHS not message-type");
-  if (myChannel != rhsptr->myChannel ||
-      mySender != rhsptr->mySender ||
+  if (mySender != rhsptr->mySender ||
       myReceiver != rhsptr->myReceiver ||
       not myMsgType->Equal(Theta,*rhsptr->myMsgType))
     return ERROR_GLOBALEQ(Theta,*this,rhs,"Head mismatch");
@@ -712,8 +706,7 @@ bool MpsGlobalBranchType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) c
   const MpsGlobalBranchType *rhsptr=dynamic_cast<const MpsGlobalBranchType*>(&rhs);
   if (rhsptr==NULL)
     return ERROR_GLOBALEQ(Theta,*this,rhs,"RHS not branch-type");
-  if (myChannel != rhsptr->myChannel ||
-      mySender != rhsptr->mySender ||
+  if (mySender != rhsptr->mySender ||
       myReceiver != rhsptr->myReceiver)
     return ERROR_GLOBALEQ(Theta,*this,rhs,"Head mismatch");
 
@@ -1043,9 +1036,9 @@ MpsGlobalMsgType *MpsGlobalMsgType::GRename(const string &from, const string &to
   MpsMsgType *newMsgType = myMsgType->GRename(from,to);
   MpsGlobalMsgType *result = NULL;
   if (myAssertionType)
-    result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc, *myAssertion, myId);
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc, *myAssertion, myId);
   else
-    result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc);
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc);
   delete newSucc;
   delete newMsgType;
   return result;
@@ -1055,7 +1048,7 @@ MpsGlobalBranchType *MpsGlobalBranchType::GRename(const string &from, const stri
   map<string,MpsGlobalType*> newBranches;
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->GRename(from,to);
-  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, myChannel, newBranches, myAssertions);
+  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, newBranches, myAssertions);
   // Clean up
   DeleteMap(newBranches);
 
@@ -1124,9 +1117,9 @@ MpsGlobalMsgType *MpsGlobalMsgType::LRename(const string &from, const string &to
   MpsMsgType *newMsgType = myMsgType->LRename(from,to);
   MpsGlobalMsgType *result = NULL;
   if (myAssertionType)
-    result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc, *myAssertion, myId);
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc, *myAssertion, myId);
   else
-    result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc);
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc);
   // Clean Up
   delete newSucc;
   delete newMsgType;
@@ -1138,7 +1131,7 @@ MpsGlobalBranchType *MpsGlobalBranchType::LRename(const string &from, const stri
   map<string,MpsGlobalType*> newBranches;
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->LRename(from,to);
-  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, myChannel, newBranches, myAssertions);
+  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, newBranches, myAssertions);
   // Clean up
   DeleteMap(newBranches);
 
@@ -1189,9 +1182,9 @@ MpsGlobalMsgType *MpsGlobalMsgType::ERename(const string &from, const string &to
   if (myAssertionType && myId==from) // Make no further renamings
   { MpsGlobalMsgType *result=NULL;
     if (myAssertionType)
-      result=new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *mySucc, *myAssertion, myId);
+      result=new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *mySucc, *myAssertion, myId);
     else
-      result=new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *mySucc);
+      result=new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *mySucc);
     delete newMsgType;
     return result;
   }
@@ -1221,9 +1214,9 @@ MpsGlobalMsgType *MpsGlobalMsgType::ERename(const string &from, const string &to
   delete tmpSucc;
   MpsGlobalMsgType *result=NULL;
   if (myAssertionType)
-    result=new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc, *newAssertion, newId);
+    result=new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc, *newAssertion, newId);
   else
-    result=new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc);
+    result=new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc);
 
   delete newAssertion;
   delete newSucc;
@@ -1238,7 +1231,7 @@ MpsGlobalBranchType *MpsGlobalBranchType::ERename(const string &from, const stri
   map<string,MpsExp*> newAssertions;
   for (map<string,MpsExp*>::const_iterator it=myAssertions.begin();it!=myAssertions.end();++it)
     newAssertions[it->first] = it->second->Rename(from,to);
-  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, myChannel, newBranches, newAssertions);
+  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, newBranches, newAssertions);
   // Clean up
   DeleteMap(newBranches);
   DeleteMap(newAssertions);
@@ -1319,9 +1312,9 @@ MpsGlobalMsgType *MpsGlobalMsgType::GSubst(const string &source, const MpsGlobal
   // Create result
   MpsGlobalMsgType *result = NULL;
   if (myAssertionType)
-    result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc, *newAssertion, newId);
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc, *newAssertion, newId);
   else
-    result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc);
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc);
 
   // Clean Up
   delete newSucc;
@@ -1334,7 +1327,7 @@ MpsGlobalBranchType *MpsGlobalBranchType::GSubst(const string &source, const Mps
   map<string,MpsGlobalType*> newBranches;
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->GSubst(source,dest,args);
-  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, myChannel, newBranches, myAssertions);
+  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, newBranches, myAssertions);
   // Clean up
   DeleteMap(newBranches);
 
@@ -1432,9 +1425,9 @@ MpsGlobalMsgType *MpsGlobalMsgType::LSubst(const string &source, const MpsLocalT
   // Create result
   MpsGlobalMsgType *result = NULL;
   if (myAssertionType)
-    result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc, *newAssertion, newId);
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc, *newAssertion, newId);
   else
-    result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc);
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc);
 
   // Clean Up
   delete newSucc;
@@ -1447,7 +1440,7 @@ MpsGlobalBranchType *MpsGlobalBranchType::LSubst(const string &source, const Mps
   map<string,MpsGlobalType*> newBranches;
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->LSubst(source,dest,args);
-  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, myChannel, newBranches, myAssertions);
+  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, newBranches, myAssertions);
 
   // Clean up
   DeleteMap(newBranches);
@@ -1496,7 +1489,7 @@ MpsGlobalMsgType *MpsGlobalMsgType::ESubst(const string &source, const MpsExp &d
 {
   MpsMsgType *newMsgType = myMsgType->ESubst(source,dest);
   if (myAssertionType && myId == source)
-  { MpsGlobalMsgType *result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *mySucc, *myAssertion, myId);
+  { MpsGlobalMsgType *result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *mySucc, *myAssertion, myId);
     delete newMsgType;
     return result;
   }
@@ -1510,7 +1503,7 @@ MpsGlobalMsgType *MpsGlobalMsgType::ESubst(const string &source, const MpsExp &d
     MpsExp *tmpAssertion = myAssertion->Rename(myId, newId);
     MpsExp *newAssertion = tmpAssertion->Subst(source,dest);
     delete tmpAssertion;
-    MpsGlobalMsgType *result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc, *newAssertion, newId);
+    MpsGlobalMsgType *result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc, *newAssertion, newId);
     delete newMsgType;
     delete newSucc;
     delete newAssertion;
@@ -1523,9 +1516,9 @@ MpsGlobalMsgType *MpsGlobalMsgType::ESubst(const string &source, const MpsExp &d
   
   MpsGlobalMsgType *result=NULL;
   if (myAssertionType)
-    result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc, *myAssertion, myId);
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc, *myAssertion, myId);
   else
-    result = new MpsGlobalMsgType(mySender, myReceiver, myChannel, *newMsgType, *newSucc);
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc);
 
   // Clean Up
   delete newMsgType;
@@ -1542,7 +1535,7 @@ MpsGlobalBranchType *MpsGlobalBranchType::ESubst(const string &source, const Mps
   map<string,MpsExp*> newAssertions;
   for (map<string,MpsExp*>::const_iterator it=myAssertions.begin();it!=myAssertions.end();++it)
     newAssertions[it->first] = it->second->Subst(source,dest);
-  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, myChannel, newBranches, newAssertions);
+  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, newBranches, newAssertions);
 
   // Clean up
   DeleteMap(newBranches);
@@ -1627,8 +1620,7 @@ MpsGlobalSyncType *MpsGlobalSyncType::ESubst(const string &source, const MpsExp 
 // Make parsable string representation
 string MpsGlobalMsgType::ToString(const string &indent) const// {{{
 {
-  string result = int2string(mySender) + "=>" + int2string(myReceiver)
-                + ":" + int2string(myChannel) + "<";
+  string result = int2string(mySender) + "=>" + int2string(myReceiver) + "<";
   string newIndent = indent;
   for (int i=0; i<result.size(); ++i)
     newIndent += " ";
@@ -1642,8 +1634,7 @@ string MpsGlobalMsgType::ToString(const string &indent) const// {{{
 string MpsGlobalBranchType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "    ";
-  string result = int2string(mySender) + "=>" + int2string(myReceiver)
-                + ":" + int2string(myChannel) + "\n"
+  string result = int2string(mySender) + "=>" + int2string(myReceiver) + "\n"
                 + indent + "{ ";
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
   {
@@ -1733,7 +1724,6 @@ string MpsGlobalSyncType::ToString(const string &indent) const// {{{
 string MpsGlobalMsgType::ToTex(int indent, int sw) const// {{{
 {
   string result = ToTex_PP(mySender) + "$\\to$" + ToTex_PP(myReceiver)
-                + ":" + ToTex_SID(myChannel)
                 + "$\\langle$" + myMsgType->ToTex(indent+2,sw) + "$\\rangle$";
   if (myAssertionType)
     result += (string)" as " + myId + "[[" + myAssertion->ToString() + "]]";
@@ -1743,8 +1733,7 @@ string MpsGlobalMsgType::ToTex(int indent, int sw) const// {{{
 } // }}}
 string MpsGlobalBranchType::ToTex(int indent, int sw) const // {{{
 {
-  string result = ToTex_PP(mySender) + "$\\to$" + ToTex_PP(myReceiver)
-                + ":" + ToTex_SID(myChannel) + "\\newline"
+  string result = ToTex_PP(mySender) + "$\\to$" + ToTex_PP(myReceiver) + "\\newline"
                 + ToTex_Hspace(indent,sw) + "\\{ ";
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
   {
@@ -1841,9 +1830,9 @@ MpsLocalType *MpsGlobalMsgType::Project(int pid) const // {{{
   {
     MpsLocalType *tmp=NULL;
     if (myAssertionType)
-      tmp = new MpsLocalRcvType(myChannel,*myMsgType,*result,*myAssertion,myId);
+      tmp = new MpsLocalRcvType(mySender,*myMsgType,*result,*myAssertion,myId);
     else
-      tmp = new MpsLocalRcvType(myChannel,*myMsgType,*result);
+      tmp = new MpsLocalRcvType(mySender,*myMsgType,*result);
     delete result;
     result=tmp;
   } // }}}
@@ -1851,9 +1840,9 @@ MpsLocalType *MpsGlobalMsgType::Project(int pid) const // {{{
   {
     MpsLocalType *tmp=NULL;
     if (myAssertionType)
-      tmp=new MpsLocalSendType(myChannel,*myMsgType,*result,*myAssertion,myId);
+      tmp=new MpsLocalSendType(myReceiver,*myMsgType,*result,*myAssertion,myId);
     else
-      tmp=new MpsLocalSendType(myChannel,*myMsgType,*result);
+      tmp=new MpsLocalSendType(myReceiver,*myMsgType,*result);
     delete result;
     result=tmp;
   } // }}}
@@ -1877,11 +1866,11 @@ MpsLocalType *MpsGlobalBranchType::Project(int pid) const // {{{
 
   if (pid==mySender) // Select {{{
   {
-    result = new MpsLocalSelectType(myChannel,branches, myAssertions);
+    result = new MpsLocalSelectType(myReceiver,branches, myAssertions);
   } // }}}
   else if (pid==myReceiver) // Branch {{{
   {
-    result = new MpsLocalBranchType(myChannel,branches, myAssertions);
+    result = new MpsLocalBranchType(mySender,branches, myAssertions);
   } // }}}
   else // Merge {{{
   {
@@ -1991,34 +1980,34 @@ int MpsGlobalSyncType::GetMaxPid() const // {{{
  */
 
 // Constructors
-MpsLocalSendType::MpsLocalSendType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ) // {{{
+MpsLocalSendType::MpsLocalSendType(int receiver, const MpsMsgType &msgtype, const MpsLocalType &succ) // {{{
 {
-  myChannel = channel;
+  myReceiver = receiver;
   myMsgType = msgtype.Copy();
   mySucc = succ.Copy();
   myAssertionType=false;
   myAssertion=new MpsBoolVal(true);
 } // }}}
-MpsLocalSendType::MpsLocalSendType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ, const MpsExp &assertion, const std::string &id) // {{{
+MpsLocalSendType::MpsLocalSendType(int receiver, const MpsMsgType &msgtype, const MpsLocalType &succ, const MpsExp &assertion, const std::string &id) // {{{
 {
-  myChannel = channel;
+  myReceiver = receiver;
   myMsgType = msgtype.Copy();
   mySucc = succ.Copy();
   myAssertionType=true;
   myAssertion=assertion.Copy();
   myId=id;
 } // }}}
-MpsLocalRcvType::MpsLocalRcvType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ) // {{{
+MpsLocalRcvType::MpsLocalRcvType(int sender, const MpsMsgType &msgtype, const MpsLocalType &succ) // {{{
 {
-  myChannel = channel;
+  mySender = sender;
   myMsgType = msgtype.Copy();
   mySucc = succ.Copy();
   myAssertionType=false;
   myAssertion=new MpsBoolVal(true);
 } // }}}
-MpsLocalRcvType::MpsLocalRcvType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ, const MpsExp &assertion, const std::string &id) // {{{
+MpsLocalRcvType::MpsLocalRcvType(int sender, const MpsMsgType &msgtype, const MpsLocalType &succ, const MpsExp &assertion, const std::string &id) // {{{
 {
-  myChannel = channel;
+  mySender = sender;
   myMsgType = msgtype.Copy();
   mySucc = succ.Copy();
 
@@ -2032,9 +2021,9 @@ MpsLocalForallType::MpsLocalForallType(const std::string &name, const MpsExp &as
   myAssertion=assertion.Copy();
   mySucc = succ.Copy();
 } // }}}
-MpsLocalSelectType::MpsLocalSelectType(int channel, const std::map<std::string,MpsLocalType*> &branches, const map<string,MpsExp*> &assertions) // {{{
+MpsLocalSelectType::MpsLocalSelectType(int receiver, const std::map<std::string,MpsLocalType*> &branches, const map<string,MpsExp*> &assertions) // {{{
 {
-  myChannel = channel;
+  myReceiver = receiver;
   myBranches.clear();
   for (map<string,MpsLocalType*>::const_iterator it=branches.begin();it!=branches.end();++it)
     myBranches[it->first]=it->second->Copy();
@@ -2042,9 +2031,9 @@ MpsLocalSelectType::MpsLocalSelectType(int channel, const std::map<std::string,M
   for (map<string,MpsExp*>::const_iterator it=assertions.begin();it!=assertions.end();++it)
     myAssertions[it->first]=it->second->Copy();
 } // }}}
-MpsLocalBranchType::MpsLocalBranchType(int channel, const map<string,MpsLocalType*> &branches, const map<string,MpsExp*> &assertions) // {{{
+MpsLocalBranchType::MpsLocalBranchType(int sender, const map<string,MpsLocalType*> &branches, const map<string,MpsExp*> &assertions) // {{{
 {
-  myChannel = channel;
+  mySender = sender;
   myBranches.clear();
   for (map<string,MpsLocalType*>::const_iterator it=branches.begin();it!=branches.end();++it)
     myBranches[it->first]=it->second->Copy();
@@ -2128,16 +2117,16 @@ MpsLocalSyncType::~MpsLocalSyncType() // {{{
 MpsLocalSendType *MpsLocalSendType::Copy() const // {{{
 {
   if (myAssertionType)
-    return new MpsLocalSendType(myChannel,*myMsgType,*mySucc,*myAssertion,myId);
+    return new MpsLocalSendType(myReceiver,*myMsgType,*mySucc,*myAssertion,myId);
   else
-    return new MpsLocalSendType(myChannel,*myMsgType,*mySucc);
+    return new MpsLocalSendType(myReceiver,*myMsgType,*mySucc);
 } // }}}
 MpsLocalRcvType *MpsLocalRcvType::Copy() const // {{{
 {
   if (myAssertionType)
-    return new MpsLocalRcvType(myChannel,*myMsgType,*mySucc,*myAssertion,myId);
+    return new MpsLocalRcvType(mySender,*myMsgType,*mySucc,*myAssertion,myId);
   else
-    return new MpsLocalRcvType(myChannel,*myMsgType,*mySucc);
+    return new MpsLocalRcvType(mySender,*myMsgType,*mySucc);
 } // }}}
 MpsLocalForallType *MpsLocalForallType::Copy() const // {{{
 {
@@ -2145,11 +2134,11 @@ MpsLocalForallType *MpsLocalForallType::Copy() const // {{{
 } // }}}
 MpsLocalSelectType *MpsLocalSelectType::Copy() const // {{{
 {
-  return new MpsLocalSelectType(myChannel,myBranches,myAssertions);
+  return new MpsLocalSelectType(myReceiver,myBranches,myAssertions);
 } // }}}
 MpsLocalBranchType *MpsLocalBranchType::Copy() const // {{{
 {
-  return new MpsLocalBranchType(myChannel,myBranches, myAssertions);
+  return new MpsLocalBranchType(mySender,myBranches, myAssertions);
 } // }}}
 MpsLocalRecType *MpsLocalRecType::Copy() const // {{{
 {
@@ -2243,7 +2232,7 @@ bool MpsLocalSendType::Equal(const MpsExp &Theta,const MpsLocalType &rhs) const 
     return ERROR_LOCALEQ(Theta,*this,rhs,"Different head");
   if (myAssertionType != rhsptr->myAssertionType)
     return ERROR_LOCALEQ(Theta,*this,rhs,"Different assertion type");
-  if (myChannel != rhsptr->myChannel ||
+  if (myReceiver != rhsptr->myReceiver ||
       not myMsgType->Equal(Theta,*rhsptr->myMsgType))
     return ERROR_LOCALEQ(Theta,*this,rhs,"Different message type");
   if (myAssertionType && myId != rhsptr->myId)
@@ -2298,7 +2287,7 @@ bool MpsLocalRcvType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const 
     return ERROR_LOCALEQ(Theta,*this,rhs,"Different head");
   if (myAssertionType != rhsptr->myAssertionType)
     return ERROR_LOCALEQ(Theta,*this,rhs,"Different assertion type");
-  if (myChannel != rhsptr->myChannel ||
+  if (mySender != rhsptr->mySender ||
       not myMsgType->Equal(Theta,*rhsptr->myMsgType))
     return ERROR_LOCALEQ(Theta,*this,rhs,"");
   if (myAssertionType && myId != rhsptr->myId)
@@ -2355,7 +2344,7 @@ bool MpsLocalSelectType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) con
   const MpsLocalSelectType *rhsptr=dynamic_cast<const MpsLocalSelectType*>(&rhs);
   if (rhsptr==NULL)
     return ERROR_LOCALEQ(Theta,*this,rhs,"");
-  if (myChannel != rhsptr->myChannel)
+  if (myReceiver != rhsptr->myReceiver)
     return ERROR_LOCALEQ(Theta,*this,rhs,"");
 
   // Check Branch Assertions
@@ -2410,7 +2399,7 @@ bool MpsLocalBranchType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) con
   const MpsLocalBranchType *rhsptr=dynamic_cast<const MpsLocalBranchType*>(&rhs);
   if (typeid(rhs)!=typeid(MpsLocalBranchType))
     return ERROR_LOCALEQ(Theta,*this,rhs,"");
-  if (myChannel != rhsptr->myChannel)
+  if (mySender != rhsptr->mySender)
     return ERROR_LOCALEQ(Theta,*this,rhs,"");
 
   // Check Branch Assertions
@@ -2824,9 +2813,9 @@ MpsLocalSendType *MpsLocalSendType::GRename(const string &from, const string &to
   MpsMsgType *newMsg = myMsgType->GRename(from,to);
   MpsLocalSendType *result=NULL;
   if (myAssertionType)
-    result=new MpsLocalSendType(myChannel, *newMsg, *newSucc, *myAssertion, myId);
+    result=new MpsLocalSendType(myReceiver, *newMsg, *newSucc, *myAssertion, myId);
   else
-    result=new MpsLocalSendType(myChannel, *newMsg, *newSucc);
+    result=new MpsLocalSendType(myReceiver, *newMsg, *newSucc);
 
   // Clean Up
   delete newSucc;
@@ -2840,9 +2829,9 @@ MpsLocalRcvType *MpsLocalRcvType::GRename(const string &from, const string &to) 
   MpsMsgType *newMsg = myMsgType->GRename(from,to);
   MpsLocalRcvType *result=NULL;
   if (myAssertionType)
-    result=new MpsLocalRcvType(myChannel, *newMsg, *newSucc, *myAssertion, myId);
+    result=new MpsLocalRcvType(mySender, *newMsg, *newSucc, *myAssertion, myId);
   else
-    result=new MpsLocalRcvType(myChannel, *newMsg, *newSucc);
+    result=new MpsLocalRcvType(mySender, *newMsg, *newSucc);
 
   // Clean Up
   delete newSucc;
@@ -2861,7 +2850,7 @@ MpsLocalSelectType *MpsLocalSelectType::GRename(const string &from, const string
   map<string,MpsLocalType*> newBranches;
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->GRename(from,to);
-  MpsLocalSelectType *result = new MpsLocalSelectType(myChannel,newBranches,myAssertions);
+  MpsLocalSelectType *result = new MpsLocalSelectType(myReceiver,newBranches,myAssertions);
 
   // Clean up
   DeleteMap(newBranches);
@@ -2873,7 +2862,7 @@ MpsLocalBranchType *MpsLocalBranchType::GRename(const string &from, const string
   map<string,MpsLocalType*> newBranches;
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->GRename(from,to);
-  MpsLocalBranchType *result = new MpsLocalBranchType(myChannel,newBranches,myAssertions);
+  MpsLocalBranchType *result = new MpsLocalBranchType(mySender,newBranches,myAssertions);
   // Clean up
   DeleteMap(newBranches);
 
@@ -2928,9 +2917,9 @@ MpsLocalSendType *MpsLocalSendType::LRename(const string &from, const string &to
   MpsMsgType *newMsg = myMsgType->LRename(from,to);
   MpsLocalSendType *result=NULL;
   if (myAssertionType)
-    result=new MpsLocalSendType(myChannel, *newMsg, *newSucc, *myAssertion, myId);
+    result=new MpsLocalSendType(myReceiver, *newMsg, *newSucc, *myAssertion, myId);
   else
-    result=new MpsLocalSendType(myChannel, *newMsg, *newSucc);
+    result=new MpsLocalSendType(myReceiver, *newMsg, *newSucc);
 
   // Clean Up
   delete newSucc;
@@ -2944,9 +2933,9 @@ MpsLocalRcvType *MpsLocalRcvType::LRename(const string &from, const string &to) 
   MpsMsgType *newMsg = myMsgType->LRename(from,to);
   MpsLocalRcvType *result=NULL;
   if (myAssertionType)
-    result=new MpsLocalRcvType(myChannel, *newMsg, *newSucc, *myAssertion, myId);
+    result=new MpsLocalRcvType(mySender, *newMsg, *newSucc, *myAssertion, myId);
   else
-    result=new MpsLocalRcvType(myChannel, *newMsg, *newSucc);
+    result=new MpsLocalRcvType(mySender, *newMsg, *newSucc);
 
   // Clean Up
   delete newSucc;
@@ -2966,7 +2955,7 @@ MpsLocalSelectType *MpsLocalSelectType::LRename(const string &from, const string
   map<string,MpsLocalType*> newBranches;
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->LRename(from,to);
-  MpsLocalSelectType *result = new MpsLocalSelectType(myChannel,newBranches,myAssertions);
+  MpsLocalSelectType *result = new MpsLocalSelectType(myReceiver,newBranches,myAssertions);
   // Clean up
   DeleteMap(newBranches);
 
@@ -2977,7 +2966,7 @@ MpsLocalBranchType *MpsLocalBranchType::LRename(const string &from, const string
   map<string,MpsLocalType*> newBranches;
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->LRename(from,to);
-  MpsLocalBranchType *result = new MpsLocalBranchType(myChannel,newBranches,myAssertions);
+  MpsLocalBranchType *result = new MpsLocalBranchType(mySender,newBranches,myAssertions);
   // Clean up
   DeleteMap(newBranches);
 
@@ -3036,7 +3025,7 @@ MpsLocalSendType *MpsLocalSendType::ERename(const string &from, const string &to
   MpsMsgType *newMsgType = myMsgType->ERename(from,to);
 
   if (myAssertionType && myId==from)
-  { MpsLocalSendType *result = new MpsLocalSendType(myChannel, *newMsgType, *mySucc, *myAssertion, myId);
+  { MpsLocalSendType *result = new MpsLocalSendType(myReceiver, *newMsgType, *mySucc, *myAssertion, myId);
     delete newMsgType;
     return result;
   }
@@ -3064,9 +3053,9 @@ MpsLocalSendType *MpsLocalSendType::ERename(const string &from, const string &to
   delete tmpSucc;
   MpsLocalSendType *result=NULL;
   if (myAssertionType)
-    result=new MpsLocalSendType(myChannel, *newMsgType, *newSucc, *newAssertion, newId);
+    result=new MpsLocalSendType(myReceiver, *newMsgType, *newSucc, *newAssertion, newId);
   else
-    result=new MpsLocalSendType(myChannel, *newMsgType, *newSucc);
+    result=new MpsLocalSendType(myReceiver, *newMsgType, *newSucc);
 
   // Clean Up
   delete newAssertion;
@@ -3079,7 +3068,7 @@ MpsLocalRcvType *MpsLocalRcvType::ERename(const string &from, const string &to) 
   MpsMsgType *newMsgType = myMsgType->ERename(from,to);
 
   if (myAssertionType && myId==from)
-  { MpsLocalRcvType *result = new MpsLocalRcvType(myChannel, *newMsgType, *mySucc, *myAssertion, myId);
+  { MpsLocalRcvType *result = new MpsLocalRcvType(mySender, *newMsgType, *mySucc, *myAssertion, myId);
     delete newMsgType;
     return result;
   }
@@ -3109,9 +3098,9 @@ MpsLocalRcvType *MpsLocalRcvType::ERename(const string &from, const string &to) 
   delete tmpSucc;
   MpsLocalRcvType *result=NULL;
   if (myAssertionType)
-    result=new MpsLocalRcvType(myChannel, *newMsgType, *newSucc, *newAssertion, newId);
+    result=new MpsLocalRcvType(mySender, *newMsgType, *newSucc, *newAssertion, newId);
   else
-    result=new MpsLocalRcvType(myChannel, *newMsgType, *newSucc);
+    result=new MpsLocalRcvType(mySender, *newMsgType, *newSucc);
 
   // Clean Up
   delete newAssertion;
@@ -3156,7 +3145,7 @@ MpsLocalSelectType *MpsLocalSelectType::ERename(const string &from, const string
   map<string,MpsExp*> newAssertions;
   for (map<string,MpsExp*>::const_iterator it=myAssertions.begin();it!=myAssertions.end();++it)
     newAssertions[it->first] = it->second->Rename(from,to);
-  MpsLocalSelectType *result = new MpsLocalSelectType(myChannel,newBranches,newAssertions);
+  MpsLocalSelectType *result = new MpsLocalSelectType(myReceiver,newBranches,newAssertions);
 
   // Clean up
   DeleteMap(newBranches);
@@ -3172,7 +3161,7 @@ MpsLocalBranchType *MpsLocalBranchType::ERename(const string &from, const string
   map<string,MpsExp*> newAssertions;
   for (map<string,MpsExp*>::const_iterator it=myAssertions.begin();it!=myAssertions.end();++it)
     newAssertions[it->first] = it->second->Rename(from,to);
-  MpsLocalBranchType *result = new MpsLocalBranchType(myChannel,newBranches,newAssertions);
+  MpsLocalBranchType *result = new MpsLocalBranchType(mySender,newBranches,newAssertions);
   // Clean up
   DeleteMap(newBranches);
   DeleteMap(newAssertions);
@@ -3263,7 +3252,7 @@ MpsLocalSendType *MpsLocalSendType::GSubst(const string &source, const MpsGlobal
 {
   MpsMsgType *newMsgType = myMsgType->GSubst(source,dest,args);
   MpsLocalType *newSucc = mySucc->GSubst(source,dest,args);
-  MpsLocalSendType *result = new MpsLocalSendType(myChannel,*newMsgType,*newSucc);
+  MpsLocalSendType *result = new MpsLocalSendType(myReceiver,*newMsgType,*newSucc);
 
   // Clean Up
   delete newSucc;
@@ -3275,7 +3264,7 @@ MpsLocalRcvType *MpsLocalRcvType::GSubst(const string &source, const MpsGlobalTy
 {
   MpsLocalType *newSucc = mySucc->GSubst(source,dest,args);
   MpsMsgType *newMsgType = myMsgType->GSubst(source,dest,args);
-  MpsLocalRcvType *result = new MpsLocalRcvType(myChannel,*newMsgType,*newSucc);
+  MpsLocalRcvType *result = new MpsLocalRcvType(mySender,*newMsgType,*newSucc);
 
   // Clean up
   delete newSucc;
@@ -3297,7 +3286,7 @@ MpsLocalSelectType *MpsLocalSelectType::GSubst(const string &source, const MpsGl
   newBranches.clear();
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->GSubst(source,dest,args);
-  MpsLocalSelectType *result = new MpsLocalSelectType(myChannel,newBranches,myAssertions);
+  MpsLocalSelectType *result = new MpsLocalSelectType(myReceiver,newBranches,myAssertions);
 
   // Clean up
   DeleteMap(newBranches);
@@ -3310,7 +3299,7 @@ MpsLocalBranchType *MpsLocalBranchType::GSubst(const string &source, const MpsGl
   newBranches.clear();
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->GSubst(source,dest,args);
-  MpsLocalBranchType *result = new MpsLocalBranchType(myChannel,newBranches,myAssertions);
+  MpsLocalBranchType *result = new MpsLocalBranchType(mySender,newBranches,myAssertions);
 
   // Clean up
   DeleteMap(newBranches);
@@ -3364,9 +3353,9 @@ MpsLocalSendType *MpsLocalSendType::LSubst(const string &source, const MpsLocalT
   MpsMsgType *newMsgType = myMsgType->LSubst(source,dest,args);
   MpsLocalSendType *result = NULL;
   if (myAssertionType)
-    result=new MpsLocalSendType(myChannel,*newMsgType,*newSucc,*myAssertion,myId);
+    result=new MpsLocalSendType(myReceiver,*newMsgType,*newSucc,*myAssertion,myId);
   else
-    result=new MpsLocalSendType(myChannel,*newMsgType,*newSucc);
+    result=new MpsLocalSendType(myReceiver,*newMsgType,*newSucc);
 
   // Clean Up
   delete newSucc;
@@ -3380,9 +3369,9 @@ MpsLocalRcvType *MpsLocalRcvType::LSubst(const string &source, const MpsLocalTyp
   MpsMsgType *newMsgType = myMsgType->LSubst(source,dest,args);
   MpsLocalRcvType *result = NULL;
   if (myAssertionType)
-    result=new MpsLocalRcvType(myChannel,*newMsgType,*newSucc,*myAssertion,myId);
+    result=new MpsLocalRcvType(mySender,*newMsgType,*newSucc,*myAssertion,myId);
   else
-    result=new MpsLocalRcvType(myChannel,*newMsgType,*newSucc);
+    result=new MpsLocalRcvType(mySender,*newMsgType,*newSucc);
 
   // Clean up
   delete newSucc;
@@ -3403,7 +3392,7 @@ MpsLocalSelectType *MpsLocalSelectType::LSubst(const string &source, const MpsLo
   map<string,MpsLocalType*> newBranches;
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->LSubst(source,dest,args);
-  MpsLocalSelectType *result = new MpsLocalSelectType(myChannel,newBranches,myAssertions);
+  MpsLocalSelectType *result = new MpsLocalSelectType(myReceiver,newBranches,myAssertions);
   // Clean up
   DeleteMap(newBranches);
 
@@ -3414,7 +3403,7 @@ MpsLocalBranchType *MpsLocalBranchType::LSubst(const string &source, const MpsLo
   map<string,MpsLocalType*> newBranches;
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
     newBranches[it->first] = it->second->LSubst(source,dest,args);
-  MpsLocalBranchType *result = new MpsLocalBranchType(myChannel,newBranches,myAssertions);
+  MpsLocalBranchType *result = new MpsLocalBranchType(mySender,newBranches,myAssertions);
   // Clean up
   DeleteMap(newBranches);
 
@@ -3486,7 +3475,7 @@ MpsLocalSendType *MpsLocalSendType::ESubst(const string &source, const MpsExp &d
   MpsMsgType *newMsgType = myMsgType->ESubst(source,dest);
 
   if (myAssertionType && source==myId) // Do not substitute in assertion and succ
-  { MpsLocalSendType *result = new MpsLocalSendType(myChannel, *newMsgType, *mySucc, *myAssertion, myId);
+  { MpsLocalSendType *result = new MpsLocalSendType(myReceiver, *newMsgType, *mySucc, *myAssertion, myId);
     delete newMsgType;
     return result;
   }
@@ -3514,9 +3503,9 @@ MpsLocalSendType *MpsLocalSendType::ESubst(const string &source, const MpsExp &d
   // Create result
   MpsLocalSendType *result=NULL;
   if (myAssertionType)
-    result=new MpsLocalSendType(myChannel,*newMsgType,*newSucc,*newAssertion,newId);
+    result=new MpsLocalSendType(myReceiver,*newMsgType,*newSucc,*newAssertion,newId);
   else
-    result=new MpsLocalSendType(myChannel,*newMsgType,*newSucc);
+    result=new MpsLocalSendType(myReceiver,*newMsgType,*newSucc);
   // Clean Up
   delete newSucc;
   delete newAssertion;
@@ -3529,7 +3518,7 @@ MpsLocalRcvType *MpsLocalRcvType::ESubst(const string &source, const MpsExp &des
   MpsMsgType *newMsgType = myMsgType->ESubst(source,dest);
 
   if (myAssertionType && source==myId) // Do not substitute in assertion and succ
-  { MpsLocalRcvType *result = new MpsLocalRcvType(myChannel, *newMsgType, *mySucc, *myAssertion, myId);
+  { MpsLocalRcvType *result = new MpsLocalRcvType(mySender, *newMsgType, *mySucc, *myAssertion, myId);
     delete newMsgType;
     return result;
   }
@@ -3557,9 +3546,9 @@ MpsLocalRcvType *MpsLocalRcvType::ESubst(const string &source, const MpsExp &des
   // Create result
   MpsLocalRcvType *result=NULL;
   if (myAssertionType)
-    result=new MpsLocalRcvType(myChannel,*newMsgType,*newSucc,*newAssertion,newId);
+    result=new MpsLocalRcvType(mySender,*newMsgType,*newSucc,*newAssertion,newId);
   else
-    result=new MpsLocalRcvType(myChannel,*newMsgType,*newSucc);
+    result=new MpsLocalRcvType(mySender,*newMsgType,*newSucc);
   // Clean Up
   delete newSucc;
   delete newAssertion;
@@ -3608,7 +3597,7 @@ MpsLocalSelectType *MpsLocalSelectType::ESubst(const string &source, const MpsEx
   map<string,MpsExp*> newAssertions;
   for (map<string,MpsExp*>::const_iterator it=myAssertions.begin();it!=myAssertions.end();++it)
     newAssertions[it->first] = it->second->Subst(source,dest);
-  MpsLocalSelectType *result = new MpsLocalSelectType(myChannel,newBranches,newAssertions);
+  MpsLocalSelectType *result = new MpsLocalSelectType(myReceiver,newBranches,newAssertions);
   // Clean up
   DeleteMap(newBranches);
   DeleteMap(newAssertions);
@@ -3623,7 +3612,7 @@ MpsLocalBranchType *MpsLocalBranchType::ESubst(const string &source, const MpsEx
   map<string,MpsExp*> newAssertions;
   for (map<string,MpsExp*>::const_iterator it=myAssertions.begin();it!=myAssertions.end();++it)
     newAssertions[it->first] = it->second->Subst(source,dest);
-  MpsLocalBranchType *result = new MpsLocalBranchType(myChannel,newBranches,newAssertions);
+  MpsLocalBranchType *result = new MpsLocalBranchType(mySender,newBranches,newAssertions);
   // Clean up
   DeleteMap(newBranches);
   DeleteMap(newAssertions);
@@ -3711,7 +3700,7 @@ MpsLocalSyncType *MpsLocalSyncType::ESubst(const string &source, const MpsExp &d
 string MpsLocalSendType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "  ";
-  string result = int2string(myChannel) + " << <" + myMsgType->ToString(newIndent) + ">";
+  string result = int2string(myReceiver) + " << <" + myMsgType->ToString(newIndent) + ">";
   if (myAssertionType)
     result += (string)" as " + myId + "[[" + myAssertion->ToString() + "]]";
   result += (string)";\n"
@@ -3721,7 +3710,7 @@ string MpsLocalSendType::ToString(const string &indent) const // {{{
 string MpsLocalRcvType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "  ";
-  string result = int2string(myChannel) + " >> <" + myMsgType->ToString(newIndent) + ">";
+  string result = int2string(mySender) + " >> <" + myMsgType->ToString(newIndent) + ">";
   if (myAssertionType)
     result += (string)" as " + myId + "[[" + myAssertion->ToString() + "]]";
   result += (string)"\n"
@@ -3737,7 +3726,7 @@ string MpsLocalForallType::ToString(const string &indent) const // {{{
 string MpsLocalSelectType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "  ";
-  string result = int2string(myChannel) + "<<\n"
+  string result = int2string(myReceiver) + "<<\n"
                 + indent + "{ ";
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
   {
@@ -3764,7 +3753,7 @@ string MpsLocalSelectType::ToString(const string &indent) const // {{{
 string MpsLocalBranchType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "  ";
-  string result = int2string(myChannel) + ">>\n"
+  string result = int2string(mySender) + ">>\n"
                 + indent + "{ ";
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();
        it!=myBranches.end();
@@ -3863,7 +3852,7 @@ string MpsLocalSyncType::ToString(const string &indent) const // {{{
 string MpsLocalSendType::ToTex(int indent, int sw) const // {{{
 {
   int newIndent = indent + 2;
-  string result = ToTex_SID(myChannel) + "$\\ll\\langle$" + myMsgType->ToTex(newIndent,sw) + "$\\rangle$";
+  string result = ToTex_SID(myReceiver) + "$\\ll\\langle$" + myMsgType->ToTex(newIndent,sw) + "$\\rangle$";
   if (myAssertionType)
     result += (string)" as " + myId + "$\\llbracket$" + myAssertion->ToString() + "$\\rrbracket$";
   result += (string)";\\newline\n"
@@ -3873,7 +3862,7 @@ string MpsLocalSendType::ToTex(int indent, int sw) const // {{{
 string MpsLocalRcvType::ToTex(int indent, int sw) const // {{{
 {
   int newIndent = indent + 2;
-  string result = ToTex_SID(myChannel) + "$\\gg\\langle$" + myMsgType->ToTex(newIndent,sw) + "$\\rangle$";
+  string result = ToTex_SID(mySender) + "$\\gg\\langle$" + myMsgType->ToTex(newIndent,sw) + "$\\rangle$";
   if (myAssertionType)
     result += (string)" as " + myId + "$\\llbracket$" + myAssertion->ToString() + "$\\rrbracket$";
   result += (string)";\\newline\n"
@@ -3890,7 +3879,7 @@ string MpsLocalSelectType::ToTex(int indent, int sw) const // {{{
 {
   int lblIndent = indent + 2;
   int newIndent = indent + 4;
-  string result = ToTex_SID(myChannel) + "$\\ll$\\newline\n"
+  string result = ToTex_SID(myReceiver) + "$\\ll$\\newline\n"
                 + ToTex_Hspace(indent,sw) + "\\{ ";
   for (map<string,MpsLocalType*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
   { if (branch!=myBranches.begin())
@@ -3911,7 +3900,7 @@ string MpsLocalBranchType::ToTex(int indent, int sw) const // {{{
 {
   int lblIndent = indent + 2;
   int newIndent = indent + 4;
-  string result = ToTex_SID(myChannel) + "$\\gg$\\newline\n"
+  string result = ToTex_SID(mySender) + "$\\gg$\\newline\n"
                 + ToTex_Hspace(indent,sw) + "\\{ ";
   for (map<string,MpsLocalType*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
   { if (branch!=myBranches.begin())
@@ -4024,7 +4013,7 @@ MpsLocalType *MpsLocalSendType::Merge(MpsLocalType &rhs) const // {{{
   // Check same Construct, channel, message-type and assertiontype
   MpsLocalSendType *rhsptr = dynamic_cast<MpsLocalSendType*>(&rhs);
   if (rhsptr==NULL ||
-      myChannel != rhsptr->myChannel ||
+      myReceiver != rhsptr->myReceiver ||
       not myMsgType->Equal(MpsBoolVal(true),*rhsptr->myMsgType) ||
       myAssertionType != rhsptr->myAssertionType)
     return MERGE_ERROR(*this,rhs,"MergeError");
@@ -4062,9 +4051,9 @@ MpsLocalType *MpsLocalSendType::Merge(MpsLocalType &rhs) const // {{{
   else
   { MpsLocalType *succ = mySucc->Merge(*rhsptr->mySucc);
     if (myAssertionType)
-      result = new MpsLocalSendType(myChannel,*myMsgType,*succ, *lhsAssertion, newId);
+      result = new MpsLocalSendType(myReceiver,*myMsgType,*succ, *lhsAssertion, newId);
     else
-      result = new MpsLocalSendType(myChannel,*myMsgType,*succ);
+      result = new MpsLocalSendType(myReceiver,*myMsgType,*succ);
     delete succ;
   }
   // Clean Up
@@ -4079,7 +4068,7 @@ MpsLocalType *MpsLocalRcvType::Merge(MpsLocalType &rhs) const // {{{
   // Check same Construct, channel, message-type and assertiontype
   MpsLocalRcvType *rhsptr = dynamic_cast<MpsLocalRcvType*>(&rhs);
   if (rhsptr==NULL ||
-      myChannel != rhsptr->myChannel ||
+      mySender != rhsptr->mySender ||
       not myMsgType->Equal(MpsBoolVal(true),*rhsptr->myMsgType) ||
       myAssertionType != rhsptr->myAssertionType)
     return MERGE_ERROR(*this,rhs,"MergeError");
@@ -4117,9 +4106,9 @@ MpsLocalType *MpsLocalRcvType::Merge(MpsLocalType &rhs) const // {{{
   else
   { MpsLocalType *succ = mySucc->Merge(*rhsptr->mySucc);
     if (myAssertionType)
-      result = new MpsLocalRcvType(myChannel,*myMsgType,*succ,*lhsAssertion,newId);
+      result = new MpsLocalRcvType(mySender,*myMsgType,*succ,*lhsAssertion,newId);
     else
-      result = new MpsLocalRcvType(myChannel,*myMsgType,*succ);
+      result = new MpsLocalRcvType(mySender,*myMsgType,*succ);
     delete succ;
   }
   // Clean Up
@@ -4175,7 +4164,7 @@ MpsLocalType *MpsLocalSelectType::Merge(MpsLocalType &rhs) const // {{{
   if (typeid(rhs) != typeid(MpsLocalSelectType))
     return MERGE_ERROR(*this,rhs,"MergeError");
   MpsLocalSelectType *rhsptr = (MpsLocalSelectType*)&rhs;
-  if (myChannel != rhsptr->myChannel)
+  if (myReceiver != rhsptr->myReceiver)
     return MERGE_ERROR(*this,rhs,"MergeError");
   map<string,MpsLocalType*> branches;
   branches.clear();
@@ -4196,7 +4185,7 @@ MpsLocalType *MpsLocalSelectType::Merge(MpsLocalType &rhs) const // {{{
     else
       assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
   }
-  MpsLocalSelectType *result = new MpsLocalSelectType(myChannel,branches,assertions);
+  MpsLocalSelectType *result = new MpsLocalSelectType(myReceiver,branches,assertions);
 
   // Clean up
   DeleteMap(branches);
@@ -4209,7 +4198,7 @@ MpsLocalType *MpsLocalBranchType::Merge(MpsLocalType &rhs) const // {{{
   if (typeid(rhs) != typeid(MpsLocalBranchType))
     return MERGE_ERROR(*this,rhs,"MergeError");
   MpsLocalBranchType *rhsptr = (MpsLocalBranchType*)&rhs;
-  if (myChannel != rhsptr->myChannel)
+  if (mySender != rhsptr->mySender)
     return MERGE_ERROR(*this,rhs,"MergeError");
 
   map<string,MpsLocalType*> branches;
@@ -4256,7 +4245,7 @@ MpsLocalType *MpsLocalBranchType::Merge(MpsLocalType &rhs) const // {{{
         assertions[ass2->first] = ass2->second->Copy();
     }
   }
-  MpsLocalBranchType *result = new MpsLocalBranchType(myChannel,branches,assertions);
+  MpsLocalBranchType *result = new MpsLocalBranchType(mySender,branches,assertions);
 
   // Clean up
   DeleteMap(branches);
@@ -4377,21 +4366,21 @@ const string &MpsLocalRecType::GetName() const // {{{
 {
   return myName;
 } // }}}
-int MpsLocalSendType::GetChannel() // {{{
+int MpsLocalSendType::GetReceiver() // {{{
 {
-  return myChannel;
+  return myReceiver;
 } // }}}
-int MpsLocalRcvType::GetChannel() // {{{
+int MpsLocalRcvType::GetSender() // {{{
 {
-  return myChannel;
+  return mySender;
 } // }}}
-int MpsLocalSelectType::GetChannel() // {{{
+int MpsLocalSelectType::GetReceiver() // {{{
 {
-  return myChannel;
+  return myReceiver;
 } // }}}
-int MpsLocalBranchType::GetChannel() // {{{
+int MpsLocalBranchType::GetSender() // {{{
 {
-  return myChannel;
+  return mySender;
 } // }}}
 const MpsLocalType *MpsLocalSendType::GetSucc() const // {{{
 {

@@ -37,16 +37,22 @@ std::string DefEnv2string(const MpsFunctionEnv &env) // {{{
   return result;
 } // }}}
 
-MpsFunction::MpsFunction(const string &name, const vector<string> &stateargs, const vector<string>&args, const MpsTerm &body) // {{{
+MpsFunction::MpsFunction(const string &name, // {{{
+                         const vector<string> &stateargs,
+                         const vector<string>&args,
+                         const vector<pair<int,int> >&argpids,
+                         const MpsTerm &body)
 { myName = name;
   myStateArgs=stateargs;
   myArgs=args;
+  myArgPids=argpids;
   myBody = body.Copy();
 } // }}}
 MpsFunction::MpsFunction(const MpsFunction &rhs) // {{{
 { myName = rhs.GetName();
   myStateArgs=rhs.GetStateArgs();
   myArgs=rhs.GetArgs();
+  myArgPids=rhs.GetArgPids();
   myBody = rhs.GetBody().Copy();
 } // }}}
 MpsFunction::~MpsFunction() // {{{
@@ -67,6 +73,9 @@ const vector<string> &MpsFunction::GetStateArgs() const // {{{
 } // }}}
 const vector<string> &MpsFunction::GetArgs() const // {{{
 { return myArgs;
+} // }}}
+const vector<pair<int,int> > &MpsFunction::GetArgPids() const // {{{
+{ return myArgPids;
 } // }}}
 const MpsTerm &MpsFunction::GetBody() const // {{{
 { return *myBody;

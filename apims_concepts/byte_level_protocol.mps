@@ -5,9 +5,10 @@ grammar
   token EOL="(\n|\r\n|\n\r)[ \t\r\n]*",
   token ="[ \t]+", // Whitespace token def, can be ignored in grammar
   token GET="(G|g)(E|e)(T|t)",
-  token PUT="(G|g)(E|e)(T|t)",
+  token PUT="(P|p)(U|u)(T|t)",
   token OPTION="|-R|-r",
   token LOCATION="(|/)([a-zA-Z.]+/)*[a-zA-Z.]+",
+  token QUIT="(Q|q)(U|u)(I|i)(T|t)",
   more tokens ...
   bnf   CMD = GET OPTION LOCATION EOL |
               PUT OPTION LOCATION EOL |

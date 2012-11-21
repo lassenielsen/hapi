@@ -164,7 +164,8 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
                            | guivalue ( exps ) ; pi2 \
                            | id : Mtype = exp ; pi2 \
                            | define gvar ids = Gtype in pi2 \
-                           | define lvar ids = Ltype in pi2");         // More processes
+                           | define lvar ids = Ltype in pi2 \
+                           | ch >> id @ ( int of int ) ; pi2");         // More processes
 
   parsed_tree *tree = MpsParser.Parse(exp);
   MpsTerm *result=MpsTerm::Create(tree);
@@ -440,7 +441,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[4]);
     MpsChannel source=ParseChannel(exp->content[0]);
-    MpsTerm *result = new MpsRcv(source, exp->content[2]->root.content, *succ);
+    MpsTerm *result = new MpsRcv(source, exp->content[2]->root.content, -1, -1, *succ);
 
     delete succ;
     return result;
@@ -765,6 +766,19 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
 
     return result;
   } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case18") // ch >> id @ ( int of int ) ; pi2 {{{
+  {
+    MpsTerm *succ = MpsTerm::Create(exp->content[10]);
+    MpsChannel source=ParseChannel(exp->content[0]);
+    MpsTerm *result = new MpsRcv(source,
+                                 exp->content[2]->root.content,
+                                 string2int(exp->content[5]->root.content),
+                                 string2int(exp->content[7]->root.content),
+                                 *succ);
+
+    delete succ;
+    return result;
+  } // }}}
 
 #if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown term parsetree: " << exp->type_name << "." << exp->case_name << endl;
@@ -783,8 +797,11 @@ MpsSnd::MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ
   mySucc = succ.Copy();
   myExp = exp.Copy();
 } // }}}
-MpsRcv::MpsRcv(const MpsChannel &channel, const string &dest, const MpsTerm &succ) // {{{
-: myChannel(channel), myDest(dest)
+MpsRcv::MpsRcv(const MpsChannel &channel, const string &dest, int pid, int maxpid, const MpsTerm &succ) // {{{
+: myChannel(channel)
+, myDest(dest)
+, myPid(pid)
+, myMaxPid(maxpid)
 {
   mySucc = succ.Copy();
 } // }}}
@@ -1197,7 +1214,7 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
   if (typeptr==NULL)
     return PrintTypeError((string)"Sending on session with non-send type: " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check channel index is correct
-  if (myChannel.GetIndex() != typeptr->GetChannel())
+  if (myChannel.GetIndex() != typeptr->GetReceiver())
     return PrintTypeError((string)"Sending on wrong index in session: " + myChannel.ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Make new environment
   MpsLocalType *newType=NULL;
@@ -1251,7 +1268,7 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
   if (typeptr==NULL)
     return PrintTypeError((string)"Receiving on session: " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check channel index is correct
-  if (myChannel.GetIndex() != typeptr->GetChannel())
+  if (myChannel.GetIndex() != typeptr->GetSender())
     return PrintTypeError((string)"Receiving on session(wrong index): " + myChannel.ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Is renaming of myDest necessary?
   bool rename = false;
@@ -1381,7 +1398,7 @@ bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
   if (typeptr==NULL)
     return PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + session->second.type->ToString("           "),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check channel index is correct
-  if (myChannel.GetIndex() != typeptr->GetChannel())
+  if (myChannel.GetIndex() != typeptr->GetReceiver())
     return PrintTypeError((string)"Typechecking error - Sending on session: " + myChannel.ToString() + "with type: " + typeptr->ToString("           "),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check label ok
   map<string,MpsLocalType*>::iterator branch=typeptr->GetBranches().find(myLabel);
@@ -1419,7 +1436,7 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
   if (typeptr==NULL)
     return PrintTypeError((string)"Branching on non-branch session: " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check channel index is correct
-  if (myChannel.GetIndex() != typeptr->GetChannel())
+  if (myChannel.GetIndex() != typeptr->GetSender())
     return PrintTypeError((string)"Branching on wrong index: " + myChannel.ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check label ok
   map<string,MpsLocalType*> &branches=typeptr->GetBranches();
@@ -2003,7 +2020,7 @@ void MpsEnd::Compile(std::string &decls, string &defs, string &main) // Use rule
 } // }}}
 void MpsSnd::Compile(std::string &decls, string &defs, string &main) // Use rules Send and Deleg (and new rule for delegaing the session itself) {{{
 {
-  main += "\n  MsgSend(" + myChannel.ToString() + ", " + myExp->ToString() + ");";
+  main += "\n  " + myChannel.GetName() + "->Send(, " + int2string(myChannel.GetIndex()) + ", " + myExp->ToString() + ");";
   mySucc->Compile(decls,defs,main);
   return;
 } // }}}
@@ -2373,7 +2390,15 @@ MpsTerm *MpsPar::ApplyRcv(const std::string &path, const MpsExp *val) const // {
 MpsTerm *MpsRcv::ApplyRcv(const std::string &path, const MpsExp *val) const // {{{
 { if (path.size()>0)
     return Error((string)"Applying Rcv on "+ToString()+" with nonempty path "+path);
- return mySucc->ESubst(myDest,*val);
+  MpsTerm *result=NULL;
+  if (myMaxPid!=-1) // Reindex channels in received session
+  { MpsTerm *tmpResult = mySucc->ReIndex(myDest,myPid,myMaxPid);
+    result=tmpResult->ESubst(myDest,*val);
+    delete tmpResult;
+  }
+  else
+    result = mySucc->ESubst(myDest,*val);
+ return result;
 } // }}}
 MpsTerm *MpsTerm::ApplySnd(const std::string &path, MpsExp **val, MpsChannel &ch) const // {{{
 { return Error((string)"Applying Snd on "+ToString());
@@ -2498,6 +2523,9 @@ MpsTerm *MpsLink::ApplyLink(const std::vector<std::string> &paths, const std::st
 
   if (myPid==1) // Only first participant registers session
     mpsgui::CreateSession(session,myMaxpid); // Inform GUI
+  // FIXME: Reindex channels to send on
+  // session[i] << exp becomes session[myMaxpid*i+myPid] << exp, and
+  // session[i] >> var becomes session[myMaxpid*myPid+i] >> var.
   return mySucc->ERename(mySession,session);
 } // }}}
 MpsTerm *MpsTerm::ApplySync(const std::vector<std::string> &paths, const std::string &label) const // {{{
@@ -2978,7 +3006,7 @@ MpsTerm *MpsRcv::PRename(const string &src, const string &dst) const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, *newSucc);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
   delete newSucc;
   return result;
 } // }}}
@@ -3147,7 +3175,7 @@ MpsTerm *MpsRcv::ERename(const string &src, const string &dst) const // {{{
   // assert mySucc != NULL
   MpsChannel newChannel=myChannel.Rename(src,dst);
   if (src == myDest) // No substitution is needed in successor
-    return new MpsRcv(newChannel, myDest, *mySucc);
+    return new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc);
 
   MpsTerm *newSucc=NULL;
   string newDest=myDest;
@@ -3160,7 +3188,7 @@ MpsTerm *MpsRcv::ERename(const string &src, const string &dst) const // {{{
   }
   else
     newSucc = mySucc->ERename(src,dst);
-  MpsTerm *result = new MpsRcv(newChannel, newDest, *newSucc);
+  MpsTerm *result = new MpsRcv(newChannel, newDest, myPid, myMaxPid, *newSucc);
   delete newSucc;
   return result;
 } // }}}
@@ -3446,6 +3474,225 @@ MpsAssign *MpsAssign::ERename(const string &src, const string &dst) const // {{{
   return result;
 } // }}}
 
+/* Reindex session channels such that
+   session[i] << e becomes session[i*maxpid+pid], and
+   session[i] >> e becomes session[i+maxpid*pid].
+ */
+MpsTerm *MpsEnd::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  return Copy();
+} // }}}
+MpsTerm *MpsSnd::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
+  MpsChannel newChannel(myChannel.GetName(),myChannel.GetIndex()*maxpid+pid);
+  MpsTerm *result = new MpsSnd(newChannel, *myExp, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsRcv::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  // assert mySucc != NULL
+  MpsChannel newChannel(myChannel.GetName(),myChannel.GetIndex()+maxpid*pid);
+  if (session == myDest) // No substitution is needed in successor
+    return new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc);
+
+  MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
+  MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsSelect::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  // assert mySucc != NULL
+  // assert myChannel != dest
+  MpsChannel newChannel(myChannel.GetName(),myChannel.GetIndex()*maxpid+pid);
+  MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
+  MpsTerm *result = new MpsSelect(newChannel, myLabel, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsBranch::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  MpsChannel newChannel(myChannel.GetName(),myChannel.GetIndex()+maxpid*pid);
+  map<string, MpsTerm*> newBranches;
+  newBranches.clear();
+  // ReIndex each branch
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    MpsTerm *newBranch = it->second->ReIndex(session,pid,maxpid);
+    newBranches[it->first] = newBranch;
+  }
+  MpsTerm *result = new MpsBranch(newChannel, newBranches);
+  // Clean up
+  DeleteMap(newBranches);
+  return result;
+} // }}}
+MpsTerm *MpsPar::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  MpsTerm *newLeft = myLeft->ReIndex(session,pid,maxpid); // Rename in left term
+  MpsTerm *newRight = myRight->ReIndex(session,pid,maxpid); // Rename in right term
+  MpsTerm *result = new MpsPar(*newLeft, *newRight); // Combine renamed terms
+  delete newLeft;
+  delete newRight;
+  return result;
+} // }}}
+MpsTerm *MpsDef::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid); // Succ is substituted immediately
+  MpsTerm *newBody = myBody->Copy(); // Body is substituted afer possible argument renamings
+
+  bool body_hidden=false;
+
+  // Process StateArgs
+  for (vector<string>::const_iterator arg=myStateArgs.begin(); arg!=myStateArgs.end(); ++arg)
+  { if (session==*arg)
+      body_hidden=true;
+  }
+
+  // Process Args
+  for (vector<string>::const_iterator arg=myArgs.begin(); arg!=myArgs.end(); ++arg)
+  { if (session==*arg)
+      body_hidden=true;
+  }
+      
+  if (not body_hidden)
+  { MpsTerm *tmpBody = newBody->ReIndex(session,pid,maxpid);
+    delete newBody;
+    newBody=tmpBody;
+  }
+
+  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc);
+  delete newBody;
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsCall::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  return Copy();
+} // }}}
+MpsTerm *MpsNu::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  // assert mySucc != NULL
+  if (myChannel==session) // No substitution necessary
+    return Copy();
+
+  MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
+  MpsTerm *result = new MpsNu(myChannel, *newSucc, *myType);
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsLink::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  // assert mySucc != NULL
+  if (mySession == session) // No further substitution needed
+    return new MpsLink(myChannel, mySession, myPid, myMaxpid, *mySucc);
+
+  MpsTerm *newSucc =  mySucc->ReIndex(session,pid,maxpid);
+
+  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsSync::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  map<string, MpsTerm*> newBranches;
+  // ReIndex each branch
+  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+  {
+    MpsTerm *newBranch = it->second->ReIndex(session,pid,maxpid);
+    newBranches[it->first] = newBranch;
+  }
+
+  MpsTerm *result = new MpsSync(myMaxpid, mySession, newBranches, myAssertions);
+
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsTerm *MpsCond::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  MpsTerm *newTrueBranch = myTrueBranch->ReIndex(session,pid,maxpid);
+  MpsTerm *newFalseBranch = myFalseBranch->ReIndex(session,pid,maxpid);
+  MpsCond *result = new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
+  delete newTrueBranch;
+  delete newFalseBranch;
+  return result;
+} // }}}
+MpsTerm *MpsGuiSync::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  map<string, inputbranch> newBranches;
+  newBranches.clear();
+  // ReIndex each branch
+  for (map<string,inputbranch>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    inputbranch newBranch;
+    newBranch.term = it->second.term->Copy();
+    newBranch.assertion = it->second.assertion->Copy();
+    newBranch.names = it->second.names;
+    newBranch.types.clear();
+    for (vector<MpsMsgType*>::const_iterator type=it->second.types.begin(); type!=it->second.types.end(); ++type)
+      newBranch.types.push_back((*type)->Copy());
+    newBranch.values.clear();
+    for (vector<MpsExp*>::const_iterator value=it->second.values.begin(); value!=it->second.values.end(); ++value)
+      newBranch.values.push_back((*value)->Copy());
+    // vector<string>::find
+    bool found=false;
+    for (vector<string>::const_iterator arg=it->second.args.begin(); arg!=it->second.args.end(); ++arg)
+      if (*arg == session)
+        found=true;
+    newBranch.args = it->second.args;
+    if (!found) // Do not substitute in body and no argument renaming
+    {
+      MpsTerm *tmpTerm = newBranch.term->ReIndex(session,pid,maxpid); // Make substitution in body
+      delete newBranch.term;
+      newBranch.term=tmpTerm;
+    }
+
+    newBranches[it->first] = newBranch;
+  }
+  MpsGuiSync *result = new MpsGuiSync(myMaxpid, mySession, myPid, newBranches);
+
+  // Clean up
+  while (newBranches.size() > 0)
+  {
+    delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    while (newBranches.begin()->second.types.size()>0)
+    {
+      delete *newBranches.begin()->second.types.begin();
+      newBranches.begin()->second.types.erase(newBranches.begin()->second.types.begin());
+    }
+    while (newBranches.begin()->second.values.size()>0)
+    {
+      delete *newBranches.begin()->second.values.begin();
+      newBranches.begin()->second.values.erase(newBranches.begin()->second.values.begin());
+    }
+    newBranches.erase(newBranches.begin());
+  }
+
+  return result;
+} // }}}
+MpsTerm *MpsGuiValue::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
+  MpsGuiValue *result = new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
+
+  // Clean up
+  delete newSucc;
+
+  return result;
+} // }}}
+MpsAssign *MpsAssign::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  // assert mySucc != NULL
+  MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
+  MpsAssign *result = new MpsAssign(myId, *myExp, *myType, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
+
 /* Substitution of Process Variable
  */
 MpsTerm *MpsEnd::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
@@ -3464,7 +3711,7 @@ MpsTerm *MpsRcv::PSubst(const string &var, const MpsTerm &exp, const vector<stri
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PSubst(var, exp, args, stateargs);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, *newSucc);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
   delete newSucc;
   return result;
 } // }}}
@@ -3792,7 +4039,7 @@ MpsTerm *MpsRcv::ESubst(const string &source, const MpsExp &dest) const // {{{
   // assert mySucc != NULL
   MpsChannel newChannel=myChannel.Subst(source,dest);
   if (source == myDest) // No substitution is needed in successor
-    return new MpsRcv(newChannel, myDest, *mySucc);
+    return new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc);
 
   MpsTerm *newSucc = NULL;
   string newDest = myDest;
@@ -3808,7 +4055,7 @@ MpsTerm *MpsRcv::ESubst(const string &source, const MpsExp &dest) const // {{{
   }
   else
     newSucc = mySucc->ESubst(source,dest);
-  MpsTerm *result = new MpsRcv(newChannel, newDest, *newSucc);
+  MpsTerm *result = new MpsRcv(newChannel, newDest, myPid, myMaxPid, *newSucc);
   delete newSucc;
   return result;
 } // }}}
@@ -4152,7 +4399,7 @@ MpsTerm *MpsSnd::GSubst(const string &source, const MpsGlobalType &dest, const v
 MpsTerm *MpsRcv::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, *newSucc);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
 
   // Clean Up
   delete newSucc;
@@ -4359,7 +4606,7 @@ MpsTerm *MpsSnd::LSubst(const string &source, const MpsLocalType &dest, const ve
 MpsTerm *MpsRcv::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, *newSucc);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
 
   // Clean Up
   delete newSucc;
@@ -4807,7 +5054,7 @@ MpsTerm *MpsSnd::Copy() const // {{{
 MpsTerm *MpsRcv::Copy() const // {{{
 {
   // assert mySucc != NULL
-  return new MpsRcv(myChannel, myDest, *mySucc);
+  return new MpsRcv(myChannel, myDest, myPid, myMaxPid, *mySucc);
 } // }}}
 MpsTerm *MpsSelect::Copy() const // {{{
 {
@@ -4947,7 +5194,7 @@ MpsTerm *MpsRcv::Simplify() const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->Simplify();
-  MpsTerm *result = new MpsRcv(myChannel, myDest, *newSucc);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
   delete newSucc;
   return result;
 } // }}}
@@ -5115,7 +5362,11 @@ string MpsSnd::ToString(string indent) const // {{{
 } // }}}
 string MpsRcv::ToString(string indent) const // {{{
 {
-  return myChannel.ToString() + " >> " + myDest + ";\n" + indent + mySucc->ToString(indent);
+  string result = myChannel.ToString() + " >> " + myDest;
+  if (myMaxPid!=-1)
+    result += "@(" + int2string(myPid) + " of " + int2string(myMaxPid) + ")";
+  result += ";\n" + indent + mySucc->ToString(indent);
+  return result;
 } // }}}
 string MpsSelect::ToString(string indent) const // {{{
 {
@@ -5278,8 +5529,12 @@ string MpsSnd::ToTex(int indent, int sw) const // {{{
 } // }}}
 string MpsRcv::ToTex(int indent, int sw) const // {{{
 {
-  return ToTex_Channel(myChannel) + "$\\gg$" + myDest + ";\\newline\n"
-       + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
+  string result = ToTex_Channel(myChannel) + "$\\gg$" + myDest;
+  if (myMaxPid!=-1)
+    result += "\\at (" + ToTex_PP(myPid) + " " + ToTex_KW("def") + " " + ToTex_PP(myMaxPid) + ")";
+  result += ";\\newline\n"
+          + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
+  return result;
 } // }}}
 string MpsSelect::ToTex(int indent, int sw) const // {{{
 {

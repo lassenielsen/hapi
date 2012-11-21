@@ -93,8 +93,8 @@ class MpsGlobalType // {{{
 class MpsGlobalMsgType : public MpsGlobalType // {{{
 {
   public:
-    MpsGlobalMsgType(int sender, int receiver, int channel, const MpsMsgType &msg, const MpsGlobalType &succ);
-    MpsGlobalMsgType(int sender, int receiver, int channel, const MpsMsgType &msg, const MpsGlobalType &succ, const MpsExp &assertion, const std::string &id);
+    MpsGlobalMsgType(int sender, int receiver, const MpsMsgType &msg, const MpsGlobalType &succ);
+    MpsGlobalMsgType(int sender, int receiver, const MpsMsgType &msg, const MpsGlobalType &succ, const MpsExp &assertion, const std::string &id);
     virtual ~MpsGlobalMsgType();
     MpsGlobalMsgType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const;
@@ -118,7 +118,6 @@ class MpsGlobalMsgType : public MpsGlobalType // {{{
   private:
     int mySender;
     int myReceiver;
-    int myChannel;
     MpsMsgType *myMsgType;
     MpsGlobalType *mySucc;
 
@@ -129,7 +128,7 @@ class MpsGlobalMsgType : public MpsGlobalType // {{{
 class MpsGlobalBranchType : public MpsGlobalType // {{{
 {
   public:
-    MpsGlobalBranchType(int sender, int receiver, int channel, const std::map<std::string,MpsGlobalType*> &branches, const std::map<std::string,MpsExp*> &assertions);
+    MpsGlobalBranchType(int sender, int receiver, const std::map<std::string,MpsGlobalType*> &branches, const std::map<std::string,MpsExp*> &assertions);
     virtual ~MpsGlobalBranchType();
     MpsGlobalBranchType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const;
@@ -153,7 +152,6 @@ class MpsGlobalBranchType : public MpsGlobalType // {{{
   private:
     int mySender;
     int myReceiver;
-    int myChannel;
     std::map<std::string,MpsGlobalType*> myBranches;
     std::map<std::string,MpsExp*> myAssertions;
 }; // }}}
@@ -316,8 +314,8 @@ class MpsLocalType // {{{
 class MpsLocalSendType : public MpsLocalType // {{{
 {
   public:
-    MpsLocalSendType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ);
-    MpsLocalSendType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ, const MpsExp &assertion, const std::string &id);
+    MpsLocalSendType(int receiver, const MpsMsgType &msgtype, const MpsLocalType &succ);
+    MpsLocalSendType(int receiver, const MpsMsgType &msgtype, const MpsLocalType &succ, const MpsExp &assertion, const std::string &id);
     virtual ~MpsLocalSendType();
     MpsLocalSendType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
@@ -338,7 +336,7 @@ class MpsLocalSendType : public MpsLocalType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
 
     // Accessors
-    int GetChannel();
+    int GetReceiver();
     const MpsLocalType *GetSucc() const;
     MpsMsgType *GetMsgType();
     bool GetAssertionType() const;
@@ -346,7 +344,7 @@ class MpsLocalSendType : public MpsLocalType // {{{
     const MpsExp &GetAssertion() const;
 
   private:
-    int myChannel;
+    int myReceiver;
     MpsMsgType *myMsgType;
     MpsLocalType *mySucc;
 
@@ -358,8 +356,8 @@ class MpsLocalSendType : public MpsLocalType // {{{
 class MpsLocalRcvType : public MpsLocalType // {{{
 {
   public:
-    MpsLocalRcvType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ);
-    MpsLocalRcvType(int channel, const MpsMsgType &msgtype, const MpsLocalType &succ, const MpsExp &assertion, const std::string &id);
+    MpsLocalRcvType(int sender, const MpsMsgType &msgtype, const MpsLocalType &succ);
+    MpsLocalRcvType(int sender, const MpsMsgType &msgtype, const MpsLocalType &succ, const MpsExp &assertion, const std::string &id);
     virtual ~MpsLocalRcvType();
     MpsLocalRcvType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
@@ -380,7 +378,7 @@ class MpsLocalRcvType : public MpsLocalType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
 
     // Accessors
-    int GetChannel();
+    int GetSender();
     const MpsLocalType *GetSucc() const;
     MpsMsgType *GetMsgType();
     bool GetAssertionType() const;
@@ -388,7 +386,7 @@ class MpsLocalRcvType : public MpsLocalType // {{{
     const MpsExp &GetAssertion() const;
 
   private:
-    int myChannel;
+    int mySender;
     MpsMsgType *myMsgType;
     MpsLocalType *mySucc;
 
@@ -434,7 +432,7 @@ class MpsLocalForallType : public MpsLocalType // {{{
 class MpsLocalSelectType : public MpsLocalType // {{{
 {
   public:
-    MpsLocalSelectType(int channel, const std::map<std::string,MpsLocalType*> &branches, const std::map<std::string,MpsExp*> &assertions);
+    MpsLocalSelectType(int receiver, const std::map<std::string,MpsLocalType*> &branches, const std::map<std::string,MpsExp*> &assertions);
     virtual ~MpsLocalSelectType();
     MpsLocalSelectType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
@@ -455,19 +453,19 @@ class MpsLocalSelectType : public MpsLocalType // {{{
     MpsLocalType *Merge(MpsLocalType &rhs) const;
 
     // Accessors
-    int GetChannel();
+    int GetReceiver();
     std::map<std::string,MpsLocalType*> &GetBranches();
     std::map<std::string,MpsExp*> &GetAssertions();
 
   private:
-    int myChannel;
+    int myReceiver;
     std::map<std::string,MpsLocalType*> myBranches;
     std::map<std::string,MpsExp*> myAssertions;
 }; // }}}
 class MpsLocalBranchType : public MpsLocalType // {{{
 {
   public:
-    MpsLocalBranchType(int channel, const std::map<std::string,MpsLocalType*> &branches, const std::map<std::string, MpsExp*> &assertions);
+    MpsLocalBranchType(int sender, const std::map<std::string,MpsLocalType*> &branches, const std::map<std::string, MpsExp*> &assertions);
     virtual ~MpsLocalBranchType();
     MpsLocalBranchType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
@@ -488,12 +486,12 @@ class MpsLocalBranchType : public MpsLocalType // {{{
     MpsLocalType *Merge(MpsLocalType &rhs) const;
 
     // Accessors
-    int GetChannel();
+    int GetSender();
     std::map<std::string,MpsLocalType*> &GetBranches();
     std::map<std::string,MpsExp*> &GetAssertions();
 
   private:
-    int myChannel;
+    int mySender;
     std::map<std::string,MpsLocalType*> myBranches;
     std::map<std::string,MpsExp*> myAssertions;
 }; // }}}

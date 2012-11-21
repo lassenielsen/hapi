@@ -236,6 +236,11 @@ class MpsTerm // {{{
     //! Apply another type of step.
     virtual MpsTerm *ApplyOther(const std::string &path) const; // Call function from funs at path
 
+    //! Reindex session, so each sender/receiver combination has its own channel
+    //! This way session[i] << e becomes session[i*maxpid+pid], and
+    //! session[i] >> e becomes session[i+maxpid*pid].
+    virtual MpsTerm *ReIndex(const std::string &session,
+                             int pid, int maxpid) const = 0;
     //! Process variable renaming
     virtual MpsTerm *PRename(const std::string &src,
                              const std::string &dst) const = 0;
@@ -300,6 +305,8 @@ class MpsEnd : public MpsTerm // {{{
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var,
@@ -337,6 +344,8 @@ class MpsSnd : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySnd(const std::string &path, MpsExp **val, MpsChannel &ch) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -364,7 +373,7 @@ class MpsSnd : public MpsTerm // {{{
 class MpsRcv : public MpsTerm // {{{
 {
   public:
-    MpsRcv(const MpsChannel &channel, const std::string &dest, const MpsTerm &succ);
+    MpsRcv(const MpsChannel &channel, const std::string &dest, int pid, int maxpid, const MpsTerm &succ);
     virtual ~MpsRcv();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -375,6 +384,8 @@ class MpsRcv : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyRcv(const std::string &path, const MpsExp *val) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -392,6 +403,8 @@ class MpsRcv : public MpsTerm // {{{
   private:
     MpsChannel myChannel;
     std::string myDest;
+    int myPid; // Process ID of received session (if it is a sessios, otherwise -1)
+    int myMaxPid; // Process count of received session (if it is a sessios, otherwise -1)
     MpsTerm *mySucc;
 }; // }}}
 // DOCUMENTATION: MpsSelect {{{
@@ -413,6 +426,8 @@ class MpsSelect : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyBSnd(const std::string &path, std::string &label, MpsChannel &ch) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -451,6 +466,8 @@ class MpsBranch : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyBRcv(const std::string &path, const std::string &label) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -496,6 +513,8 @@ class MpsPar : public MpsTerm // {{{
     MpsTerm *ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const;
     MpsTerm *ApplyCall(const std::string &path, const std::vector<MpsFunction> &funs) const;
     MpsTerm *ApplyOther(const std::string &path) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -533,6 +552,8 @@ class MpsDef : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -575,6 +596,8 @@ class MpsCall : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyCall(const std::string &path, const std::vector<MpsFunction> &funs) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -613,6 +636,8 @@ class MpsNu : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -652,6 +677,8 @@ class MpsLink : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyLink(const std::vector<std::string> &paths, const std::string &session) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -692,6 +719,8 @@ class MpsSync : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySync(const std::vector<std::string> &paths, const std::string &label) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -731,6 +760,8 @@ class MpsCond : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -781,6 +812,8 @@ class MpsGuiSync : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySync(const std::vector<std::string> &paths, const std::string &label) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsGuiSync *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -820,6 +853,8 @@ class MpsGuiValue : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
+    MpsTerm *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
     MpsGuiValue *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
@@ -866,6 +901,8 @@ class MpsAssign : public MpsTerm // {{{
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
+    MpsAssign *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
     MpsAssign *PRename(const std::string &src, const std::string &dst) const;
     MpsAssign *ERename(const std::string &src, const std::string &dst) const;
     MpsAssign *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;

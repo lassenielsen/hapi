@@ -33,9 +33,10 @@ class MpsTerm;
 class MpsFunction // {{{
 { public:
     MpsFunction(const std::string &name,
-            const std::vector<std::string> &stateargs,
-            const std::vector<std::string> &args,
-            const MpsTerm &body);
+                const std::vector<std::string> &stateargs,
+                const std::vector<std::string> &args,
+                const std::vector<std::pair<int,int> > &argpids,
+                const MpsTerm &body);
     MpsFunction(const MpsFunction &rhs);
     virtual ~MpsFunction();
     MpsFunction &operator=(const MpsFunction &rhs);
@@ -43,12 +44,14 @@ class MpsFunction // {{{
     const std::string &GetName() const;
     const std::vector<std::string> &GetStateArgs() const;
     const std::vector<std::string> &GetArgs() const;
+    const std::vector<std::pair<int,int> > &GetArgPids() const;
     const MpsTerm &GetBody() const;
 
   private:
     std::string myName;
     std::vector<std::string> myStateArgs;
     std::vector<std::string> myArgs;
+    std::vector<std::pair<int,int> > myArgPids;
     MpsTerm *myBody;
 }; // }}}
 
