@@ -1337,7 +1337,10 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
     MpsLocalEnv::const_iterator oldsession = newDelta.find(myDest);
     if (oldsession != newDelta.end() && typeid(*oldsession->second.type)!=typeid(MpsLocalEndType))
       return PrintTypeError((string)"Overwriting open session: " + myDest,*this,Theta,Gamma,Delta,Sigma,Omega);
+    // Check specification of pid and maxpid
     MpsDelegateMsgType *mtptr = dynamic_cast<MpsDelegateMsgType*>(typeptr->GetMsgType());
+    if (myPid!=mtptr->GetPid() || myMaxPid!=mtptr->GetMaxpid())
+      return PrintTypeError((string)"Receiving session with pid or maxpid different than specified",*this,Theta,Gamma,Delta,Sigma,Omega);
     newDelta[myDest].type = mtptr->GetLocalType();
     newDelta[myDest].pid = mtptr->GetPid();
     newDelta[myDest].maxpid = mtptr->GetMaxpid();
