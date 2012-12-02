@@ -2523,10 +2523,14 @@ MpsTerm *MpsLink::ApplyLink(const std::vector<std::string> &paths, const std::st
 
   if (myPid==1) // Only first participant registers session
     mpsgui::CreateSession(session,myMaxpid); // Inform GUI
-  // FIXME: Reindex channels to send on
+  // Renamimg session channel to common name
+  MpsTerm *tmpResult = mySucc->ERename(mySession,session);
+  // Reindexing session
   // session[i] << exp becomes session[myMaxpid*i+myPid] << exp, and
   // session[i] >> var becomes session[myMaxpid*myPid+i] >> var.
-  return mySucc->ERename(mySession,session);
+  MpsTerm *result = tmpResult->ReIndex(session,myPid,myMaxpid);
+  delete tmpResult;
+  return result;
 } // }}}
 MpsTerm *MpsTerm::ApplySync(const std::vector<std::string> &paths, const std::string &label) const // {{{
 { if (paths.size()>0)
@@ -2624,7 +2628,7 @@ MpsTerm *MpsDef::ApplyDef(const std::string &path, std::vector<MpsFunction> &des
     return Error((string)"Applying Def on "+ToString()+" with nonempty pathh"+path);
   string name = NewName(myName);
   MpsTerm *newBody=myBody->PRename(myName,name);
-  MpsFunction newdef(name,myStateArgs,myArgs,*newBody);
+  MpsFunction newdef(name,myStateArgs,myArgs,GetArgPids(),*newBody);
   dest.push_back(newdef);
   delete newBody;
   return mySucc->PRename(myName,name);
@@ -2657,7 +2661,7 @@ MpsTerm *MpsCall::ApplyCall(const std::string &path, const std::vector<MpsFuncti
     return Error((string)"Applying Call on "+ToString());
   for (vector<MpsFunction>::const_iterator fun=funs.begin(); fun!=funs.end(); ++fun)
   { if (fun->GetName()==myName)
-      return this->PSubst(myName,fun->GetBody(),fun->GetArgs(), fun->GetStateArgs());
+      return this->PSubst(myName,fun->GetBody(),fun->GetArgs(), fun->GetArgPids(), fun->GetStateArgs());
   }
   return Error((string)"Applying Call, but no definition "+myName+" in env");
 } // }}}
@@ -3485,7 +3489,9 @@ MpsTerm *MpsEnd::ReIndex(const string &session, int pid, int maxpid) const // {{
 MpsTerm *MpsSnd::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
-  MpsChannel newChannel(myChannel.GetName(),myChannel.GetIndex()*maxpid+pid);
+  MpsChannel newChannel=myChannel;
+  if (session==myChannel.GetName())
+    newChannel=MpsChannel(myChannel.GetName(),myChannel.GetIndex()*maxpid+pid);
   MpsTerm *result = new MpsSnd(newChannel, *myExp, *newSucc);
   delete newSucc;
   return result;
@@ -3493,7 +3499,9 @@ MpsTerm *MpsSnd::ReIndex(const string &session, int pid, int maxpid) const // {{
 MpsTerm *MpsRcv::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   // assert mySucc != NULL
-  MpsChannel newChannel(myChannel.GetName(),myChannel.GetIndex()+maxpid*pid);
+  MpsChannel newChannel=myChannel;
+  if (session==myChannel.GetName())
+    newChannel=MpsChannel(myChannel.GetName(),myChannel.GetIndex()+maxpid*pid);
   if (session == myDest) // No substitution is needed in successor
     return new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc);
 
@@ -3695,35 +3703,35 @@ MpsAssign *MpsAssign::ReIndex(const string &session, int pid, int maxpid) const 
 
 /* Substitution of Process Variable
  */
-MpsTerm *MpsEnd::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsEnd::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   return Copy();
 } // }}}
-MpsTerm *MpsSnd::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsSnd::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   // assert mySucc != NULL
-  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, stateargs);
+  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
   MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc);
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsRcv::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsRcv::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   // assert mySucc != NULL
-  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, stateargs);
+  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
   MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsSelect::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsSelect::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   // assert mySucc != NULL
-  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, stateargs);
+  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
   MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc);
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsBranch::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsBranch::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   map<string, MpsTerm*> newBranches;
   newBranches.clear();
@@ -3731,7 +3739,7 @@ MpsTerm *MpsBranch::PSubst(const string &var, const MpsTerm &exp, const vector<s
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     // assert it->second != NULL
-    MpsTerm *newBranch = it->second->PSubst(var,exp,args,stateargs);
+    MpsTerm *newBranch = it->second->PSubst(var,exp,args,argpids,stateargs);
     newBranches[it->first] = newBranch;
   }
   MpsTerm *result = new MpsBranch(myChannel, newBranches);
@@ -3743,18 +3751,18 @@ MpsTerm *MpsBranch::PSubst(const string &var, const MpsTerm &exp, const vector<s
   }
   return result;
 } // }}}
-MpsTerm *MpsPar::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsPar::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   // assert myLeft != NULL
   // assert myRight != NULL
-  MpsTerm *newLeft = myLeft->PSubst(var,exp,args,stateargs);
-  MpsTerm *newRight = myRight->PSubst(var,exp,args,stateargs);
+  MpsTerm *newLeft = myLeft->PSubst(var,exp,args,argpids,stateargs);
+  MpsTerm *newRight = myRight->PSubst(var,exp,args,argpids,stateargs);
   MpsTerm *result = new MpsPar(*newLeft, *newRight);
   delete newLeft;
   delete newRight;
   return result;
 } // }}}
-MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   // assert(mySucc != NULL);
   // assert myName not in exp.FPV()
@@ -3781,8 +3789,8 @@ MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<stri
     MpsTerm *newVar = new MpsCall(newName,tmpArgs,tmpState);
     DeleteVector(tmpArgs);
     DeleteVector(tmpState);
-    newSucc = mySucc->PSubst(myName,*newVar,myArgs,myStateArgs); // Initialise newSucc
-    newBody = myBody->PSubst(myName,*newVar,myArgs,myStateArgs); // Initialise newBody
+    newSucc = mySucc->PSubst(myName,*newVar,myArgs,GetArgPids(),myStateArgs); // Initialise newSucc
+    newBody = myBody->PSubst(myName,*newVar,myArgs,GetArgPids(),myStateArgs); // Initialise newBody
     delete newVar;
   }
   else // Renaming of myName not necessary
@@ -3810,11 +3818,11 @@ MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<stri
       newArgs.push_back(*it); // Add the argument
   }
   { // Make substitution
-    MpsTerm *tmpSucc = newSucc->PSubst(var,exp,args,stateargs);
+    MpsTerm *tmpSucc = newSucc->PSubst(var,exp,args,argpids,stateargs);
     delete newSucc;
     newSucc = tmpSucc;
 
-    MpsTerm *tmpBody = newBody->PSubst(var,exp,args,stateargs);
+    MpsTerm *tmpBody = newBody->PSubst(var,exp,args,argpids,stateargs);
     delete newBody;
     newBody = tmpBody;
   }
@@ -3824,7 +3832,7 @@ MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<stri
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   if (myName == var)
   {
@@ -3882,13 +3890,20 @@ MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<str
       newTerm = tmpTerm;
     }
     vector<MpsExp*>::const_iterator argExp=myArgs.begin();
+    vector<pair<int,int> >::const_iterator argPid=argpids.begin();
     for (vector<string>::const_iterator argName=argNames.begin();
-         argName!=argNames.end() && argExp!=myArgs.end();
-         ++argName,++argExp)
+         argName!=argNames.end() && argExp!=myArgs.end() && argPid!=argpids.end();
+         ++argName,++argExp,++argPid)
     { // Substitute the argNames for the arguments one by one
       MpsExp *value=(*argExp)->Eval();
-      MpsTerm *tmpTerm=newTerm->ESubst(*argName,*value);
+      MpsTerm *tmpTerm2;
+      if (argPid->second>0)
+        tmpTerm2=newTerm->ReIndex(*argName,argPid->first,argPid->second);
+      else
+        tmpTerm2=newTerm->Copy();
+      MpsTerm *tmpTerm=tmpTerm2->ESubst(*argName,*value);
       delete value;
+      delete tmpTerm2;
       delete newTerm;
       newTerm = tmpTerm;
     }
@@ -3897,7 +3912,7 @@ MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<str
   else
     return new MpsCall(myName,myArgs,myState);
 } // }}}
-MpsTerm *MpsNu::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsNu::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   // assert mySucc != NULL
   string newChannel = myChannel;
@@ -3909,25 +3924,25 @@ MpsTerm *MpsNu::PSubst(const string &var, const MpsTerm &exp, const vector<strin
     newChannel = MpsExp::NewVar();
     MpsExp *newVar = new MpsVarExp(newChannel);
     MpsTerm *tmpSucc = mySucc->ESubst(myChannel,*newVar);
-    newSucc = tmpSucc->PSubst(var,exp,args,stateargs);
+    newSucc = tmpSucc->PSubst(var,exp,args,argpids,stateargs);
     delete tmpSucc;
     delete newVar;
   }
   else
-    newSucc = mySucc->PSubst(var,exp,args,stateargs);
+    newSucc = mySucc->PSubst(var,exp,args,argpids,stateargs);
   MpsTerm *result = new MpsNu(newChannel, *newSucc, *myType);
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsLink::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsLink::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   // assert mySucc != NULL
-  MpsTerm *newSucc = mySucc->PSubst(var,exp,args,stateargs);
+  MpsTerm *newSucc = mySucc->PSubst(var,exp,args,argpids,stateargs);
   MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc);
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsSync::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsSync::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   map<string, MpsTerm*> newBranches;
   newBranches.clear();
@@ -3935,11 +3950,12 @@ MpsTerm *MpsSync::PSubst(const string &var, const MpsTerm &exp, const vector<str
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     // assert it->second != NULL
-    MpsTerm *newBranch = it->second->PSubst(var,exp,args,stateargs);
+    MpsTerm *newBranch = it->second->PSubst(var,exp,args,argpids,stateargs);
     newBranches[it->first] = newBranch;
   }
   MpsTerm *result = new MpsSync(myMaxpid, mySession, newBranches, myAssertions);
   // Clean up
+  // FIXME: Use DeleteVector(newBranches);
   while (newBranches.size() > 0)
   {
     delete newBranches.begin()->second;
@@ -3948,16 +3964,16 @@ MpsTerm *MpsSync::PSubst(const string &var, const MpsTerm &exp, const vector<str
 
   return result;
 } // }}}
-MpsTerm *MpsCond::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsTerm *MpsCond::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
-  MpsTerm *newTrueBranch = myTrueBranch->PSubst(var,exp,args,stateargs);
-  MpsTerm *newFalseBranch = myFalseBranch->PSubst(var,exp,args,stateargs);
+  MpsTerm *newTrueBranch = myTrueBranch->PSubst(var,exp,args,argpids,stateargs);
+  MpsTerm *newFalseBranch = myFalseBranch->PSubst(var,exp,args,argpids,stateargs);
   MpsCond *result = new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
   delete newTrueBranch;
   delete newFalseBranch;
   return result;
 } // }}}
-MpsGuiSync *MpsGuiSync::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsGuiSync *MpsGuiSync::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   map<string, inputbranch> newBranches;
   newBranches.clear();
@@ -3965,7 +3981,7 @@ MpsGuiSync *MpsGuiSync::PSubst(const string &var, const MpsTerm &exp, const vect
   for (map<string,inputbranch>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     inputbranch newBranch;
-    newBranch.term = it->second.term->PSubst(var,exp,args,stateargs);
+    newBranch.term = it->second.term->PSubst(var,exp,args,argpids,stateargs);
     newBranch.assertion = it->second.assertion->Copy();
     newBranch.args = it->second.args;
     newBranch.names = it->second.names;
@@ -3998,17 +4014,17 @@ MpsGuiSync *MpsGuiSync::PSubst(const string &var, const MpsTerm &exp, const vect
 
   return result;
 } // }}}
-MpsGuiValue *MpsGuiValue::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsGuiValue *MpsGuiValue::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
-  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, stateargs);
+  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
   MpsGuiValue *result = new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
   delete newSucc;
   return result;
 } // }}}
-MpsAssign *MpsAssign::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<string> &stateargs) const // {{{
+MpsAssign *MpsAssign::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
   // assert mySucc != NULL
-  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, stateargs);
+  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
   MpsAssign *result = new MpsAssign(myId, *myExp, *myType, *newSucc);
   delete newSucc;
   return result;
@@ -5702,3 +5718,18 @@ string MpsAssign::ToTex(int indent, int sw) const // {{{
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
 
+/* Term specific funtions
+ */
+vector<pair<int,int> > MpsDef::GetArgPids() const // {{{
+{
+  vector<pair<int,int> > argPids; // Build argPid vector for function def.
+  for (vector<MpsMsgType*>::const_iterator argType=myTypes.begin();
+       argType!=myTypes.end(); ++argType)
+  { const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(*argType);
+    if (delType!=NULL)
+      argPids.push_back(pair<int,int>(delType->GetPid(), delType->GetMaxpid()));
+    else
+      argPids.push_back(pair<int,int>(0,0));
+  }
+  return argPids;
+} // }}}

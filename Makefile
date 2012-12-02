@@ -20,7 +20,7 @@ libname = lib$(name).so
 COMMENT = OS_
 OS_AUTO = $(shell uname -s)
 
-opt =
+opt = -O3
 compiler = g++
 ctags = ctags
 args = -fPIC `sdl-config --cflags` $(opt) -I./include/

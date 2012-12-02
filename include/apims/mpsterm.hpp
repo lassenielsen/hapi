@@ -251,6 +251,7 @@ class MpsTerm // {{{
     virtual MpsTerm *PSubst(const std::string &var,
                             const MpsTerm &exp,
                             const std::vector<std::string> &args,
+                            const std::vector<std::pair<int,int> > &argpids,
                             const std::vector<std::string> &stateargs) const = 0;
     //! Expression variable substitution
     virtual MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const = 0;
@@ -312,6 +313,7 @@ class MpsEnd : public MpsTerm // {{{
     MpsTerm *PSubst(const std::string &var,
                     const MpsTerm &exp,
                     const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
                     const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source,
                     const MpsExp &dest) const;
@@ -348,7 +350,11 @@ class MpsSnd : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -388,7 +394,11 @@ class MpsRcv : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -430,7 +440,11 @@ class MpsSelect : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -470,7 +484,11 @@ class MpsBranch : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -517,7 +535,11 @@ class MpsPar : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -556,7 +578,11 @@ class MpsDef : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -567,6 +593,8 @@ class MpsDef : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+
+    std::vector<std::pair<int,int> > GetArgPids() const;
 
   private:
     std::string myName;
@@ -600,7 +628,11 @@ class MpsCall : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -640,7 +672,11 @@ class MpsNu : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -681,7 +717,11 @@ class MpsLink : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -723,7 +763,11 @@ class MpsSync : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -764,7 +808,11 @@ class MpsCond : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsTerm *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsTerm *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -816,7 +864,11 @@ class MpsGuiSync : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsGuiSync *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsGuiSync *PSubst(const std::string &var,
+                       const MpsTerm &exp,
+                       const std::vector<std::string> &args,
+                       const std::vector<std::pair<int,int> > &argpids,
+                       const std::vector<std::string> &stateargs) const;
     MpsGuiSync *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsGuiSync *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGuiSync *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -857,7 +909,11 @@ class MpsGuiValue : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
-    MpsGuiValue *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsGuiValue *PSubst(const std::string &var,
+                    const MpsTerm &exp,
+                    const std::vector<std::string> &args,
+                    const std::vector<std::pair<int,int> > &argpids,
+                    const std::vector<std::string> &stateargs) const;
     MpsGuiValue *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsGuiValue *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGuiValue *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
@@ -905,7 +961,11 @@ class MpsAssign : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsAssign *PRename(const std::string &src, const std::string &dst) const;
     MpsAssign *ERename(const std::string &src, const std::string &dst) const;
-    MpsAssign *PSubst(const std::string &var, const MpsTerm &exp, const std::vector<std::string> &args, const std::vector<std::string> &stateargs) const;
+    MpsAssign *PSubst(const std::string &var,
+                      const MpsTerm &exp,
+                      const std::vector<std::string> &args,
+                      const std::vector<std::pair<int,int> > &argpids,
+                      const std::vector<std::string> &stateargs) const;
     MpsAssign *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsAssign *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsAssign *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;

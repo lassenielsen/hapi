@@ -62,6 +62,7 @@ MpsFunction &MpsFunction::operator=(const MpsFunction &rhs) // {{{
 { myName = rhs.GetName();
   myStateArgs=rhs.GetStateArgs();
   myArgs=rhs.GetArgs();
+  myArgPids=rhs.GetArgPids();
   delete myBody;
   myBody = rhs.GetBody().Copy();
 } // }}}
