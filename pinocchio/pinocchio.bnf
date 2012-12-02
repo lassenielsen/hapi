@@ -1,0 +1,110 @@
+// Tokens
+whitespace: r'[ \t\r\n]+'
+boolval := r'True|False'
+intval := r'0|[1-9][0-9]*' // Examples 
+floatval := r'(0|[1-9][0-9]*)(\.[0-9]*[1-9])?([eE]-?[1-9][0-9]*)?f' // Examples 3f, 3,1415f, 17E37f, 31,415E-1f
+charval := r'(c\'.\')+c#[0-9]{1,3}' // Examples c'x', c#54, c'''
+stringval := r's\'([\][^\']|.)*\'' // Examples s'abba'
+address := r'([a-zA-Z][a-zA-Z0-9_]*|((1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[0-9])(.1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[0-9]){3}))#[1-9][0-9]*' // Examples localhost#1213, 192.168.0.15#1213
+id ::= r'[a-zA-Z][a-zA-Z0-9_]*'
+op1 := r'[+]|[-]|&&|\|\|'
+op2 := r'*|/|not'
+PAR := r'[|]'
+regexp := r'r\'([\].|[^\'])*\'' // Examples r'abba', r'ab*a', r'a\'*a'
+keywords: ( ) [ ] { } , ; : @ ! ? = << >> def in channel where
+
+// Values
+val ::= boolval
+      | intval
+      | charval
+      | stringval
+      | dictval
+      | address
+      | id
+      // labels as strings
+dictval ::= { valdict }
+valdict ::= valbranch valdict_0'
+          |
+valdict_0' ::= , valbranch valdict_0'
+             |
+             | , // Allow trailing comma
+valbranch ::= id : val
+// Expressions
+exp   ::= exp1
+exp_1 ::= exp_2
+        | exp_1 op_1 exp_2
+exp_2 ::= exp_3
+        | exp_2 op_2 exp_3
+exp_3 ::= val
+        | id ( exps_0 )
+        | ( exp )
+        | ( exps_no1 )
+exps_no1 ::= exp , exp exps_0'
+           |
+exps_0 ::= exp exps_0'
+         |
+exps_0' ::= , exp exps_0'
+          |
+          | , // Allow trailing comma
+// Processees
+proc ::= proc_0
+proc_0 ::= proc_1 PAR proc_0
+proc_0 ::= id [ intval ] << exp ; proc
+         | id [ intval ] >> id ; proc
+         | id [ intval ] >> { procdict }
+         | def decls in proc
+         | id < exps_0 > ( exps_0 )
+         | id ( exps_0 )
+         | proc_1
+proc_1 ::= proc_1 PAR proc_0
+         |
+procdict ::= procbranch procdict_0'
+procdict_0' ::= , procbranch procdict_0'
+              |
+              | , // Allow trailing comma
+procbranch ::= regexp : proc
+             | exp ? exp ! regexp : proc
+decls ::= decl dels_0'
+decls_0' ::= , decl decls_0'
+           |
+           | , // Allow trailing comma
+decl ::= id ( args_0 ) = proc
+       | id < args > ( args_0 ) = proc
+       | id < args > ( args_0 ) where exp = proc
+       | channel id : chtype
+       | id = intval @ id
+args ::= arg args_0'
+args_0 ::= arg args_0'
+         |
+args_0' ::= , arg args_0'
+          |
+          | , // Allow trailing comma
+arg ::= id : type
+// Types
+type ::= Bool
+       | Int
+       | Char
+       | String
+       | String [ regexp ]
+       | { typedict }
+       | ( types_no1 )
+       | chtype
+       | int @ chtype
+typedict ::= typebranch typedict_0'
+           | // Allow empty dict
+typedict_0' ::= , typebranch typedict_0'
+              |
+              | , // Allow trailing comma
+typebranch ::= id : type
+chtype ::= intval -> intval : type
+         | intval -> intval : { chtypedict }
+         | chtypedict
+chtypedict ::= chtypebranch chtypedict_0'
+chtypedict_0' ::= , chtypebranch chtypedict_0'
+                |
+                | , // Allow trailing comma
+chtypebranch ::= regexp : type   // equiv to ! regexp : type
+             | ! regexp : type // equiv to true ? true ! regexp : type
+             | ? regexp : type // equiv to true ? false ! regexp : type
+             | exp ? exp ! regexp : type
+
