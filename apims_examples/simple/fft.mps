@@ -508,86 +508,86 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   // }}}
   // Process 6 {{{
 | link(8,fft,s,7);
-  s[55]<<((0,1),(0,1)); // x6=0
+  s[7]<<((0,1),(0,1)); // x6=0
   // l=2
-  s[55]>>x;
-  s[56]<<x;
-  s[63]>>z;
+  s[7]>>x;
+  s[8]<<x;
+  s[8]>>z;
   // Calculate z+x*omega^2
   link(2,compmult,t,1);
-  t[1]<<x;
-  t[1]<<omega2;
+  t[2]<<x;
+  t[2]<<omega2;
   t[2]>>x;
   link(2,compadd,t,1);
-  t[1]<<z;
-  t[1]<<x;
+  t[2]<<z;
+  t[2]<<x;
   t[2]>>x;
-  s[55]<<x;
+  s[7]<<x;
   // l=1
-  s[55]>>x;
-  s[39]>>z;
-  s[53]<<x;
+  s[7]>>x;
+  s[5]>>z;
+  s[5]<<x;
   // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
-  t[1]<<z;
-  t[1]<<x;
+  t[2]<<z;
+  t[2]<<x;
   t[2]>>x;
-  s[55]<<x;
+  s[7]<<x;
   // l=0
-  s[55]>>x;
-  s[23]>>z;
-  s[51]<<x;
+  s[7]>>x;
+  s[3]>>z;
+  s[3]<<x;
   // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
-  t[1]<<z;
-  t[1]<<x;
+  t[2]<<z;
+  t[2]<<x;
   t[2]>>x;
-  s[55]<<x;
+  s[7]<<x;
   // DONE
-  ((nu a:Gend)link(2,a,bot,1); s[55]>>x; end)
+  ((nu a:Gend)link(2,a,bot,1); s[7]>>x; end)
   // }}}
   // Process 7 {{{
 | link(8,fft,s,8);
-  s[64]<<((0-2,1),(0,1)); // x7=-2
+  s[8]<<((0-2,1),(0,1)); // x7=-2
   // l=2
-  s[64]>>x;
-  s[56]>>z;
-  s[63]<<x;
+  s[8]>>x;
+  s[7]>>z;
+  s[7]<<x;
   // Calculate z+x*omega^3
   link(2,compmult,t,1);
-  t[1]<<x;
-  t[1]<<omega3;
+  t[2]<<x;
+  t[2]<<omega3;
   t[2]>>x;
   link(2,compadd,t,1);
-  t[1]<<z;
-  t[1]<<x;
+  t[2]<<z;
+  t[2]<<x;
   t[2]>>x;
-  s[64]<<x;
+  s[8]<<x;
   // l=1
-  s[64]>>x;
-  s[48]>>z;
-  s[62]<<x;
+  s[8]>>x;
+  s[6]>>z;
+  s[6]<<x;
   // Calculate z+x*omega^1
   link(2,compmult,t,1);
-  t[1]<<x;
-  t[1]<<omega1;
+  t[2]<<x;
+  t[2]<<omega1;
   t[2]>>x;
   link(2,compadd,t,1);
-  t[1]<<z;
-  t[1]<<x;
+  t[2]<<z;
+  t[2]<<x;
   t[2]>>x;
-  s[64]<<x;
+  s[8]<<x;
   // l=0
-  s[64]>>x;
-  s[32]>>z;
-  s[60]<<x;
+  s[8]>>x;
+  s[4]>>z;
+  s[4]<<x;
   // Calculate z+x*omega^0=z+x
   link(2,compadd,t,1);
-  t[1]<<z;
-  t[1]<<x;
+  t[2]<<z;
+  t[2]<<x;
   t[2]>>x;
-  s[64]<<x;
+  s[8]<<x;
   // DONE
-  ((nu a:Gend)link(2,a,bot,1); s[64]>>x; end)
+  ((nu a:Gend)link(2,a,bot,1); s[8]>>x; end)
   // }}}
 ) ) ) ) ) ) ) ) )

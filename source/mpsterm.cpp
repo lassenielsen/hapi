@@ -3517,7 +3517,9 @@ MpsTerm *MpsSelect::ReIndex(const string &session, int pid, int maxpid) const //
 {
   // assert mySucc != NULL
   // assert myChannel != dest
-  MpsChannel newChannel(myChannel.GetName(),myChannel.GetIndex()*maxpid+pid);
+  MpsChannel newChannel=myChannel;
+  if (session==myChannel.GetName())
+    newChannel=MpsChannel(myChannel.GetName(),myChannel.GetIndex()*maxpid+pid);
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
   MpsTerm *result = new MpsSelect(newChannel, myLabel, *newSucc);
   delete newSucc;
@@ -3525,7 +3527,9 @@ MpsTerm *MpsSelect::ReIndex(const string &session, int pid, int maxpid) const //
 } // }}}
 MpsTerm *MpsBranch::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
-  MpsChannel newChannel(myChannel.GetName(),myChannel.GetIndex()+maxpid*pid);
+  MpsChannel newChannel=myChannel;
+  if (session==myChannel.GetName())
+    newChannel=MpsChannel(myChannel.GetName(),myChannel.GetIndex()+maxpid*pid);
   map<string, MpsTerm*> newBranches;
   newBranches.clear();
   // ReIndex each branch

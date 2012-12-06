@@ -1,6 +1,8 @@
 #include <apims/mpsfunction.hpp>
 #include <apims/mpsterm.hpp>
 
+#include "common.cpp"
+
 using namespace std;
 
 namespace apims
@@ -25,11 +27,14 @@ std::string DefEnv2string(const MpsFunctionEnv &env) // {{{
     }
     result+=">(";
     // Print arguments
-    for (std::vector<std::string>::const_iterator arg=def->GetArgs().begin(); arg!=def->GetArgs().end(); ++arg)
+    vector<pair<int,int> >::const_iterator argpids=def->GetArgPids().begin();
+    for (std::vector<std::string>::const_iterator arg=def->GetArgs().begin(); arg!=def->GetArgs().end(); ++arg,++argpids)
     {
       if (arg!=def->GetArgs().begin())
         result += ",";
       result += *arg;
+      if (argpids->second>0)
+        result += "@(" + int2string(argpids->first) + " of " + int2string(argpids->second);
     }
     result += (std::string)")=\n    "
             + def->GetBody().ToString("    ");
