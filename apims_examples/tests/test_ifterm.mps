@@ -1,8 +1,8 @@
-(nu a: 2=>1:1<Bool>;
-       1=>2:2<Int>;
+(nu a: 2=>1<Bool>;
+       1=>2<Int>;
        Gend)
 ( link(2,a,s,1);
-  s[1] >> b;
+  s[2] >> b;
   if not if b then false else true
   then s[2] << 1;
        end
@@ -10,6 +10,6 @@
        end
 | link(2,a,s,2);
   s[1] << false;
-  s[2] >> val;
+  s[1] >> val;
   end
 )
