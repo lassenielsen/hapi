@@ -2,11 +2,11 @@
 // The implementation can be optimized in many ways.
 define $set= // The interface of a set
   rec $set. 
-  1=>2:2
-  {//^Erase: 1=>2:1<Int>;
-   //        $list,
-   ^Member: 1=>2:2<Int>;
-            2=>1:1<Bool>;
+  1=>2
+  {//^Erase: 1=>2<Int>;
+   //        $set,
+   ^Member: 1=>2<Int>;
+            2=>1<Bool>;
             $set,
    ^Delete: Gend
   }
@@ -16,9 +16,9 @@ in
     link(2,empty_set,s,2);
     ( EmptySet()
     | def Empty(this: $set@(2of2)) =
-        this[2]>>
+        this[1]>>
         {^Member:
-          this[2]>>x;
+          this[1]>>x;
           this[1]<<false;
           Empty(this),
          ^Delete:
@@ -27,15 +27,15 @@ in
       in Empty(s)
     )
   in EmptySet() |
-(nu singleton_set: 1=>2:2<Int>;$set)
+(nu singleton_set: 1=>2<Int>;$set)
 ( def SingletonSet() =
     link(2,singleton_set,s,2);
     ( SingletonSet()
-    | s[2]>>elt;
+    | s[1]>>elt;
       def Singleton(this: $set@(2of2)) =
-        this[2]>>
+        this[1]>>
         {^Member:
-          this[2]>>x;
+          this[1]>>x;
           this[1]<<x=elt;
           Singleton(this),
          ^Delete:
@@ -44,20 +44,20 @@ in
       in Singleton(s)
     )
   in SingletonSet() |
-(nu union_set: 1=>2:2<$set@(1of2)>;1=>2:2<$set@(1of2)>;$set)
+(nu union_set: 1=>2<$set@(1of2)>;1=>2<$set@(1of2)>;$set)
 ( def UnionSet() =
     link(2,union_set,s,2);
     ( UnionSet()
     | def Union(this: $set@(2of2), set1: $set@(1of2), set2: $set@(1of2)) =
-        this[2]>>
+        this[1]>>
         {^Member:
           set1[2]<<^Member;
           set2[2]<<^Member;
-          this[2]>>x;
+          this[1]>>x;
           set1[2]<<x;
           set2[2]<<x;
-          set1[1]>>r1;
-          set2[1]>>r2;
+          set1[2]>>r1;
+          set2[2]>>r2;
           this[1]<<r1 or r2;
           Union(this,set1,set2),
          ^Delete:
@@ -66,8 +66,8 @@ in
           end
         }
       in
-        s[2]>>s1;
-        s[2]>>s2;
+        s[1]>>s1@(1 of 2);
+        s[1]>>s2@(1 of 2);
         Union(s,s1,s2)
     )
   in UnionSet() |
@@ -90,7 +90,7 @@ link(2,union_set,u7,1); u7[2]<<u4; u7[2]<<u5;
 link(2,union_set,u8,1); u8[2]<<u6; u8[2]<<u7;
 u8[2]<<^Member;
 u8[2]<<6;
-u8[1]>>x;
+u8[2]>>x;
 u8[2]<<^Delete;
 end
 ) ) )
