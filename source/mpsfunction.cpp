@@ -44,7 +44,9 @@ std::string DefEnv2string(const MpsFunctionEnv &env) // {{{
 
 MpsFunction::MpsFunction(const string &name, // {{{
                          const vector<string> &stateargs,
+                         const vector<MpsMsgType*> &statetypes,
                          const vector<string>&args,
+                         const vector<MpsMsgType*> &types,
                          const vector<pair<int,int> >&argpids,
                          const MpsTerm &body)
 { myName = name;
@@ -52,6 +54,10 @@ MpsFunction::MpsFunction(const string &name, // {{{
   myArgs=args;
   myArgPids=argpids;
   myBody = body.Copy();
+  for (vector<MpsMsgType*>::const_iterator it=statetypes.begin(); it!=statetypes.end(); ++it)
+    myStateTypes.push_back((*it)->Copy());
+  for (vector<MpsMsgType*>::const_iterator it=types.begin(); it!=types.end(); ++it)
+    myTypes.push_back((*it)->Copy());
 } // }}}
 MpsFunction::MpsFunction(const MpsFunction &rhs) // {{{
 { myName = rhs.GetName();
@@ -59,9 +65,15 @@ MpsFunction::MpsFunction(const MpsFunction &rhs) // {{{
   myArgs=rhs.GetArgs();
   myArgPids=rhs.GetArgPids();
   myBody = rhs.GetBody().Copy();
+  for (vector<MpsMsgType*>::const_iterator it=rhs.GetStateTypes().begin(); it!=rhs.GetStateTypes().end(); ++it)
+    myStateTypes.push_back((*it)->Copy());
+  for (vector<MpsMsgType*>::const_iterator it=rhs.GetTypes().begin(); it!=rhs.GetTypes().end(); ++it)
+    myTypes.push_back((*it)->Copy());
 } // }}}
 MpsFunction::~MpsFunction() // {{{
 { delete myBody;
+  DeleteVector(myStateTypes);
+  DeleteVector(myTypes);
 } // }}}
 MpsFunction &MpsFunction::operator=(const MpsFunction &rhs) // {{{
 { myName = rhs.GetName();
@@ -70,6 +82,12 @@ MpsFunction &MpsFunction::operator=(const MpsFunction &rhs) // {{{
   myArgPids=rhs.GetArgPids();
   delete myBody;
   myBody = rhs.GetBody().Copy();
+  DeleteVector(myStateTypes);
+  DeleteVector(myTypes);
+  for (vector<MpsMsgType*>::const_iterator it=rhs.GetStateTypes().begin(); it!=rhs.GetStateTypes().end(); ++it)
+    myStateTypes.push_back((*it)->Copy());
+  for (vector<MpsMsgType*>::const_iterator it=rhs.GetTypes().begin(); it!=rhs.GetTypes().end(); ++it)
+    myTypes.push_back((*it)->Copy());
 } // }}}
 const string &MpsFunction::GetName() const // {{{
 { return myName;
@@ -77,8 +95,14 @@ const string &MpsFunction::GetName() const // {{{
 const vector<string> &MpsFunction::GetStateArgs() const // {{{
 { return myStateArgs;
 } // }}}
+const vector<MpsMsgType*> &MpsFunction::GetStateTypes() const // {{{
+{ return myStateTypes;
+} // }}}
 const vector<string> &MpsFunction::GetArgs() const // {{{
 { return myArgs;
+} // }}}
+const vector<MpsMsgType*> &MpsFunction::GetTypes() const // {{{
+{ return myTypes;
 } // }}}
 const vector<pair<int,int> > &MpsFunction::GetArgPids() const // {{{
 { return myArgPids;

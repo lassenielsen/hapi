@@ -1,4 +1,4 @@
-// DOCUMENTATION: mpsterm.hpp {{{
+// DOCUMENTATION: mpsfunction.hpp {{{
 /*! \file
  * This file declares the MpsFunction class used to represent procedure
  * declarations, and MpsFuntionEnv used to represent a function
@@ -15,6 +15,7 @@
 
 #include <string>
 #include <vector>
+#include <apims/mpstype.hpp>
 
 namespace apims
 {
@@ -34,7 +35,9 @@ class MpsFunction // {{{
 { public:
     MpsFunction(const std::string &name,
                 const std::vector<std::string> &stateargs,
+                const std::vector<MpsMsgType*> &statetypes,
                 const std::vector<std::string> &args,
+                const std::vector<MpsMsgType*> &types,
                 const std::vector<std::pair<int,int> > &argpids,
                 const MpsTerm &body);
     MpsFunction(const MpsFunction &rhs);
@@ -43,14 +46,22 @@ class MpsFunction // {{{
 
     const std::string &GetName() const;
     const std::vector<std::string> &GetStateArgs() const;
+    const std::vector<MpsMsgType*> &GetStateTypes() const;
     const std::vector<std::string> &GetArgs() const;
+    const std::vector<MpsMsgType*> &GetTypes() const;
     const std::vector<std::pair<int,int> > &GetArgPids() const;
     const MpsTerm &GetBody() const;
+
+    //std::string ToString() const;
+    //std::string ToTex() const;
+    //std::string ToC() const;
 
   private:
     std::string myName;
     std::vector<std::string> myStateArgs;
+    std::vector<MpsMsgType*> myStateTypes;
     std::vector<std::string> myArgs;
+    std::vector<MpsMsgType*> myTypes;
     std::vector<std::pair<int,int> > myArgPids;
     MpsTerm *myBody;
 }; // }}}

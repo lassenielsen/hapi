@@ -2631,7 +2631,7 @@ MpsTerm *MpsDef::ApplyDef(const std::string &path, std::vector<MpsFunction> &des
     return Error((string)"Applying Def on "+ToString()+" with nonempty pathh"+path);
   string name = NewName(myName);
   MpsTerm *newBody=myBody->PRename(myName,name);
-  MpsFunction newdef(name,myStateArgs,myArgs,GetArgPids(),*newBody);
+  MpsFunction newdef(name,myStateArgs,myStateTypes,myArgs,myTypes,GetArgPids(),*newBody);
   dest.push_back(newdef);
   delete newBody;
   return mySucc->PRename(myName,name);
