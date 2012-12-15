@@ -21,50 +21,51 @@ in // }}}
     link(2,list,s,2);
     ( List()
     | def NIL(this: $list@(2 of 2)) = // {{{
-        this[1]>>
-        {^Insert:
-          this[1]>>val;
-          link(2,list,s,1);
-          def CONS(this: $list@(2 of 2), next: $list@(1 of 2), v: Int) = // {{{
-            this[1]>>
-            {^Insert:
-              next[2]<<^Insert;
-              this[1]>>newVal;
-              if v<=newVal
-              then next[2]<<newVal;
+        def CONS(this: $list@(2 of 2), next: $list@(1 of 2), v: Int) = // {{{
+          this[1]>>
+          {^Insert:
+            next[2]<<^Insert;
+            this[1]>>newVal;
+            if v<=newVal
+            then next[2]<<newVal;
+                 CONS(this,next,v)
+            else next[2]<<v;
+                 CONS(this,next,newVal),
+           ^Lookup:
+            this[1]>>pos;
+            if pos<=0
+            then this[1]<<^SOME;
+                 this[1]<<v;
+                 CONS(this,next,v)
+            else next[2]<<^Lookup;
+                 next[2]<<pos-1;
+                 next[2]>>
+                 {^SOME:
+                   this[1]<<^SOME;
+                   next[2]>>val;
+                   this[1]<<val;
+                   CONS(this,next,v),
+                  ^NONE:
+                   this[1]<<^NONE;
                    CONS(this,next,v)
-              else next[2]<<v;
-                   CONS(this,next,newVal),
-             ^Lookup:
-              this[1]>>pos;
-              if pos<=0
-              then this[1]<<^SOME;
-                   this[1]<<v;
-                   CONS(this,next,v)
-              else next[2]<<^Lookup;
-                   next[2]<<pos-1;
-                   next[2]>>
-                   {^SOME:
-                     this[1]<<^SOME;
-                     next[2]>>val;
-                     this[1]<<val;
-                     CONS(this,next,v),
-                    ^NONE:
-                     this[1]<<^NONE;
-                     CONS(this,next,v)
-                   },
-             ^Delete:
-              next[2]<<^Delete;
-              end
-            } // }}}
-          in CONS(this,s,val),
-         ^Lookup:
-          this[1]>>pos;
-          this[1]<<^NONE;
-          NIL(this),
-         ^Delete:
-          end
-        } // }}}
+                 },
+           ^Delete:
+            next[2]<<^Delete;
+            end
+          } // }}}
+        in         
+          this[1]>>
+          {^Insert:
+            this[1]>>val;
+            link(2,list,s,1);
+            CONS(this,s,val),
+           ^Lookup:
+            this[1]>>pos;
+            this[1]<<^NONE;
+            NIL(this),
+           ^Delete:
+            end
+          } // }}}
       in NIL(s)
     )
   in List() // }}}
