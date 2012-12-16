@@ -2,7 +2,7 @@
 define $seq bit1 bit2 bit3 bit4 =
   rec $state<x1:Bool=bit1,x2:Bool=bit2,x3:Bool=bit3,x4:Bool=bit4>.
          {^Continue[[not x1 or not x2 or not x3 or not x4]]: // x<16
-           1=>2:1<Int>;
+           1=>2<Int>;
            $state<not x1,
                   ((x1) or x2) and (not (x1) or not x2),
                   ((x1 and x2) or x3) and (not (x1 and x2) or not x3),
@@ -13,9 +13,9 @@ define $seq bit1 bit2 bit3 bit4 =
 in // }}}
 // Define XOR protocol {{{
 define $xor=
-  1=>2:2<Bool> as x;
-  1=>2:2<Bool> as y;
-  2=>1:1<Bool> as z[[(z or (x and y) or (not x and not y)) and (not z or (x and not y) or (not x and y))]];
+  1=>2<Bool> as x;
+  1=>2<Bool> as y;
+  2=>1<Bool> as z[[(z or (x and y) or (not x and not y)) and (not z or (x and not y) or (not x and y))]];
   Gend
 in // }}}
 (nu a: $seq<false,false,false,false>)
@@ -25,8 +25,8 @@ in // }}}
   def XOR() =
     link(2,xor,s,2);
     ( XOR()
-    | s[2]>>x1;
-      s[2]>>x2;
+    | s[1]>>x1;
+      s[1]>>x2;
       s[1]<<(x1 and not x2) or (not x1 and x2);
       end
     )
@@ -36,19 +36,19 @@ in // }}}
   def SEQ1<bit1:Bool,bit2:Bool,bit3:Bool,bit4:Bool>(s:$seq<bit1,bit2,bit3,bit4>@(1of2),i:Int) =
     sync(2,s)
     {^Continue[[not (bit1 and bit2 and bit3 and bit4)]]:
-      s[1]<<i;
+      s[2]<<i;
       link(2,xor,t,1);
       t[2]<<bit1;
       t[2]<<bit2;
-      t[1]>>newBit2;
+      t[2]>>newBit2;
       link(2,xor,t,1);
       t[2]<<bit1 and bit2;
       t[2]<<bit3;
-      t[1]>>newBit3;
+      t[2]>>newBit3;
       link(2,xor,t,1);
       t[2]<<bit1 and bit2 and bit3;
       t[2]<<bit4;
-      t[1]>>newBit4;
+      t[2]>>newBit4;
       SEQ1<not bit1,newBit2,newBit3,newBit4>(s,i+1),
      ^End[[bit1 and bit2 and bit3 and bit4]]:
       end
@@ -63,15 +63,15 @@ in // }}}
       link(2,xor,t,1);
       t[2]<<bit1;
       t[2]<<bit2;
-      t[1]>>newBit2;
+      t[2]>>newBit2;
       link(2,xor,t,1);
       t[2]<<bit1 and bit2;
       t[2]<<bit3;
-      t[1]>>newBit3;
+      t[2]>>newBit3;
       link(2,xor,t,1);
       t[2]<<bit1 and bit2 and bit3;
       t[2]<<bit4;
-      t[1]>>newBit4;
+      t[2]>>newBit4;
       SEQ2<not bit1,newBit2,newBit3,newBit4>(s),
      ^End[[bit1 and bit2 and bit3 and bit4]]:
       end

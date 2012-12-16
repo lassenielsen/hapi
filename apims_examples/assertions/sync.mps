@@ -1,11 +1,11 @@
-(nu a: 1=>2:1<Bool> as x;
-       1=>2:1<Bool> as y;
+(nu a: 1=>2<Bool> as x;
+       1=>2<Bool> as y;
        {^A[[x or y]]:
          {^A[[x]]:
-           2=>1:2<Bool> as z [[x or z]];
+           2=>1<Bool> as z [[x or z]];
            Gend,
           ^B[[y]]:
-           2=>1:2<Bool> as z [[x or z]];
+           2=>1<Bool> as z [[x or z]];
            Gend
          },
         ^B[[not x or not y]]:
@@ -19,10 +19,10 @@
   sync(2,s)
   {^A[[q2 or q1]]: sync(2,s)
        {^A[[q1]]:
-         s[2]<<false;
+         s[1]<<false;
          end,
         ^B[[q2]]:
-         s[2]<<true;
+         s[1]<<true;
          end
        },
    ^B[[not (q1 and q2)]]:
