@@ -54,6 +54,7 @@ class MpsExp // {{{
     virtual MpsExp *Subst(const std::string &source, const MpsExp &dest) const = 0; // Substitute exp for var
 
     virtual std::string ToString() const= 0; // Make string representation
+    virtual std::string ToC(const std::string &dest) const= 0; // Make C++ code that evaluates expression and stores the result in dest
     static MpsExp *Create(const dpl::parsed_tree *exp); // Create from parsing
     static MpsExp *Create(const std::string &exp); // Create from string
     static std::string NewVar(std::string base="x");
@@ -94,6 +95,7 @@ class MpsVarExp : public MpsExp // {{{
     MpsExp *Rename(const std::string &src, const std::string &dst) const;
     MpsExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
+    std::string ToC(const std::string &dest) const;
 
     MpsExp *Negate() const;
     MpsExp *MakeNNF(bool negate=false) const;
@@ -118,6 +120,7 @@ class MpsIntVal : public MpsExp // {{{
     MpsIntVal *Rename(const std::string &src, const std::string &dst) const;
     MpsIntVal *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
+    std::string ToC(const std::string &dest) const;
     const mpz_t &GetValue() const;
 
     MpsExp *Negate() const;
@@ -144,6 +147,7 @@ class MpsStringVal : public MpsExp // {{{
     MpsStringVal *Rename(const std::string &src, const std::string &det) const;
     MpsStringVal *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
+    std::string ToC(const std::string &dest) const;
     std::string GetValue() const;
 
     MpsExp *Negate() const;
@@ -169,6 +173,7 @@ class MpsBoolVal : public MpsExp // {{{
     MpsBoolVal *Rename(const std::string &src, const std::string &dst) const;
     MpsBoolVal *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
+    std::string ToC(const std::string &dest) const;
     bool GetValue() const;
 
     MpsExp *Negate() const;
@@ -194,6 +199,7 @@ class MpsCondExp : public MpsExp // {{{
     MpsCondExp *Rename(const std::string &src, const std::string &dst) const;
     MpsCondExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
+    std::string ToC(const std::string &dest) const;
 
     MpsExp *Negate() const;
     MpsExp *MakeNNF(bool negate=false) const;
@@ -220,6 +226,7 @@ class MpsUnOpExp : public MpsExp // {{{
     MpsUnOpExp *Rename(const std::string &src, const std::string &dst) const;
     MpsUnOpExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
+    std::string ToC(const std::string &dest) const;
     std::string GetOp() const;
     const MpsExp &GetRight() const;
     MpsExp &GetRight();
@@ -248,6 +255,7 @@ class MpsBinOpExp : public MpsExp // {{{
     MpsBinOpExp *Rename(const std::string &src, const std::string &dst) const;
     MpsBinOpExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
+    std::string ToC(const std::string &dest) const;
     std::string GetOp() const;
     const MpsExp &GetLeft() const;
     const MpsExp &GetRight() const;
@@ -277,6 +285,7 @@ class MpsTupleExp : public MpsExp // {{{
     MpsTupleExp *Rename(const std::string &src, const std::string &dst) const;
     MpsTupleExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
+    std::string ToC(const std::string &dest) const;
     int GetSize() const;
     const MpsExp *GetElement(int index) const;
 

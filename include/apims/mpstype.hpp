@@ -645,6 +645,7 @@ class MpsMsgType // {{{
     // Other methods
     virtual std::string ToString(const std::string &indent="") const = 0;
     virtual std::string ToTex(int indent=0, int sw=2) const = 0;
+    virtual std::string ToC() const = 0;
 
     // Grammar
     const static std::string BNF_STYPE;
@@ -674,6 +675,7 @@ class MpsMsgNoType : public MpsMsgType // {{{
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 }; // }}}
 class MpsIntMsgType : public MpsMsgType // {{{
 {
@@ -696,6 +698,7 @@ class MpsIntMsgType : public MpsMsgType // {{{
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 }; // }}}
 class MpsStringMsgType : public MpsMsgType // {{{
 {
@@ -718,6 +721,7 @@ class MpsStringMsgType : public MpsMsgType // {{{
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 }; // }}}
 class MpsBoolMsgType : public MpsMsgType // {{{
 {
@@ -740,6 +744,7 @@ class MpsBoolMsgType : public MpsMsgType // {{{
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 }; // }}}
 class MpsTupleMsgType : public MpsMsgType // {{{
 {
@@ -762,6 +767,8 @@ class MpsTupleMsgType : public MpsMsgType // {{{
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
+
     int GetSize() const;
     const MpsMsgType *GetElement(int index) const;
 
@@ -789,6 +796,8 @@ class MpsChannelMsgType : public MpsMsgType // {{{
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
+
     const MpsGlobalType *GetGlobalType() const {return myType;}
     MpsGlobalType *GetGlobalType() {return myType;}
 
@@ -816,6 +825,8 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
 
     virtual std::string ToString(const std::string &indent="") const=0;
     std::string ToTex(int indent=0, int sw=2) const=0;
+    std::string ToC() const;
+
     virtual const MpsLocalType *GetLocalType() const=0;
     virtual MpsLocalType *GetLocalType()=0;
     int GetPid() const {return myPid;}

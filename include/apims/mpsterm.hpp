@@ -273,6 +273,7 @@ class MpsTerm // {{{
     virtual std::string ToString(std::string indent="") const = 0;
     //! Make string representation of the process with latex markup
     virtual std::string ToTex(int indent=0, int sw=2) const = 0;
+    virtual std::string ToC() const = 0;
 
     // DOCUMENTATION: MpsTerm::NewName {{{
     /*!
@@ -326,6 +327,7 @@ class MpsEnd : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 }; // }}}
 // DOCUMENTATION: MpsSnd {{{
 /*!
@@ -365,6 +367,7 @@ class MpsSnd : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     MpsChannel myChannel;
@@ -409,6 +412,7 @@ class MpsRcv : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     MpsChannel myChannel;
@@ -455,6 +459,7 @@ class MpsSelect : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     MpsChannel myChannel;
@@ -499,6 +504,7 @@ class MpsBranch : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     MpsChannel myChannel;
@@ -550,6 +556,7 @@ class MpsPar : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     MpsTerm *myLeft;
@@ -593,6 +600,7 @@ class MpsDef : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
     std::vector<std::pair<int,int> > GetArgPids() const;
 
@@ -643,6 +651,7 @@ class MpsCall : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     std::string myName;
@@ -688,6 +697,7 @@ class MpsNu : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     std::string myChannel;
@@ -732,6 +742,7 @@ class MpsLink : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     std::string myChannel;
@@ -778,6 +789,7 @@ class MpsSync : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     std::string mySession;
@@ -823,6 +835,7 @@ class MpsCond : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     MpsExp *myCond;
@@ -879,6 +892,7 @@ class MpsGuiSync : public MpsTerm // {{{
     MpsGuiSync *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     std::string mySession;
@@ -924,6 +938,7 @@ class MpsGuiValue : public MpsTerm // {{{
     MpsGuiValue *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     MpsExp *myName;
@@ -976,6 +991,7 @@ class MpsAssign : public MpsTerm // {{{
     MpsAssign *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
 
   private:
     std::string myId;

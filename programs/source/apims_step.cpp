@@ -19,7 +19,7 @@ int main(int argc, char **argv)
       delete current;
     current = next;
     next = NULL;
-    cout << "Current Term:\n -- " << Env2string(env) << "\n -- " << current->ToString(" -- ") << endl;
+    cout << "Current Term:\n -- " << EnvToString(env) << "\n -- " << current->ToString(" -- ") << endl;
     vector<MpsTerm*> steps;
     vector<MpsEnv> envs;
     vector<MpsEvent> events;
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     for (int i=0; i<steps.size(); ++i)
     {
       cout << "Option " << i << ":" << endl;
-      cout << "  Result: " << Env2string(envs[i]) << "\n          " << steps[i]->Simplify()->ToString("          ") << endl;
+      cout << "  Result: " << EnvToString(envs[i]) << "\n          " << steps[i]->Simplify()->ToString("          ") << endl;
     }
     cout << "Option " << steps.size() << ": quit." << endl;
     cout << "Select: " << flush;

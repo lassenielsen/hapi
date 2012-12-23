@@ -1012,6 +1012,100 @@ string MpsTupleExp::ToString() const // {{{
   return result;
 } // }}}
 
+/* Make C++ code that evaluates expression and stores the result in dest
+ */
+string MpsVarExp::ToC(const string &dest) const // {{{
+{
+  stringstream result;
+  result << dest << "=" << myName << ";" << endl;
+  return result.str();
+} // }}}
+string MpsIntVal::ToC(const string &dest) const // {{{
+{
+  char *str=mpz_get_str(NULL,10,myValue);
+  string val(str);
+  free(str);
+  stringstream result;
+  result << dest << "=" << val << ";" << endl;
+  return result.str();
+} // }}}
+string MpsStringVal::ToC(const string &dest) const // {{{
+{
+  stringstream result;
+  result << dest << "\"" << myValue << "\";" << endl;
+  return result.str();
+} // }}}
+string MpsBoolVal::ToC(const string &dest) const // {{{
+{
+  stringstream result;
+  if (myValue)
+    result << dest << "=true;" << endl;
+  else
+    result << dest << "=false;" << endl;
+  return result.str();
+} // }}}
+string MpsCondExp::ToC(const string &dest) const // {{{
+{
+  stringstream result;
+  string newName=MpsExp::NewVar("expcond");
+  result << "bool " << newName << ";" << endl;
+  result << myCond->ToC(newName);
+  result << "if (" << newName << ")" << endl
+         << "{" << endl
+         << myTrueBranch->ToC(dest)
+         << "}"
+         << "else"
+         << "{"
+         << myFalseBranch->ToC(dest);
+  return result.str();
+} // }}}
+string MpsUnOpExp::ToC(const string &dest) const // {{{
+{
+  stringstream result;
+  if (myName == "not")
+  { string newName = MpsExp::NewVar("expnot");
+    result << "bool " << newName << ";" << endl;
+    result << myRight->ToC(newName);
+    result << dest << "=" << "!" << newName << ";" << endl;
+    return result.str();
+  }
+  else
+    throw (string)"MpsUnOpExp::ToC: Unknown operation " + myName;
+} // }}}
+string MpsBinOpExp::ToC(const string &dest) const // {{{
+{
+  stringstream result;
+  if (myName=="+")
+  { string leftName = MpsExp::NewVar("plusexp");
+    string rightName = MpsExp::NewVar("plusexp");
+    result << myType->ToC() << " " << leftName << ";" << endl
+           << myType->ToC() << " " << rightName << ";" << endl;
+    result << myLeft->ToC(leftName);
+    result << myRight->ToC(leftName);
+    result << dest << "=" << leftName << "+" << rightName << ";" << endl;
+    return result.str();
+  }
+  else if (myName=="-")
+  { string leftName = MpsExp::NewVar("plusexp");
+    string rightName = MpsExp::NewVar("plusexp");
+    result << myType->ToC() << " " << leftName << ";" << endl
+           << myType->ToC() << " " << rightName << ";" << endl;
+    result << myLeft->ToC(leftName);
+    result << myRight->ToC(leftName);
+    result << dest << "=" << leftName << "+" << rightName << ";" << endl;
+    return result.str();
+  }
+  return (string)"(" + myLeft->ToString() + " " + myName + " " + myRight->ToString() + ")";
+} // }}}
+string MpsTupleExp::ToC(const string &dest) const // {{{
+{
+  stringstream result;
+  int pos=0;
+  for (vector<MpsExp*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
+    result << (*it)->ToC(dest + ".x"+int2string(pos));
+  return result.str();
+} // }}}
+
 /* Decide if Valid
  */
 int __COUNT_PROOFS=0;

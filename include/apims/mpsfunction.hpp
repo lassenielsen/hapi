@@ -52,9 +52,9 @@ class MpsFunction // {{{
     const std::vector<std::pair<int,int> > &GetArgPids() const;
     const MpsTerm &GetBody() const;
 
-    //std::string ToString() const;
-    //std::string ToTex() const;
-    //std::string ToC() const;
+    std::string ToString() const;
+ //   std::string ToTex() const;
+    std::string ToC() const;
 
   private:
     std::string myName;
@@ -74,7 +74,8 @@ class MpsFunction // {{{
 // }}}
 typedef std::vector<MpsFunction> MpsFunctionEnv;
 
-std::string DefEnv2string(const MpsFunctionEnv &env);
+std::string DefEnvToString(const MpsFunctionEnv &env);
+std::string DefEnvToC(const MpsFunctionEnv &env);
 
 }
 #endif

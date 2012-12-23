@@ -5165,6 +5165,43 @@ string MpsDelegateGlobalMsgType::ToTex(int indent, int sw) const // {{{
   return result;
 } // }}}
 
+// Compile to C++
+string MpsMsgNoType::ToC() const // {{{
+{
+  return "void *";
+} // }}}
+string MpsIntMsgType::ToC() const // {{{
+{
+  return "mpz_t";
+} // }}}
+string MpsStringMsgType::ToC() const // {{{
+{
+  return "std::string";
+} // }}}
+string MpsBoolMsgType::ToC() const // {{{
+{
+  return "bool";
+} // }}}
+string MpsTupleMsgType::ToC() const // {{{
+{
+  string result="struct {"
+  int i=0;
+  for (vector<MpsMsgType*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
+  {
+    result += (*it)->ToString() + " x"+int2string(i++) + "; ";
+  }
+  result += "}";
+  return result;
+} // }}}
+string MpsChannelMsgType::ToC(const string &indent) const // {{{
+{
+  return "libpi::Channel";
+} // }}}
+string MpsDelegateMsgType::ToString(const string &indent) const // {{{
+{
+  return "libpi::Session";
+} // }}}
+
 // Individual accesors
 int MpsTupleMsgType::GetSize() const // {{{
 {

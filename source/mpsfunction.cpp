@@ -1,5 +1,6 @@
 #include <apims/mpsfunction.hpp>
 #include <apims/mpsterm.hpp>
+#include <sstream>
 
 #include "common.cpp"
 
@@ -7,39 +8,26 @@ using namespace std;
 
 namespace apims
 {
-std::string DefEnv2string(const MpsFunctionEnv &env) // {{{
+std::string DefEnvToString(const MpsFunctionEnv &env) // {{{
 {
   std::string result="global\n  ";
-  bool first = true;
   for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
   {
-    if (!first)
+    if (def!=env.begin())
       result += ",\n  ";
-    else 
-      first = false;
-    result+=def->GetName() + "<";
-    // Print state arguments
-    for (std::vector<std::string>::const_iterator arg=def->GetStateArgs().begin(); arg!=def->GetStateArgs().end(); ++arg)
-    {
-      if (arg!=def->GetStateArgs().begin())
-        result += ",";
-      result += *arg;
-    }
-    result+=">(";
-    // Print arguments
-    vector<pair<int,int> >::const_iterator argpids=def->GetArgPids().begin();
-    for (std::vector<std::string>::const_iterator arg=def->GetArgs().begin(); arg!=def->GetArgs().end(); ++arg,++argpids)
-    {
-      if (arg!=def->GetArgs().begin())
-        result += ",";
-      result += *arg;
-      if (argpids->second>0)
-        result += "@(" + int2string(argpids->first) + " of " + int2string(argpids->second);
-    }
-    result += (std::string)")=\n    "
-            + def->GetBody().ToString("    ");
+    result += def->ToString();
   }
   return result;
+} // }}}
+std::string DefEnvToC(const MpsFunctionEnv &env) // {{{
+{
+  stringstream ss;
+  ss << "// Procedure declerations" << endl;
+  for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
+  {
+    ss << def->ToC();
+  }
+  return ss.str();
 } // }}}
 
 MpsFunction::MpsFunction(const string &name, // {{{
@@ -109,5 +97,68 @@ const vector<pair<int,int> > &MpsFunction::GetArgPids() const // {{{
 } // }}}
 const MpsTerm &MpsFunction::GetBody() const // {{{
 { return *myBody;
+} // }}}
+string MpsFunction::ToString() const // {{{
+{
+  stringstream ss;
+  ss << GetName() << "<";
+  // Print state arguments
+  vector<MpsMsgType*>::const_iterator type=GetStateTypes().begin();
+  for (vector<string>::const_iterator arg=GetStateArgs().begin();
+       arg!=GetStateArgs().end() &&
+       type!=GetStateTypes().end();
+       ++arg, ++type)
+  {
+    if (arg!=GetStateArgs().begin())
+      ss << ",";
+    ss << *arg;
+    ss << ": ";
+    ss << (*type)->ToString("        ");
+  }
+  ss << ">(";
+  // Print arguments
+  vector<pair<int,int> >::const_iterator argpids=GetArgPids().begin();
+  type=GetTypes().begin();
+  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg,++argpids,++type)
+  {
+    if (arg!=GetArgs().begin())
+      ss << ",";
+    ss << *arg;
+    if (argpids->second>0)
+      ss << "@(" << int2string(argpids->first) << " of " << int2string(argpids->second) << ")";
+    ss << ": " << (*type)->ToString("        ");
+  }
+  ss << (std::string)")=\n    "
+     << GetBody().ToString("    ");
+  return ss.str();
+} // }}}
+string MpsFunction::ToC() const // {{{
+{
+  stringstream ss;
+  ss << "void " << GetName() << "(";
+  // Print state arguments
+  vector<MpsMsgType*>::const_iterator type=GetStateTypes().begin();
+  for (vector<string>::const_iterator arg=GetStateArgs().begin();
+       arg!=GetStateArgs().end() &&
+       type!=GetStateTypes().end();
+       ++arg, ++type)
+  {
+    if (arg!=GetStateArgs().begin())
+      ss << ",";
+    ss << (*type)->ToC() << " " << *arg;
+  }
+  // Print arguments
+  type=GetTypes().begin();
+  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg,++argpids,++type)
+  {
+    if (arg!=GetArgs().begin() || GetStateArgs().size()>0)
+      ss << ",";
+    ss << (*type)->ToC() << " " << *arg;
+  }
+  ss << ")" << endl
+     << "{" << endl
+     << "  "
+     << GetBody().ToC("  ");
+  return ss.str();
 } // }}}
 }

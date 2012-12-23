@@ -5482,10 +5482,6 @@ string MpsNu::ToString(string indent) const // {{{
   string newIndent = indent + "  ";
   return (string)"(nu " + myChannel + ":" + myType->ToString(typeIndent) + ")\n" + newIndent + mySucc->ToString(newIndent);
 } // }}}
-string MpsLink::ToString(string indent) const // {{{
-{
-  return (string) "link(" + int2string(myMaxpid) + "," + myChannel + "," + mySession + "," + int2string(myPid) + ");\n" + indent + mySucc->ToString(indent);
-} // }}}
 string MpsSync::ToString(string indent) const // {{{
 {
   string newIndent = indent + "    ";
@@ -5725,6 +5721,162 @@ string MpsAssign::ToTex(int indent, int sw) const // {{{
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
 
+/* Make executable C++ code for processes
+ */
+string MpsEnd::ToC() const // {{{
+{
+  return "return;\n";
+} // }}}
+string MpsSnd::ToC() const // {{{
+{
+  stringstream result;
+  string newName = MpsExp::NewVar("result"); // Create variable name foor the message to send
+  result << myType->ToC() << " *" << newName << ";" << endl; // Declare variable
+  result << myExp->ToC(newName); // Compute message and store in variable
+  result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Send(" << newName << ");" << endl; // Send computed value
+  result << "delete " << newName << ";" << endl;
+  result << mySucc->ToC();
+  return result.str();
+} // }}}
+string MpsRcv::ToC() const // {{{
+{
+  stringstream result;
+  string newName = MpsExp::NewVar("var"); // Create variable name foor the mmessagee to send
+  result << myType->ToC() << " " << newName << ";" << endl; // Declare variable
+  result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Receive(" << newName << ");" << endl; // Receive value
+  result << mySucc->ToC();
+  return result.str();
+} // }}}
+string MpsSelect::ToC() const // {{{
+{
+  stringstream result;
+  string newName = MpsExp::NewVar("choice"); // Create variable name foor the mmessagee to send
+  result << "Message *" << newName << ";" << endl; // Declare variable
+  result << newName << "->AddData(\"" << myLabel << "\"," << int2string(myLabel.size()+1) << ");" << endl; // Declare variable
+  result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Send(*" << newName << ");" << endl; // Send label
+  result << "delete " << newName << ";" << endl;
+  result << mySucc->ToC();
+  return result.str();
+} // }}}
+string MpsBranch::ToC() const // {{{
+{
+  stringstream result;
+  string newName = MpsExp::NewVar("var"); // Create variable name foor the mmessagee to send
+  result << myType->ToC() << " " << newName << ";" << endl; // Declare variable
+  result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Receive(" << newName << ");" << endl; // Receive value
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    if (it != myBranches.begin())
+      result << "else ";
+    result << "if (" << newName << "==" << it->first << ")" << endl
+           << "{" << endl;
+    result << it->second->ToC();
+    result << "}" << endl;
+  }
+  result << "delete " << newName << ";" << endl;
+  return result.str();
+} // }}}
+string MpsPar::ToC() const // {{{
+{
+  stringstream result;
+  string newName = MpsExp::NewVar("fork"); // Create variable name foor the mmessagee to send
+  result << "int " << newName << "=fork();" << endl
+         << "if (" << newName << ">0)" << endl
+         << "{" << endl
+         <<  myLeft->ToC()
+         << "}" << endl
+         << "else if (" << newName << "==0)" << endl
+         << "{" << endl
+         <<  myRight->ToC()
+         << "}" << endl
+         << "else throw (string)\"Error during fork!\";" << endl;
+  return result.str();
+} // }}}
+string MpsDef::ToC() const // {{{
+{
+  throw (string)"MpsDef::ToC(): Local definitions not supported in compilation, must be moved to global procedure";
+} // }}}
+string MpsCall::ToC() const // {{{
+{
+  stringstream precall;
+  stringstream call;
+  stringstream postcall;
+  call << myName << "(";
+  for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it)
+  {
+    if (it != myState.begin())
+      call << ", ";
+    string newName = MpsExp::NewVar("statearg");
+    precall << type << " *" << newName << ";" << endl
+            << (*it)->ToC(newName);
+    call << newName;
+    postcall << "delete " << newName << ";" << endl;
+  }
+  for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+  {
+    if (it != myArgs.begin() || myState.size()>0)
+      precall << ", ";
+    string newName = MpsExp::NewVar("arg");
+    precall << type << " *" << newName << ";" << endl
+            << (*it)->ToC(newName);
+    call << newName;
+    postcall << "delete " << newName << ";" << endl;
+  }
+  call << ");" << endl;
+  return precall.str() + call.str() + postcall.str();
+} // }}}
+string MpsNu::ToC() const // {{{
+{
+  stringstream result;
+  result << "vector<Channel_MQ> " << myChannel << ";" << endl;
+  for (int i=0;i<myType->GetMaxPid();++i)
+    result << myChannel << ".push_back(Channel_MQ());" << endl;
+  result << mySucc->ToC();
+  return result.str();
+} // }}}
+string MpsLink::ToC() const // {{{
+{
+  stringstream result;
+  result << "Session_MQ(" << myChannel << ", " << int2string(myPid) << ", " << int2string(myMaxpid) << ");" << endl;
+  result << mySucc->ToC();
+  return result.str();
+} // }}}
+string MpsSync::ToC() const // {{{
+{
+  throw (string)"MpsDef::ToC(): Symmetric synchronization is not supported yet!";
+} // }}}
+string MpsCond::ToC() const // {{{
+{
+  stringstream result;
+  string newName = MpsExp::NewVar("cond");
+  result << "bool " << newName << ";" << endl
+         << myCond->ToC(newName);
+  result << "if (" << newName << ")" << endl
+         << "{" << endl
+         << myTrueBranch->ToC()
+         << "}" << endl
+         << "else" << endl
+         << "{" << endl
+         << myFalseBranch << endl
+         << "}" << endl;
+  return result.str();
+} // }}}
+string MpsGuiSync::ToC() const // {{{
+{
+  throw (string)"MpsDef::ToC(): guisync is not implemented yet!";
+} // }}}
+string MpsGuiValue::ToC() const // {{{
+{
+  throw (string)"MpsDef::ToC(): guivalue is not implemented yet!";
+} // }}}
+string MpsAssign::ToC() const // {{{
+{
+  stringstream result;
+  result << myType->ToC() << " " << myId << ";" << endl;
+  result << myExp->ToC(myId);
+  result << mySucc->ToC();
+  return result.str();
+} // }}}
 /* Term specific funtions
  */
 vector<pair<int,int> > MpsDef::GetArgPids() const // {{{

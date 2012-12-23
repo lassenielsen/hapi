@@ -161,11 +161,11 @@ int main(int argc, char **argv)
       // Print state
       if (cfgSteps)
         (*out) << "******************* Step: *******************\n"
-               << Env2string(env) << "\n"
-               << DefEnv2string(defs) << " in\n"
+               << EnvToString(env) << "\n"
+               << DefEnvToString(defs) << " in\n"
                << current->ToString() << endl;
       else if (cfgBuffers)
-        (*out) << Env2string(env) << endl;
+        (*out) << EnvToString(env) << endl;
       // Find next state
       int choices = -1;
       int choice = -1;

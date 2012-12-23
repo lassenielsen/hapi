@@ -95,7 +95,7 @@ typedef std::list<MpsEvent> MpsQueue;
 // }}}
 typedef std::map<MpsChannel,MpsQueue> MpsEnv;
 
-inline std::string Env2string(const MpsEnv &env) // {{{
+inline std::string EnvToString(const MpsEnv &env) // {{{
 {
   std::string result="[[";
   bool first = true;
