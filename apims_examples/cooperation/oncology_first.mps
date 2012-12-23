@@ -5,25 +5,25 @@
 //  1: The drug itself
 //  2: User/Owner
 define $drug_atadminister =  // Behavior when sent from Authorised person to Nurse
-  2=>1:1
+  2=>1
   {^Administer:              // The drug is administered to the patient
     Gend
   }
 in define $drug_atcheck2 =   // Behavior when sent crom CP to Nurse via porter
   rec $atcheck2.
-  2=>1:1
+  2=>1
   {^Check:                   // Check Patient Information
-    1=>2:2<String>;          // Read Content description
-    1=>2:2<String>;          // Read Patient Information
-    2=>1:1                   // Verify or Reject
+    1=>2<String>;          // Read Content description
+    1=>2<String>;          // Read Patient Information
+    2=>1                   // Verify or Reject
     {^Reject:                // the content does not match prescription
       $atcheck2,             // The drug is destroyed, and the preparation must be restarted
      ^Verify:                // The content matches the prescription
-      2=>1:1
+      2=>1
       {^Check:               // Check Patient Information
-        1=>2:2<String>;      // Read Content description
-        1=>2:2<String>;      // Read Patient Information
-        2=>1:1               // Verify or Reject
+        1=>2<String>;      // Read Content description
+        1=>2<String>;      // Read Patient Information
+        2=>1               // Verify or Reject
         {^Reject:            // the content does not match prescription
           $atcheck2,         // The drug is destroyed, and the preparation must be restarted
          ^Verify:            // The content matches the prescription
@@ -35,43 +35,43 @@ in define $drug_atcheck2 =   // Behavior when sent crom CP to Nurse via porter
     Gend
   }
 in define $drug_ataccept1 =  // Behavior when sent from PA to CP
-  2=>1:1                     // Verify or Reject
+  2=>1                     // Verify or Reject
   {^Destroy:                 // the content does not match prescription
     Gend,                    // The drug is destroyed, and the preparation must be restarted
    ^Verify:                  // The content matches the prescription
     $drug_atcheck2
   }
 in define $drug_atcheck1 =   // Behavior when sent from PA to CP
-  2=>1:1
+  2=>1
   {^Check:                   // Check Patient Information
-    1=>2:2<String>;          // Read content description
-    1=>2:2<String>;          // Read Patient Information
+    1=>2<String>;          // Read content description
+    1=>2<String>;          // Read Patient Information
     $drug_ataccept1
   }
 in define $drug =            // Full behavior of a drug
-  2=>1:1
+  2=>1
   {^Prepare:
-    2=>1:1<String>;          // Attach Content Information
-    2=>1:1<String>;          // Attach Patient Information
+    2=>1<String>;          // Attach Content Information
+    2=>1<String>;          // Attach Patient Information
     $drug_atcheck1
   }
 // Used positions: // {{{
 in define $drug_ataccept3 =  // Behavior when sent from PA to CP
-  2=>1:1                     // Verify or Reject
+  2=>1                     // Verify or Reject
   {^Reject:                  // the content does not match prescription
     $drug_atcheck2,          // The drug is destroyed, and the preparation must be restarted
    ^Verify:                  // The content matches the prescription
     $drug_atadminister
   }
 in define $drug_atcheck3 =   // Behavior when sent from Nurse to Authorised person
-  2=>1:1
+  2=>1
   {^Check:                   // Check Patient Information
-    1=>2:2<String>;          // Read content description
-    1=>2:2<String>;          // Read Patient Information
+    1=>2<String>;          // Read content description
+    1=>2<String>;          // Read Patient Information
     $drug_ataccept3
   }
 in define $drug_ataccept2 =
-  2=>1:1                     // Verify or Reject
+  2=>1                     // Verify or Reject
   {^Reject:                  // the content does not match prescription
     $drug_atcheck2,          // The drug is destroyed, and the preparation must be restarted
    ^Verify:                  // The content matches the prescription
@@ -84,33 +84,33 @@ def Drug() = // {{{
   link(2,drug,s,1);
   guivalue(2,s,1,"User","Drug");
   ( Drug()
-  | s[1]>>
+  | s[2]>>
     {^Prepare:
-      s[1]>>content;
-      s[1]>>patient;
-      s[1]>>
+      s[2]>>content;
+      s[2]>>patient;
+      s[2]>>
       {^Check:
         s[2]<<content;
         s[2]<<patient;
-        s[1]>>
+        s[2]>>
         {^Destroy: end,
          ^Verify:
           def Drug_Check2(s: $drug_atcheck2@(1of2)) =
-            s[1]>>
+            s[2]>>
             {^Check:
               s[2]<<content;
               s[2]<<patient;
-              s[1]>>
+              s[2]>>
               {^Reject: Drug_Check2(s),
                ^Verify:
-                s[1]>>
+                s[2]>>
                 {^Check:
                   s[2]<<content;
                   s[2]<<patient;
-                  s[1]>>
+                  s[2]>>
                   {^Reject: Drug_Check2(s),
                    ^Verify:
-                    s[1]>>
+                    s[2]>>
                     {^Administer: end
                     }
                   }
@@ -132,25 +132,25 @@ in (Drug() | // }}}
 //  1: The Flowchart Object
 //  2: User/Owner
 define $flowchart_atsign =
-  2=>1:1
+  2=>1
   {^Sign:                            // The resonsible nurse signs
     Gend
   }
 in define $flowchart_atcheck3 =
   rec $atcheck3.
-  2=>1:1
+  2=>1
   {^Check:                           // BEGIN: Responsible Nurse Check
-    1=>2:2<String>;                  // Read Patient Info
-    1=>2:2<String>;                  // Read Dosis
-    2=>1:1
+    1=>2<String>;                  // Read Patient Info
+    1=>2<String>;                  // Read Dosis
+    2=>1
     {^Reject:                        // The prescription and prepared dosis do not match
       $atcheck3,
      ^Accept:                        // The prescription and prepared dosis match
-      2=>1:1
+      2=>1
       {^Check:                       // BEGIN: Authorized Person Check
-        1=>2:2<String>;              // Read Patient Info
-        1=>2:2<String>;              // Read Dosis
-        2=>1:1
+        1=>2<String>;              // Read Patient Info
+        1=>2<String>;              // Read Dosis
+        2=>1
         {^Reject:                    // The prescription and prepared dosis do not match
           $atcheck3,                 // Put drug back, reverification is necessary
          ^Accept:                    // The prescription and prepared dosis match
@@ -160,11 +160,11 @@ in define $flowchart_atcheck3 =
     }
   }
 in define $flowchart_atcheck4 =
-  2=>1:1
+  2=>1
   {^Check:                           // BEGIN: Authorized Person Check
-    1=>2:2<String>;                  // Read Patient Info
-    1=>2:2<String>;                  // Read Dosis
-    2=>1:1
+    1=>2<String>;                  // Read Patient Info
+    1=>2<String>;                  // Read Dosis
+    2=>1
     {^Reject:                        // The prescription and prepared dosis do not match
       $flowchart_atcheck3,           // Put drug back, reverification is necessary
      ^Accept:                        // The prescription and prepared dosis match
@@ -178,80 +178,80 @@ in define $flowchart_atcheck4 =
 //  2: The Nurse
 //  3: The Authorised Person
 in define $oncology_administer =
-  1=>2:2<String>;  // Patient gives info to nurse
+  1=>2<String>;  // Patient gives info to nurse
   {^Reject:
     Gend,
    #Verify:
-    1=>3:3<String>;                     // Patient gives details
-    2=>3:4<$flowchart_atcheck4@(2of2)>; // Transfer flowchart to verify
-    2=>3:4<$drug_atcheck3@(2of2)>;      // Transfer drug to verify
+    1=>3<String>;                     // Patient gives details
+    2=>3<$flowchart_atcheck4@(2of2)>; // Transfer flowchart to verify
+    2=>3<$drug_atcheck3@(2of2)>;      // Transfer drug to verify
     {^Reject:
-      3=>2:2<$flowchart_atcheck3@(2of2)>;
-      3=>2:2<$drug_atcheck2@(2of2)>;// Transfer drug to verify
+      3=>2<$flowchart_atcheck3@(2of2)>;
+      3=>2<$drug_atcheck2@(2of2)>;// Transfer drug to verify
       Gend,
      #Verify:
-      3=>2:2<$flowchart_atsign@(2of2)>;
-      3=>2:2<$drug_atadminister@(2of2)>;// Transfer drug to verify
+      3=>2<$flowchart_atsign@(2of2)>;
+      3=>2<$drug_atadminister@(2of2)>;// Transfer drug to verify
       {^Administer:
         Gend
       }
     }
   }// }}}
 in define $flowchart_attonurse =
-  1=>2:2< <$oncology_administer> >;  // The Nurse reads the contact info
+  1=>2< <$oncology_administer> >;  // The Nurse reads the contact info
   $flowchart_atcheck3
 in define $flowchart_atcheck2 =
   rec $atcheck2.
-  2=>1:1
+  2=>1
   {^CheckDrug:                        // BEGIN: CP check PA work
-    1=>2:2<String>;                   // Read Dosis
-    1=>2:2<String>;                   // Read Patient
-    2=>1:1
+    1=>2<String>;                   // Read Dosis
+    1=>2<String>;                   // Read Patient
+    2=>1
     {^RejectDrug:                     // The Patient Info did not match
       $atcheck2,                      // Try again when new drug is ready
      ^AcceptDrug:                     // The produced drug is accepted
-      2=>1:1
+      2=>1
       {^Sign:                         // The Controlling Pharmacist signs
         $flowchart_attonurse
       }
     }
   }
 in define $flowchart_ataccept2 =
-  2=>1:1
+  2=>1
   {^RejectDrug:                       // The Patient Info did not match
     $flowchart_atcheck2,              // Try again when new drug is ready
    ^AcceptDrug:                       // The produced drug is accepted
-    2=>1:1
+    2=>1
     {^Sign:                           // The Controlling Pharmacist signs
       $flowchart_attonurse
     }
   }
 in define $flowchart_atcalc =
   rec $atcalc.
-  2=>1:1
+  2=>1
   {^CalcDosis:
-    2=>1:1<String>;                             // Write Dosis
-    2=>1:1
+    2=>1<String>;                             // Write Dosis
+    2=>1
     {^Sign:                                     // The Doctor signs
-      2=>1:1
+      2=>1
       {^Check:                                  // BEGIN: CP checks Prescription and drug
-        1=>2:2<String>;                         // Read Patient Info
-        1=>2:2<Int>;                            // Read Patient Height
-        1=>2:2<Int>;                            // Read Patient Weight
-        1=>2:2<String>;                         // Read Patient History
-        1=>2:2<String>;                         // Read Latest Lab Results
-        1=>2:2<String>;                         // Read Dosis
+        1=>2<String>;                         // Read Patient Info
+        1=>2<Int>;                            // Read Patient Height
+        1=>2<Int>;                            // Read Patient Weight
+        1=>2<String>;                         // Read Patient History
+        1=>2<String>;                         // Read Latest Lab Results
+        1=>2<String>;                         // Read Dosis
         rec $ataccept1.
-        2=>1:1
+        2=>1
         {^RejectCalc:
           $atcalc,
          ^AcceptCalc:
           rec $ataccept2.
-          2=>1:1
+          2=>1
           {^RejectDrug:                         // Calculations are wrong
             $ataccept2,                         // The calculations must be redone
            ^AcceptDrug:
-            2=>1:1
+            2=>1
             {^Sign:                             // The Controlling Pharmacist signs
               $flowchart_attonurse
             }
@@ -259,11 +259,11 @@ in define $flowchart_atcalc =
          ^RejectDrug:
           $ataccept1,
          ^AcceptDrug:
-          2=>1:1
+          2=>1
           {^RejectCalc:                         // Calculations are wrong
             $atcalc,                            // The calculations must be redone
            ^AcceptCalc:
-            2=>1:1
+            2=>1
             {^Sign:                             // The Controlling Pharmacist signs
               $flowchart_attonurse
             }
@@ -273,29 +273,29 @@ in define $flowchart_atcalc =
     }
   }
 in define $flowchart_ataccept1no2 =
-  2=>1:1
+  2=>1
   {^RejectCalc:                                 // Calculations are wrong
     $flowchart_atcalc,                          // The calculations must be redone
    ^AcceptCalc:
-    2=>1:1
+    2=>1
     {^Sign:                                     // The Controlling Pharmacist signs
       $flowchart_attonurse
     }
   }
 in define $flowchart_ataccept2no1 =
   rec $ataccept2.
-  2=>1:1
+  2=>1
   {^RejectDrug:                                 // Calculations are wrong
     $ataccept2,                                 // The calculations must be redone
    ^AcceptDrug:
-    2=>1:1
+    2=>1
     {^Sign:                                     // The Controlling Pharmacist signs
       $flowchart_attonurse
     }
   }
 in define $flowchart_ataccept1 =
   rec $ataccept1.
-  2=>1:1
+  2=>1
   {^RejectCalc:
     $flowchart_atcalc,
    ^AcceptCalc:
@@ -306,25 +306,25 @@ in define $flowchart_ataccept1 =
     $flowchart_ataccept1no2
   }
 in define $flowchart_atcheck1 =
-  2=>1:1
+  2=>1
   {^Check:
-    1=>2:2<String>;                             // Read Patient Info
-    1=>2:2<Int>;                                // Read Patient Height
-    1=>2:2<Int>;                                // Read Patient Weight
-    1=>2:2<String>;                             // Read Patient History
-    1=>2:2<String>;                             // Read Latest Lab Results
-    1=>2:2<String>;                             // Read Dosis
+    1=>2<String>;                             // Read Patient Info
+    1=>2<Int>;                                // Read Patient Height
+    1=>2<Int>;                                // Read Patient Weight
+    1=>2<String>;                             // Read Patient History
+    1=>2<String>;                             // Read Latest Lab Results
+    1=>2<String>;                             // Read Dosis
     $flowchart_ataccept1
   }
 in define $flowchart =
-  2=>1:1
+  2=>1
   {^RegisterPatient:
-    2=>1:1<String>;                             // Write Patient Info
-    2=>1:1<Int>;                                // Write Patient Height
-    2=>1:1<Int>;                                // Write Patient Weight
-    2=>1:1<String>;                             // Write Patient History
-    2=>1:1<String>;                             // Write Latest Lab results
-    2=>1:1< <$oncology_administer> >;           // Write contact info
+    2=>1<String>;                             // Write Patient Info
+    2=>1<Int>;                                // Write Patient Height
+    2=>1<Int>;                                // Write Patient Weight
+    2=>1<String>;                             // Write Patient History
+    2=>1<String>;                             // Write Latest Lab results
+    2=>1< <$oncology_administer> >;           // Write contact info
     $flowchart_atcalc
   }
 in // }}}
@@ -334,35 +334,35 @@ def Flowchart() = // {{{
   link(2,flowchart,s,1);
   guivalue(2,s,1,"User","Flowchart");
   ( Flowchart()
-  | s[1]>>
+  | s[2]>>
     {^RegisterPatient:
-      s[1]>>patient;
-      s[1]>>height;
-      s[1]>>weight;
-      s[1]>>history;
-      s[1]>>labresult;
-      s[1]>>channel;
+      s[2]>>patient;
+      s[2]>>height;
+      s[2]>>weight;
+      s[2]>>history;
+      s[2]>>labresult;
+      s[2]>>channel;
       def AtCalc(s:$flowchart_atcalc@(1of2)) =
       def AtAdminister(patient:String, // {{{
                        dosis:String,
                        s:$flowchart_atcheck3@(1of2)) =
-        s[1]>>
+        s[2]>>
         {^Check:
           s[2]<<patient;
           s[2]<<dosis;
-          s[1]>>
+          s[2]>>
           {^Reject:
             AtAdminister(patient,dosis,s),
            ^Accept:
-            s[1]>>
+            s[2]>>
             {^Check:
               s[2]<<patient;
               s[2]<<dosis;
-              s[1]>>
+              s[2]>>
               {^Reject:
                 AtAdminister(patient,dosis,s),
                ^Accept:
-                s[1]>>
+                s[2]>>
                 {^Sign:
                   end
                 }
@@ -374,11 +374,11 @@ def Flowchart() = // {{{
       def AtAccept1no2(patient:String, // {{{
                        dosis:String,
                        s:$flowchart_ataccept1no2@(1of2)) =
-        s[1]>>
+        s[2]>>
         {^RejectCalc:
           AtCalc(s),
          ^AcceptCalc:
-          s[1]>>
+          s[2]>>
           {^Sign:
             s[2]<<channel;
             AtAdminister(patient,dosis,s)
@@ -388,11 +388,11 @@ def Flowchart() = // {{{
       def AtAccept2no1(patient:String, // {{{
                        dosis:String,
                        s:$flowchart_ataccept2no1@(1of2)) =
-        s[1]>>
+        s[2]>>
         {^RejectDrug:
           AtAccept2no1(patient,dosis,s),
          ^AcceptDrug:
-          s[1]>>
+          s[2]>>
           {^Sign:
             s[2]<<channel;
             AtAdminister(patient,dosis,s)
@@ -402,7 +402,7 @@ def Flowchart() = // {{{
       def AtAccept1(patient:String, // {{{
                     dosis:String,
                     s:$flowchart_ataccept1@(1of2)) =
-        s[1]>>
+        s[2]>>
         {^RejectCalc:
           AtCalc(s),
          ^AcceptCalc:
@@ -413,12 +413,12 @@ def Flowchart() = // {{{
           AtAccept1no2(patient,dosis,s)
         }
       in // }}}
-        s[1]>>
+        s[2]>>
         {^CalcDosis:
-          s[1]>>dosis;
-          s[1]>>
+          s[2]>>dosis;
+          s[2]>>
           {^Sign:
-            s[1]>>
+            s[2]>>
             {^Check:
               s[2]<<patient;
               s[2]<<height;
@@ -442,7 +442,7 @@ in (Flowchart() | // }}}
 //  1: The Porter
 //  2: The Controlling Pharmacist
 define $pharmacy_reception =
-  1=>2:2<$flowchart_atcheck1@(2of2)>;                  // Porter delivers flowchart to CP
+  1=>2<$flowchart_atcheck1@(2of2)>;                  // Porter delivers flowchart to CP
   Gend
 in // }}}
 (nu drug_order: $pharmacy_reception)
@@ -451,7 +451,7 @@ def Porter_Order() = // {{{
   link(2,drug_order,s,2);
   guivalue(2,s,2,"User","Porter1");
   ( Porter_Order()
-  | s[2]>>fc; // Receive flowchart
+  | s[1]>>fc; // Receive flowchart
     link(2,pharmacy_reception,t,1);
     guivalue(2,t,1,"User","Porter1");
     t[2]<<fc; // Deliver flowchart
@@ -464,7 +464,7 @@ in ( Porter_Order() | // }}}
 //  1: The Controlling Pharmacist
 //  2: The Porter
 define $transfer_rejected =
-  1=>2:2<$flowchart_atcalc@(2of2)>;                  // Porter receives flowchart
+  1=>2<$flowchart_atcalc@(2of2)>;                  // Porter receives flowchart
   Gend
 in // }}}
 (nu rejected_send: $transfer_rejected)
@@ -473,7 +473,7 @@ def Porter_Rejected() = // {{{
   link(2,rejected_send,s,2);
   guivalue(2,s,2,"User","Porter2");
   ( Porter_Rejected()
-  | s[2]>>fc; // Receive rejected flowchart
+  | s[1]>>fc; // Receive rejected flowchart
     link(2,rejected_receive,t,1);
   guivalue(2,t,1,"User","Porter2");
     t[2]<<fc; // Deliver rejected flowchart
@@ -486,8 +486,8 @@ in ( Porter_Rejected() | // }}}
 //  1: The Controlling Pharmacist
 //  2: The Porter
 define $transfer_accepted =
-  1=>2:2<$flowchart_attonurse@(2of2)>;                  // Porter receives flowchart
-  1=>2:2<$drug_atcheck2@(2of2)>;                        // Porter receives drug
+  1=>2<$flowchart_attonurse@(2of2)>;                  // Porter receives flowchart
+  1=>2<$drug_atcheck2@(2of2)>;                        // Porter receives drug
   Gend
 in // }}}
 (nu accepted_send: $transfer_accepted)
@@ -496,8 +496,8 @@ def Porter_Accepted() = // {{{
   link(2,accepted_send,s,2);
   guivalue(2,s,2,"User","Porter3");
   ( Porter_Accepted()
-  | s[2]>>theFlowchart;   // Receive flowchart
-    s[2]>>theDrug; // Receive drug
+  | s[1]>>theFlowchart;   // Receive flowchart
+    s[1]>>theDrug; // Receive drug
     link(2,accepted_receive,t,1);
     guivalue(2,t,1,"User","Porter3");
     t[2]<<theFlowchart;   // Deliver flowchart
@@ -513,9 +513,9 @@ in ( Porter_Accepted() | // }}}
 //  1: The Patient
 //  2: The Doctor
 define $oncology_reception =
-  1=>2:2<String>;
+  1=>2<String>;
   {^Register:                // Receive Patient (register information)
-    2=>1:1< <$oncology_administer> >;
+    2=>1< <$oncology_administer> >;
     {^CalcDosis:
       Gend
     }
@@ -526,7 +526,7 @@ def OncologyDoctor() = // {{{
   link(2,oncology_reception,pa,2);
   guivalue(2,pa,2,"User","Oncology Doctor");
   ( OncologyDoctor()
-  | pa[2]>>patient_info;
+  | pa[1]>>patient_info;
     guisync(2,pa,2)
     {^Register(patient:String=patient_info,
                height:Int=0,
@@ -557,7 +557,7 @@ def OncologyDoctor() = // {{{
     }
   )
 in ( OncologyDoctor() | // }}}
-(nu oncology_findauth: 1=>2:2< <$oncology_administer> >;Gend)
+(nu oncology_findauth: 1=>2< <$oncology_administer> >;Gend)
 def OncologyNurse() = // {{{
   link(2,accepted_receive,porter,2);
   guivalue(2,porter,2,"User","Oncology Nurse");
@@ -606,8 +606,8 @@ def OncologyNurse() = // {{{
         }
       }
     in // }}}
-    porter[2]>>fc;          // Receive Flowchart
-    porter[2]>>dr;          // Receive Drug
+    porter[1]>>fc;          // Receive Flowchart
+    porter[1]>>dr;          // Receive Drug
     fc[2]>>ref;             // Read patient reference from flowchart
     link(2,oncology_findauth,auth,1);
     guivalue(2,auth,1,"User","Oncology Nurse");

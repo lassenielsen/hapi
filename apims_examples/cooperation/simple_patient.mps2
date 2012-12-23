@@ -1,22 +1,22 @@
-define $consultation = // {{{
-rec $state<data:Bool=false, schedule:Bool=false, result:Bool=false>.
+define $consultation data schedule result = // {{{
+rec $state<data:Bool=data, schedule:Bool=schedule, result:Bool=result>.
 { ^Pdata[[not (data and schedule and result)]]:
-    1=>2:2<String>; 1=>3:3<String>; $state<true,false,result>,
+    1=>2<String>; 1=>3<String>; $state<true,false,result>,
   ^Dschedule[[data and not (data and schedule and result)]]:
-    2=>1:1<String>; 2=>3:3<String>; $state<data,true,false>,
+    2=>1<String>; 2=>3<String>; $state<data,true,false>,
   ^Nschedule[[data and not (data and schedule and result)]]:
-    3=>1:1<String>; 3=>2:2<String>; $state<data,true,false>,
+    3=>1<String>; 3=>2<String>; $state<data,true,false>,
   ^Dresult[[schedule and not (data and schedule and result)]]:
-    2=>1:1<String>; $state<data,schedule,true>,
+    2=>1<String>; $state<data,schedule,true>,
   ^STOP[[data and schedule and result]]:
     Gend
 }
 in // }}}
-(nu a: $consultation)
+(nu a: $consultation<false,false,false>)
 (
   // Patient {{{
   def State<sData: Bool, sSchedule: Bool, sResult: Bool>
-           (symptoms: String, session: $consultation@(1of3)) =
+           (symptoms: String, session: $consultation<sData,sSchedule,sResult>@(1of3)) =
     guisync(3,session,1)
     { ^Pdata[[not (sData and sSchedule and sResult)]](symptoms:String=symptoms):
         guivalue(3,session,1,"symptoms",symptoms);
@@ -24,15 +24,15 @@ in // }}}
         session[3]<<symptoms;
         State<true,false,sResult>(symptoms,session),
       ^Dschedule[[sData and not (sData and sSchedule and sResult)]]():
-        session[1]>>schedule;
+        session[2]>>schedule;
         guivalue(3,session,1,"schedule",schedule);
         State<sData,true,false>(symptoms,session),
       ^Nschedule[[sData and not (sData and sSchedule and sResult)]]():
-        session[1]>>schedule;
+        session[3]>>schedule;
         guivalue(3,session,1,"schedule",schedule);
         State<sData,true,false>(symptoms,session),
       ^Dresult[[sSchedule and not (sData and sSchedule and sResult)]]():
-        session[1]>>result;
+        session[2]>>result;
         guivalue(3,session,1,"result",result);
         State<sData,sSchedule,true>(symptoms,session),
       ^STOP[[sData and sSchedule and sResult]](remarks:String=""):
@@ -43,10 +43,10 @@ in // }}}
     State<false,false,false>("",s) // }}}
   // Doctor {{{
 | def State<sData: Bool, sSchedule: Bool, sResult: Bool>
-           (schedule: String, session: $consultation@(2of3)) =
+           (schedule: String, session: $consultation<sData,sSchedule,sResult>@(2of3)) =
     guisync(3,session,2)
     { ^Pdata[[not (sData and sSchedule and sResult)]]():
-        session[2]>>symptoms;
+        session[1]>>symptoms;
         guivalue(3,session,2,"symptoms",symptoms);
         State<true,false,sResult>(schedule,session),
       ^Dschedule[[sData and not (sData and sSchedule and sResult)]](schedule:String=schedule):
@@ -55,7 +55,7 @@ in // }}}
         session[3]<<schedule;
         State<sData,true,false>(schedule,session),
       ^Nschedule[[sData and not (sData and sSchedule and sResult)]]():
-        session[2]>>schedule;
+        session[3]>>schedule;
         guivalue(3,session,2,"schedule",schedule);
         State<sData,true,false>(schedule,session),
       ^Dresult[[sSchedule and not (sData and sSchedule and sResult)]](result:String=""):
@@ -70,14 +70,14 @@ in // }}}
     State<false,false,false>("",s) // }}}
   // Nurse {{{
 | def State<sData: Bool, sSchedule: Bool, sResult: Bool>
-           (schedule: String, session: $consultation@(3of3)) =
+           (schedule: String, session: $consultation<sData,sSchedule,sResult>@(3of3)) =
     guisync(3,session,3)
     { ^Pdata[[not (sData and sSchedule and sResult)]]():
-        session[3]>>symptoms;
+        session[1]>>symptoms;
         guivalue(3,session,3,"symptoms",symptoms);
         State<true,false,sResult>(schedule,session),
       ^Dschedule[[sData and not (sData and sSchedule and sResult)]]():
-        session[3]>>schedule;
+        session[2]>>schedule;
         guivalue(3,session,3,"schedule",schedule);
         State<sData,true,false>(schedule,session),
       ^Nschedule[[sData and not (sData and sSchedule and sResult)]](schedule:String=schedule):

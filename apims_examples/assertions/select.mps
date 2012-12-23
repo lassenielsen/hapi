@@ -1,6 +1,6 @@
-(nu a: 1=>2:1<Bool> as x;
-       1=>2:1<Bool> as y;
-       2=>1:2
+(nu a: 1=>2<Bool> as x;
+       1=>2<Bool> as y;
+       2=>1
        {^A[[x or y]]: Gend,
         ^B[[not x or not y]]: Gend
        })
@@ -8,8 +8,8 @@
   s[1]>>q1;
   s[1]>>q2;
   if q1 and q2
-  then s[2]<<^A;
+  then s[1]<<^A;
        end
-  else s[2]<<^B;
+  else s[1]<<^B;
        end
 )

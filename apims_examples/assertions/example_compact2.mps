@@ -2,7 +2,7 @@
 define $seq bit1 bit2 bit3 bit4 =
   rec $state<x1:Bool=bit1,x2:Bool=bit2,x3:Bool=bit3,x4:Bool=bit4>.
          {^Continue[[not x1 or not x2 or not x3 or not x4]]: // x<16
-           1=>2:1<Int>;
+           1=>2<Int>;
            $state<not x1,
                   ((x1) or x2) and (not (x1) or not x2),
                   ((x1 and x2) or x3) and (not (x1 and x2) or not x3),
@@ -18,7 +18,7 @@ in // }}}
   def SEQ1<bit1:Bool,bit2:Bool,bit3:Bool,bit4:Bool>(s:$seq<bit1,bit2,bit3,bit4>@(1of2),i:Int) =
     sync(2,s)
     {^Continue[[not (bit1 and bit2 and bit3 and bit4)]]:
-      s[1]<<i;
+      s[2]<<i;
       SEQ1<not bit1,
            ((bit1) or bit2) and (not (bit1) or not bit2),
            ((bit1 and bit2) or bit3) and (not (bit1 and bit2) or not bit3),

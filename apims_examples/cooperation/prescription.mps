@@ -7,41 +7,45 @@
 //         or the pharmacist accepts the prescription
 // Step 4: The pharmacy gives the medcin to the patient,
 //         and notifies the doctor
-(nu a: { ^data:
-           1=>2:2<String>;
-           rec $x.
-             { ^prescribe:
-                 2=>1:1<String>;
-                 2=>3:3<String>;
-                 { ^accept:
-                     { ^deliver:
-                         3=>1:1<String>;
-                         3=>2:2<String>;
-                         Gend
-                     },
-                   ^deny:
-                     3=>2:2<String>;
-                     $x
-                 },
-               ^deny:
-                 Gend
-             }
-       }
-)
+define $prescribe2 =
+  rec $x.
+  {^prescribe:
+    2=>1<String>;
+    2=>3<String>;
+    {^accept:
+      {^deliver:
+        3=>1<String>;
+        3=>2<String>;
+        Gend
+      },
+     ^deny:
+      3=>2<String>;
+      $x
+    },
+   ^deny:
+     Gend
+  }
+in
+define $prescribe =
+{^data:
+  1=>2<String>;
+  $prescribe2
+}
+in
+(nu a: $prescribe)
 ( link(3,a,s,1);
   guisync(3,s,1)
   { ^data(sym:String="normal"):
       s[2] << sym;
-      def X(s:rec %x.{^deny:Lend,^prescribe:1>><String>;
-              {^accept:{^deliver:1>><String>;Lend},^deny: %x}}@(1 of 3))=
+      def X(s: $prescribe2@(1 of 3))=
         guisync(3,s,1)
         { ^prescribe():
-            s[1] >> id;
+            s[2] >> id;
             guisync(3,s,1)
             { ^accept():
                 guisync(3,s,1)
                 { ^deliver():
-                    s[1] >> rcpt;
+                    s[3] >> rcpt;
                     end
                 },
               ^deny():
@@ -55,9 +59,8 @@
 | link(3,a,s,2);
   guisync(3,s,2)
   { ^data():
-      s[2] >> sym;
-      def X(s: rec%x.{^deny:Lend,^prescribe:1<<<String>;3<<<String>;
-              {^accept:{^deliver:2>><String>;Lend},^deny:2>><String>;%x}}@(2of3))=
+      s[1] >> sym;
+      def X(s: $prescribe2@(2of3))=
         guisync(3,s,2)
         { ^prescribe(id:String=""):
             s[1] << id;
@@ -66,11 +69,11 @@
             { ^accept():
                 guisync(3,s,2)
                 { ^deliver():
-                    s[2] >> message;
+                    s[3] >> message;
                     end
                 },
               ^deny():
-                s[2] >> reason;
+                s[3] >> reason;
                 X(s)
             },
           ^deny(reason:String=""):
@@ -81,11 +84,10 @@
 | link(3,a,s,3);
   guisync(3,s,3)
   { ^data():
-      defX(s: rec%x.{^deny:Lend,^prescribe:3>><String>;{^accept:{^deliver:
-              1<<<String>;2<<<String>;Lend},^deny:2<<<String>;%x}}@(3of3))=
+      defX(s: $prescribe2@(3of3))=
         guisync(3,s,3)
         { ^prescribe():
-            s[3] >> id;
+            s[2] >> id;
             guisync(3,s,3)
             { ^accept(reason:String=""):
                 guisync(3,s,3)

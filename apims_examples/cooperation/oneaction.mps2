@@ -1,7 +1,7 @@
 define $workflow x =
   rec $state<state:Bool=x>.
   { ^Do[[not state]]:
-      1=>2:1<Bool>; $state<true>,
+      1=>2<Bool>; $state<true>,
     ^STOP[[state]]:
       Gend
   } in
@@ -10,7 +10,7 @@ define $workflow x =
   def State<state: Bool>(session: $workflow<state>@(1of2)) =
     guisync(2,session,1)
     { ^Do[[not state]](comment:String="No Comment"):
-        session[1]<<state;
+        session[2]<<state;
         State<true>(session),
       ^STOP[[state]](comment:String="No Comment"):
         end

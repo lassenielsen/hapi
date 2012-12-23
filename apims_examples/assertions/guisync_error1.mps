@@ -1,11 +1,11 @@
-(nu a: 1=>2:1<Bool> as x;
-       1=>2:1<Bool> as y;
+(nu a: 1=>2<Bool> as x;
+       1=>2<Bool> as y;
        {^A[[x or y]]:
          {^A[[x]]:
-           2=>1:2<Bool> as z [[x or z]];
+           2=>1<Bool> as z [[x or z]];
            Gend,
           ^B[[y]]:
-           2=>1:2<Bool> as z [[x or z]];
+           2=>1<Bool> as z [[x or z]];
            Gend
          },
         ^B[[not x or not y]]:
@@ -21,18 +21,18 @@
     if (v)
     then guisync(2,s,2)
          {^A[[q1]](v:Bool=v):
-           s[2]<<false;
+           s[1]<<false;
            end,
           ^B[[q2]](v:Bool=v):
-           s[2]<<v;
+           s[1]<<v;
            end
          }
     else guisync(2,s,2)
          {^A[[q1]](v:Bool=v):
-           s[2]<<false;
+           s[1]<<false;
            end,
           ^B[[q2]](v:Bool=v):
-           s[2]<<true;
+           s[1]<<true;
            end
          },
    ^B[[not (q1 and q2)]](comment:String=""):
