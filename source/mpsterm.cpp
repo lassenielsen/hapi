@@ -432,7 +432,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     MpsTerm *succ = MpsTerm::Create(exp->content[4]);
     MpsExp *value = MpsExp::Create(exp->content[2]);
     MpsChannel dest = ParseChannel(exp->content[0]);
-    MpsTerm *result = new MpsSnd(dest, *value, *succ);
+    MpsTerm *result = new MpsSnd(dest, *value, *succ, MpsMsgNoType());
     delete succ;
     delete value;
     return result;
@@ -441,7 +441,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[4]);
     MpsChannel source=ParseChannel(exp->content[0]);
-    MpsTerm *result = new MpsRcv(source, exp->content[2]->root.content, -1, -1, *succ);
+    MpsTerm *result = new MpsRcv(source, exp->content[2]->root.content, -1, -1, *succ, MpsMsgNoType());
 
     delete succ;
     return result;
@@ -774,7 +774,8 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
                                  exp->content[2]->root.content,
                                  string2int(exp->content[5]->root.content),
                                  string2int(exp->content[7]->root.content),
-                                 *succ);
+                                 *succ,
+                                 MpsMsgNoType());
 
     delete succ;
     return result;
@@ -791,19 +792,21 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
 MpsEnd::MpsEnd() // {{{
 {
 } // }}}
-MpsSnd::MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ) // {{{
+MpsSnd::MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ, const MpsMsgType &type) // {{{
 : myChannel(channel)
 {
   mySucc = succ.Copy();
   myExp = exp.Copy();
+  myType = type.Copy();
 } // }}}
-MpsRcv::MpsRcv(const MpsChannel &channel, const string &dest, int pid, int maxpid, const MpsTerm &succ) // {{{
+MpsRcv::MpsRcv(const MpsChannel &channel, const string &dest, int pid, int maxpid, const MpsTerm &succ, const MpsMsgType &type) // {{{
 : myChannel(channel)
 , myDest(dest)
 , myPid(pid)
 , myMaxPid(maxpid)
 {
   mySucc = succ.Copy();
+  myType=type.Copy();
 } // }}}
 MpsSelect::MpsSelect(const MpsChannel &channel, const string &label, const MpsTerm &succ) // {{{
 : myChannel(channel), myLabel(label)
@@ -3005,7 +3008,7 @@ MpsTerm *MpsSnd::PRename(const string &src, const string &dst) const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc);
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType());
   delete newSucc;
   return result;
 } // }}}
@@ -3013,7 +3016,7 @@ MpsTerm *MpsRcv::PRename(const string &src, const string &dst) const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType());
   delete newSucc;
   return result;
 } // }}}
@@ -3172,7 +3175,7 @@ MpsTerm *MpsSnd::ERename(const string &src, const string &dst) const // {{{
   MpsTerm *newSucc = mySucc->ERename(src,dst);
   MpsExp *newExp=myExp->Rename(src,dst);
   MpsChannel newChannel=myChannel.Rename(src,dst);
-  MpsTerm *result = new MpsSnd(newChannel, *newExp, *newSucc);
+  MpsTerm *result = new MpsSnd(newChannel, *newExp, *newSucc, GetMsgType());
   delete newSucc;
   delete newExp;
   return result;
@@ -3181,8 +3184,12 @@ MpsTerm *MpsRcv::ERename(const string &src, const string &dst) const // {{{
 {
   // assert mySucc != NULL
   MpsChannel newChannel=myChannel.Rename(src,dst);
+  MpsMsgType *newType = GetMsgType().ERename(src,dst);
   if (src == myDest) // No substitution is needed in successor
-    return new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc);
+  { MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc, *newType);
+    delete newType;
+    return result;
+  }
 
   MpsTerm *newSucc=NULL;
   string newDest=myDest;
@@ -3195,7 +3202,8 @@ MpsTerm *MpsRcv::ERename(const string &src, const string &dst) const // {{{
   }
   else
     newSucc = mySucc->ERename(src,dst);
-  MpsTerm *result = new MpsRcv(newChannel, newDest, myPid, myMaxPid, *newSucc);
+  MpsTerm *result = new MpsRcv(newChannel, newDest, myPid, myMaxPid, *newSucc, *newType);
+  delete newType;
   delete newSucc;
   return result;
 } // }}}
@@ -3495,7 +3503,7 @@ MpsTerm *MpsSnd::ReIndex(const string &session, int pid, int maxpid) const // {{
   MpsChannel newChannel=myChannel;
   if (session==myChannel.GetName())
     newChannel=MpsChannel(myChannel.GetName(),myChannel.GetIndex()*maxpid+pid);
-  MpsTerm *result = new MpsSnd(newChannel, *myExp, *newSucc);
+  MpsTerm *result = new MpsSnd(newChannel, *myExp, *newSucc, GetMsgType());
   delete newSucc;
   return result;
 } // }}}
@@ -3506,10 +3514,10 @@ MpsTerm *MpsRcv::ReIndex(const string &session, int pid, int maxpid) const // {{
   if (session==myChannel.GetName())
     newChannel=MpsChannel(myChannel.GetName(),myChannel.GetIndex()+maxpid*pid);
   if (session == myDest) // No substitution is needed in successor
-    return new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc);
+    return new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc, GetMsgType());
 
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
-  MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *newSucc);
+  MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType());
   delete newSucc;
   return result;
 } // }}}
@@ -3718,7 +3726,7 @@ MpsTerm *MpsSnd::PSubst(const string &var, const MpsTerm &exp, const vector<stri
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc);
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType());
   delete newSucc;
   return result;
 } // }}}
@@ -3726,7 +3734,7 @@ MpsTerm *MpsRcv::PSubst(const string &var, const MpsTerm &exp, const vector<stri
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType());
   delete newSucc;
   return result;
 } // }}}
@@ -4052,7 +4060,9 @@ MpsTerm *MpsSnd::ESubst(const string &source, const MpsExp &dest) const // {{{
   MpsTerm *newSucc = mySucc->ESubst(source,dest);
   MpsExp *newExp=myExp->Subst(source,dest);
   MpsChannel newChannel=myChannel.Subst(source,dest);
-  MpsTerm *result = new MpsSnd(newChannel, *newExp, *newSucc);
+  MpsMsgType *newType = GetMsgType().ESubst(source,dest);
+  MpsTerm *result = new MpsSnd(newChannel, *newExp, *newSucc, *newType);
+  delete newType;
   delete newSucc;
   delete newExp;
   return result;
@@ -4061,8 +4071,12 @@ MpsTerm *MpsRcv::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   // assert mySucc != NULL
   MpsChannel newChannel=myChannel.Subst(source,dest);
+  MpsMsgType *newType=GetMsgType().ESubst(source,dest);
   if (source == myDest) // No substitution is needed in successor
-    return new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc);
+  { MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc, *newType);
+    delete newType;
+    return result;
+  }
 
   MpsTerm *newSucc = NULL;
   string newDest = myDest;
@@ -4078,7 +4092,8 @@ MpsTerm *MpsRcv::ESubst(const string &source, const MpsExp &dest) const // {{{
   }
   else
     newSucc = mySucc->ESubst(source,dest);
-  MpsTerm *result = new MpsRcv(newChannel, newDest, myPid, myMaxPid, *newSucc);
+  MpsTerm *result = new MpsRcv(newChannel, newDest, myPid, myMaxPid, *newSucc, *newType);
+  delete newType;
   delete newSucc;
   return result;
 } // }}}
@@ -4412,9 +4427,11 @@ MpsTerm *MpsEnd::GSubst(const string &source, const MpsGlobalType &dest, const v
 MpsTerm *MpsSnd::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc);
+  MpsMsgType *newType = GetMsgType().GSubst(source,dest,args);
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *newType);
 
   // Clean Up
+  delete newType;
   delete newSucc;
 
   return result;
@@ -4422,9 +4439,11 @@ MpsTerm *MpsSnd::GSubst(const string &source, const MpsGlobalType &dest, const v
 MpsTerm *MpsRcv::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
+  MpsMsgType *newType = GetMsgType().GSubst(source,dest,args);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *newType);
 
   // Clean Up
+  delete newType;
   delete newSucc;
 
   return result;
@@ -4619,9 +4638,11 @@ MpsTerm *MpsEnd::LSubst(const string &source, const MpsLocalType &dest, const ve
 MpsTerm *MpsSnd::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc);
+  MpsMsgType *newType = GetMsgType().LSubst(source,dest,args);
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *newType);
 
   // Clean Up
+  delete newType;
   delete newSucc;
 
   return result;
@@ -4629,9 +4650,11 @@ MpsTerm *MpsSnd::LSubst(const string &source, const MpsLocalType &dest, const ve
 MpsTerm *MpsRcv::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
+  MpsMsgType * newType = GetMsgType().LSubst(source,dest,args);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *newType);
 
   // Clean Up
+  delete newType;
   delete newSucc;
 
   return result;
@@ -5072,12 +5095,12 @@ MpsTerm *MpsEnd::Copy() const // {{{
 MpsTerm *MpsSnd::Copy() const // {{{
 {
   // assert mySucc != NULL
-  return new MpsSnd(myChannel, *myExp, *mySucc);
+  return new MpsSnd(myChannel, *myExp, *mySucc, GetMsgType());
 } // }}}
 MpsTerm *MpsRcv::Copy() const // {{{
 {
   // assert mySucc != NULL
-  return new MpsRcv(myChannel, myDest, myPid, myMaxPid, *mySucc);
+  return new MpsRcv(myChannel, myDest, myPid, myMaxPid, *mySucc, GetMsgType());
 } // }}}
 MpsTerm *MpsSelect::Copy() const // {{{
 {
@@ -5209,7 +5232,7 @@ MpsTerm *MpsSnd::Simplify() const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->Simplify();
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc);
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType());
   delete newSucc;
   return result;
 } // }}}
@@ -5217,7 +5240,7 @@ MpsTerm *MpsRcv::Simplify() const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->Simplify();
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType());
   delete newSucc;
   return result;
 } // }}}
@@ -5731,7 +5754,7 @@ string MpsSnd::ToC() const // {{{
 {
   stringstream result;
   string newName = MpsExp::NewVar("result"); // Create variable name foor the message to send
-  result << myType->ToC() << " *" << newName << ";" << endl; // Declare variable
+  result << GetMsgType().ToC() << " *" << newName << ";" << endl; // Declare variable
   result << myExp->ToC(newName); // Compute message and store in variable
   result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Send(" << newName << ");" << endl; // Send computed value
   result << "delete " << newName << ";" << endl;
@@ -5742,7 +5765,7 @@ string MpsRcv::ToC() const // {{{
 {
   stringstream result;
   string newName = MpsExp::NewVar("var"); // Create variable name foor the mmessagee to send
-  result << myType->ToC() << " " << newName << ";" << endl; // Declare variable
+  result << GetMsgType().ToC() << " " << newName << ";" << endl; // Declare variable
   result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Receive(" << newName << ");" << endl; // Receive value
   result << mySucc->ToC();
   return result.str();
@@ -5762,7 +5785,7 @@ string MpsBranch::ToC() const // {{{
 {
   stringstream result;
   string newName = MpsExp::NewVar("var"); // Create variable name foor the mmessagee to send
-  result << myType->ToC() << " " << newName << ";" << endl; // Declare variable
+  result << "std::string " << newName << ";" << endl; // Declare variable
   result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Receive(" << newName << ");" << endl; // Receive value
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
@@ -5877,6 +5900,7 @@ string MpsAssign::ToC() const // {{{
   result << mySucc->ToC();
   return result.str();
 } // }}}
+
 /* Term specific funtions
  */
 vector<pair<int,int> > MpsDef::GetArgPids() const // {{{
@@ -5891,4 +5915,10 @@ vector<pair<int,int> > MpsDef::GetArgPids() const // {{{
       argPids.push_back(pair<int,int>(0,0));
   }
   return argPids;
+} // }}}
+const MpsMsgType &MpsSnd::GetMsgType() const // {{{
+{ return myType;
+} // }}}
+const MpsMsgType &MpsRcv::GetMsgType() const // {{{
+{ return myType;
 } // }}}

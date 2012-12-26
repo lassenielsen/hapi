@@ -337,7 +337,7 @@ class MpsEnd : public MpsTerm // {{{
 class MpsSnd : public MpsTerm // {{{
 {
   public:
-    MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ);
+    MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ, const MpsMsgType &type);
     virtual ~MpsSnd();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -369,10 +369,13 @@ class MpsSnd : public MpsTerm // {{{
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
 
+    const MpsMsgType &GetMsgType() const;
+
   private:
     MpsChannel myChannel;
     MpsExp *myExp;
     MpsTerm *mySucc;
+    MpsMsgType *myType;
 }; // }}}
 // DOCUMENTATION: MpsRcv {{{
 /*!
@@ -382,7 +385,7 @@ class MpsSnd : public MpsTerm // {{{
 class MpsRcv : public MpsTerm // {{{
 {
   public:
-    MpsRcv(const MpsChannel &channel, const std::string &dest, int pid, int maxpid, const MpsTerm &succ);
+    MpsRcv(const MpsChannel &channel, const std::string &dest, int pid, int maxpid, const MpsTerm &succ, const MpsMsgType &type);
     virtual ~MpsRcv();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -414,12 +417,15 @@ class MpsRcv : public MpsTerm // {{{
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
 
+    const MpsMsgType &GetMsgType() const;
+
   private:
     MpsChannel myChannel;
     std::string myDest;
     int myPid; // Process ID of received session (if it is a sessios, otherwise -1)
     int myMaxPid; // Process count of received session (if it is a sessios, otherwise -1)
     MpsTerm *mySucc;
+    MpsMsgType *myType;
 }; // }}}
 // DOCUMENTATION: MpsSelect {{{
 /*!
