@@ -149,7 +149,7 @@ string MpsFunction::ToC() const // {{{
   }
   // Print arguments
   type=GetTypes().begin();
-  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg,++argpids,++type)
+  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg,++type)
   {
     if (arg!=GetArgs().begin() || GetStateArgs().size()>0)
       ss << ",";
@@ -158,7 +158,7 @@ string MpsFunction::ToC() const // {{{
   ss << ")" << endl
      << "{" << endl
      << "  "
-     << GetBody().ToC("  ");
+     << GetBody().ToC();
   return ss.str();
 } // }}}
 }

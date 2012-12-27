@@ -28,7 +28,7 @@ MpsTerm *MpsTerm::Error(const string &msg) // {{{
 {
   string name=(string)"_ERROR: " + msg;
   vector<MpsExp*> arg;
-  return new MpsCall(name, arg, arg);
+  return new MpsCall(name, arg, arg, vector<MpsMsgType*>(), vector<MpsMsgType*>());
 } // }}}
 
 /* Parsing of MpsTerms from a string
@@ -518,7 +518,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     vector<MpsExp*> state;
     state.clear();
     FindExps(exp->content[1],state);
-    MpsTerm *result = new MpsCall(exp->content[0]->root.content, args, state);
+    MpsTerm *result = new MpsCall(exp->content[0]->root.content, args, state, vector<MpsMsgType*>(), vector<MpsMsgType*>());
     DeleteVector(args);
     DeleteVector(state);
     return result;
@@ -848,7 +848,7 @@ MpsDef::MpsDef(const string &name, const std::vector<std::string> &args, const v
   myBody = body.Copy();
   mySucc = succ.Copy();
 } // }}}
-MpsCall::MpsCall(const string &name, const vector<MpsExp*> &args, const vector<MpsExp*> &state) // {{{
+MpsCall::MpsCall(const string &name, const vector<MpsExp*> &args, const vector<MpsExp*> &state, const vector<MpsMsgType*> &types, const vector<MpsMsgType*> &statetypes) // {{{
 : myName(name)
 {
   myArgs.clear();
@@ -857,6 +857,12 @@ MpsCall::MpsCall(const string &name, const vector<MpsExp*> &args, const vector<M
   myState.clear();
   for (vector<MpsExp*>::const_iterator it=state.begin(); it!=state.end(); ++it)
     myState.push_back((*it)->Copy());
+  myTypes.clear();
+  for (vector<MpsMsgType*>::const_iterator it=types.begin(); it!=types.end(); ++it)
+    myTypes.push_back((*it)->Copy());
+  myStateTypes.clear();
+  for (vector<MpsMsgType*>::const_iterator it=statetypes.begin(); it!=statetypes.end(); ++it)
+    myStateTypes.push_back((*it)->Copy());
 } // }}}
 MpsNu::MpsNu(const string &channel, const MpsTerm &succ, const MpsGlobalType &type) // {{{
 : myChannel(channel)
@@ -936,11 +942,13 @@ MpsEnd::~MpsEnd() // {{{
 } // }}}
 MpsSnd::~MpsSnd() // {{{
 {
+  delete myType;
   delete mySucc;
   delete myExp;
 } // }}}
 MpsRcv::~MpsRcv() // {{{
 {
+  delete myType;
   delete mySucc;
 } // }}}
 MpsSelect::~MpsSelect() // {{{
@@ -975,6 +983,8 @@ MpsCall::~MpsCall() // {{{
 {
   DeleteVector(myArgs);
   DeleteVector(myState);
+  DeleteVector(myTypes);
+  DeleteVector(myStateTypes);
 } // }}}
 MpsNu::~MpsNu() // {{{
 {
@@ -1179,7 +1189,7 @@ inline bool TypeCheckForall(const MpsExp &Theta, const MpsGlobalEnv &Gamma, cons
   MpsLocalType *newType = type->GetSucc()->ERename(type->GetName(),newName);
   // Create new Theta
   MpsExp *newAssertion = type->GetAssertion().Rename(type->GetName(),newName);
-  MpsExp *newTheta=new MpsBinOpExp("and",Theta,*newAssertion);
+  MpsExp *newTheta=new MpsBinOpExp("and",Theta,*newAssertion,MpsBoolMsgType(),MpsBoolMsgType());
   delete newAssertion;
   // Create new Delta
   MpsLocalEnv newDelta = Delta;
@@ -1365,7 +1375,7 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
     }
     else
       newAssertion=typeptr->GetAssertion().Copy();
-    newTheta=new MpsBinOpExp("and",Theta,*newAssertion);
+    newTheta=new MpsBinOpExp("and",Theta,*newAssertion,MpsBoolMsgType(),MpsBoolMsgType());
     delete newAssertion;
   }
   else
@@ -1457,7 +1467,7 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
     map<string,MpsExp*>::const_iterator assertion=typeptr->GetAssertions().find(branch->first);
     if (assertion==typeptr->GetAssertions().end())
       return PrintTypeError((string)"Branch has no assertion: " + branch->first,*this,Theta,Gamma,Delta,Sigma,Omega);
-    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*assertion->second);
+    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Typecheck Branch
     bool brcheck=succ->second->TypeCheck(*newTheta,Gamma,newDelta,Sigma,Omega);
     delete newTheta;
@@ -1700,7 +1710,7 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
       if (assertion==assertions.end())
         return PrintTypeError((string)"Synchronisation type has no assertion for branch: " + branch->first,*this,Theta,Gamma,Delta,Sigma,Omega);
       // FIXME: mandatoryOr
-      MpsExp *tmpOr = new MpsBinOpExp("or",*mandatoryOr,*assertion->second);
+      MpsExp *tmpOr = new MpsBinOpExp("or",*mandatoryOr,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
       delete mandatoryOr;
       mandatoryOr=tmpOr;
       // Check Label Inclusion
@@ -1718,7 +1728,7 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
         if (myAssertion==myAssertions.end())
           return PrintTypeError((string)"Synchronisation process has no assertion for branch: " + branch->first,*this,Theta,Gamma,Delta,Sigma,Omega);
         MpsExp *notAssertion = new MpsUnOpExp("not",*assertion->second);
-        MpsExp *implication = new MpsBinOpExp("or",*notAssertion,*myAssertion->second);
+        MpsExp *implication = new MpsBinOpExp("or",*notAssertion,*myAssertion->second,MpsBoolMsgType(),MpsBoolMsgType());
         delete notAssertion;
         bool checkImplication=implication->ValidExp(hyps);
         delete implication;
@@ -1754,7 +1764,7 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
     if (assertion==assertions.end())
         return PrintTypeError((string)"Synchronisation type has no assertion for branch: " + branch->first,*this,Theta,Gamma,Delta,Sigma,Omega);
     MpsExp *notAssertion = new MpsUnOpExp("not",*myAssertion->second);
-    MpsExp *implication = new MpsBinOpExp("or",*notAssertion,*assertion->second);
+    MpsExp *implication = new MpsBinOpExp("or",*notAssertion,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     delete notAssertion;
     bool checkImplication = implication->ValidExp(hyps);
     delete implication;
@@ -1764,7 +1774,7 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
     MpsLocalEnv newDelta = Delta;
     newDelta[mySession].type = type->second;
     // Make new Theta
-    MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion->second);
+    MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Check Branch
     bool checkBranch=branch->second->TypeCheck(*newTheta,Gamma,newDelta,Sigma,Omega);
     delete newTheta;
@@ -1783,9 +1793,9 @@ bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
   if (!condtypematch)
     return PrintTypeError("Condition not of type Bool",*this,Theta,Gamma,Delta,Sigma,Omega);
   // Make new Thetas
-  MpsExp *trueTheta = new MpsBinOpExp("and",Theta,*myCond);;
+  MpsExp *trueTheta = new MpsBinOpExp("and",Theta,*myCond,MpsBoolMsgType(),MpsBoolMsgType());
   MpsExp *notCond = new MpsUnOpExp("not",*myCond);
-  MpsExp *falseTheta = new MpsBinOpExp("and",Theta,*notCond);
+  MpsExp *falseTheta = new MpsBinOpExp("and",Theta,*notCond,MpsBoolMsgType(),MpsBoolMsgType());
   delete notCond;
   
   bool result = myTrueBranch->TypeCheck(*trueTheta,Gamma,Delta,Sigma,Omega)
@@ -1833,7 +1843,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const
       if (assertion==assertions.end())
         return PrintTypeError((string)"Synchronisation type has no assertion for branch: " + branch->first,*this,Theta,Gamma,Delta,Sigma,Omega);
       // FIXME: mandatoryOr
-      MpsExp *tmpOr = new MpsBinOpExp("or",*mandatoryOr,*assertion->second);
+      MpsExp *tmpOr = new MpsBinOpExp("or",*mandatoryOr,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
       delete mandatoryOr;
       mandatoryOr=tmpOr;
       // Check Label Inclusion
@@ -1848,7 +1858,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const
       {
         // Check Assertion Implication
         MpsExp *notAssertion = new MpsUnOpExp("not",*assertion->second);
-        MpsExp *implication = new MpsBinOpExp("or",*notAssertion,*myBranch->second.assertion);
+        MpsExp *implication = new MpsBinOpExp("or",*notAssertion,*myBranch->second.assertion,MpsBoolMsgType(),MpsBoolMsgType());
         delete notAssertion;
         bool checkImplication=implication->ValidExp(hyps);
         delete implication;
@@ -1890,7 +1900,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const
     if (assertion==assertions.end())
         return PrintTypeError((string)"Synchronisation type has no assertion for branch: " + myBranch->first,*this,Theta,Gamma,Delta,Sigma,Omega);
     MpsExp *notAssertion = new MpsUnOpExp("not",*myBranch->second.assertion);
-    MpsExp *implication = new MpsBinOpExp("or",*notAssertion,*assertion->second);
+    MpsExp *implication = new MpsBinOpExp("or",*notAssertion,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     delete notAssertion;
     bool checkImplication = implication->ValidExp(hyps);
     delete implication;
@@ -1928,7 +1938,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const
     for (int i=0; i<myBranch->second.args.size(); ++i)
       newSigma[myBranch->second.args[i] ] = myBranch->second.types[i]; // Only simple types
     // Make new Theta
-    MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myBranch->second.assertion);
+    MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myBranch->second.assertion,MpsBoolMsgType(),MpsBoolMsgType());
     // Rename args in Theta
     for (map<string,string>::const_iterator tr=renaming.begin(); tr!=renaming.end(); ++tr)
     { MpsExp *tmpTheta=newTheta->Rename(tr->first,tr->second);
@@ -3073,7 +3083,7 @@ MpsTerm *MpsCall::PRename(const string &src, const string &dst) const // {{{
   if (myName != src)
     return Copy();
   else
-    return new MpsCall(dst,myArgs,myState);
+    return new MpsCall(dst,myArgs,myState,myTypes,myStateTypes);
 } // }}}
 MpsTerm *MpsNu::PRename(const string &src, const string &dst) const // {{{
 {
@@ -3304,9 +3314,17 @@ MpsTerm *MpsCall::ERename(const string &src, const string &dst) const // {{{
   vector<MpsExp*> newState;
   for (vector<MpsExp*>::const_iterator it=myState.begin();it!=myState.end();++it)
     newState.push_back((*it)->Rename(src,dst));
-  MpsTerm *result = new MpsCall(myName,newArgs,newState);
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myTypes.begin();it!=myTypes.end();++it)
+    newTypes.push_back((*it)->ERename(src,dst));
+  vector<MpsMsgType*> newStateTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin();it!=myStateTypes.end();++it)
+    newStateTypes.push_back((*it)->ERename(src,dst));
+  MpsTerm *result = new MpsCall(myName,newArgs,newState,newTypes,newStateTypes);
   DeleteVector(newArgs);
   DeleteVector(newState);
+  DeleteVector(newTypes);
+  DeleteVector(newStateTypes);
   return result;
 } // }}}
 MpsTerm *MpsNu::ERename(const string &src, const string &dst) const // {{{
@@ -3801,7 +3819,7 @@ MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<stri
     tmpState.clear();
     for (vector<string>::const_iterator it=myStateArgs.begin(); it!=myStateArgs.end(); ++it)
       tmpState.push_back(new MpsVarExp(*it));
-    MpsTerm *newVar = new MpsCall(newName,tmpArgs,tmpState);
+    MpsTerm *newVar = new MpsCall(newName,tmpArgs,tmpState,myTypes,myStateTypes);
     DeleteVector(tmpArgs);
     DeleteVector(tmpState);
     newSucc = mySucc->PSubst(myName,*newVar,myArgs,GetArgPids(),myStateArgs); // Initialise newSucc
@@ -3925,7 +3943,7 @@ MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<str
     return newTerm;
   }
   else
-    return new MpsCall(myName,myArgs,myState);
+    return new MpsCall(myName,myArgs,myState,myTypes,myStateTypes);
 } // }}}
 MpsTerm *MpsNu::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
 {
@@ -4215,9 +4233,17 @@ MpsTerm *MpsCall::ESubst(const string &source, const MpsExp &dest) const // {{{
   vector<MpsExp*> newState;
   for (vector<MpsExp*>::const_iterator it=myState.begin();it!=myState.end();++it)
     newState.push_back((*it)->Subst(source,dest));
-  MpsTerm *result = new MpsCall(myName,newArgs,newState);
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myTypes.begin();it!=myTypes.end();++it)
+    newTypes.push_back((*it)->ESubst(source,dest));
+  vector<MpsMsgType*> newStateTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin();it!=myStateTypes.end();++it)
+    newStateTypes.push_back((*it)->ESubst(source,dest));
+  MpsTerm *result = new MpsCall(myName,newArgs,newState,newTypes,newStateTypes);
   DeleteVector(newArgs);
   DeleteVector(newState);
+  DeleteVector(newTypes);
+  DeleteVector(newStateTypes);
   return result;
 } // }}}
 MpsTerm *MpsNu::ESubst(const string &source, const MpsExp &dest) const // {{{
@@ -5123,7 +5149,7 @@ MpsTerm *MpsDef::Copy() const // {{{
 MpsTerm *MpsCall::Copy() const // {{{
 {
   // assert mySucc != NULL
-  return new MpsCall(myName, myArgs, myState);
+  return new MpsCall(myName, myArgs, myState, myTypes, myStateTypes);
 } // }}}
 MpsTerm *MpsNu::Copy() const // {{{
 {
@@ -5298,7 +5324,7 @@ MpsTerm *MpsDef::Simplify() const // {{{
 } // }}}
 MpsTerm *MpsCall::Simplify() const // {{{
 {
-  return new MpsCall(myName, myArgs, myState);
+  return new MpsCall(myName, myArgs, myState, myTypes, myStateTypes);
 } // }}}
 MpsTerm *MpsNu::Simplify() const // {{{
 {
@@ -5825,22 +5851,32 @@ string MpsCall::ToC() const // {{{
   stringstream call;
   stringstream postcall;
   call << myName << "(";
-  for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it)
+  vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
+  for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
   {
     if (it != myState.begin())
       call << ", ";
     string newName = MpsExp::NewVar("statearg");
-    precall << type << " *" << newName << ";" << endl
+    if (tit!=myStateTypes.end())
+      precall << (*tit)->ToC();
+    else
+      precall << "Data";
+    precall << " *" << newName << ";" << endl
             << (*it)->ToC(newName);
     call << newName;
     postcall << "delete " << newName << ";" << endl;
   }
-  for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+  tit=myTypes.begin();
+  for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it, ++tit)
   {
     if (it != myArgs.begin() || myState.size()>0)
       precall << ", ";
     string newName = MpsExp::NewVar("arg");
-    precall << type << " *" << newName << ";" << endl
+    if (tit!=myTypes.end())
+      precall << (*tit)->ToC();
+    else
+      precall << "Data";
+    precall << " *" << newName << ";" << endl
             << (*it)->ToC(newName);
     call << newName;
     postcall << "delete " << newName << ";" << endl;
@@ -5917,8 +5953,16 @@ vector<pair<int,int> > MpsDef::GetArgPids() const // {{{
   return argPids;
 } // }}}
 const MpsMsgType &MpsSnd::GetMsgType() const // {{{
-{ return myType;
+{ return *myType;
 } // }}}
 const MpsMsgType &MpsRcv::GetMsgType() const // {{{
-{ return myType;
+{ return *myType;
+} // }}}
+void MpsSnd::SetMsgType(const MpsMsgType &type) // {{{
+{ delete myType;
+  myType=type.Copy();
+} // }}}
+void MpsRcv::SetMsgType(const MpsMsgType &type) // {{{
+{ delete myType;
+  myType=type.Copy();
 } // }}}

@@ -650,9 +650,9 @@ bool ERROR_GLOBALEQ(const MpsExp &Theta, const MpsGlobalType &lhs, const MpsGlob
 bool CompareAssertions(const MpsExp &Theta, const MpsExp &lhs, const MpsExp &rhs) // {{{
 { MpsExp *notLhs = new MpsUnOpExp("not",lhs);
   MpsExp *notRhs = new MpsUnOpExp("not",rhs);
-  MpsExp *check1 = new MpsBinOpExp("or",*notLhs,rhs);
-  MpsExp *check2 = new MpsBinOpExp("or",*notRhs,lhs);
-  MpsExp *check = new MpsBinOpExp("and",*check1,*check2);
+  MpsExp *check1 = new MpsBinOpExp("or",*notLhs,rhs,MpsBoolMsgType(),MpsBoolMsgType());
+  MpsExp *check2 = new MpsBinOpExp("or",*notRhs,lhs,MpsBoolMsgType(),MpsBoolMsgType());
+  MpsExp *check = new MpsBinOpExp("and",*check1,*check2,MpsBoolMsgType(),MpsBoolMsgType());
   delete notLhs;
   delete notRhs;
   delete check1;
@@ -688,7 +688,7 @@ bool MpsGlobalMsgType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) cons
     return ERROR_GLOBALEQ(Theta,*this,rhs,"Assertion mismatch");
   }
   delete rhsAssertion;
-  MpsExp *newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion);
+  MpsExp *newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion,MpsBoolMsgType(),MpsBoolMsgType());
   delete lhsAssertion;
   // Rename to common name in Succ
   MpsGlobalType *lhsSucc=mySucc->ERename(myId,newId);
@@ -729,7 +729,7 @@ bool MpsGlobalBranchType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) c
     if (lhsHasA)
     { if (not CompareAssertions(Theta,*lhsAssertion->second,*rhsAssertion->second))
         return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"Assertion not equivalent for label: " + it->first);
-      newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion->second);
+      newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     }
     else
       newTheta=Theta.Copy();
@@ -842,7 +842,7 @@ bool MpsGlobalSyncType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) con
     if (lhsHasA)
     { if (not CompareAssertions(Theta,*lhsAssertion->second,*rhsAssertion->second))
         return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"Assertion not equivalent for label: " + it->first);
-      newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion->second);
+      newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     }
     else
       newTheta=Theta.Copy();
@@ -2187,7 +2187,7 @@ bool CompareForall(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalT
     }
     MpsLocalType *lhsSucc=lhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
     MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(rhsptr->GetName(),newName);
-    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*lhsAssertion);
+    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*lhsAssertion,MpsBoolMsgType(),MpsBoolMsgType());
     delete lhsAssertion;
     bool result = CompareForall(*newTheta,*lhsSucc,*rhsSucc);
     delete lhsSucc;
@@ -2200,7 +2200,7 @@ bool CompareForall(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalT
     string newName = MpsExp::NewVar(lhsptr->GetName());
     MpsLocalType *lhsSucc=lhsptr->GetSucc()->ERename(lhsptr->GetName(),newName);
     MpsExp *newAssertion = lhsptr->GetAssertion().Rename(lhsptr->GetName(),newName);
-    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*newAssertion);
+    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*newAssertion,MpsBoolMsgType(),MpsBoolMsgType());
     delete newAssertion;
     bool result = CompareForall(*newTheta,*lhsSucc,rhs);
     delete lhsSucc;
@@ -2212,7 +2212,7 @@ bool CompareForall(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalT
     string newName = MpsExp::NewVar(rhsptr->GetName());
     MpsLocalType *rhsSucc=rhsptr->GetSucc()->ERename(rhsptr->GetName(),newName);
     MpsExp *newAssertion = rhsptr->GetAssertion().Rename(rhsptr->GetName(),newName);
-    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*newAssertion);
+    MpsExp *newTheta = new MpsBinOpExp("and",Theta,*newAssertion,MpsBoolMsgType(),MpsBoolMsgType());
     delete newAssertion;
     bool result = CompareForall(*newTheta,lhs,*rhsSucc);
     delete rhsSucc;
@@ -2242,7 +2242,7 @@ bool MpsLocalSendType::Equal(const MpsExp &Theta,const MpsLocalType &rhs) const 
     MpsExp *lhsAssertion=myAssertion->Rename(myId,newId);
     MpsExp *rhsAssertion=rhsptr->myAssertion->Rename(rhsptr->myId,newId);
     bool checkAssercion = CompareAssertions(Theta,*lhsAssertion,*rhsAssertion);
-    MpsExp *newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion);
+    MpsExp *newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion,MpsBoolMsgType(),MpsBoolMsgType());
     delete lhsAssertion;
     delete rhsAssertion;
     if (not checkAssercion)
@@ -2264,7 +2264,7 @@ bool MpsLocalSendType::Equal(const MpsExp &Theta,const MpsLocalType &rhs) const 
     if (myAssertionType)
     { if ( not CompareAssertions(Theta,*myAssertion,*rhsptr->myAssertion))
         return ERROR_LOCALEQ(Theta,*this,rhs,"Different assertions");
-      MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion);
+      MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion,MpsBoolMsgType(),MpsBoolMsgType());
       bool checkSucc=mySucc->Equal(*newTheta,*rhsptr->mySucc);
       delete newTheta;
       if (not checkSucc)
@@ -2297,7 +2297,7 @@ bool MpsLocalRcvType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const 
     MpsExp *lhsAssertion=myAssertion->Rename(myId,newId);
     MpsExp *rhsAssertion=rhsptr->myAssertion->Rename(rhsptr->myId,newId);
     bool checkAssercion = CompareAssertions(Theta,*lhsAssertion,*rhsAssertion);
-    MpsExp *newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion);
+    MpsExp *newTheta=new MpsBinOpExp("and",Theta,*lhsAssertion,MpsBoolMsgType(),MpsBoolMsgType());
     delete lhsAssertion;
     delete rhsAssertion;
     if (not checkAssercion)
@@ -2318,7 +2318,7 @@ bool MpsLocalRcvType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const 
     if (myAssertionType)
     { if ( not CompareAssertions(Theta,*myAssertion,*rhsptr->myAssertion))
         return ERROR_LOCALEQ(Theta,*this,rhs,"");
-      MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion);
+      MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion,MpsBoolMsgType(),MpsBoolMsgType());
       bool checkSucc=mySucc->Equal(*newTheta,*rhsptr->mySucc);
       delete newTheta;
       if (not checkSucc)
@@ -2375,7 +2375,7 @@ bool MpsLocalSelectType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) con
     if (assertion==myAssertions.end())
       newTheta=Theta.Copy();
     else
-      newTheta=new MpsBinOpExp("and",Theta,*assertion->second);
+      newTheta=new MpsBinOpExp("and",Theta,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     bool checkSucc=it->second->Equal(*newTheta,*it2->second);
     delete newTheta;
     if (not checkSucc)
@@ -2430,7 +2430,7 @@ bool MpsLocalBranchType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) con
     if (assertion==myAssertions.end())
       newTheta=Theta.Copy();
     else
-      newTheta=new MpsBinOpExp("and",Theta,*assertion->second);
+      newTheta=new MpsBinOpExp("and",Theta,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     bool checkSucc=it->second->Equal(*newTheta,*it2->second);
     delete newTheta;
     if (not checkSucc)
@@ -2560,7 +2560,7 @@ bool MpsLocalSyncType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const
     if (assertion==myAssertions.end())
       newTheta=Theta.Copy();
     else
-      newTheta=new MpsBinOpExp("and",Theta,*assertion->second);
+      newTheta=new MpsBinOpExp("and",Theta,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     bool checkSucc=it->second->Equal(*newTheta,*it2->second);
     delete newTheta;
     if (not checkSucc)
@@ -5184,7 +5184,7 @@ string MpsBoolMsgType::ToC() const // {{{
 } // }}}
 string MpsTupleMsgType::ToC() const // {{{
 {
-  string result="struct {"
+  string result="struct {";
   int i=0;
   for (vector<MpsMsgType*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
   {
@@ -5193,11 +5193,11 @@ string MpsTupleMsgType::ToC() const // {{{
   result += "}";
   return result;
 } // }}}
-string MpsChannelMsgType::ToC(const string &indent) const // {{{
+string MpsChannelMsgType::ToC() const // {{{
 {
   return "libpi::Channel";
 } // }}}
-string MpsDelegateMsgType::ToString(const string &indent) const // {{{
+string MpsDelegateMsgType::ToC() const // {{{
 {
   return "libpi::Session";
 } // }}}

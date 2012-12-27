@@ -370,6 +370,7 @@ class MpsSnd : public MpsTerm // {{{
     std::string ToC() const;
 
     const MpsMsgType &GetMsgType() const;
+    void SetMsgType(const MpsMsgType &type);
 
   private:
     MpsChannel myChannel;
@@ -418,6 +419,7 @@ class MpsRcv : public MpsTerm // {{{
     std::string ToC() const;
 
     const MpsMsgType &GetMsgType() const;
+    void SetMsgType(const MpsMsgType &type);
 
   private:
     MpsChannel myChannel;
@@ -627,7 +629,7 @@ class MpsDef : public MpsTerm // {{{
 class MpsCall : public MpsTerm // {{{
 {
   public:
-    MpsCall(const std::string &name, const std::vector<MpsExp*> &args, const std::vector<MpsExp*> &state);
+    MpsCall(const std::string &name, const std::vector<MpsExp*> &args, const std::vector<MpsExp*> &state, const std::vector<MpsMsgType*> &types, const std::vector<MpsMsgType*> &statetypes);
     virtual ~MpsCall();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -663,6 +665,8 @@ class MpsCall : public MpsTerm // {{{
     std::string myName;
     std::vector<MpsExp*> myState;
     std::vector<MpsExp*> myArgs;
+    std::vector<MpsMsgType*> myTypes;
+    std::vector<MpsMsgType*> myStateTypes;
 }; // }}}
 // DOCUMENTATION: MpsNu {{{
 /*!

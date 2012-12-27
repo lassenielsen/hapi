@@ -245,7 +245,7 @@ class MpsUnOpExp : public MpsExp // {{{
 class MpsBinOpExp : public MpsExp // {{{
 {
   public:
-    MpsBinOpExp(const std::string &name, const MpsExp &left, const MpsExp &right);
+    MpsBinOpExp(const std::string &name, const MpsExp &left, const MpsExp &right, const MpsMsgType &leftType, const MpsMsgType &rightType);
     virtual ~MpsBinOpExp();
     MpsBinOpExp *Copy() const;
     MpsExp *Eval() const;
@@ -270,7 +270,8 @@ class MpsBinOpExp : public MpsExp // {{{
     std::string myName; // One of: +,-,*,/,and,or,=,<=,&
     MpsExp *myLeft;
     MpsExp *myRight;
-
+    MpsMsgType *myLeftType;
+    MpsMsgType *myRightType;
 }; // }}}
 class MpsTupleExp : public MpsExp // {{{
 {

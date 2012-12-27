@@ -93,7 +93,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   {
     MpsExp *left = MpsExp::Create(exp->content[0]);
     MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("+",*left, *right);
+    MpsExp *result = new MpsBinOpExp("+",*left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
@@ -102,7 +102,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   {
     MpsExp *left = MpsExp::Create(exp->content[0]);
     MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("-",*left, *right);
+    MpsExp *result = new MpsBinOpExp("-",*left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
@@ -111,7 +111,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   {
     MpsExp *left = MpsExp::Create(exp->content[0]);
     MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("*",*left, *right);
+    MpsExp *result = new MpsBinOpExp("*",*left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
@@ -120,7 +120,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   {
     MpsExp *left = MpsExp::Create(exp->content[0]);
     MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("/",*left, *right);
+    MpsExp *result = new MpsBinOpExp("/",*left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
@@ -129,7 +129,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   {
     MpsExp *left = MpsExp::Create(exp->content[0]);
     MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("and",*left, *right);
+    MpsExp *result = new MpsBinOpExp("and", *left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
@@ -138,7 +138,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   {
     MpsExp *left = MpsExp::Create(exp->content[0]);
     MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("or",*left, *right);
+    MpsExp *result = new MpsBinOpExp("or",*left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
@@ -147,7 +147,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   {
     MpsExp *left = MpsExp::Create(exp->content[0]);
     MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("=",*left, *right);
+    MpsExp *result = new MpsBinOpExp("=", *left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
@@ -156,7 +156,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   {
     MpsExp *left = MpsExp::Create(exp->content[0]);
     MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("<=",*left, *right);
+    MpsExp *result = new MpsBinOpExp("<=", *left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
@@ -187,7 +187,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
     mpz_init_set_str(val,exp->content[2]->root.content.c_str(),10);
     MpsExp *right=new MpsIntVal(val);
     mpz_clear(val);
-    MpsExp *result = new MpsBinOpExp("&",*left,*right);
+    MpsExp *result = new MpsBinOpExp("&", *left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
@@ -269,11 +269,13 @@ MpsUnOpExp::MpsUnOpExp(const string &name, const MpsExp &right) // {{{
   myName = name;
   myRight = right.Copy();
 } // }}}
-MpsBinOpExp::MpsBinOpExp(const string &name, const MpsExp &left, const MpsExp &right) // {{{
+MpsBinOpExp::MpsBinOpExp(const string &name, const MpsExp &left, const MpsExp &right, const MpsMsgType &leftType, const MpsMsgType &rightType) // {{{
 {
   myName = name;
   myLeft = left.Copy();
   myRight = right.Copy();
+  myLeftType = leftType.Copy();
+  myRightType = rightType.Copy();
 } // }}}
 MpsTupleExp::MpsTupleExp(const vector<MpsExp*> &elements) // {{{
 {
@@ -314,6 +316,8 @@ MpsBinOpExp::~MpsBinOpExp() // {{{
 {
   delete myLeft;
   delete myRight;
+  delete myLeftType;
+  delete myRightType;
 } // }}}
 MpsTupleExp::~MpsTupleExp() // {{{
 {
@@ -352,7 +356,7 @@ MpsUnOpExp *MpsUnOpExp::Copy() const // {{{
 } // }}}
 MpsBinOpExp *MpsBinOpExp::Copy() const // {{{
 {
-  return new MpsBinOpExp(myName, *myLeft, *myRight);
+  return new MpsBinOpExp(myName, *myLeft, *myRight, *myLeftType, *myRightType);
 } // }}}
 MpsTupleExp *MpsTupleExp::Copy() const // {{{
 {
@@ -499,7 +503,7 @@ MpsExp *MpsBinOpExp::Eval() const// {{{
     return result;
   } // }}}
   else // {{{
-  { MpsExp *result = new MpsBinOpExp(myName,*leftVal,*rightVal);
+  { MpsExp *result = new MpsBinOpExp(myName,*leftVal,*rightVal, *myLeftType, *myRightType);
     delete leftVal;
     delete rightVal;
     return result;
@@ -879,9 +883,13 @@ MpsBinOpExp *MpsBinOpExp::Rename(const string &src, const string &dst) const // 
 {
   MpsExp *newLeft = myLeft->Rename(src,dst);
   MpsExp *newRight = myRight->Rename(src,dst);
-  MpsBinOpExp *result = new MpsBinOpExp(myName, *newLeft, *newRight);
+  MpsMsgType *newLeftType = myLeftType->ERename(src,dst);
+  MpsMsgType *newRightType = myRightType->ERename(src,dst);
+  MpsBinOpExp *result = new MpsBinOpExp(myName, *newLeft, *newRight, *newLeftType, *newRightType);
   delete newLeft;
   delete newRight;
+  delete newLeftType;
+  delete newRightType;
   return result;
 } // }}}
 MpsTupleExp *MpsTupleExp::Rename(const string &src, const string &dst) const // {{{
@@ -939,9 +947,13 @@ MpsBinOpExp *MpsBinOpExp::Subst(const string &source, const MpsExp &dest) const/
 {
   MpsExp *newLeft = myLeft->Subst(source,dest);
   MpsExp *newRight = myRight->Subst(source,dest);
-  MpsBinOpExp *result = new MpsBinOpExp(myName, *newLeft, *newRight);
+  MpsMsgType *newLeftType = myLeftType->ESubst(source,dest);
+  MpsMsgType *newRightType = myRightType->ESubst(source,dest);
+  MpsBinOpExp *result = new MpsBinOpExp(myName, *newLeft, *newRight, *newLeftType, *newRightType);
   delete newLeft;
   delete newRight;
+  delete newLeftType;
+  delete newRightType;
   return result;
 } // }}}
 MpsTupleExp *MpsTupleExp::Subst(const string &source, const MpsExp &dest) const// {{{
@@ -1078,8 +1090,8 @@ string MpsBinOpExp::ToC(const string &dest) const // {{{
   if (myName=="+")
   { string leftName = MpsExp::NewVar("plusexp");
     string rightName = MpsExp::NewVar("plusexp");
-    result << myType->ToC() << " " << leftName << ";" << endl
-           << myType->ToC() << " " << rightName << ";" << endl;
+    result << myLeftType->ToC() << " " << leftName << ";" << endl
+           << myRightType->ToC() << " " << rightName << ";" << endl;
     result << myLeft->ToC(leftName);
     result << myRight->ToC(leftName);
     result << dest << "=" << leftName << "+" << rightName << ";" << endl;
@@ -1088,13 +1100,14 @@ string MpsBinOpExp::ToC(const string &dest) const // {{{
   else if (myName=="-")
   { string leftName = MpsExp::NewVar("plusexp");
     string rightName = MpsExp::NewVar("plusexp");
-    result << myType->ToC() << " " << leftName << ";" << endl
-           << myType->ToC() << " " << rightName << ";" << endl;
+    result << myLeftType->ToC() << " " << leftName << ";" << endl
+           << myRightType->ToC() << " " << rightName << ";" << endl;
     result << myLeft->ToC(leftName);
     result << myRight->ToC(leftName);
-    result << dest << "=" << leftName << "+" << rightName << ";" << endl;
+    result << dest << "=" << leftName << "-" << rightName << ";" << endl;
     return result.str();
   }
+  // FIXME: More operators
   return (string)"(" + myLeft->ToString() + " " + myName + " " + myRight->ToString() + ")";
 } // }}}
 string MpsTupleExp::ToC(const string &dest) const // {{{
@@ -1499,7 +1512,7 @@ bool MpsExp::ValidExp_CNF(vector<const MpsExp*> hyps) const // {{{
   for (int i=0; i<hyps.size(); ++i)
   { MpsExp *tmp=fullexp;
     MpsUnOpExp neg("not",*hyps[i]);
-    fullexp=new MpsBinOpExp("or",*fullexp,neg);
+    fullexp=new MpsBinOpExp("or",*fullexp,neg,MpsMsgNoType(),MpsMsgNoType());
     delete tmp;
   }
   // fullexp = (...(e or not hyp1) or ... or not hypn)
@@ -1545,7 +1558,7 @@ MpsExp *MpsBinOpExp::Negate() const// {{{
 { if (GetOp()=="and")
   { MpsExp *newLeft = myLeft->Negate();
     MpsExp *newRight = myRight->Negate();
-    MpsExp *result = new MpsBinOpExp("or",*newLeft,*newRight);
+    MpsExp *result = new MpsBinOpExp("or",*newLeft,*newRight,*myLeftType, *myRightType);
     delete newLeft;
     delete newRight;
     return result;
@@ -1553,7 +1566,7 @@ MpsExp *MpsBinOpExp::Negate() const// {{{
   else if (GetOp()=="or")
   { MpsExp *newLeft = myLeft->Negate();
     MpsExp *newRight = myRight->Negate();
-    MpsExp *result = new MpsBinOpExp("and",*newLeft,*newRight);
+    MpsExp *result = new MpsBinOpExp("and",*newLeft,*newRight,*myLeftType,*myRightType);
     delete newLeft;
     delete newRight;
     return result;
@@ -1561,14 +1574,14 @@ MpsExp *MpsBinOpExp::Negate() const// {{{
   else if (GetOp()=="<=")
   { mpz_t one;
     mpz_init_set_str(one,"1",10);
-    MpsExp *newRight = new MpsBinOpExp("+",*myRight,MpsIntVal(one));
+    MpsExp *newRight = new MpsBinOpExp("+",*myRight,MpsIntVal(one),*myRightType,MpsIntMsgType());
     mpz_clear(one);
-    MpsExp *result = new MpsBinOpExp("and",*myLeft,*newRight);
+    MpsExp *result = new MpsBinOpExp("and",*myLeft,*newRight,*myLeftType,*myRightType);
     delete newRight;
     return result;
   }
   else if (GetOp()=="=")
-  { MpsExp *result = new MpsBinOpExp("!=",*myLeft,*myRight);
+  { MpsExp *result = new MpsBinOpExp("!=",*myLeft,*myRight,*myLeftType,*myRightType);
     return result;
   }
   else
@@ -1621,7 +1634,7 @@ MpsExp *MpsBinOpExp::MakeCNF() const// {{{
 { if (GetOp()=="and")
   { MpsExp *newLeft = myLeft->MakeCNF();
     MpsExp *newRight = myRight->MakeCNF();
-    MpsExp *result = new MpsBinOpExp("and",*newLeft,*newRight);
+    MpsExp *result = new MpsBinOpExp("and",*newLeft,*newRight,*myLeftType,*myRightType);
     delete newLeft;
     delete newRight;
     return result;
@@ -1633,15 +1646,15 @@ MpsExp *MpsBinOpExp::MakeCNF() const// {{{
     MpsBinOpExp *opRight = dynamic_cast<MpsBinOpExp*>(newRight);
     if (opLeft!=NULL)
     { if (opLeft->GetOp()=="and") // (e1 and e2) or e3
-      { MpsExp *tmpLeft=new MpsBinOpExp("or",opLeft->GetLeft(),*newRight); // e1 or e3
+      { MpsExp *tmpLeft=new MpsBinOpExp("or",opLeft->GetLeft(),*newRight,*myLeftType,*myRightType); // e1 or e3
         MpsExp *cnfLeft=tmpLeft->MakeCNF();
         delete tmpLeft;
-        MpsExp *tmpRight=new MpsBinOpExp("or",opLeft->GetRight(),*newRight); // e2 or e3
+        MpsExp *tmpRight=new MpsBinOpExp("or",opLeft->GetRight(),*newRight,*myLeftType,*myRightType); // e2 or e3
         MpsExp *cnfRight=tmpRight->MakeCNF();
         delete tmpRight;
         delete newLeft;
         delete newRight;
-        MpsExp *result=new MpsBinOpExp("and",*cnfLeft, *cnfRight);
+        MpsExp *result=new MpsBinOpExp("and",*cnfLeft, *cnfRight,*myLeftType,*myRightType);
         delete cnfLeft;
         delete cnfRight;
         return result;
@@ -1656,15 +1669,15 @@ MpsExp *MpsBinOpExp::MakeCNF() const// {{{
     }
     if (opRight!=NULL)
     { if (opRight->GetOp()=="and") // e1 or (e2 and e3)
-      { MpsExp *tmpLeft=new MpsBinOpExp("or",*newLeft,opRight->GetLeft()); // e1 or e2
+      { MpsExp *tmpLeft=new MpsBinOpExp("or",*newLeft,opRight->GetLeft(),*myLeftType,*myRightType); // e1 or e2
         MpsExp *cnfLeft=tmpLeft->MakeCNF();
         delete tmpLeft;
-        MpsExp *tmpRight=new MpsBinOpExp("or",*newLeft,opRight->GetRight()); // e1 or e3
+        MpsExp *tmpRight=new MpsBinOpExp("or",*newLeft,opRight->GetRight(),*myLeftType,*myRightType); // e1 or e3
         MpsExp *cnfRight=tmpRight->MakeCNF();
         delete tmpRight;
         delete newLeft;
         delete newRight;
-        MpsExp *result=new MpsBinOpExp("and",*cnfLeft, *cnfRight);
+        MpsExp *result=new MpsBinOpExp("and",*cnfLeft, *cnfRight, *myLeftType,*myRightType);
         delete cnfLeft;
         delete cnfRight;
         return result;
@@ -1678,7 +1691,7 @@ MpsExp *MpsBinOpExp::MakeCNF() const// {{{
       }
     }
     // Otherwise just combine left and right side
-    MpsExp *result = new MpsBinOpExp("or",*newLeft,*newRight);
+    MpsExp *result = new MpsBinOpExp("or",*newLeft,*newRight,*myLeftType,*myRightType);
     delete newLeft;
     delete newRight;
     return result;
@@ -1731,7 +1744,7 @@ MpsExp *MpsBinOpExp::MakeNNF(bool negate) const// {{{
 { if (GetOp()=="and")
   { MpsExp *newLeft = myLeft->MakeNNF(negate);
     MpsExp *newRight = myRight->MakeNNF(negate);
-    MpsExp *result = new MpsBinOpExp(negate?"or":"and",*newLeft,*newRight);
+    MpsExp *result = new MpsBinOpExp(negate?"or":"and",*newLeft,*newRight,*myLeftType,*myRightType);
     delete newLeft;
     delete newRight;
     return result;
@@ -1739,7 +1752,7 @@ MpsExp *MpsBinOpExp::MakeNNF(bool negate) const// {{{
   else if (GetOp()=="or")
   { MpsExp *newLeft = myLeft->MakeNNF(negate);
     MpsExp *newRight = myRight->MakeNNF(negate);
-    MpsExp *result = new MpsBinOpExp(negate?"and":"or",*newLeft,*newRight);
+    MpsExp *result = new MpsBinOpExp(negate?"and":"or",*newLeft,*newRight,*myLeftType,*myRightType);
     delete newLeft;
     delete newRight;
     return result;
