@@ -22,7 +22,7 @@ std::string DefEnvToString(const MpsFunctionEnv &env) // {{{
 std::string DefEnvToC(const MpsFunctionEnv &env) // {{{
 {
   stringstream ss;
-  ss << "// Procedure declerations" << endl;
+  ss << "/* Procedure declerations */" << endl;
   for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
   {
     ss << def->ToC();

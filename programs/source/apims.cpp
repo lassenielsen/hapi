@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 //  else
 //    (*out) << "************** NO TYPE CHECKEING **************" << endl;
   if (cfgCompile)
-    (*out) << current->Compile() << endl;
+    (*out) << current->MakeC() << endl;
   if (cfgEval)
   { // Apply semantics repeatedly (evaluate)
     MpsTerm *next = current;

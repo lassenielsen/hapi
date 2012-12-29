@@ -1263,6 +1263,8 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
   bool result = mySucc->TypeCheck(Theta,Gamma,newDelta,Sigma,Omega);
   // Clean Up
   delete newType;
+  // Store message type in term
+  SetMsgType(*(typeptr->GetMsgType()));
   return result;
 } // }}}
 bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma, const MpsProcEnv &Omega) // Use rules Rcv and Srec {{{
@@ -1394,6 +1396,8 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
   else
     delete newType;
 
+  // Store message type in term
+  SetMsgType(*(typeptr->GetMsgType()));
   return result;
 } // }}}
 bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma, const MpsProcEnv &Omega) // Use rule Sel {{{
@@ -2006,7 +2010,7 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
   return result;
 } // }}}
 
-/* Compile to C code
+/* Compile to C++ code
  */
 int _compile_id;
 string Compile_NewVar(string base) // {{{
@@ -5531,6 +5535,11 @@ string MpsNu::ToString(string indent) const // {{{
   string newIndent = indent + "  ";
   return (string)"(nu " + myChannel + ":" + myType->ToString(typeIndent) + ")\n" + newIndent + mySucc->ToString(newIndent);
 } // }}}
+string MpsLink::ToString(string indent) const // {{{
+{
+  return (string)"link(" + int2string(myMaxpid) + "," + myChannel + "," + mySession + "," + int2string(myPid) + ");\n"
+       + indent + mySucc->ToString(indent);
+} // }}}
 string MpsSync::ToString(string indent) const // {{{
 {
   string newIndent = indent + "    ";
@@ -5772,38 +5781,63 @@ string MpsAssign::ToTex(int indent, int sw) const // {{{
 
 /* Make executable C++ code for processes
  */
+string MakeC_Name(const string &name) // {{{
+{
+  return stringreplace(name,"~","__SIM__");
+} // }}}
+string MpsTerm::MakeC() const // {{{
+{ _compile_id=1;
+  MpsFunctionEnv defs;
+  // FIXME: Move definitions to global env
+  return (string)"#include <unistd.h>\n"
+       + "#include <vector>\n"
+       + "#include <libpi/session_mq.hpp>\n"
+       + "using namespace std;\n"
+       + "using namespace libpi;\n\n"
+       + DefEnvToC(defs)
+       + "\n\n/* Main process */\nint main()\n{\n  "
+       + ToC()
+       + "}";
+} // }}}
 string MpsEnd::ToC() const // {{{
 {
-  return "return;\n";
+  return "  return 0;\n";
 } // }}}
 string MpsSnd::ToC() const // {{{
 {
   stringstream result;
-  string newName = MpsExp::NewVar("result"); // Create variable name foor the message to send
-  result << GetMsgType().ToC() << " *" << newName << ";" << endl; // Declare variable
+  // Create variable name foor the message to send
+  string newName = MakeC_Name(MpsExp::NewVar("send"));
+  string msgName = MakeC_Name(MpsExp::NewVar("send"));
+  // Declare variable
+  result << "  { " << GetMsgType().ToC() << " " << newName << ";" << endl;
   result << myExp->ToC(newName); // Compute message and store in variable
-  result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Send(" << newName << ");" << endl; // Send computed value
-  result << "delete " << newName << ";" << endl;
+  result << "    Message " << " " << msgName << "(" << newName << ");" << endl;
+  result << "    " << MakeC_Name(myChannel.GetName()) << ".Send(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl; // Send computed value
+  result << "  }" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}
 string MpsRcv::ToC() const // {{{
 {
   stringstream result;
-  string newName = MpsExp::NewVar("var"); // Create variable name foor the mmessagee to send
-  result << GetMsgType().ToC() << " " << newName << ";" << endl; // Declare variable
-  result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Receive(" << newName << ");" << endl; // Receive value
+  string newName = MakeC_Name(MpsExp::NewVar("receive")); // Create variable name foor the mmessagee to send
+  string msgName = MakeC_Name(MpsExp::NewVar("receive")); // Create variable name foor the mmessagee to send
+  result << "  " << GetMsgType().ToC() << " " << newName << ";" << endl; // Declare variable
+  result << "  { Message " << msgName << ";" << endl; // Declare message variable
+  result << "    " << MakeC_Name(myChannel.GetName()) << ".Receive(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl; // Receive value
+  result << "    " << newName << "=(" << GetMsgType().ToC() << ")" << msgName << ";" << endl;
+  result << "  }" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}
 string MpsSelect::ToC() const // {{{
 {
   stringstream result;
-  string newName = MpsExp::NewVar("choice"); // Create variable name foor the mmessagee to send
-  result << "Message *" << newName << ";" << endl; // Declare variable
-  result << newName << "->AddData(\"" << myLabel << "\"," << int2string(myLabel.size()+1) << ");" << endl; // Declare variable
-  result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Send(*" << newName << ");" << endl; // Send label
-  result << "delete " << newName << ";" << endl;
+  string newName = MakeC_Name(MpsExp::NewVar("select")); // Create variable name foor the mmessagee to send
+  result << "{" << endl
+         << "string " << newName << "=\"" << myLabel << "\";" << endl
+         << MakeC_Name(myChannel.GetName()) << ".Send(" << int2string(myChannel.GetIndex()-1) << "," << newName << ");" << endl; // Send label
   result << mySucc->ToC();
   return result.str();
 } // }}}
@@ -5812,7 +5846,7 @@ string MpsBranch::ToC() const // {{{
   stringstream result;
   string newName = MpsExp::NewVar("var"); // Create variable name foor the mmessagee to send
   result << "std::string " << newName << ";" << endl; // Declare variable
-  result << myChannel.GetName() << "[" << int2string(myChannel.GetIndex()) << "]->Receive(" << newName << ");" << endl; // Receive value
+  result << myChannel.GetName() << ".Receive(" << int2string(myChannel.GetIndex()-1) << ", " << newName << ");" << endl; // Receive value
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
@@ -5828,17 +5862,18 @@ string MpsBranch::ToC() const // {{{
 string MpsPar::ToC() const // {{{
 {
   stringstream result;
-  string newName = MpsExp::NewVar("fork"); // Create variable name foor the mmessagee to send
-  result << "int " << newName << "=fork();" << endl
-         << "if (" << newName << ">0)" << endl
-         << "{" << endl
+  string newName = MakeC_Name(MpsExp::NewVar("fork")); // Create variable name foor the mmessagee to send
+  result << "  int " << newName << "=fork();" << endl
+         << "  if (" << newName << ">0)" << endl
+         << "  {" << endl
          <<  myLeft->ToC()
-         << "}" << endl
-         << "else if (" << newName << "==0)" << endl
-         << "{" << endl
+         << "  }" << endl
+         << "  else if (" << newName << "==0)" << endl
+         << "  {" << endl
          <<  myRight->ToC()
-         << "}" << endl
-         << "else throw (string)\"Error during fork!\";" << endl;
+         << "  }" << endl
+         << "else throw (string)\"Error during fork!\";" << endl
+         << "return 0;" << endl;
   return result.str();
 } // }}}
 string MpsDef::ToC() const // {{{
@@ -5861,34 +5896,33 @@ string MpsCall::ToC() const // {{{
       precall << (*tit)->ToC();
     else
       precall << "Data";
-    precall << " *" << newName << ";" << endl
+    precall << " " << newName << ";" << endl
             << (*it)->ToC(newName);
     call << newName;
-    postcall << "delete " << newName << ";" << endl;
   }
   tit=myTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it, ++tit)
   {
     if (it != myArgs.begin() || myState.size()>0)
-      precall << ", ";
+      call << ", ";
     string newName = MpsExp::NewVar("arg");
     if (tit!=myTypes.end())
       precall << (*tit)->ToC();
     else
       precall << "Data";
-    precall << " *" << newName << ";" << endl
+    precall << " " << newName << ";" << endl
             << (*it)->ToC(newName);
     call << newName;
-    postcall << "delete " << newName << ";" << endl;
   }
   call << ");" << endl;
+  postcall << "return 0;" << endl;
   return precall.str() + call.str() + postcall.str();
 } // }}}
 string MpsNu::ToC() const // {{{
 {
   stringstream result;
   result << "vector<Channel_MQ> " << myChannel << ";" << endl;
-  for (int i=0;i<myType->GetMaxPid();++i)
+  for (int i=1;i<myType->GetMaxPid();++i)
     result << myChannel << ".push_back(Channel_MQ());" << endl;
   result << mySucc->ToC();
   return result.str();
@@ -5896,7 +5930,7 @@ string MpsNu::ToC() const // {{{
 string MpsLink::ToC() const // {{{
 {
   stringstream result;
-  result << "Session_MQ(" << myChannel << ", " << int2string(myPid) << ", " << int2string(myMaxpid) << ");" << endl;
+  result << "Session_MQ " << mySession << "(" << myChannel << ", " << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}

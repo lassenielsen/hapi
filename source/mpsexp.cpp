@@ -1044,7 +1044,7 @@ string MpsIntVal::ToC(const string &dest) const // {{{
 string MpsStringVal::ToC(const string &dest) const // {{{
 {
   stringstream result;
-  result << dest << "\"" << myValue << "\";" << endl;
+  result << dest << "=\"" << stuff_string(myValue) << "\";" << endl;
   return result.str();
 } // }}}
 string MpsBoolVal::ToC(const string &dest) const // {{{

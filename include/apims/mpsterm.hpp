@@ -273,7 +273,8 @@ class MpsTerm // {{{
     virtual std::string ToString(std::string indent="") const = 0;
     //! Make string representation of the process with latex markup
     virtual std::string ToTex(int indent=0, int sw=2) const = 0;
-    virtual std::string ToC() const = 0;
+    std::string MakeC() const;
+    virtual std::string ToC() const=0;
 
     // DOCUMENTATION: MpsTerm::NewName {{{
     /*!
