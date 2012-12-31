@@ -1029,7 +1029,7 @@ string MpsTupleExp::ToString() const // {{{
 string MpsVarExp::ToC(const string &dest) const // {{{
 {
   stringstream result;
-  result << dest << "=" << myName << ";" << endl;
+  result << "    " << dest << "=" << myName << ";" << endl;
   return result.str();
 } // }}}
 string MpsIntVal::ToC(const string &dest) const // {{{
@@ -1038,37 +1038,37 @@ string MpsIntVal::ToC(const string &dest) const // {{{
   string val(str);
   free(str);
   stringstream result;
-  result << dest << "=" << val << ";" << endl;
+  result << "    " << dest << "=" << val << ";" << endl;
   return result.str();
 } // }}}
 string MpsStringVal::ToC(const string &dest) const // {{{
 {
   stringstream result;
-  result << dest << "=\"" << stuff_string(myValue) << "\";" << endl;
+  result << "    " << dest << "=\"" << stuff_string(myValue) << "\";" << endl;
   return result.str();
 } // }}}
 string MpsBoolVal::ToC(const string &dest) const // {{{
 {
   stringstream result;
-  if (myValue)
-    result << dest << "=true;" << endl;
-  else
-    result << dest << "=false;" << endl;
+  result << "    " << dest << "=";
+  result << (myValue?(string)"true":(string)"false");
+  result << ";" << endl;
   return result.str();
 } // }}}
 string MpsCondExp::ToC(const string &dest) const // {{{
 {
   stringstream result;
   string newName=MpsExp::NewVar("expcond");
-  result << "bool " << newName << ";" << endl;
+  result << "    bool " << newName << ";" << endl;
   result << myCond->ToC(newName);
-  result << "if (" << newName << ")" << endl
-         << "{" << endl
+  result << "    if (" << newName << ")" << endl
+         << "    {" << endl
          << myTrueBranch->ToC(dest)
-         << "}"
-         << "else"
-         << "{"
-         << myFalseBranch->ToC(dest);
+         << "    }"
+         << "    else"
+         << "    {"
+         << myFalseBranch->ToC(dest)
+         << "    }" << endl;
   return result.str();
 } // }}}
 string MpsUnOpExp::ToC(const string &dest) const // {{{
@@ -1076,9 +1076,9 @@ string MpsUnOpExp::ToC(const string &dest) const // {{{
   stringstream result;
   if (myName == "not")
   { string newName = MpsExp::NewVar("expnot");
-    result << "bool " << newName << ";" << endl;
+    result << "    bool " << newName << ";" << endl;
     result << myRight->ToC(newName);
-    result << dest << "=" << "!" << newName << ";" << endl;
+    result << "    " << dest << "=" << "!" << newName << ";" << endl;
     return result.str();
   }
   else
@@ -1087,24 +1087,23 @@ string MpsUnOpExp::ToC(const string &dest) const // {{{
 string MpsBinOpExp::ToC(const string &dest) const // {{{
 {
   stringstream result;
+  string leftName = ToC_Name(MpsExp::NewVar("left"));
+  string rightName = ToC_Name(MpsExp::NewVar("right"));
+
   if (myName=="+")
-  { string leftName = MpsExp::NewVar("plusexp");
-    string rightName = MpsExp::NewVar("plusexp");
-    result << myLeftType->ToC() << " " << leftName << ";" << endl
-           << myRightType->ToC() << " " << rightName << ";" << endl;
+  { result << "    " << myLeftType->ToC() << " " << leftName << ";" << endl
+           << "    " << myRightType->ToC() << " " << rightName << ";" << endl;
     result << myLeft->ToC(leftName);
-    result << myRight->ToC(leftName);
-    result << dest << "=" << leftName << "+" << rightName << ";" << endl;
+    result << myRight->ToC(rightName);
+    result << "    " << dest << "=" << leftName << "+" << rightName << ";" << endl;
     return result.str();
   }
   else if (myName=="-")
-  { string leftName = MpsExp::NewVar("plusexp");
-    string rightName = MpsExp::NewVar("plusexp");
-    result << myLeftType->ToC() << " " << leftName << ";" << endl
-           << myRightType->ToC() << " " << rightName << ";" << endl;
+  { result << "    " << myLeftType->ToC() << " " << leftName << ";" << endl
+           << "    " << myRightType->ToC() << " " << rightName << ";" << endl;
     result << myLeft->ToC(leftName);
-    result << myRight->ToC(leftName);
-    result << dest << "=" << leftName << "-" << rightName << ";" << endl;
+    result << myRight->ToC(rightName);
+    result << "    " << dest << "=" << leftName << "-" << rightName << ";" << endl;
     return result.str();
   }
   // FIXME: More operators

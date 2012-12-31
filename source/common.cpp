@@ -181,3 +181,8 @@ inline std::string ToTex_Channel(apims::MpsChannel ch) // {{{
   else
     return ToTex_ChName(ch.GetName());
 } // }}}
+
+// ToC helper functions
+inline std::string ToC_Name(const std::string &name) // {{{
+{ return stringreplace(name,"~","__SIM__");
+} // }}}

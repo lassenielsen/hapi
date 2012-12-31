@@ -22,7 +22,12 @@ std::string DefEnvToString(const MpsFunctionEnv &env) // {{{
 std::string DefEnvToC(const MpsFunctionEnv &env) // {{{
 {
   stringstream ss;
-  ss << "/* Procedure declerations */" << endl;
+  ss << endl << "/* Procedure declerations */" << endl;
+  for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
+  {
+    ss << def->ToCDecl() << ";" << endl;
+  }
+  ss << endl << "/* Procedure implementations */" << endl;
   for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
   {
     ss << def->ToC();
@@ -132,7 +137,7 @@ string MpsFunction::ToString() const // {{{
      << GetBody().ToString("    ");
   return ss.str();
 } // }}}
-string MpsFunction::ToC() const // {{{
+string MpsFunction::ToCDecl() const // {{{
 {
   stringstream ss;
   ss << "void " << GetName() << "(";
@@ -155,10 +160,16 @@ string MpsFunction::ToC() const // {{{
       ss << ",";
     ss << (*type)->ToC() << " " << *arg;
   }
-  ss << ")" << endl
+  ss << ")";
+  return ss.str();
+} // }}}
+string MpsFunction::ToC() const // {{{
+{
+  stringstream ss;
+  ss << ToCDecl() << endl
      << "{" << endl
-     << "  "
-     << GetBody().ToC();
+     << GetBody().ToC()
+     << "}";
   return ss.str();
 } // }}}
 }
