@@ -46,7 +46,7 @@ class MpsExp // {{{
     virtual ~MpsExp();
     virtual MpsExp *Copy() const = 0; // Make a deep copy
     virtual MpsExp *Eval() const = 0; // Evaluate to a value
-    virtual MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const = 0;
+    virtual MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) = 0;
     virtual bool operator==(const MpsExp &rhs) const = 0;
 
     virtual std::set<std::string> FV() const = 0; // Find free variables in expression
@@ -89,7 +89,7 @@ class MpsVarExp : public MpsExp // {{{
     virtual ~MpsVarExp();
     MpsVarExp *Copy() const;
     MpsVarExp *Eval() const;
-    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const;
+    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma);
     bool operator==(const MpsExp &rhs) const;
     std::set<std::string> FV() const;
     MpsExp *Rename(const std::string &src, const std::string &dst) const;
@@ -114,7 +114,7 @@ class MpsIntVal : public MpsExp // {{{
     virtual ~MpsIntVal();
     MpsIntVal *Copy() const;
     MpsIntVal *Eval() const;
-    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const;
+    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma);
     bool operator==(const MpsExp &rhs) const;
     std::set<std::string> FV() const;
     MpsIntVal *Rename(const std::string &src, const std::string &dst) const;
@@ -141,7 +141,7 @@ class MpsStringVal : public MpsExp // {{{
     virtual ~MpsStringVal();
     MpsStringVal *Copy() const;
     MpsStringVal *Eval() const;
-    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const;
+    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma);
     bool operator==(const MpsExp &rhs) const;
     std::set<std::string> FV() const;
     MpsStringVal *Rename(const std::string &src, const std::string &det) const;
@@ -167,7 +167,7 @@ class MpsBoolVal : public MpsExp // {{{
     virtual ~MpsBoolVal();
     MpsBoolVal *Copy() const;
     MpsBoolVal *Eval() const;
-    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const;
+    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma);
     bool operator==(const MpsExp &rhs) const;
     std::set<std::string> FV() const;
     MpsBoolVal *Rename(const std::string &src, const std::string &dst) const;
@@ -193,7 +193,7 @@ class MpsCondExp : public MpsExp // {{{
     virtual ~MpsCondExp();
     MpsCondExp *Copy() const;
     MpsExp *Eval() const;
-    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const;
+    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma);
     bool operator==(const MpsExp &rhs) const;
     std::set<std::string> FV() const;
     MpsCondExp *Rename(const std::string &src, const std::string &dst) const;
@@ -220,7 +220,7 @@ class MpsUnOpExp : public MpsExp // {{{
     virtual ~MpsUnOpExp();
     MpsUnOpExp *Copy() const;
     MpsExp *Eval() const;
-    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const;
+    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma);
     bool operator==(const MpsExp &rhs) const;
     std::set<std::string> FV() const;
     MpsUnOpExp *Rename(const std::string &src, const std::string &dst) const;
@@ -249,7 +249,7 @@ class MpsBinOpExp : public MpsExp // {{{
     virtual ~MpsBinOpExp();
     MpsBinOpExp *Copy() const;
     MpsExp *Eval() const;
-    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const;
+    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma);
     bool operator==(const MpsExp &rhs) const;
     std::set<std::string> FV() const;
     MpsBinOpExp *Rename(const std::string &src, const std::string &dst) const;
@@ -280,7 +280,7 @@ class MpsTupleExp : public MpsExp // {{{
     virtual ~MpsTupleExp();
     MpsTupleExp *Copy() const;
     MpsTupleExp *Eval() const;
-    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const;
+    MpsMsgType *TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma);
     bool operator==(const MpsExp &rhs) const;
     std::set<std::string> FV() const;
     MpsTupleExp *Rename(const std::string &src, const std::string &dst) const;

@@ -528,7 +528,7 @@ MpsTupleExp *MpsTupleExp::Eval() const// {{{
 
 /* Typechecking
  */
-MpsMsgType *MpsVarExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const // {{{
+MpsMsgType *MpsVarExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
 {
   MpsGlobalEnv::const_iterator it_gamma = Gamma.find(myName);
   if (it_gamma != Gamma.end())
@@ -541,19 +541,19 @@ MpsMsgType *MpsVarExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &D
     return it_sigma->second->Copy();
   return new MpsMsgNoType();
 } // }}}
-MpsMsgType *MpsIntVal::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const // {{{
+MpsMsgType *MpsIntVal::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
 {
   return new MpsIntMsgType();
 } // }}}
-MpsMsgType *MpsStringVal::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const // {{{
+MpsMsgType *MpsStringVal::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
 {
   return new MpsStringMsgType();
 } // }}}
-MpsMsgType *MpsBoolVal::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const // {{{
+MpsMsgType *MpsBoolVal::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
 {
   return new MpsBoolMsgType();
 } // }}}
-MpsMsgType *MpsCondExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const // {{{
+MpsMsgType *MpsCondExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
 {
   MpsMsgType *result=NULL;
   MpsMsgType *condtype=myCond->TypeCheck(Gamma,Delta,Sigma);
@@ -578,7 +578,7 @@ MpsMsgType *MpsCondExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &
   delete condtype;
   return result;
 } // }}}
-MpsMsgType *MpsUnOpExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const // {{{
+MpsMsgType *MpsUnOpExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
 {
   if (myName == "not") // Boolean operation [bool -> bool] // {{{
   { MpsMsgType *argtype = myRight->TypeCheck(Gamma,Delta,Sigma);
@@ -592,91 +592,61 @@ MpsMsgType *MpsUnOpExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &
   else // Unknown operator
     return new MpsMsgNoType();
 } // }}}
-MpsMsgType *MpsBinOpExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const // {{{
+MpsMsgType *MpsBinOpExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
 {
+  delete myLeftType;
+  myLeftType=myLeft->TypeCheck(Gamma,Delta,Sigma);
+  delete myRightType;
+  myRightType=myRight->TypeCheck(Gamma,Delta,Sigma);
   if (myName == "+" || // Integer operation [int -> int -> int] // {{{
       myName == "-" ||
       myName == "*" ||
       myName == "/")
-  { MpsMsgType *lefttype=myLeft->TypeCheck(Gamma,Delta,Sigma);
-    MpsMsgType *righttype=myRight->TypeCheck(Gamma,Delta,Sigma);
-    if (dynamic_cast<MpsIntMsgType*>(lefttype) &&
-        dynamic_cast<MpsIntMsgType*>(righttype))
-    { delete righttype;
-      return lefttype;
-    }
+  { if (dynamic_cast<MpsIntMsgType*>(myLeftType) &&
+        dynamic_cast<MpsIntMsgType*>(myRightType))
+      return new MpsIntMsgType();
     else
-    { delete lefttype;
-      delete righttype;
       return new MpsMsgNoType();
-    }
   } // }}}
   if (myName == "and" || // Boolean operation [bool -> bool -> bool] // {{{
       myName == "or")
-  { MpsMsgType *lefttype=myLeft->TypeCheck(Gamma,Delta,Sigma);
-    MpsMsgType *righttype=myRight->TypeCheck(Gamma,Delta,Sigma);
-    if (dynamic_cast<MpsBoolMsgType*>(lefttype) &&
-        dynamic_cast<MpsBoolMsgType*>(righttype))
-    { delete righttype;
-      return lefttype;
-    }
+  { if (dynamic_cast<MpsBoolMsgType*>(myLeftType) &&
+        dynamic_cast<MpsBoolMsgType*>(myRightType))
+      return new MpsBoolMsgType;
     else
-    { delete lefttype;
-      delete righttype;
       return new MpsMsgNoType();
-    }
   } // }}}
   if (myName == "=") // Boolean operation [X -> X -> bool] // {{{
-  { MpsMsgType *lefttype=myLeft->TypeCheck(Gamma,Delta,Sigma);
-    MpsMsgType *righttype=myRight->TypeCheck(Gamma,Delta,Sigma);
-    if (((not dynamic_cast<MpsMsgNoType*>(lefttype)) ||
-         (not dynamic_cast<MpsMsgNoType*>(righttype))) &&
-        lefttype->Equal(MpsBoolVal(true),*righttype))
-    { delete lefttype;
-      delete righttype;
+  { if (((not dynamic_cast<MpsMsgNoType*>(myLeftType)) ||
+         (not dynamic_cast<MpsMsgNoType*>(myRightType))) &&
+        myLeftType->Equal(MpsBoolVal(true),*myRightType))
       return new MpsBoolMsgType();
-    }
     else
-    { delete lefttype;
-      delete righttype;
       return new MpsMsgNoType();
-    }
   } // }}}
   if (myName == "<=") // Integer operation [int -> int -> bool] // {{{
-  { MpsMsgType *lefttype=myLeft->TypeCheck(Gamma,Delta,Sigma);
-    MpsMsgType *righttype=myRight->TypeCheck(Gamma,Delta,Sigma);
-    if (dynamic_cast<MpsIntMsgType*>(lefttype) &&
-        dynamic_cast<MpsIntMsgType*>(righttype))
-    { delete lefttype;
-      delete righttype;
+  { if (dynamic_cast<MpsIntMsgType*>(myLeftType) &&
+        dynamic_cast<MpsIntMsgType*>(myRightType))
       return new MpsBoolMsgType();
-    }
     else
-    { delete lefttype;
-      delete righttype;
       return new MpsMsgNoType();
-    }
   } // }}}
   if (myName == "&") // Untupeling [(_,...,_,X,_,...,_] -> idx -> X {{{
   {
-    MpsMsgType *lefttype = myLeft->TypeCheck(Gamma,Delta,Sigma);
-    MpsTupleMsgType *lhsptr = dynamic_cast<MpsTupleMsgType*>(lefttype);
+    MpsTupleMsgType *lhsptr = dynamic_cast<MpsTupleMsgType*>(myLeftType);
     if (lhsptr==NULL)
-    { delete lefttype;
       return new MpsMsgNoType();
-    }
     MpsIntVal *index = dynamic_cast<MpsIntVal*>(myRight);
     if (index==NULL)
-      return false;
+      return new MpsMsgNoType();
     unsigned long int idx = mpz_get_ui(index->GetValue());
     MpsMsgType *result = lhsptr->GetElement(idx)->Copy();
-    delete lefttype;
     return result;
   } // }}}
   else // Unknown operator
-    return false;
+    return new MpsMsgNoType();
 } // }}}
-MpsMsgType *MpsTupleExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) const // {{{
+MpsMsgType *MpsTupleExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
 {
   bool error=false;
   vector<MpsMsgType*> types;
