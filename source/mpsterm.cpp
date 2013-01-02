@@ -5786,6 +5786,7 @@ string MpsTerm::MakeC() const // {{{
   MpsFunctionEnv defs;
   // FIXME: Move definitions to global env
   return (string)"#include <unistd.h>\n"
+       + "#include <gmp.h>\n"
        + "#include <vector>\n"
        + "#include <libpi/session_mq.hpp>\n"
        + "using namespace std;\n"
@@ -5822,7 +5823,7 @@ string MpsRcv::ToC() const // {{{
   result << "  " << GetMsgType().ToC() << " " << newName << ";" << endl; // Declare variable
   result << "  { Message " << msgName << ";" << endl; // Declare message variable
   result << "    " << ToC_Name(myChannel.GetName()) << ".Receive(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl; // Receive value
-  result << "    " << newName << "=(" << GetMsgType().ToC() << ")" << msgName << ";" << endl;
+  result << "    " << msgName << ".GetValue(" << newName << ");" << endl;
   result << "  }" << endl;
   result << mySucc->ToC();
   return result.str();
