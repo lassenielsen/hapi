@@ -119,6 +119,8 @@ int main(int argc, char **argv)
   else
     out = new ofstream(dest.c_str());
 
+  if (cfgCompile)
+    (*out) << "/* Pre compilation output:" << endl;
   // Parse program
   MpsTerm *current = MpsTerm::Create(term);
   if (cfgPrint)
@@ -142,7 +144,8 @@ int main(int argc, char **argv)
 //  else
 //    (*out) << "************** NO TYPE CHECKEING **************" << endl;
   if (cfgCompile)
-    (*out) << current->MakeC() << endl;
+    (*out) << "*/" << endl
+           << current->MakeC() << endl;
   if (cfgEval)
   { // Apply semantics repeatedly (evaluate)
     MpsTerm *next = current;

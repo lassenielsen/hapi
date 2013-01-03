@@ -1658,8 +1658,8 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
   if (channel==Gamma.end())
     return PrintTypeError((string)"Linking on closed channel:" + myChannel,*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check correct maxpid
-  if (myMaxpid < channel->second->GetMaxPid())
-    return PrintTypeError((string)"MaxPID cannot be smaller than:" + int2string(channel->second->GetMaxPid()),*this,Theta,Gamma,Delta,Sigma,Omega);
+  if (myMaxpid != channel->second->GetMaxPid()) // Notice restriction
+    return PrintTypeError((string)"MaxPID is different from:" + int2string(channel->second->GetMaxPid()),*this,Theta,Gamma,Delta,Sigma,Omega);
   // Create local type
   MpsLocalType *newType=channel->second->Project(myPid);
   set<string> fv = newType->FEV();
