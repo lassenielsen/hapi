@@ -1,4 +1,4 @@
-programs = apims
+programs = apims apims-compile
 name = apims
 version = 2.5.0
 compiler = g++
@@ -81,6 +81,9 @@ clean:
 objects/%.o: source/%.cpp include/*.hpp include/config.hpp
 	mkdir -p objects
 	$(compiler) -c source/$*.cpp $(args) -o objects/$*.o
+
+apims-compile:
+	cp source/apims-compile ./apims-compile
 
 %: $(objects) objects/%.o include/config.hpp
 	$(compiler) objects/$*.o $(objects) -o $* $(args) $(libs)

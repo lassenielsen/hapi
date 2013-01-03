@@ -1,0 +1,7 @@
+#!/bin/bash
+echo "Compiling $1"
+echo "Stage one: Generating c++ code in $1.cpp ..."
+apims -compile -o $1.cpp -f $1.pi
+echo "Stage two: Compiling $1.cpp to $1"
+gcc -o $1 $1.cpp -lpi -lgmp
+echo Done
