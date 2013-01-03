@@ -1957,15 +1957,15 @@ int MpsGlobalRecType::GetMaxPid() const // {{{
 } // }}}
 int MpsGlobalVarType::GetMaxPid() const // {{{
 {
-  return 0;
+  return 1;
 } // }}}
 int MpsGlobalEndType::GetMaxPid() const // {{{
 {
-  return 0;
+  return 1;
 } // }}}
 int MpsGlobalSyncType::GetMaxPid() const // {{{
 {
-  int maxpid = 0;
+  int maxpid = 1;
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
   {
     int succmax = it->second->GetMaxPid();
