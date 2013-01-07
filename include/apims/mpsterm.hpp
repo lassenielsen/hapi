@@ -273,7 +273,53 @@ class MpsTerm // {{{
     virtual std::string ToString(std::string indent="") const = 0;
     //! Make string representation of the process with latex markup
     virtual std::string ToTex(int indent=0, int sw=2) const = 0;
+    // DOCUMENTATION: MpsTerm::MakeC {{{
+    /*!
+     * Compilation to C++code is perfomed in 4 steps:
+     * 1. Rename all variables, so no name is introduced more than once
+     *    (avoid things like s>>x;t>>x;...)
+     * 2. Add all free variables in function bodies to the function
+     *    argument list and call agruments where it is used.
+     * 3. Move all functions to the global function environment, also
+     *    functions defined in function bodies
+     * 4. Translate each function separately, and translate the main
+     *    process sa the function 'main'.
+     */
+    // }}}
     std::string MakeC() const;
+    // DOCUMENTATION: MpsTerm::RenameAll {{{
+    /*!
+     * RenameAll renames all bound variables (Process, logical and
+     * expression) to a new unique name, to avoid any form of name
+     * collision.
+     */
+    // }}}
+    virtual MpsTerm *RenameAll() const=0;
+    // DOCUMENTATION: MpsTerm::CloseDefinitions {{{
+    /*!
+     * CloseDefinitions adds all the free variables of function bodies
+     * to the argument list, and adds these arguments to where the
+     * function is called.
+     */
+    // }}}
+    virtual MpsTerm *CloseDefinitions() const=0;
+    // DOCUMENTATION: MpsTerm::ExtractDefinitions {{{
+    /*!
+     * ExtractDefinitions extracts all function definitions from the
+     * term, and inserts them in the provided finction-environment.
+     * This is performed bottom-up such that the definitions added to
+     * the environment will themselves be free of nested definitions.
+     */
+    // }}}
+    virtual MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const=0;
+    // DOCUMENTATION: MpsTerm::ToC {{{
+    /*!
+     * ToC generates C++ code performing the tasks of the term.
+     * This assumes that there are no function definition in term, and
+     * these should be moved to a global environment beforehand using
+     * ExtractDefinitions before calling ToC.
+     */
+    // }}}
     virtual std::string ToC() const=0;
 
     // DOCUMENTATION: MpsTerm::NewName {{{
@@ -328,6 +374,9 @@ class MpsEnd : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 }; // }}}
 // DOCUMENTATION: MpsSnd {{{
@@ -368,6 +417,9 @@ class MpsSnd : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
     const MpsMsgType &GetMsgType() const;
@@ -417,6 +469,9 @@ class MpsRcv : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
     const MpsMsgType &GetMsgType() const;
@@ -468,6 +523,9 @@ class MpsSelect : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:
@@ -513,6 +571,9 @@ class MpsBranch : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:
@@ -565,6 +626,9 @@ class MpsPar : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:
@@ -609,6 +673,9 @@ class MpsDef : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
     std::vector<std::pair<int,int> > GetArgPids() const;
@@ -660,6 +727,9 @@ class MpsCall : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:
@@ -708,6 +778,9 @@ class MpsNu : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:
@@ -753,6 +826,9 @@ class MpsLink : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:
@@ -800,6 +876,9 @@ class MpsSync : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:
@@ -846,6 +925,9 @@ class MpsCond : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:
@@ -903,6 +985,9 @@ class MpsGuiSync : public MpsTerm // {{{
     MpsGuiSync *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:
@@ -949,6 +1034,9 @@ class MpsGuiValue : public MpsTerm // {{{
     MpsGuiValue *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:
@@ -1002,6 +1090,9 @@ class MpsAssign : public MpsTerm // {{{
     MpsAssign *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *RenameAll() const;
+    MpsTerm *CloseDefinitions() const;
+    MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
   private:

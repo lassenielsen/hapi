@@ -5968,6 +5968,215 @@ string MpsAssign::ToC() const // {{{
   return result.str();
 } // }}}
 
+/* MpsTerm::RenameAll
+ */
+MpsTerm *MpsEnd::RenameAll() const // {{{
+{
+  return Copy();
+} // }}}
+MpsTerm *MpsSnd::RenameAll() const // {{{
+{ MpsTerm *newSucc=mySucc->RenameAll();
+  MpsMsgType *newType=myType->RenameAll();
+  MpsTerm *result=new MpsSnd(myChannel,*myExp,*newSucc,*newType);
+  delete newSucc;
+  delete newType;
+  return result;
+} // }}}
+MpsTerm *MpsRcv::RenameAll() const // {{{
+{ string newDest=MpsExp::NewVar(myDest);
+  MpsTerm *tmpSucc=mySucc->ERename(myDest,newDest);
+  MpsTerm *newSucc=tmpSucc->RenameAll();
+  delete tmpSucc;
+  MpsMsgType *newType=myType->RenameAll();
+  MpsTerm *result=new MpsRcv(myChannel,newDest,myPid,myMaxPid,*newSucc,*newType);
+  delete newSucc;
+  delete newType;
+  return result;
+} // }}}
+MpsTerm *MpsSelect::RenameAll() const // {{{
+{ MpsTerm *newSucc=mySucc->RenameAll();
+  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc);
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsBranch::RenameAll() const // {{{
+{ map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+    newBranches[it->first]=it->second->RenameAll();
+  MpsTerm *result=new MpsBranch(myChannel,newBranches);
+  DeleteMap(newBranches);
+  return result;
+} // }}}
+MpsTerm *MpsPar::RenameAll() const // {{{
+{ MpsTerm *newLeft=myLeft->RenameAll();
+  MpsTerm *newRight=myRight->RenameAll();
+  MpsTerm *result=new MpsPar(*newLeft,*newRight);
+  delete newLeft;
+  delete newRight;
+  return result;
+} // }}}
+MpsTerm *MpsDef::RenameAll() const // {{{
+{ string newName=MpsTerm::NewName(myName);
+  // Create new statearg names
+  vector<string> newStateArgs;
+  for (vector<string>::const_iterator it=myStateArgs.begin(); it!=myStateArgs.end(); ++it)
+    newStateArgs.push_back(MpsExp::NewVar(*it));
+  // Create new statearg types
+  vector<MpsMsgType*> newStateTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin(); it!=myStateTypes.end(); ++it)
+    newStateTypes.push_back((*it)->RenameAll());
+  // Create new arg names
+  vector<string> newArgs;
+  for (vector<string>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+    newArgs.push_back(MpsExp::NewVar(*it));
+  // Create new state types
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myTypes.begin(); it!=myTypes.end(); ++it)
+    newTypes.push_back((*it)->RenameAll());
+  // Create new body
+  MpsTerm *newBody=myBody->PRename(myName,newName);
+  for (int i=0;i<myStateArgs.size();++i)
+  { MpsTerm *tmpBody=newBody->ERename(myStateArgs[i],newStateArgs[i]);
+    delete newBody;
+    newBody=tmpBody;
+  }
+  for (int i=0;i<myArgs.size();++i)
+  { MpsTerm *tmpBody=newBody->ERename(myArgs[i],newArgs[i]);
+    delete newBody;
+    newBody=tmpBody;
+  }
+  // Create new succ
+  MpsTerm *newSucc=mySucc->PRename(myName,newName);
+
+  MpsTerm *result=new MpsDef(newName,
+                             newArgs,
+                             newTypes,
+                             newStateArgs,
+                             newStateTypes,
+                             *newBody,
+                             *newSucc);
+
+  // Cleanup
+  delete newSucc;
+  delete newBody;
+  DeleteVector(newTypes);
+  DeleteVector(newStateTypes);
+
+  return result;
+} // }}}
+MpsTerm *MpsCall::RenameAll() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsNu::RenameAll() const // {{{
+{ string newChannel = MpsExp::NewVar(myChannel);
+  MpsTerm *tmpSucc=mySucc->ERename(myChannel,newChannel);
+  MpsTerm *newSucc=tmpSucc->RenameAll();
+  delete tmpSucc;
+  MpsGlobalType *newType=myType->RenameAll();
+
+  MpsTerm *result=new MpsNu(newChannel,*newSucc,*newType);
+
+  delete newSucc;
+  delete newType;
+
+  return result;
+} // }}}
+MpsTerm *MpsLink::RenameAll() const // {{{
+{ string newSession=MpsExp::NewVar(mySession);
+  MpsTerm *tmpSucc=mySucc->ERename(mySession,newSession);
+  MpsTerm *newSucc=tmpSucc->RenameAll();
+  delete tmpSucc;
+  MpsTerm *result=new MpsLink(myChannel,newSession,myPid,myMaxpid,*newSucc);
+  
+  delete newSucc;
+
+  return result;
+} // }}}
+MpsTerm *MpsSync::RenameAll() const // {{{
+{ map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+    newBranches[it->first]=it->second->RenameAll();
+
+  MpsTerm *result=new MpsSync(myMaxpid,mySession,newBranches,myAssertions);
+
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsTerm *MpsCond::RenameAll() const // {{{
+{ MpsTerm *newTrueBranch=myTrueBranch->RenameAll();
+  MpsTerm *newFalseBranch=myFalseBranch->RenameAll();
+
+  MpsTerm *result=new MpsCond(*myCond,*newTrueBranch,*newFalseBranch);
+
+  delete newTrueBranch;
+  delete newFalseBranch;
+
+  return result;
+} // }}}
+MpsTerm *MpsGuiSync::RenameAll() const // {{{
+{ map<string,inputbranch> newBranches;
+  for (map<string,inputbranch>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+  { inputbranch newBranch;
+    // Copy names
+    newBranch.names=it->second.names;
+    // Copy assertion
+    newBranch.assertion=it->second.assertion->Copy();
+    // Copy values
+    for (vector<MpsExp*>::const_iterator val=it->second.values.begin();val!=it->second.values.end(); ++val)
+      newBranch.values.push_back((*val)->Copy());
+    // Perform RenameAll on types
+    for (vector<MpsMsgType*>::const_iterator type=it->second.types.begin();type!=it->second.types.end(); ++type)
+      newBranch.types.push_back((*type)->RenameAll());
+    // Rename args
+    for (vector<string>::const_iterator arg=it->second.args.begin();arg!=it->second.args.end(); ++arg)
+      newBranch.args.push_back(MpsExp::NewVar(*arg));
+    // Generate term with renames args
+    newBranch.term=it->second.term->RenameAll();
+    for (int i=0;i<it->second.args.size(); ++i)
+    { MpsTerm *tmpTerm=newBranch.term->ERename(it->second.args[i],newBranch.args[i]);
+      delete newBranch.term;
+      newBranch.term=tmpTerm;
+    }
+    // Add to newBranches
+    newBranches[it->first]=newBranch;
+  }
+  MpsTerm *result = new MpsGuiSync(myMaxpid,mySession,myPid,newBranches);
+
+  // Clean up
+  while (newBranches.size() > 0)
+  {
+    delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    DeleteVector(newBranches.begin()->second.types);
+    DeleteVector(newBranches.begin()->second.values);
+    newBranches.erase(newBranches.begin());
+  }
+
+  return result;
+} // }}}
+MpsTerm *MpsGuiValue::RenameAll() const // {{{
+{ MpsTerm *newSucc=mySucc->RenameAll();
+  MpsTerm *result=new MpsGuiValue(myMaxpid,mySession,myPid,*myName,*myValue,*newSucc);
+  
+  delete newSucc;
+
+  return result;
+} // }}}
+MpsTerm *MpsAssign::RenameAll() const // {{{
+{ string newId=MpsExp::NewVar(myId);
+  MpsTerm *tmpSucc=mySucc->ERename(myId,newId);
+  MpsTerm *newSucc=tmpSucc->RenameAll();
+  delete tmpSucc;
+  MpsMsgType *newType=myType->RenameAll();
+  MpsTerm *result=new MpsAssign(newId,*myExp,*newType,*newSucc);
+  
+  delete newSucc;
+  delete newType;
+
+  return result;
+} // }}}
+
 /* Term specific funtions
  */
 vector<pair<int,int> > MpsDef::GetArgPids() const // {{{
