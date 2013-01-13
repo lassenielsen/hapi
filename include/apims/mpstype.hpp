@@ -47,7 +47,7 @@ class MpsGlobalType // {{{
     // Constructor, Copy and operator methods
     virtual ~MpsGlobalType();
     virtual MpsGlobalType *Copy() const = 0;
-    virtual bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const=0;
+    virtual bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const = 0;
     //virtual bool operator==(const MpsGlobalType &rhs) const=0;
     // FIXME: Improve to semantical equality
     // FIXME: Implement subtyping virtual bool operator<=(const MpsGlobalType &rhs) const = 0;
@@ -62,6 +62,7 @@ class MpsGlobalType // {{{
     virtual MpsGlobalType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const = 0;
     virtual MpsGlobalType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const = 0;
     virtual MpsGlobalType *ESubst(const std::string &source, const MpsExp &dest) const = 0;
+    virtual MpsGlobalType *RenameAll() const = 0;
 
     //! Make parsable string representation
     virtual std::string ToString(const std::string &indent="") const = 0;
@@ -109,6 +110,7 @@ class MpsGlobalMsgType : public MpsGlobalType // {{{
     MpsGlobalMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsGlobalMsgType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -143,6 +145,7 @@ class MpsGlobalBranchType : public MpsGlobalType // {{{
     MpsGlobalBranchType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalBranchType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalBranchType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsGlobalBranchType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -173,6 +176,7 @@ class MpsGlobalRecType : public MpsGlobalType // {{{
     MpsGlobalRecType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalRecType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalRecType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsGlobalRecType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -202,6 +206,7 @@ class MpsGlobalVarType : public MpsGlobalType // {{{
     MpsGlobalType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalVarType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalVarType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsGlobalVarType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -230,6 +235,7 @@ class MpsGlobalEndType : public MpsGlobalType // {{{
     MpsGlobalEndType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalEndType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalEndType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsGlobalEndType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -254,6 +260,7 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
     MpsGlobalSyncType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalSyncType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalSyncType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsGlobalSyncType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -296,6 +303,7 @@ class MpsLocalType // {{{
     virtual MpsLocalType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const = 0;
     virtual MpsLocalType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const = 0;
     virtual MpsLocalType *ESubst(const std::string &source, const MpsExp &dest) const = 0;
+    virtual MpsLocalType *RenameAll() const=0;
 
     // Merge two types to make least supertype
     virtual MpsLocalType *Merge(MpsLocalType &rhs) const = 0;
@@ -330,6 +338,7 @@ class MpsLocalSendType : public MpsLocalType // {{{
     MpsLocalSendType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSendType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSendType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalSendType *RenameAll() const;
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
     std::string ToString(const std::string &indent="") const;
@@ -372,6 +381,7 @@ class MpsLocalRcvType : public MpsLocalType // {{{
     MpsLocalRcvType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalRcvType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalRcvType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalRcvType *RenameAll() const;
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
     std::string ToString(const std::string &indent="") const;
@@ -413,6 +423,7 @@ class MpsLocalForallType : public MpsLocalType // {{{
     MpsLocalForallType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalForallType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalForallType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalForallType *RenameAll() const;
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
     std::string ToString(const std::string &indent="") const;
@@ -447,6 +458,7 @@ class MpsLocalSelectType : public MpsLocalType // {{{
     MpsLocalSelectType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSelectType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSelectType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalSelectType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -480,6 +492,7 @@ class MpsLocalBranchType : public MpsLocalType // {{{
     MpsLocalBranchType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalBranchType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalBranchType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalBranchType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -513,6 +526,7 @@ class MpsLocalRecType : public MpsLocalType // {{{
     MpsLocalRecType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalRecType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalRecType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalRecType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -546,6 +560,7 @@ class MpsLocalVarType : public MpsLocalType // {{{
     MpsLocalVarType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalVarType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalVarType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -573,6 +588,7 @@ class MpsLocalEndType : public MpsLocalType // {{{
     MpsLocalEndType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalEndType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalEndType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalEndType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -596,6 +612,7 @@ class MpsLocalSyncType : public MpsLocalType // {{{
     MpsLocalSyncType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSyncType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSyncType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalSyncType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -641,6 +658,7 @@ class MpsMsgType // {{{
     virtual MpsMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const=0;
     virtual MpsMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const=0;
     virtual MpsMsgType *ESubst(const std::string &source, const MpsExp &dest) const=0;
+    virtual MpsMsgType *RenameAll() const=0;
 
     // Other methods
     virtual std::string ToString(const std::string &indent="") const = 0;
@@ -672,6 +690,7 @@ class MpsMsgNoType : public MpsMsgType // {{{
     MpsMsgNoType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsMsgNoType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsMsgNoType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsMsgNoType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -695,6 +714,7 @@ class MpsIntMsgType : public MpsMsgType // {{{
     MpsIntMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsIntMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsIntMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsIntMsgType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -718,6 +738,7 @@ class MpsStringMsgType : public MpsMsgType // {{{
     MpsStringMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsStringMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsStringMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsStringMsgType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -741,6 +762,7 @@ class MpsBoolMsgType : public MpsMsgType // {{{
     MpsBoolMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsBoolMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsBoolMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsBoolMsgType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -764,6 +786,7 @@ class MpsTupleMsgType : public MpsMsgType // {{{
     MpsTupleMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTupleMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsTupleMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsTupleMsgType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -793,6 +816,7 @@ class MpsChannelMsgType : public MpsMsgType // {{{
     MpsChannelMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsChannelMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsChannelMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsChannelMsgType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
@@ -822,6 +846,7 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
     virtual MpsDelegateMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const=0;
     virtual MpsDelegateMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const=0;
     virtual MpsDelegateMsgType *ESubst(const std::string &source, const MpsExp &dest) const=0;
+    virtual MpsDelegateMsgType *RenameAll() const=0;
 
     virtual std::string ToString(const std::string &indent="") const=0;
     std::string ToTex(int indent=0, int sw=2) const=0;
@@ -852,6 +877,7 @@ class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
     MpsDelegateLocalMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsDelegateLocalMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsDelegateLocalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsDelegateLocalMsgType *RenameAll() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
 
@@ -878,6 +904,7 @@ class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegat
     MpsDelegateGlobalMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsDelegateGlobalMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsDelegateGlobalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsDelegateGlobalMsgType *RenameAll() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
 
@@ -893,19 +920,19 @@ class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegat
 }; // }}}
 
 // Define environments
-struct delta
+struct delta // {{{
 {
   MpsLocalType *type;
   int pid;
   int maxpid;
-};
+}; // }}}
 
-struct omega
+struct omega // {{{
 {
   std::vector<MpsMsgType*> stypes;
   std::vector<std::string> snames;
   std::vector<MpsMsgType*> types;
-};
+}; // }}}
 
 typedef std::map<std::string,MpsGlobalType*> MpsGlobalEnv;
 typedef std::map<std::string,delta> MpsLocalEnv;
