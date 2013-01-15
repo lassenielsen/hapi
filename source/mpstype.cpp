@@ -3933,7 +3933,16 @@ MpsLocalEndType *MpsLocalEndType::RenameAll() const // {{{
 } // }}}
 MpsLocalSyncType *MpsLocalSyncType::RenameAll() const // {{{
 {
-  return Copy();
+  // Create new branches with renaming
+  map<string,MpsLocalType*> newBranches;
+  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+    newBranches[it->first] = it->second->RenameAll();
+  MpsLocalSyncType *result = new MpsLocalSyncType(newBranches, myAssertions);
+
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
 } // }}}
 
 // Make parsable string representation
@@ -5296,6 +5305,67 @@ MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::ESubst(const string &source, c
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->ESubst(source,dest);
+  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+
+  // Clean Up
+  delete newType;
+
+  return result;
+} // }}}
+
+// Renaming of all bound identifiers
+MpsMsgNoType *MpsMsgNoType::RenameAll() const // {{{
+{
+  return new MpsMsgNoType();
+} // }}}
+MpsIntMsgType *MpsIntMsgType::RenameAll() const // {{{
+{
+  return new MpsIntMsgType();
+} // }}}
+MpsStringMsgType *MpsStringMsgType::RenameAll() const // {{{
+{
+  return new MpsStringMsgType();
+} // }}}
+MpsBoolMsgType *MpsBoolMsgType::RenameAll() const // {{{
+{
+  return new MpsBoolMsgType();
+} // }}}
+MpsTupleMsgType *MpsTupleMsgType::RenameAll() const // {{{
+{
+  vector<MpsMsgType*> newElements;
+  for (vector<MpsMsgType*>::const_iterator elt=myElements.begin(); elt!=myElements.end(); ++elt)
+    newElements.push_back((*elt)->RenameAll());
+
+  MpsTupleMsgType *result=new MpsTupleMsgType(newElements);
+
+  //Clean Up
+  DeleteVector(newElements);
+
+  return result;
+} // }}}
+MpsChannelMsgType *MpsChannelMsgType::RenameAll() const // {{{
+{
+  MpsGlobalType *newType=myType->RenameAll();
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType);
+
+  // Clean Up
+  delete newType;
+
+  return result;
+} // }}}
+MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::RenameAll() const // {{{
+{
+  MpsLocalType *newType = myType->RenameAll();
+  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+
+  // Clean Up
+  delete newType;
+
+  return result;
+} // }}}
+MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::RenameAll() const // {{{
+{
+  MpsGlobalType *newType = myGlobalType->RenameAll();
   MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
 
   // Clean Up

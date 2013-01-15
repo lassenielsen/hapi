@@ -5783,9 +5783,15 @@ string MpsAssign::ToTex(int indent, int sw) const // {{{
  */
 string MpsTerm::MakeC() const // {{{
 { _compile_id=1;
+  MpsTerm *step1=RenameAll();
+  MpsTerm *step2=CloseDefinitions();
+  delete step1;
   MpsFunctionEnv defs;
-  // FIXME: Move definitions to global env
-  return (string)"#include <unistd.h>\n"
+  // Move definitions to global env
+  MpsTerm *main=step2->ExtractDefinitions(defs);
+  delete step2;
+  string result = (string)
+         "#include <unistd.h>\n"
        + "#include <gmp.h>\n"
        + "#include <vector>\n"
        + "#include <libpi/session_mq.hpp>\n"
@@ -5793,8 +5799,10 @@ string MpsTerm::MakeC() const // {{{
        + "using namespace libpi;\n\n"
        + DefEnvToC(defs)
        + "\n\n/* Main process */\nint main()\n{\n"
-       + ToC()
+       + main->ToC()
        + "}";
+  delete main;
+  return result;
 } // }}}
 string MpsEnd::ToC() const // {{{
 {
@@ -5947,7 +5955,7 @@ string MpsCond::ToC() const // {{{
          << "}" << endl
          << "else" << endl
          << "{" << endl
-         << myFalseBranch << endl
+         << myFalseBranch->ToC()
          << "}" << endl;
   return result.str();
 } // }}}
@@ -6173,6 +6181,197 @@ MpsTerm *MpsAssign::RenameAll() const // {{{
   
   delete newSucc;
   delete newType;
+
+  return result;
+} // }}}
+
+/* MpsTerm::CloseDefinitions
+ */
+MpsTerm *MpsEnd::CloseDefinitions() const // {{{
+{
+  return Copy();
+} // }}}
+MpsTerm *MpsSnd::CloseDefinitions() const // {{{
+{
+  return Copy();
+} // }}}
+MpsTerm *MpsRcv::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsSelect::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsBranch::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsPar::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsDef::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsCall::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsNu::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsLink::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsSync::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsCond::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsGuiSync::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsGuiValue::CloseDefinitions() const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsAssign::CloseDefinitions() const // {{{
+{ return Copy(); // FIXME
+} // }}}
+
+/* MpsTerm::ExtractDefinitions
+ */
+MpsTerm *MpsEnd::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{
+  return Copy();
+} // }}}
+MpsTerm *MpsSnd::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
+  MpsTerm *result=new MpsSnd(myChannel,*myExp,*newSucc,*myType);
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsRcv::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
+  MpsTerm *result=new MpsRcv(myChannel,myDest,myPid,myMaxPid,*newSucc,*myType);
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsSelect::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
+  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc);
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsBranch::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+    newBranches[it->first]=it->second->ExtractDefinitions(env);
+  MpsTerm *result=new MpsBranch(myChannel,newBranches);
+  DeleteMap(newBranches);
+  return result;
+} // }}}
+MpsTerm *MpsPar::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ MpsTerm *newLeft=myLeft->ExtractDefinitions(env);
+  MpsTerm *newRight=myRight->ExtractDefinitions(env);
+  MpsTerm *result=new MpsPar(*newLeft,*newRight);
+  delete newLeft;
+  delete newRight;
+  return result;
+} // }}}
+MpsTerm *MpsDef::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ // This is where the action happens!
+  // Remove definitions from body, so it is definition free
+  MpsTerm *newBody = myBody->ExtractDefinitions(env);
+  // Add definition with cleaned body to global env
+  env.push_back(MpsFunction(myName,myStateArgs,myStateTypes,myArgs,myTypes,GetArgPids(),*newBody));
+  // Clean up
+  delete newBody;
+  // Return term without local definition
+  return mySucc->ExtractDefinitions(env);
+} // }}}
+MpsTerm *MpsCall::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ return Copy();
+} // }}}
+MpsTerm *MpsNu::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
+
+  MpsTerm *result=new MpsNu(myChannel,*newSucc,*myType);
+
+  delete newSucc;
+
+  return result;
+} // }}}
+MpsTerm *MpsLink::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
+  MpsTerm *result=new MpsLink(myChannel,mySession,myPid,myMaxpid,*newSucc);
+  
+  delete newSucc;
+
+  return result;
+} // }}}
+MpsTerm *MpsSync::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+    newBranches[it->first]=it->second->ExtractDefinitions(env);
+
+  MpsTerm *result=new MpsSync(myMaxpid,mySession,newBranches,myAssertions);
+
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsTerm *MpsCond::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ MpsTerm *newTrueBranch=myTrueBranch->ExtractDefinitions(env);
+  MpsTerm *newFalseBranch=myFalseBranch->ExtractDefinitions(env);
+
+  MpsTerm *result=new MpsCond(*myCond,*newTrueBranch,*newFalseBranch);
+
+  delete newTrueBranch;
+  delete newFalseBranch;
+
+  return result;
+} // }}}
+MpsTerm *MpsGuiSync::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ map<string,inputbranch> newBranches;
+  for (map<string,inputbranch>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+  { inputbranch newBranch;
+    // Remove defs from term
+    newBranch.term=it->second.term->ExtractDefinitions(env);
+    // Copy the rest
+    newBranch.assertion=it->second.assertion->Copy();
+    newBranch.names=it->second.names;
+    newBranch.args=it->second.args;
+    for (vector<MpsMsgType*>::const_iterator type=it->second.types.begin();type!=it->second.types.end(); ++type)
+      newBranch.types.push_back((*type)->Copy());
+    for (vector<MpsExp*>::const_iterator val=it->second.values.begin();val!=it->second.values.end(); ++val)
+      newBranch.values.push_back((*val)->Copy());
+    // Add to newBranches
+    newBranches[it->first]=newBranch;
+  }
+  MpsTerm *result = new MpsGuiSync(myMaxpid,mySession,myPid,newBranches);
+
+  // Clean up
+  while (newBranches.size() > 0)
+  {
+    delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    DeleteVector(newBranches.begin()->second.types);
+    DeleteVector(newBranches.begin()->second.values);
+    newBranches.erase(newBranches.begin());
+  }
+
+  return result;
+} // }}}
+MpsTerm *MpsGuiValue::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
+  MpsTerm *result=new MpsGuiValue(myMaxpid,mySession,myPid,*myName,*myValue,*newSucc);
+  
+  delete newSucc;
+
+  return result;
+} // }}}
+MpsTerm *MpsAssign::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
+  MpsTerm *result=new MpsAssign(myId,*myExp,*myType,*newSucc);
+  
+  delete newSucc;
 
   return result;
 } // }}}
