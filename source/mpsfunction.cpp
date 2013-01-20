@@ -140,7 +140,7 @@ string MpsFunction::ToString() const // {{{
 string MpsFunction::ToCDecl() const // {{{
 {
   stringstream ss;
-  ss << "void " << GetName() << "(";
+  ss << "int " << ToC_Name(GetName()) << "(";
   // Print state arguments
   vector<MpsMsgType*>::const_iterator type=GetStateTypes().begin();
   for (vector<string>::const_iterator arg=GetStateArgs().begin();
@@ -150,7 +150,7 @@ string MpsFunction::ToCDecl() const // {{{
   {
     if (arg!=GetStateArgs().begin())
       ss << ",";
-    ss << (*type)->ToC() << " " << *arg;
+    ss << (*type)->ToC() << " " << ToC_Name(*arg);
   }
   // Print arguments
   type=GetTypes().begin();
@@ -158,7 +158,7 @@ string MpsFunction::ToCDecl() const // {{{
   {
     if (arg!=GetArgs().begin() || GetStateArgs().size()>0)
       ss << ",";
-    ss << (*type)->ToC() << " " << *arg;
+    ss << (*type)->ToC() << " " << ToC_Name(*arg);
   }
   ss << ")";
   return ss.str();

@@ -999,7 +999,7 @@ string MpsTupleExp::ToString() const // {{{
 string MpsVarExp::ToC(const string &dest) const // {{{
 {
   stringstream result;
-  result << "    " << dest << "=" << myName << ";" << endl;
+  result << "    " << dest << "=" << ToC_Name(myName) << ";" << endl;
   return result.str();
 } // }}}
 string MpsIntVal::ToC(const string &dest) const // {{{
@@ -1028,7 +1028,7 @@ string MpsBoolVal::ToC(const string &dest) const // {{{
 string MpsCondExp::ToC(const string &dest) const // {{{
 {
   stringstream result;
-  string newName=MpsExp::NewVar("expcond");
+  string newName=ToC_Name(MpsExp::NewVar("expcond"));
   result << "    bool " << newName << ";" << endl;
   result << myCond->ToC(newName);
   result << "    if (" << newName << ")" << endl
@@ -1045,7 +1045,7 @@ string MpsUnOpExp::ToC(const string &dest) const // {{{
 {
   stringstream result;
   if (myName == "not")
-  { string newName = MpsExp::NewVar("expnot");
+  { string newName = ToC_Name(MpsExp::NewVar("expnot"));
     result << "    bool " << newName << ";" << endl;
     result << myRight->ToC(newName);
     result << "    " << dest << "=" << "!" << newName << ";" << endl;
@@ -1059,29 +1059,34 @@ string MpsBinOpExp::ToC(const string &dest) const // {{{
   stringstream result;
   string leftName = ToC_Name(MpsExp::NewVar("left"));
   string rightName = ToC_Name(MpsExp::NewVar("right"));
-
+  result << "    " << myLeftType->ToC() << " " << leftName << ";" << endl
+         << "    mpz_init(" << leftName << ");" << endl
+         << myLeft->ToC(leftName)
+         << "    " << myRightType->ToC() << " " << rightName << ";" << endl
+         << "    mpz_init(" << rightName << ");" << endl
+         << myRight->ToC(rightName);
+    
   // For branching on subtree types
   const MpsIntMsgType *lftIntType=dynamic_cast<const MpsIntMsgType*>(myLeftType);
   const MpsIntMsgType *rgtIntType=dynamic_cast<const MpsIntMsgType*>(myRightType);
 
   if (myName=="+" && lftIntType!=NULL && rgtIntType!=NULL) // Integer Addition {{{
-  { result << "    " << myLeftType->ToC() << " " << leftName << ";" << endl
-           << "    " << myRightType->ToC() << " " << rightName << ";" << endl;
-    result << myLeft->ToC(leftName);
-    result << myRight->ToC(rightName);
-    result << "    mpz_add(" << dest << "," << leftName << "," << rightName << ");" << endl;
+  { result << "    mpz_add(" << dest << "," << leftName << "," << rightName << ");" << endl;
     return result.str();
   } // }}}
   else if (myName=="-" && lftIntType!=NULL && rgtIntType!=NULL) // {{{
-  { result << "    " << myLeftType->ToC() << " " << leftName << ";" << endl
-           << "    " << myRightType->ToC() << " " << rightName << ";" << endl;
-    result << myLeft->ToC(leftName);
-    result << myRight->ToC(rightName);
-    result << "    mpz_sub(" << dest << "," << leftName << "," << rightName << ");" << endl;
+  { result << "    mpz_sub(" << dest << "," << leftName << "," << rightName << ");" << endl;
+    return result.str();
+  } // }}}
+  else if (myName=="<=" && lftIntType!=NULL && rgtIntType!=NULL) // {{{
+  { string cmpName = ToC_Name(MpsExp::NewVar("cmp"));
+    result << "    int " << cmpName << ";" << endl;
+    result << "    " << cmpName << "=mpz_cmp(" << leftName << "," << rightName << ");" << endl;
+    result << "    " << dest << "=" << cmpName << "<=0;" << endl;
     return result.str();
   } // }}}
   // FIXME: More operators
-  return (string)"(" + myLeft->ToString() + " " + myName + " " + myRight->ToString() + ")";
+  return (string)"[[(" + myLeftType->ToString() + ")" + myLeft->ToString() + " " + myName + " (" + myRightType->ToString() + ")" + myRight->ToString() + "]]";
 } // }}}
 string MpsTupleExp::ToC(const string &dest) const // {{{
 {

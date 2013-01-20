@@ -5784,7 +5784,7 @@ string MpsAssign::ToTex(int indent, int sw) const // {{{
 string MpsTerm::MakeC() const // {{{
 { _compile_id=1;
   MpsTerm *step1=RenameAll();
-  MpsTerm *step2=CloseDefinitions();
+  MpsTerm *step2=step1->CloseDefinitions();
   delete step1;
   MpsFunctionEnv defs;
   // Move definitions to global env
@@ -5849,9 +5849,9 @@ string MpsSelect::ToC() const // {{{
 string MpsBranch::ToC() const // {{{
 {
   stringstream result;
-  string newName = MpsExp::NewVar("var"); // Create variable name foor the mmessagee to send
+  string newName = ToC_Name(MpsExp::NewVar("var")); // Create variable name foor the mmessagee to send
   result << "std::string " << newName << ";" << endl; // Declare variable
-  result << myChannel.GetName() << ".Receive(" << int2string(myChannel.GetIndex()-1) << ", " << newName << ");" << endl; // Receive value
+  result << ToC_Name(myChannel.GetName()) << ".Receive(" << int2string(myChannel.GetIndex()-1) << ", " << newName << ");" << endl; // Receive value
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
@@ -5861,7 +5861,6 @@ string MpsBranch::ToC() const // {{{
     result << it->second->ToC();
     result << "}" << endl;
   }
-  result << "delete " << newName << ";" << endl;
   return result.str();
 } // }}}
 string MpsPar::ToC() const // {{{
@@ -5890,13 +5889,13 @@ string MpsCall::ToC() const // {{{
   stringstream precall;
   stringstream call;
   stringstream postcall;
-  call << myName << "(";
+  call << ToC_Name(myName) << "(";
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
   {
     if (it != myState.begin())
       call << ", ";
-    string newName = MpsExp::NewVar("statearg");
+    string newName = ToC_Name(MpsExp::NewVar("statearg"));
     if (tit!=myStateTypes.end())
       precall << (*tit)->ToC();
     else
@@ -5910,7 +5909,7 @@ string MpsCall::ToC() const // {{{
   {
     if (it != myArgs.begin() || myState.size()>0)
       call << ", ";
-    string newName = MpsExp::NewVar("arg");
+    string newName = ToC_Name(MpsExp::NewVar("arg"));
     if (tit!=myTypes.end())
       precall << (*tit)->ToC();
     else
@@ -5935,7 +5934,7 @@ string MpsNu::ToC() const // {{{
 string MpsLink::ToC() const // {{{
 {
   stringstream result;
-  result << "  Session_MQ " << mySession << "(" << myChannel << ", " << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl;
+  result << "  Session_MQ " << ToC_Name(mySession) << "(" << ToC_Name(myChannel) << ", " << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}
@@ -5946,17 +5945,17 @@ string MpsSync::ToC() const // {{{
 string MpsCond::ToC() const // {{{
 {
   stringstream result;
-  string newName = MpsExp::NewVar("cond");
-  result << "bool " << newName << ";" << endl
+  string newName = ToC_Name(MpsExp::NewVar("cond"));
+  result << "  bool " << newName << ";" << endl
          << myCond->ToC(newName);
-  result << "if (" << newName << ")" << endl
-         << "{" << endl
+  result << "  if (" << newName << ")" << endl
+         << "  {" << endl
          << myTrueBranch->ToC()
-         << "}" << endl
-         << "else" << endl
-         << "{" << endl
+         << "  }" << endl
+         << "  else" << endl
+         << "  {" << endl
          << myFalseBranch->ToC()
-         << "}" << endl;
+         << "  }" << endl;
   return result.str();
 } // }}}
 string MpsGuiSync::ToC() const // {{{
@@ -5965,12 +5964,12 @@ string MpsGuiSync::ToC() const // {{{
 } // }}}
 string MpsGuiValue::ToC() const // {{{
 {
-  throw (string)"MpsDef::ToC(): guivalue is not implemented yet!";
+  throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
 } // }}}
 string MpsAssign::ToC() const // {{{
 {
   stringstream result;
-  result << myType->ToC() << " " << myId << ";" << endl;
+  result << myType->ToC() << " " << ToC_Name(myId) << ";" << endl;
   result << myExp->ToC(myId);
   result << mySucc->ToC();
   return result.str();
