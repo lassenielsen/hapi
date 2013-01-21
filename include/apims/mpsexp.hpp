@@ -85,7 +85,7 @@ class MpsExp // {{{
 class MpsVarExp : public MpsExp // {{{
 {
   public:
-    MpsVarExp(const std::string &name);
+    MpsVarExp(const std::string &name, const MpsMsgType &type);
     virtual ~MpsVarExp();
     MpsVarExp *Copy() const;
     MpsVarExp *Eval() const;
@@ -105,7 +105,7 @@ class MpsVarExp : public MpsExp // {{{
 
   private:
     std::string myName;
-
+    MpsMsgType *myType;
 }; // }}}
 class MpsIntVal : public MpsExp // {{{
 {

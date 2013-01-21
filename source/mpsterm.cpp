@@ -1152,7 +1152,7 @@ inline bool TypeCheckRec(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const M
   vector<TypeArg> args;
   vector<string> argnames;
   for (vector<TypeArg>::const_iterator it=type->GetArgs().begin(); it!=type->GetArgs().end(); ++it)
-  { MpsExp *newValue = new MpsVarExp(it->myName);
+  { MpsExp *newValue = new MpsVarExp(it->myName, MpsMsgNoType());
     TypeArg arg(it->myName, *it->myType,  *newValue);
     delete newValue;
     args.push_back(arg);
@@ -1572,6 +1572,7 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
     return PrintTypeError((string)"Process Variable wrong argument-count: " + myName,*this,Theta,Gamma,Delta,Sigma,Omega);
   // Check argument-types and remove used sessions from endDelta
   MpsLocalEnv endDelta=Delta;
+  DeleteVector(myStateTypes);
   for (int i=0;i<myState.size();++i)
   {
     MpsMsgType *statetype = myState[i]->TypeCheck(Gamma, Delta, Sigma);
@@ -1585,7 +1586,10 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
     delete statetype;    
     if (!statetypematch)
       return PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
+    // Store type for compilation
+    myStateTypes.push_back(omega->second.stypes[i]->Copy());
   }
+  DeleteVector(myTypes);
   for (int i=0;i<myArgs.size();++i)
   {
     MpsMsgType *argType = myArgs[i]->TypeCheck(Gamma,endDelta,Sigma);
@@ -1604,6 +1608,9 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mp
 #endif
     bool argtypematch = argType->Equal(Theta,*callType);
     string callTypeString = callType->ToString();
+
+    // Store type for compilation
+    myTypes.push_back(callType->Copy());
     delete argType;
     delete callType;
     if (not argtypematch)
@@ -2776,7 +2783,7 @@ bool MpsRcv::SubSteps(vector<MpsStep> &dest) // {{{
   MpsEvent event;
   event.myType = rcv;
   event.myChannel = myChannel;
-  event.myValue = new MpsVarExp(MpsExp::NewVar());
+  event.myValue = new MpsVarExp(MpsExp::NewVar(), MpsMsgNoType());
   vector<string> paths;
   paths.push_back("");
   dest.push_back(MpsStep(event, paths));
@@ -3818,11 +3825,11 @@ MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<stri
     vector<MpsExp*> tmpArgs;
     tmpArgs.clear();
     for (vector<string>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
-      tmpArgs.push_back(new MpsVarExp(*it));
+      tmpArgs.push_back(new MpsVarExp(*it,MpsMsgNoType()));
     vector<MpsExp*> tmpState;
     tmpState.clear();
     for (vector<string>::const_iterator it=myStateArgs.begin(); it!=myStateArgs.end(); ++it)
-      tmpState.push_back(new MpsVarExp(*it));
+      tmpState.push_back(new MpsVarExp(*it,MpsMsgNoType()));
     MpsTerm *newVar = new MpsCall(newName,tmpArgs,tmpState,myTypes,myStateTypes);
     DeleteVector(tmpArgs);
     DeleteVector(tmpState);
@@ -3844,7 +3851,7 @@ MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<stri
     if (fev.find(*it) != fev.end()) // Must rename argument
     {
       string newArg = MpsExp::NewVar(); // Make new name
-      MpsExp *newVar = new MpsVarExp(newArg);
+      MpsExp *newVar = new MpsVarExp(newArg,MpsMsgNoType());
       MpsTerm *tmpBody = newBody->ESubst(*it,*newVar); // Rename argument
       delete newVar;
       delete newBody;
@@ -3896,7 +3903,7 @@ MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<str
     for (vector<string>::const_iterator it=stateargs.begin();it!=stateargs.end();++it)
     {
       // Create new variable
-      MpsExp *newVar=new MpsVarExp(MpsExp::NewVar());
+      MpsExp *newVar=new MpsVarExp(MpsExp::NewVar(),MpsMsgNoType());
       MpsTerm *tmpTerm=newTerm->ESubst(*it,*newVar); // Rename statearg to new name
       stateNames.push_back(newVar->ToString());
       delete newVar;
@@ -3906,7 +3913,7 @@ MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<str
     for (vector<string>::const_iterator it=args.begin();it!=args.end();++it)
     {
       // Create new variable
-      MpsExp *newVar=new MpsVarExp(MpsExp::NewVar());
+      MpsExp *newVar=new MpsVarExp(MpsExp::NewVar(),MpsMsgNoType());
       MpsTerm *tmpTerm=newTerm->ESubst(*it,*newVar); // Rename arg to new name
       argNames.push_back(newVar->ToString());
       delete newVar;
@@ -3959,7 +3966,7 @@ MpsTerm *MpsNu::PSubst(const string &var, const MpsTerm &exp, const vector<strin
   if (fev.find(myChannel)!= fev.end()) // Rename channel before subst
   {
     newChannel = MpsExp::NewVar();
-    MpsExp *newVar = new MpsVarExp(newChannel);
+    MpsExp *newVar = new MpsVarExp(newChannel,MpsMsgNoType());
     MpsTerm *tmpSucc = mySucc->ESubst(myChannel,*newVar);
     newSucc = tmpSucc->PSubst(var,exp,args,argpids,stateargs);
     delete tmpSucc;
@@ -4106,7 +4113,7 @@ MpsTerm *MpsRcv::ESubst(const string &source, const MpsExp &dest) const // {{{
   if (fv.find(myDest) != fv.end()) // Must rename to avoid capturing
   {
     newDest = MpsExp::NewVar();
-    MpsExp *newVar = new MpsVarExp(newDest);
+    MpsExp *newVar = new MpsVarExp(newDest,MpsMsgNoType());
     MpsTerm *tmpSucc = mySucc->ESubst(myDest,*newVar);
     newSucc = tmpSucc->ESubst(source,dest);
     delete tmpSucc;
@@ -4266,7 +4273,7 @@ MpsTerm *MpsNu::ESubst(const string &source, const MpsExp &dest) const // {{{
   if (fv.find(myChannel) != fv.end()) // Must rename myChannel
   {
     newChannel = MpsExp::NewVar();
-    MpsExp *newVar = new MpsVarExp(newChannel);
+    MpsExp *newVar = new MpsVarExp(newChannel,MpsMsgNoType());
     MpsTerm *tmpSucc = mySucc->ESubst(myChannel,*newVar);
     newSucc = tmpSucc->ESubst(source,dest);
     delete tmpSucc;
@@ -4292,7 +4299,7 @@ MpsTerm *MpsLink::ESubst(const string &source, const MpsExp &dest) const // {{{
   if (fv.find(mySession) != fv.end())
   {
     newSession = MpsExp::NewVar();
-    MpsExp *newVar = new MpsVarExp(newSession);
+    MpsExp *newVar = new MpsVarExp(newSession,MpsMsgNoType());
     MpsTerm *tmpSucc = mySucc->ESubst(mySession, *newVar);
     newSucc = tmpSucc->ESubst(source,dest);
     delete newVar;
@@ -4380,7 +4387,7 @@ MpsGuiSync *MpsGuiSync::ESubst(const string &source, const MpsExp &dest) const /
         if (fv.find(*arg)!=fv.end()) //Argument must be renamed
         {
           string newArg = MpsExp::NewVar(); // Make unused name
-          MpsExp *newVar = new MpsVarExp(newArg); // Make variable with the new name
+          MpsExp *newVar = new MpsVarExp(newArg,MpsMsgNoType()); // Make variable with the new name
           MpsTerm *tmpTerm = newBranch.term->ESubst(*arg,*newVar); // Replace old variable with new one
           delete newVar;
           delete newBranch.term;
@@ -5826,12 +5833,11 @@ string MpsSnd::ToC() const // {{{
 string MpsRcv::ToC() const // {{{
 {
   stringstream result;
-  string newName = ToC_Name(MpsExp::NewVar("receive")); // Create variable name foor the mmessagee to send
   string msgName = ToC_Name(MpsExp::NewVar("receive")); // Create variable name foor the mmessagee to send
-  result << "  " << GetMsgType().ToC() << " " << newName << ";" << endl; // Declare variable
+  result << "  " << GetMsgType().ToC() << " " << ToC_Name(myDest) << ";" << endl; // Declare variable
   result << "  { Message " << msgName << ";" << endl; // Declare message variable
   result << "    " << ToC_Name(myChannel.GetName()) << ".Receive(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl; // Receive value
-  result << "    " << msgName << ".GetValue(" << newName << ");" << endl;
+  result << "    " << msgName << ".GetValue(" << ToC_Name(myDest) << ");" << endl;
   result << "  }" << endl;
   result << mySucc->ToC();
   return result.str();
@@ -5889,34 +5895,40 @@ string MpsCall::ToC() const // {{{
   stringstream precall;
   stringstream call;
   stringstream postcall;
-  call << ToC_Name(myName) << "(";
+  call << "  " << ToC_Name(myName) << "(";
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
-  {
+  { string newName = ToC_Name(MpsExp::NewVar("statearg"));
     if (it != myState.begin())
       call << ", ";
-    string newName = ToC_Name(MpsExp::NewVar("statearg"));
-    if (tit!=myStateTypes.end())
-      precall << (*tit)->ToC();
-    else
-      precall << "Data";
-    precall << " " << newName << ";" << endl
-            << (*it)->ToC(newName);
     call << newName;
+    if (tit!=myStateTypes.end())
+    { precall << "  " << (*tit)->ToC() << " " << newName << ";" << endl;
+      if (dynamic_cast<const MpsIntMsgType*>(*tit)!=NULL)
+          precall << "  mpz_init(" << newName << ");" << endl;
+    }
+    else
+      precall << "  Data " << newName << ";" << endl;
+    precall << "  {" << endl
+            <<(*it)->ToC(newName)
+            << "  }" << endl;
   }
   tit=myTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it, ++tit)
-  {
+  { string newName = ToC_Name(MpsExp::NewVar("arg"));
     if (it != myArgs.begin() || myState.size()>0)
       call << ", ";
-    string newName = ToC_Name(MpsExp::NewVar("arg"));
-    if (tit!=myTypes.end())
-      precall << (*tit)->ToC();
-    else
-      precall << "Data";
-    precall << " " << newName << ";" << endl
-            << (*it)->ToC(newName);
     call << newName;
+    if (tit!=myTypes.end())
+    { precall << "  " << (*tit)->ToC() << " " << newName << ";" << endl;
+      if (dynamic_cast<const MpsIntMsgType*>(*tit)!=NULL)
+          precall << "  mpz_init(" << newName << ");" << endl;
+    }
+    else
+      precall << "Data" << " " << newName << ";" << endl;
+    precall << "  {" << endl
+            <<(*it)->ToC(newName)
+            << "  }" << endl;
   }
   call << ");" << endl;
   postcall << "return 0;" << endl;
@@ -6041,7 +6053,9 @@ MpsTerm *MpsDef::RenameAll() const // {{{
   for (vector<MpsMsgType*>::const_iterator it=myTypes.begin(); it!=myTypes.end(); ++it)
     newTypes.push_back((*it)->RenameAll());
   // Create new body
-  MpsTerm *newBody=myBody->PRename(myName,newName);
+  MpsTerm *tmpBody=myBody->PRename(myName,newName);
+  MpsTerm *newBody=tmpBody->RenameAll();
+  delete tmpBody;
   for (int i=0;i<myStateArgs.size();++i)
   { MpsTerm *tmpBody=newBody->ERename(myStateArgs[i],newStateArgs[i]);
     delete newBody;
@@ -6053,7 +6067,9 @@ MpsTerm *MpsDef::RenameAll() const // {{{
     newBody=tmpBody;
   }
   // Create new succ
-  MpsTerm *newSucc=mySucc->PRename(myName,newName);
+  MpsTerm *tmpSucc=mySucc->PRename(myName,newName);
+  MpsTerm *newSucc=tmpSucc->RenameAll();
+  delete tmpSucc;
 
   MpsTerm *result=new MpsDef(newName,
                              newArgs,

@@ -49,7 +49,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   } // }}}
   if (exp->type_name == "exp" && exp->case_name == "case1") // id {{{
   {
-    return new MpsVarExp(exp->content[0]->root.content);
+    return new MpsVarExp(exp->content[0]->root.content,MpsMsgNoType());
   } // }}}
   if (exp->type_name == "exp" && exp->case_name == "case2") // int {{{
   {
@@ -194,7 +194,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   } // }}}
 
   cerr << "Unknown exp-parsetree: " << exp->type_name << "." << exp->case_name << endl;
-  return new MpsVarExp("_ERROR");
+  return new MpsVarExp("_ERROR",MpsMsgNoType());
 } // }}}
 MpsExp *MpsExp::Create(const std::string &exp) // {{{
 {
@@ -241,9 +241,10 @@ string MpsExp::NewVar(string base) // {{{
 
 /* MpsExp constructors
  */
-MpsVarExp::MpsVarExp(const string &name) // {{{
+MpsVarExp::MpsVarExp(const string &name, const MpsMsgType &type) // {{{
 {
   myName = name;
+  myType = type.Copy();
 } // }}}
 MpsIntVal::MpsIntVal(const mpz_t &value) // {{{
 {
@@ -291,6 +292,7 @@ MpsExp::~MpsExp() // {{{
 } // }}}
 MpsVarExp::~MpsVarExp() // {{{
 {
+  delete myType;
 } // }}}
 MpsIntVal::~MpsIntVal() // {{{
 {
@@ -332,7 +334,7 @@ MpsTupleExp::~MpsTupleExp() // {{{
  */
 MpsVarExp *MpsVarExp::Copy() const // {{{
 {
-  return new MpsVarExp(myName);
+  return new MpsVarExp(myName,*myType);
 } // }}}
 MpsIntVal *MpsIntVal::Copy() const // {{{
 {
@@ -529,17 +531,20 @@ MpsTupleExp *MpsTupleExp::Eval() const// {{{
 /* Typechecking
  */
 MpsMsgType *MpsVarExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
-{
+{ MpsMsgType *result=new MpsMsgNoType();
   MpsGlobalEnv::const_iterator it_gamma = Gamma.find(myName);
   if (it_gamma != Gamma.end())
-    return new MpsChannelMsgType(*(it_gamma->second));
+    result=new MpsChannelMsgType(*(it_gamma->second));
   MpsLocalEnv::const_iterator it_delta = Delta.find(myName);
   if (it_delta != Delta.end())
-    return new MpsDelegateLocalMsgType(*it_delta->second.type, it_delta->second.pid, it_delta->second.maxpid);
+    result=new MpsDelegateLocalMsgType(*it_delta->second.type, it_delta->second.pid, it_delta->second.maxpid);
   MpsMsgEnv::const_iterator it_sigma = Sigma.find(myName);
   if (it_sigma != Sigma.end())
-    return it_sigma->second->Copy();
-  return new MpsMsgNoType();
+    result=it_sigma->second->Copy();
+
+  delete myType;
+  myType = result->Copy();
+  return result;;
 } // }}}
 MpsMsgType *MpsIntVal::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
 {
@@ -683,7 +688,7 @@ bool MpsVarExp::operator==(const MpsExp &rhs) const // {{{
   if (typeid(rhs) != typeid(MpsVarExp))
     return false;
   MpsVarExp *rhsptr=(MpsVarExp*)&rhs;
-  return (myName == rhsptr->myName);
+  return (myName == rhsptr->myName); // ignore type info!
 } // }}}
 bool MpsIntVal::operator==(const MpsExp &rhs) const // {{{
 {
@@ -815,7 +820,7 @@ set<string> MpsTupleExp::FV() const// {{{
 MpsExp *MpsVarExp::Rename(const string &src, const string &dst) const // {{{
 {
   if (myName == src)
-    return new MpsVarExp(dst);
+    return new MpsVarExp(dst,*myType);
   else
     return Copy();
 } // }}}
@@ -999,7 +1004,10 @@ string MpsTupleExp::ToString() const // {{{
 string MpsVarExp::ToC(const string &dest) const // {{{
 {
   stringstream result;
-  result << "    " << dest << "=" << ToC_Name(myName) << ";" << endl;
+  if (dynamic_cast<const MpsIntMsgType*>(myType))
+    result << "    mpz_set(" << dest << "," << ToC_Name(myName) << ");" << endl;
+  else
+    result << "    " << dest << "=" << ToC_Name(myName) << ";" << endl;
   return result.str();
 } // }}}
 string MpsIntVal::ToC(const string &dest) const // {{{
@@ -1008,7 +1016,7 @@ string MpsIntVal::ToC(const string &dest) const // {{{
   string val(str);
   free(str);
   stringstream result;
-  result << "    mpz_init_set_str(" << dest << ",\"" << val << "\",10);" << endl;
+  result << "    mpz_set_str(" << dest << ",\"" << val << "\",10);" << endl;
   return result.str();
 } // }}}
 string MpsStringVal::ToC(const string &dest) const // {{{
@@ -1512,11 +1520,11 @@ MpsExp *MpsVarExp::Negate() const// {{{
 } // }}}
 MpsExp *MpsIntVal::Negate() const// {{{
 { throw (string)"ERROR: Negate applied to Integer Value";
-  return new MpsVarExp("ERROR: Negate applied to Integer Value");
+  return new MpsVarExp("ERROR: Negate applied to Integer Value",MpsMsgNoType());
 } // }}}
 MpsExp *MpsStringVal::Negate() const// {{{
 { throw (string)"ERROR: Negate applied to String Value";
-  return new MpsVarExp("ERROR: Negate applied to String Value");
+  return new MpsVarExp("ERROR: Negate applied to String Value",MpsMsgNoType());
 } // }}}
 MpsExp *MpsBoolVal::Negate() const// {{{
 {
@@ -1524,13 +1532,13 @@ MpsExp *MpsBoolVal::Negate() const// {{{
 } // }}}
 MpsExp *MpsCondExp::Negate() const// {{{
 { throw (string)"ERROR: Negate applied to CondExp - NOT IMPLEMENTED";
-  return new MpsVarExp("ERROR: Negate applied to CondExp - NOT IMPLEMENTED");
+  return new MpsVarExp("ERROR: Negate applied to CondExp - NOT IMPLEMENTED",MpsMsgNoType());
 } // }}}
 MpsExp *MpsUnOpExp::Negate() const// {{{
 { if (GetOp()=="not")
     return myRight->Copy();
   throw (string)"ERROR: Negation on unary operator: "+GetOp();
-  return new MpsVarExp((string)"ERROR: Negation on unary operator: " + GetOp());
+  return new MpsVarExp((string)"ERROR: Negation on unary operator: " + GetOp(),MpsMsgNoType());
 } // }}}
 MpsExp *MpsBinOpExp::Negate() const// {{{
 { if (GetOp()=="and")
@@ -1565,12 +1573,12 @@ MpsExp *MpsBinOpExp::Negate() const// {{{
   else
   {
     throw (string)"ERROR: Negate applied to binary operator: "+GetOp();
-    return new MpsVarExp((string)"ERROR: Negate applied to binary operator: " + GetOp());
+    return new MpsVarExp((string)"ERROR: Negate applied to binary operator: " + GetOp(),MpsMsgNoType());
   }
 } // }}}
 MpsExp *MpsTupleExp::Negate() const// {{{
 { throw (string)"ERROR: Negate applied to tuple";
-  return new MpsVarExp("ERROR: Negate applied to tuple");
+  return new MpsVarExp("ERROR: Negate applied to tuple",MpsMsgNoType());
 } // }}}
 
 /* Convert boolean expressions to CNF
@@ -1581,18 +1589,18 @@ MpsExp *MpsVarExp::MakeCNF() const// {{{
 } // }}}
 MpsExp *MpsIntVal::MakeCNF() const// {{{
 { throw (string)"ERROR: MakeCNF applied to Integer Value";
-  return new MpsVarExp("ERROR: MakeCNF applied to Integer Value");
+  return new MpsVarExp("ERROR: MakeCNF applied to Integer Value",MpsMsgNoType());
 } // }}}
 MpsExp *MpsStringVal::MakeCNF() const// {{{
 { throw (string)"ERROR: MakeCNF applied to String Value";
-  return new MpsVarExp("ERROR: MakeCNF applied to String Value");
+  return new MpsVarExp("ERROR: MakeCNF applied to String Value",MpsMsgNoType());
 } // }}}
 MpsExp *MpsBoolVal::MakeCNF() const// {{{
 { return Copy();
 } // }}}
 MpsExp *MpsCondExp::MakeCNF() const// {{{
 { throw (string)"ERROR: MakeCNF applied to CondExp - NOT IMPLEMENTED";
-  return new MpsVarExp("ERROR: MakeCNF applied to CondExp - NOT IMPLEMENTED");
+  return new MpsVarExp("ERROR: MakeCNF applied to CondExp - NOT IMPLEMENTED",MpsMsgNoType());
 } // }}}
 MpsExp *MpsUnOpExp::MakeCNF() const// {{{
 { if (GetOp()=="not")
@@ -1606,7 +1614,7 @@ MpsExp *MpsUnOpExp::MakeCNF() const// {{{
     }
   }
   throw (string)"ERROR: Negation on unary operator: "+GetOp();
-  return new MpsVarExp((string)"ERROR: Negation on unary operator: " + GetOp());
+  return new MpsVarExp((string)"ERROR: Negation on unary operator: " + GetOp(),MpsMsgNoType());
 } // }}}
 MpsExp *MpsBinOpExp::MakeCNF() const// {{{
 { if (GetOp()=="and")
@@ -1642,7 +1650,7 @@ MpsExp *MpsBinOpExp::MakeCNF() const// {{{
         delete newLeft;
         delete newRight;
         throw msg;
-        return new MpsVarExp(msg);
+        return new MpsVarExp(msg,MpsMsgNoType());
       }
     }
     if (opRight!=NULL)
@@ -1665,7 +1673,7 @@ MpsExp *MpsBinOpExp::MakeCNF() const// {{{
         delete newLeft;
         delete newRight;
         throw msg;
-        return new MpsVarExp(msg);
+        return new MpsVarExp(msg,MpsMsgNoType());
       }
     }
     // Otherwise just combine left and right side
@@ -1676,12 +1684,12 @@ MpsExp *MpsBinOpExp::MakeCNF() const// {{{
   }
   else
   { throw (string)"ERROR: MakeCNF applied to binary operator: "+GetOp();
-    return new MpsVarExp((string)"ERROR: MakeCNF applied to binary operator: " + GetOp());
+    return new MpsVarExp((string)"ERROR: MakeCNF applied to binary operator: " + GetOp(),MpsMsgNoType());
   }
 } // }}}
 MpsExp *MpsTupleExp::MakeCNF() const// {{{
 { throw (string)"ERROR: MakeCNF applied to tuple";
-  return new MpsVarExp("ERROR: MakeCNF applied to tuple");
+  return new MpsVarExp("ERROR: MakeCNF applied to tuple",MpsMsgNoType());
 } // }}}
 
 /* Convert boolean expressions to Negation Normal Form
@@ -1856,7 +1864,7 @@ int MpsTupleExp::GetSize() const // {{{
 const MpsExp *MpsTupleExp::GetElement(int index) const // {{{
 {
   if (index < 0 || index >= myElements.size()) // Index out of bounds
-    return new MpsVarExp("_Error: Tuple index out of bounds");
+    return new MpsVarExp("_Error: Tuple index out of bounds",MpsMsgNoType());
   return myElements[index];
 } // }}}
 string MpsBinOpExp::GetOp() const // {{{

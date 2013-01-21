@@ -4255,7 +4255,7 @@ MpsExp *MERGE_ERROR_EXP(const MpsLocalType &lhs, const MpsLocalType &rhs, string
        << "!!!!!!!!!!!!LHS: " << lhs.ToString("!!!!!!!!!!!!LHS: ") << endl
        << "!!!!!!!!!!!!RHS: " << rhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
 #endif
-  return new MpsVarExp(MpsExp::NewVar("ERROR"));
+  return new MpsVarExp(MpsExp::NewVar("ERROR"),MpsMsgNoType());
 } // }}}
 MpsLocalType *MpsLocalSendType::Merge(MpsLocalType &rhs) const // {{{
 {
