@@ -1095,6 +1095,8 @@ class MpsAssign : public MpsTerm // {{{
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
+    const MpsMsgType &GetExpType() const;
+
   private:
     std::string myId;
     MpsExp *myExp;

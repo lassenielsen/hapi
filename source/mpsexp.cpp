@@ -1001,108 +1001,79 @@ string MpsTupleExp::ToString() const // {{{
 
 /* Make C++ code that evaluates expression and stores the result in dest
  */
-string MpsVarExp::ToC(const string &dest) const // {{{
+string MpsVarExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  stringstream result;
-  if (dynamic_cast<const MpsIntMsgType*>(myType))
-    result << "    mpz_set(" << dest << "," << ToC_Name(myName) << ");" << endl;
-  else
-    result << "    " << dest << "=" << ToC_Name(myName) << ";" << endl;
-  return result.str();
+  // No evaluation necessary
+  return ToC_Name(myName);
 } // }}}
-string MpsIntVal::ToC(const string &dest) const // {{{
-{
+string MpsIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
+{ 
   char *str=mpz_get_str(NULL,10,myValue);
   string val(str);
   free(str);
-  stringstream result;
-  result << "    mpz_set_str(" << dest << ",\"" << val << "\",10);" << endl;
-  return result.str();
+  string varName = ToC_Name(MpsExp::NewVar("intval"));
+  dest << "    IntValue " << varName << "(\"" << val << "\");" << endl;
+  return varName;
 } // }}}
-string MpsStringVal::ToC(const string &dest) const // {{{
+string MpsStringVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  stringstream result;
-  result << "    " << dest << "=\"" << stuff_string(myValue) << "\";" << endl;
-  return result.str();
+  string varName = ToC_Name(MpsExp::NewVar("stringval"));
+  dest << "    StringValue " << varName << "(\"" << stuff_string(myValue) << "\");" << endl;
+  return varName;
 } // }}}
-string MpsBoolVal::ToC(const string &dest) const // {{{
+string MpsBoolVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  stringstream result;
-  result << "    " << dest << "=";
-  result << (myValue?(string)"true":(string)"false");
-  result << ";" << endl;
-  return result.str();
+  string varName = ToC_Name(MpsExp::NewVar("boolval"));
+  dest << "    BpplValue " << varName << "(" << (myValue?(string)"true":(string)"false") << ");" << endl;
+  return varName;
 } // }}}
-string MpsCondExp::ToC(const string &dest) const // {{{
+string MpsCondExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  stringstream result;
-  string newName=ToC_Name(MpsExp::NewVar("expcond"));
-  result << "    bool " << newName << ";" << endl;
-  result << myCond->ToC(newName);
-  result << "    if (" << newName << ")" << endl
-         << "    {" << endl
-         << myTrueBranch->ToC(dest)
-         << "    }"
-         << "    else"
-         << "    {"
-         << myFalseBranch->ToC(dest)
-         << "    }" << endl;
-  return result.str();
+  string varName = ToC_Name(MpsExp::NewVar("ifval"));
+  string condVar = myCond->ToC(dest, "BoolValue");
+  dest << "    " << typeName << " " << varName << ";" << endl
+       << "    if (" << condVar << ".GetValue())" << endl
+       << "    {" << endl;
+  string trueVar = myTrueBranch->ToC(dest, typeName);
+  dest << "      " << varName << " = " << trueVar << ";" << endl
+       << "    }"
+       << "    else"
+       << "    {";
+  string falseVar = myFalseBranch->ToC(dest, typeName);
+  dest << "      " << varName << " = " << falseVar << ";" << endl
+       << "    }" << endl;
+  return varName;
 } // }}}
-string MpsUnOpExp::ToC(const string &dest) const // {{{
+string MpsUnOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  stringstream result;
-  if (myName == "not")
-  { string newName = ToC_Name(MpsExp::NewVar("expnot"));
-    result << "    bool " << newName << ";" << endl;
-    result << myRight->ToC(newName);
-    result << "    " << dest << "=" << "!" << newName << ";" << endl;
-    return result.str();
-  }
+  string varName = ToC_Name(MpsExp::NewVar("unop"));
+  if (myName == "not") // {{{
+  { string subName = myRight->ToC(dest, typeName);
+    dest << "    " << typeName << " " << varName << "(!" << subName << ".GetValue());" << endl;
+    return varName;
+  } // }}}
   else
     throw (string)"MpsUnOpExp::ToC: Unknown operation " + myName;
 } // }}}
-string MpsBinOpExp::ToC(const string &dest) const // {{{
+string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  stringstream result;
-  string leftName = ToC_Name(MpsExp::NewVar("left"));
-  string rightName = ToC_Name(MpsExp::NewVar("right"));
-  result << "    " << myLeftType->ToC() << " " << leftName << ";" << endl
-         << "    mpz_init(" << leftName << ");" << endl
-         << myLeft->ToC(leftName)
-         << "    " << myRightType->ToC() << " " << rightName << ";" << endl
-         << "    mpz_init(" << rightName << ");" << endl
-         << myRight->ToC(rightName);
-    
-  // For branching on subtree types
-  const MpsIntMsgType *lftIntType=dynamic_cast<const MpsIntMsgType*>(myLeftType);
-  const MpsIntMsgType *rgtIntType=dynamic_cast<const MpsIntMsgType*>(myRightType);
-
-  if (myName=="+" && lftIntType!=NULL && rgtIntType!=NULL) // Integer Addition {{{
-  { result << "    mpz_add(" << dest << "," << leftName << "," << rightName << ");" << endl;
-    return result.str();
-  } // }}}
-  else if (myName=="-" && lftIntType!=NULL && rgtIntType!=NULL) // {{{
-  { result << "    mpz_sub(" << dest << "," << leftName << "," << rightName << ");" << endl;
-    return result.str();
-  } // }}}
-  else if (myName=="<=" && lftIntType!=NULL && rgtIntType!=NULL) // {{{
-  { string cmpName = ToC_Name(MpsExp::NewVar("cmp"));
-    result << "    int " << cmpName << ";" << endl;
-    result << "    " << cmpName << "=mpz_cmp(" << leftName << "," << rightName << ");" << endl;
-    result << "    " << dest << "=" << cmpName << "<=0;" << endl;
-    return result.str();
-  } // }}}
-  // FIXME: More operators
-  return (string)"[[(" + myLeftType->ToString() + ")" + myLeft->ToString() + " " + myName + " (" + myRightType->ToString() + ")" + myRight->ToString() + "]]";
+  string varName = ToC_Name(MpsExp::NewVar("binop"));
+  string leftName = myLeft->ToC(dest, myLeftType->ToC());
+  string rightName = myRight->ToC(dest, myRightType->ToC());
+  dest << "    " << typeName << " " << varName << "(" << leftName << " " << myName << " " << rightName << ");" << endl;
+  return varName;
 } // }}}
-string MpsTupleExp::ToC(const string &dest) const // {{{
+string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  stringstream result;
-  int pos=0;
+  string varName = ToC_Name(MpsExp::NewVar("tupleval"));
+  dest << "    " << typeName << " " << varName << ";" << endl;
   for (vector<MpsExp*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
-    result << (*it)->ToC(dest + ".x"+int2string(pos));
-  return result.str();
+  { dest << "    {" << endl;
+    string eltName = (*it)->ToC(dest,"Unknown");
+    dest << "      " << varName << ".AddValue(" << eltName << ");" << endl
+         << "    }" << endl;
+  }
+  return varName;
 } // }}}
 
 /* Decide if Valid

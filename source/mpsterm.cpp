@@ -5819,12 +5819,12 @@ string MpsSnd::ToC() const // {{{
 {
   stringstream result;
   // Create variable name foor the message to send
-  string newName = ToC_Name(MpsExp::NewVar("send"));
   string msgName = ToC_Name(MpsExp::NewVar("send"));
   // Declare variable
-  result << "  { " << GetMsgType().ToC() << " " << newName << ";" << endl;
-  result << myExp->ToC(newName); // Compute message and store in variable
-  result << "    Message " << " " << msgName << "(" << newName << ");" << endl;
+  result << "  { " << endl;
+  string valName=myExp->ToC(result, GetMsgType().ToC()); // Compute message and store in variable valName
+  result << "    Message " << " " << msgName << ";" << endl
+         << "    " << valName << ".ToMessage(" << msgName << ");" << endl;
   result << "    " << ToC_Name(myChannel.GetName()) << ".Send(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl; // Send computed value
   result << "  }" << endl;
   result << mySucc->ToC();
@@ -5845,28 +5845,35 @@ string MpsRcv::ToC() const // {{{
 string MpsSelect::ToC() const // {{{
 {
   stringstream result;
-  string newName = ToC_Name(MpsExp::NewVar("select")); // Create variable name foor the mmessagee to send
-  result << "{" << endl
-         << "string " << newName << "=\"" << myLabel << "\";" << endl
-         << ToC_Name(myChannel.GetName()) << ".Send(" << int2string(myChannel.GetIndex()-1) << "," << newName << ");" << endl; // Send label
+  string msgName = ToC_Name(MpsExp::NewVar("select")); // Create variable name foor the mmessagee to send
+  result << "  {" << endl
+         << "    Message " << " " << msgName << ";" << endl
+         << "    " << msgName << ".AddData(" << "\"" << myLabel << "\", " << int2string(myLabel.size()+1) << ");" << endl
+         << ToC_Name(myChannel.GetName()) << ".Send(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl; // Send label
   result << mySucc->ToC();
   return result.str();
 } // }}}
 string MpsBranch::ToC() const // {{{
 {
   stringstream result;
-  string newName = ToC_Name(MpsExp::NewVar("var")); // Create variable name foor the mmessagee to send
-  result << "std::string " << newName << ";" << endl; // Declare variable
-  result << ToC_Name(myChannel.GetName()) << ".Receive(" << int2string(myChannel.GetIndex()-1) << ", " << newName << ");" << endl; // Receive value
+  string lblName = ToC_Name(MpsExp::NewVar("branch")); // Create variable name for the received value
+  string msgName = ToC_Name(MpsExp::NewVar("branch")); // Create variable name for the received message
+  result << "  string " << lblName << ";" << endl
+         << "  {" << endl
+         << "    Message " << msgName << ";" << endl // Declare message variable
+         << "    " << ToC_Name(myChannel.GetName()) << ".Receive(" << int2string(myChannel.GetIndex()-1) << ", " << msgName << ");" << endl // Receive message
+         << "    " << msgName << ".GetValue(" << lblName << ");" << endl
+         << "  }" << endl;
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
-      result << "else ";
-    result << "if (" << newName << "==" << it->first << ")" << endl
-           << "{" << endl;
+      result << "  else ";
+    result << "  if (" << lblName << "==" << it->first << ")" << endl
+           << "  {" << endl;
     result << it->second->ToC();
-    result << "}" << endl;
+    result << "  }" << endl;
   }
+  result << "  else throw (string)\"Unknown branch: " << lblName << "\";" << endl;
   return result.str();
 } // }}}
 string MpsPar::ToC() const // {{{
@@ -5898,37 +5905,21 @@ string MpsCall::ToC() const // {{{
   call << "  " << ToC_Name(myName) << "(";
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
-  { string newName = ToC_Name(MpsExp::NewVar("statearg"));
+  { precall << "  {" << endl;
+    string newName = (*it)->ToC(precall, (*tit)->ToC());
+    precall << "  }" << endl;
     if (it != myState.begin())
       call << ", ";
     call << newName;
-    if (tit!=myStateTypes.end())
-    { precall << "  " << (*tit)->ToC() << " " << newName << ";" << endl;
-      if (dynamic_cast<const MpsIntMsgType*>(*tit)!=NULL)
-          precall << "  mpz_init(" << newName << ");" << endl;
-    }
-    else
-      precall << "  Data " << newName << ";" << endl;
-    precall << "  {" << endl
-            <<(*it)->ToC(newName)
-            << "  }" << endl;
   }
   tit=myTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it, ++tit)
-  { string newName = ToC_Name(MpsExp::NewVar("arg"));
+  { precall << "  {" << endl;
+    string newName = (*it)->ToC(precall, (*tit)->ToC());
+    precall << "  }" << endl;
     if (it != myArgs.begin() || myState.size()>0)
       call << ", ";
     call << newName;
-    if (tit!=myTypes.end())
-    { precall << "  " << (*tit)->ToC() << " " << newName << ";" << endl;
-      if (dynamic_cast<const MpsIntMsgType*>(*tit)!=NULL)
-          precall << "  mpz_init(" << newName << ");" << endl;
-    }
-    else
-      precall << "Data" << " " << newName << ";" << endl;
-    precall << "  {" << endl
-            <<(*it)->ToC(newName)
-            << "  }" << endl;
   }
   call << ");" << endl;
   postcall << "return 0;" << endl;
@@ -5957,9 +5948,7 @@ string MpsSync::ToC() const // {{{
 string MpsCond::ToC() const // {{{
 {
   stringstream result;
-  string newName = ToC_Name(MpsExp::NewVar("cond"));
-  result << "  bool " << newName << ";" << endl
-         << myCond->ToC(newName);
+  string newName = myCond->ToC(result,"BoolValue");
   result << "  if (" << newName << ")" << endl
          << "  {" << endl
          << myTrueBranch->ToC()
@@ -5982,8 +5971,10 @@ string MpsAssign::ToC() const // {{{
 {
   stringstream result;
   result << myType->ToC() << " " << ToC_Name(myId) << ";" << endl;
-  result << myExp->ToC(myId);
-  result << mySucc->ToC();
+  string varName = myExp->ToC(result,GetExpType().ToC());
+  MpsTerm *tmpSucc = mySucc->ERename(myId,varName);
+  result << tmpSucc->ToC();
+  delete tmpSucc;
   return result.str();
 } // }}}
 
@@ -6416,7 +6407,6 @@ void MpsSnd::SetMsgType(const MpsMsgType &type) // {{{
 { delete myType;
   myType=type.Copy();
 } // }}}
-void MpsRcv::SetMsgType(const MpsMsgType &type) // {{{
-{ delete myType;
-  myType=type.Copy();
+const MpsMsgType &MpsAssign::GetExpType() const // {{{
+{ return *myType;
 } // }}}

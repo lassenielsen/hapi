@@ -5482,34 +5482,27 @@ string MpsMsgNoType::ToC() const // {{{
 } // }}}
 string MpsIntMsgType::ToC() const // {{{
 {
-  return "mpz_t";
+  return "IntValue";
 } // }}}
 string MpsStringMsgType::ToC() const // {{{
 {
-  return "std::string";
+  return "StringValue";
 } // }}}
 string MpsBoolMsgType::ToC() const // {{{
 {
-  return "bool";
+  return "BoolValue";
 } // }}}
 string MpsTupleMsgType::ToC() const // {{{
 {
-  string result="struct {";
-  int i=0;
-  for (vector<MpsMsgType*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
-  {
-    result += (*it)->ToString() + " x"+int2string(i++) + "; ";
-  }
-  result += "}";
-  return result;
+  return "TupleValue";
 } // }}}
 string MpsChannelMsgType::ToC() const // {{{
 {
-  return "libpi::Channel";
+  return "Channel";
 } // }}}
 string MpsDelegateMsgType::ToC() const // {{{
 {
-  return "libpi::Session";
+  return "Session";
 } // }}}
 
 // Individual accesors
