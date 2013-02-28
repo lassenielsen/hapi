@@ -6403,6 +6403,10 @@ const MpsMsgType &MpsSnd::GetMsgType() const // {{{
 const MpsMsgType &MpsRcv::GetMsgType() const // {{{
 { return *myType;
 } // }}}
+void MpsRcv::SetMsgType(const MpsMsgType &type) // {{{
+{ delete myType;
+  myType=type.Copy();
+} // }}}
 void MpsSnd::SetMsgType(const MpsMsgType &type) // {{{
 { delete myType;
   myType=type.Copy();
