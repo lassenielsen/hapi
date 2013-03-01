@@ -5802,6 +5802,7 @@ string MpsTerm::MakeC() const // {{{
        + "#include <gmp.h>\n"
        + "#include <vector>\n"
        + "#include <libpi/session_mq.hpp>\n"
+       + "#include <libpi/value.hpp>\n"
        + "using namespace std;\n"
        + "using namespace libpi;\n\n"
        + DefEnvToC(defs)
@@ -5928,9 +5929,9 @@ string MpsCall::ToC() const // {{{
 string MpsNu::ToC() const // {{{
 {
   stringstream result;
-  result << "  vector<Channel_MQ> " << myChannel << ";" << endl;
+  result << "  vector<Channel_MQ> " << ToC_Name(myChannel) << ";" << endl;
   for (int i=1;i<myType->GetMaxPid();++i)
-    result << "  " << myChannel << ".push_back(Channel_MQ());" << endl;
+    result << "  " << ToC_Name(myChannel) << ".push_back(Channel_MQ());" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}
@@ -5949,7 +5950,7 @@ string MpsCond::ToC() const // {{{
 {
   stringstream result;
   string newName = myCond->ToC(result,"BoolValue");
-  result << "  if (" << newName << ")" << endl
+  result << "  if (" << newName << ".GetValue())" << endl
          << "  {" << endl
          << myTrueBranch->ToC()
          << "  }" << endl
