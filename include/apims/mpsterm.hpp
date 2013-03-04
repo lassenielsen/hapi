@@ -681,6 +681,7 @@ class MpsDef : public MpsTerm // {{{
     std::vector<std::pair<int,int> > GetArgPids() const;
 
   private:
+    static std::vector<std::pair<int,int> > GetArgPids(const std::vector<MpsMsgType*> &argTypes);
     std::string myName;
     std::vector<std::string> myStateArgs;
     std::vector<MpsMsgType*> myStateTypes;

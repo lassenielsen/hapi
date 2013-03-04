@@ -6235,46 +6235,185 @@ MpsTerm *MpsEnd::CloseDefinitions() const // {{{
 } // }}}
 MpsTerm *MpsSnd::CloseDefinitions() const // {{{
 {
-  return Copy();
+  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *myType);
+  delete newSucc;
+
+  return result;
 } // }}}
 MpsTerm *MpsRcv::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *myType);
+  delete newSucc;
+
+  return result;
 } // }}}
 MpsTerm *MpsSelect::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc);
+  delete newSucc;
+
+  return result;
 } // }}}
 MpsTerm *MpsBranch::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+    newBranches[it->first]=it->second->CloseDefinitions();
+
+  MpsTerm *result=new MpsBranch(myChannel,newBranches);
+  DeleteMap(newBranches);
+
+  return result;
 } // }}}
 MpsTerm *MpsPar::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  MpsTerm *newLeft = myLeft->CloseDefinitions();
+  MpsTerm *newRight = myRight->CloseDefinitions();
+
+  MpsTerm *result=new MpsPar(*newLeft,*newRight);
+
+  delete newLeft;
+  delete newRight;
+
+  return result;
 } // }}}
 MpsTerm *MpsDef::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  // Copy current args and types
+  vector<string> newArgs=myArgs;
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator t=myTypes.begin(); t!=myTypes.end(); ++t)
+    newTypes.push_back((*t)->Copy());
+
+  // Find missing args
+  set<string> fvs=myBody->FEV();
+  for (vector<string>::const_iterator bv=myStateArgs.begin(); bv!=myStateArgs.end(); ++bv)
+    fvs.erase(*bv);
+  for (vector<string>::const_iterator bv=myArgs.begin(); bv!=myArgs.end(); ++bv)
+    fvs.erase(*bv);
+  // Add missing args, and their types from env
+  for (set<string>::const_iterator fv=fvs.begin(); fv!=fvs.end(); ++fv)
+  { newArgs.push_back(*fv);
+    MpsMsgEnv::const_iterator bt=myEnv.find(*fv);
+    if (bt==myEnv.end())
+      newTypes.push_back(new MpsMsgNoType());
+    else
+      newTypes.push_back(bt->second->Copy());
+  }
+  // Create call term for substitution
+  vector<MpsExp*> callArgs;
+  for (vector<string>::const_iterator it=newArgs.begin(); it!=newArgs.end(); ++it)
+    callArgs.push_back(new MpsVarExp(*it,MpsMsgNoType()));
+  vector<MpsExp*> callStateArgs;
+  for (vector<string>::const_iterator it=myStateArgs.begin(); it!=myStateArgs.end(); ++it)
+    callStateArgs.push_back(new MpsVarExp(*it,MpsMsgNoType()));
+  MpsTerm *newCall = new MpsCall(myName,callArgs,callStateArgs,newTypes,myStateTypes);
+  DeleteVector(callArgs);
+  DeleteVector(callStateArgs);
+  // Create new body
+  MpsTerm *tmpSucc = mySucc->PSubst(myName,*newCall,myArgs,GetArgPids(),myStateArgs);
+  MpsTerm *newSucc = tmpSucc->CloseDefinitions();
+  delete tmpSucc;
+  // Create new succ
+  MpsTerm *tmpBody = myBody->PSubst(myName,*newCall,myArgs,GetArgPids(),myStateArgs);
+  MpsTerm *newBody = tmpBody->CloseDefinitions();
+  delete tmpBody;
+  // Create result
+  MpsTerm *result=new MpsDef(myName,newArgs,newTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv);
+
+  delete newBody;
+  delete newSucc;
+  DeleteVector(newTypes);
+
+  return result;
 } // }}}
 MpsTerm *MpsCall::CloseDefinitions() const // {{{
 { return Copy();
 } // }}}
 MpsTerm *MpsNu::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  MpsTerm *result= new MpsNu(myChannel, *newSucc, *myType);
+  delete newSucc;
+  return result;
 } // }}}
 MpsTerm *MpsLink::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  MpsTerm *result= new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc);
+  delete newSucc;
+  return result;
 } // }}}
 MpsTerm *MpsSync::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator br=myBranches.begin(); br!=myBranches.end(); ++br)
+    newBranches[br->first]=br->second->CloseDefinitions();
+
+  MpsTerm *result=new MpsSync(myMaxpid, mySession, newBranches, myAssertions);
+
+  DeleteMap(newBranches);
+
+  return result;
 } // }}}
 MpsTerm *MpsCond::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  MpsTerm *newTrueBranch=myTrueBranch->CloseDefinitions();
+  MpsTerm *newFalseBranch=myFalseBranch->CloseDefinitions();
+
+  MpsTerm *result=new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
+
+  delete newTrueBranch;
+  delete newFalseBranch;
+
+  return result;
 } // }}}
 MpsTerm *MpsGuiSync::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  // Create new branches
+  map<string,inputbranch> newBranches;
+  for (map<string,inputbranch>::const_iterator br=myBranches.begin(); br!=myBranches.end(); ++br)
+  { inputbranch newBr;
+    newBr.term=br->second.term->CloseDefinitions();
+    newBr.assertion=br->second.assertion->Copy();
+    newBr.names=br->second.names;
+    newBr.args=br->second.args;
+    for (vector<MpsMsgType*>::const_iterator t=br->second.types.begin(); t!=br->second.types.end(); ++t)
+      newBr.types.push_back((*t)->Copy());
+    for (vector<MpsExp*>::const_iterator v=br->second.values.begin(); v!=br->second.values.end(); ++v)
+      newBr.values.push_back((*v)->Copy());
+    newBranches[br->first]=newBr;
+  }
+  // Create result
+  MpsTerm *result=new MpsGuiSync(myMaxpid, mySession, myPid, newBranches);
+  // Clean up
+  while (newBranches.size()>0)
+  {
+    delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    DeleteVector(newBranches.begin()->second.types);
+    DeleteVector(newBranches.begin()->second.values);
+    newBranches.erase(newBranches.begin());
+  }
+  // return
+  return result;
 } // }}}
 MpsTerm *MpsGuiValue::CloseDefinitions() const // {{{
-{ return Copy();
+{
+  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  MpsTerm *result= new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
+  delete newSucc;
+  return result;
 } // }}}
 MpsTerm *MpsAssign::CloseDefinitions() const // {{{
-{ return Copy(); // FIXME
+{
+  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  MpsTerm *result= new MpsAssign(myId, *myExp, *myType, *newSucc);
+  delete newSucc;
+  return result;
 } // }}}
 
 /* MpsTerm::ExtractDefinitions
@@ -6420,11 +6559,11 @@ MpsTerm *MpsAssign::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 
 /* Term specific funtions
  */
-vector<pair<int,int> > MpsDef::GetArgPids() const // {{{
+vector<pair<int,int> > MpsDef::GetArgPids(const std::vector<MpsMsgType*> &argTypes) // {{{
 {
   vector<pair<int,int> > argPids; // Build argPid vector for function def.
-  for (vector<MpsMsgType*>::const_iterator argType=myTypes.begin();
-       argType!=myTypes.end(); ++argType)
+  for (vector<MpsMsgType*>::const_iterator argType=argTypes.begin();
+       argType!=argTypes.end(); ++argType)
   { const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(*argType);
     if (delType!=NULL)
       argPids.push_back(pair<int,int>(delType->GetPid(), delType->GetMaxpid()));
@@ -6433,6 +6572,10 @@ vector<pair<int,int> > MpsDef::GetArgPids() const // {{{
   }
   return argPids;
 } // }}}
+vector<pair<int,int> > MpsDef::GetArgPids() const // {{{
+{ return GetArgPids(myTypes);
+} // }}}
+
 const MpsMsgType &MpsSnd::GetMsgType() const // {{{
 { return *myType;
 } // }}}
