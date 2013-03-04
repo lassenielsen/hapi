@@ -494,7 +494,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     vector<MpsMsgType*> statetypes;
     statetypes.clear();
     FindArgs(exp->content[2],stateargs,statetypes);
-    MpsTerm *result = new MpsDef(exp->content[1]->root.content, args, types, stateargs, statetypes, *body, *succ);
+    MpsTerm *result = new MpsDef(exp->content[1]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv());
     // Clean up
     delete succ;
     delete body;
@@ -832,7 +832,7 @@ MpsPar::MpsPar(const MpsTerm &left, const MpsTerm &right) // {{{
   myLeft = left.Copy();
   myRight = right.Copy();
 } // }}}
-MpsDef::MpsDef(const string &name, const std::vector<std::string> &args, const vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ) // {{{
+MpsDef::MpsDef(const string &name, const std::vector<std::string> &args, const vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, const MpsMsgEnv &env) // {{{
 : myName(name),
   myArgs(args),
   myStateArgs(stateargs)
@@ -847,6 +847,8 @@ MpsDef::MpsDef(const string &name, const std::vector<std::string> &args, const v
   // Assert succ!=NULL
   myBody = body.Copy();
   mySucc = succ.Copy();
+  for (MpsMsgEnv::const_iterator it=env.begin(); it!=env.end(); ++it)
+    myEnv[it->first]=it->second->Copy();
 } // }}}
 MpsCall::MpsCall(const string &name, const vector<MpsExp*> &args, const vector<MpsExp*> &state, const vector<MpsMsgType*> &types, const vector<MpsMsgType*> &statetypes) // {{{
 : myName(name)
@@ -976,6 +978,7 @@ MpsDef::~MpsDef() // {{{
   // assert myBody != NULL
   DeleteVector(myTypes);
   DeleteVector(myStateTypes);
+  DeleteMap(myEnv);
   delete mySucc;
   delete myBody;
 } // }}}
@@ -1556,6 +1559,14 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
       usedArgs.insert(myArgs[i]);
     }
   }
+  // Store env for later (compilation)
+  DeleteMap(myEnv);
+  for (MpsGlobalEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
+    myEnv[it->first]= new MpsChannelMsgType(*it->second);
+  for (MpsLocalEnv::const_iterator it=Delta.begin(); it!=Delta.end(); ++it)
+    myEnv[it->first]= new MpsDelegateLocalMsgType(*it->second.type,it->second.pid,it->second.maxpid);
+  for (MpsMsgEnv::const_iterator it=Sigma.begin(); it!=Sigma.end(); ++it)
+    myEnv[it->first]=it->second->Copy();
   // Make subcalls
   return mySucc->TypeCheck(Theta,Gamma,Delta,Sigma,newOmega) && myBody->TypeCheck(Theta,newGamma,newDelta,newSigma,newOmega);
 } // }}}
@@ -3083,7 +3094,7 @@ MpsTerm *MpsDef::PRename(const string &src, const string &dst) const // {{{
   
   MpsTerm *newBody = myBody->PRename(src,dst);
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc);
+  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc, myEnv);
   delete newBody;
   delete newSucc;
 
@@ -3311,8 +3322,19 @@ MpsTerm *MpsDef::ERename(const string &src, const string &dst) const // {{{
     delete newBody;
     newBody=tmpBody;
   }
+  // Perform renaming in env
+  MpsMsgEnv newEnv;
+  for (MpsMsgEnv::const_iterator it=myEnv.begin(); it!=myEnv.end(); ++it)
+  { if (it->first==src)
+      newEnv[dst]=it->second->ERename(src,dst);
+    else
+      newEnv[it->first]=it->second->ERename(src,dst);
+  }
 
-  MpsTerm *result = new MpsDef(myName,newArgs,myTypes,newStateArgs,myStateTypes,*newBody,*newSucc);
+  // Create result
+  MpsTerm *result = new MpsDef(myName,newArgs,myTypes,newStateArgs,myStateTypes,*newBody,*newSucc,newEnv);
+
+  DeleteMap(newEnv);
   delete newBody;
   delete newSucc;
   return result;
@@ -3614,7 +3636,7 @@ MpsTerm *MpsDef::ReIndex(const string &session, int pid, int maxpid) const // {{
     newBody=tmpBody;
   }
 
-  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc);
+  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv);
   delete newBody;
   delete newSucc;
   return result;
@@ -3871,7 +3893,7 @@ MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<stri
     newBody = tmpBody;
   }
   // Make result
-  MpsTerm *result = new MpsDef(newName, newArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc);
+  MpsTerm *result = new MpsDef(newName, newArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc, myEnv);
   delete newBody;
   delete newSucc;
   return result;
@@ -4182,6 +4204,9 @@ MpsTerm *MpsDef::ESubst(const string &source, const MpsExp &dest) const // {{{
   vector<MpsMsgType*> newStateTypes;
   for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin(); it!=myStateTypes.end(); ++it)
     newStateTypes.push_back((*it)->ESubst(source,dest));
+  MpsMsgEnv newEnv;
+  for (MpsMsgEnv::const_iterator it=myEnv.begin(); it!=myEnv.end(); ++it)
+    newEnv[it->first]=it->second->ESubst(source,dest);
 
   MpsTerm *result = NULL; // Find result
   // vector<string>::find
@@ -4193,7 +4218,7 @@ MpsTerm *MpsDef::ESubst(const string &source, const MpsExp &dest) const // {{{
     if (*it == source)
       found=true;
   if (found) // Do not substitute in body
-    result = new MpsDef(newName, myArgs, newTypes, myStateArgs, newStateTypes, *newBody, *newSucc);
+    result = new MpsDef(newName, myArgs, newTypes, myStateArgs, newStateTypes, *newBody, *newSucc, newEnv);
   else
   {
     vector<string> newStateArgs; // Find new state arguments, and rename if necessary
@@ -4228,12 +4253,13 @@ MpsTerm *MpsDef::ESubst(const string &source, const MpsExp &dest) const // {{{
     MpsTerm *tmpBody = newBody->ESubst(source,dest); // Make substitution in body
     delete newBody;
     newBody=tmpBody;
-    result = new MpsDef(newName, newArgs, newTypes, newStateArgs, newStateTypes, *newBody, *newSucc);
+    result = new MpsDef(newName, newArgs, newTypes, newStateArgs, newStateTypes, *newBody, *newSucc, newEnv);
   }
   delete newBody;
   delete newSucc;
   DeleteVector(newTypes);
   DeleteVector(newStateTypes);
+  DeleteMap(newEnv);
   return result;
 } // }}}
 MpsTerm *MpsCall::ESubst(const string &source, const MpsExp &dest) const // {{{
@@ -4534,12 +4560,16 @@ MpsTerm *MpsDef::GSubst(const string &source, const MpsGlobalType &dest, const v
   newTypes.clear();
   for (vector<MpsMsgType*>::const_iterator type=myTypes.begin(); type!=myTypes.end(); ++type)
     newTypes.push_back((*type)->GSubst(source,dest,args));
+  MpsMsgEnv newEnv;
+  for (MpsMsgEnv::const_iterator it=myEnv.begin(); it!=myEnv.end(); ++it)
+    newEnv[it->first]=it->second->GSubst(source,dest,args);
   
-  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*newBody,*newSucc);
+  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*newBody,*newSucc,newEnv);
 
   // Clean Up
   DeleteVector(newStateTypes);
   DeleteVector(newTypes);
+  DeleteMap(newEnv);
   delete newBody;
   delete newSucc;
 
@@ -4745,12 +4775,16 @@ MpsTerm *MpsDef::LSubst(const string &source, const MpsLocalType &dest, const ve
   newTypes.clear();
   for (vector<MpsMsgType*>::const_iterator type=myTypes.begin(); type!=myTypes.end(); ++type)
     newTypes.push_back((*type)->LSubst(source,dest,args));
+  MpsMsgEnv newEnv;
+  for (MpsMsgEnv::const_iterator it=myEnv.begin(); it!=myEnv.end(); ++it)
+    newEnv[it->first]=it->second->LSubst(source,dest,args);
   
-  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*myBody,*mySucc);
+  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*myBody,*mySucc,newEnv);
 
   // Clean Up
   DeleteVector(newStateTypes);
   DeleteVector(newTypes);
+  DeleteMap(newEnv);
   delete newBody;
   delete newSucc;
 
@@ -5155,7 +5189,7 @@ MpsTerm *MpsPar::Copy() const // {{{
 MpsTerm *MpsDef::Copy() const // {{{
 {
   // assert mySucc != NULL
-  return new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *mySucc);
+  return new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *mySucc, myEnv);
 } // }}}
 MpsTerm *MpsCall::Copy() const // {{{
 {
@@ -5328,7 +5362,7 @@ MpsTerm *MpsDef::Simplify() const // {{{
   if (newSucc->ToString() == "end")
     result = new MpsEnd();
   else
-    result = new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc);
+    result = new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc, myEnv);
   delete newSucc;
   delete newBody;
   return result;
@@ -6069,7 +6103,8 @@ MpsTerm *MpsDef::RenameAll() const // {{{
                              newStateArgs,
                              newStateTypes,
                              *newBody,
-                             *newSucc);
+                             *newSucc,
+                             myEnv);
 
   // Cleanup
   delete newSucc;

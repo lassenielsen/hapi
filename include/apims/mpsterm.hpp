@@ -643,7 +643,7 @@ class MpsPar : public MpsTerm // {{{
 class MpsDef : public MpsTerm // {{{
 {
   public:
-    MpsDef(const std::string &name, const std::vector<std::string> &args, const std::vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const std::vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ);
+    MpsDef(const std::string &name, const std::vector<std::string> &args, const std::vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const std::vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, const MpsMsgEnv &env);
     virtual ~MpsDef();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -686,6 +686,7 @@ class MpsDef : public MpsTerm // {{{
     std::vector<MpsMsgType*> myStateTypes;
     std::vector<std::string> myArgs;
     std::vector<MpsMsgType*> myTypes;
+    MpsMsgEnv myEnv;
     MpsTerm *myBody;
     MpsTerm *mySucc;
 }; // }}}
