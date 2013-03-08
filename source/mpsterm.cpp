@@ -5940,18 +5940,14 @@ string MpsCall::ToC() const // {{{
   call << "  " << ToC_Name(myName) << "(";
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
-  { precall << "  {" << endl;
-    string newName = (*it)->ToC(precall, (*tit)->ToC());
-    precall << "  }" << endl;
+  { string newName = (*it)->ToC(precall, (*tit)->ToC());
     if (it != myState.begin())
       call << ", ";
     call << newName;
   }
   tit=myTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it, ++tit)
-  { precall << "  {" << endl;
-    string newName = (*it)->ToC(precall, (*tit)->ToC());
-    precall << "  }" << endl;
+  { string newName = (*it)->ToC(precall, (*tit)->ToC());
     if (it != myArgs.begin() || myState.size()>0)
       call << ", ";
     call << newName;
