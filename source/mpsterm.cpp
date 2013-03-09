@@ -5833,7 +5833,6 @@ string MpsTerm::MakeC() const // {{{
   delete step2;
   string result = (string)
          "#include <unistd.h>\n"
-       + "#include <gmp.h>\n"
        + "#include <vector>\n"
        + "#include <libpi/session_mq.hpp>\n"
        + "#include <libpi/value.hpp>\n"
