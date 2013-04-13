@@ -5498,7 +5498,7 @@ string MpsTupleMsgType::ToC() const // {{{
 } // }}}
 string MpsChannelMsgType::ToC() const // {{{
 {
-  return "vector<Channel_MQ>";
+  return "MQChannelValue";
 } // }}}
 string MpsDelegateMsgType::ToC() const // {{{
 {

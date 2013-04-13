@@ -1,4 +1,5 @@
 #define MPSUSEGUI
+#include <apims/mpstype.hpp>
 #include <dpl/parser.hpp>
 #include <apims/mpsterm.hpp>
 #include <apims/mpsgui.hpp>
@@ -5959,16 +5960,18 @@ string MpsCall::ToC() const // {{{
 string MpsNu::ToC() const // {{{
 {
   stringstream result;
-  result << "  vector<Channel_MQ> " << ToC_Name(myChannel) << ";" << endl;
+  string vecName = ToC_Name(MpsExp::NewVar("chvector")); // Create variable name foor the mmessagee to send
+  result << "  vector<Channel_MQ> " << vecName << ";" << endl;
   for (int i=1;i<myType->GetMaxPid();++i)
-    result << "  " << ToC_Name(myChannel) << ".push_back(Channel_MQ());" << endl;
+    result << "  " << vecName << ".push_back(Channel_MQ());" << endl;
+  result << "  MQChannelValue " << ToC_Name(myChannel) << "(" << vecName << ");" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}
 string MpsLink::ToC() const // {{{
 {
   stringstream result;
-  result << "  Session_MQ " << ToC_Name(mySession) << "(" << ToC_Name(myChannel) << ", " << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl;
+  result << "  Session_MQ " << ToC_Name(mySession) << "(" << ToC_Name(myChannel) << ".GetValues(), " << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}
