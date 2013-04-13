@@ -5834,15 +5834,19 @@ string MpsTerm::MakeC() const // {{{
   delete step2;
   string result = (string)
          "#include <unistd.h>\n"
-       + "#include <gmp.h>\n"
        + "#include <vector>\n"
+       + "#include <iostream>\n"
        + "#include <libpi/session_mq.hpp>\n"
        + "#include <libpi/value.hpp>\n"
        + "using namespace std;\n"
        + "using namespace libpi;\n\n"
        + DefEnvToC(defs)
        + "\n\n/* Main process */\nint main()\n{\n"
+       + "  try {\n"
        + main->ToC()
+       + "  } catch (const string &error) {\n"
+       + "    cerr << \"Error: \" << error << endl;\n"
+       + "  }\n"
        + "}";
   delete main;
   return result;
@@ -5938,7 +5942,7 @@ string MpsCall::ToC() const // {{{
   stringstream precall;
   stringstream call;
   stringstream postcall;
-  call << "  " << ToC_Name(myName) << "(";
+  call << "  return " << ToC_Name(myName) << "(";
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
   { string newName = (*it)->ToC(precall, (*tit)->ToC());
@@ -5954,7 +5958,6 @@ string MpsCall::ToC() const // {{{
     call << newName;
   }
   call << ");" << endl;
-  postcall << "return 0;" << endl;
   return precall.str() + call.str() + postcall.str();
 } // }}}
 string MpsNu::ToC() const // {{{

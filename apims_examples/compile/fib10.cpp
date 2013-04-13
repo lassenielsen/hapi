@@ -29,7 +29,6 @@
 ************ Type Check Succeeded! ************
 */
 #include <unistd.h>
-#include <gmp.h>
 #include <vector>
 #include <libpi/session_mq.hpp>
 #include <libpi/value.hpp>
@@ -47,8 +46,6 @@ int __SIM__Fib1(vector<Channel_MQ> __SIM__fib1)
   int __SIM__fork16=fork();
   if (__SIM__fork16>0)
   {
-  {
-  }
   __SIM__Fib1(__SIM__fib1);
 return 0;
   }
@@ -120,8 +117,6 @@ int main()
   int __SIM__fork12=fork();
   if (__SIM__fork12>0)
   {
-  {
-  }
   __SIM__Fib1(__SIM__fib1);
 return 0;
   }
