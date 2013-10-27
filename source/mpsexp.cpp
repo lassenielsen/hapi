@@ -1024,7 +1024,7 @@ string MpsStringVal::ToC(stringstream &dest, const string &typeName) const // {{
 string MpsBoolVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("boolval"));
-  dest << "    BpplValue " << varName << "(" << (myValue?(string)"true":(string)"false") << ");" << endl;
+  dest << "    BoolValue " << varName << "(" << (myValue?(string)"true":(string)"false") << ");" << endl;
   return varName;
 } // }}}
 string MpsCondExp::ToC(stringstream &dest, const string &typeName) const // {{{
@@ -1060,7 +1060,16 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
-  dest << "    " << typeName << " " << varName << "(" << leftName << " " << myName << " " << rightName << ");" << endl;
+  dest << "    " << typeName << " " << varName << "(" << leftName << " ";
+  if (myName=="=")
+    dest << "==";
+  else if (myName=="or")
+    dest << "||";
+  else if (myName=="and")9
+    dest << "&&";
+  else
+    dest << myName;
+  dest << " " << rightName << ");" << endl;
   return varName;
 } // }}}
 string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{

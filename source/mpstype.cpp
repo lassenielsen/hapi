@@ -5498,11 +5498,11 @@ string MpsTupleMsgType::ToC() const // {{{
 } // }}}
 string MpsChannelMsgType::ToC() const // {{{
 {
-  return "MQChannelValue";
+  return "ChannelsValue";
 } // }}}
 string MpsDelegateMsgType::ToC() const // {{{
 {
-  return "Session";
+  return "Session*";
 } // }}}
 
 // Individual accesors

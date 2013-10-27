@@ -1,0 +1,11 @@
+(nu a: 1=>2{^X: 2=>1<String>;Gend, ^Y: 2=>1<String>;Gend})
+( link(2,a,s,1);
+  s[2]<<^Y;
+  s[2]>>val;
+  end
+| link(2,a,s,2);
+  s[1]>>
+  { ^X: s[1]<<"X"; end,
+    ^Y: s[1]<<"Y"; end
+  }
+)

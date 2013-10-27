@@ -1,0 +1,17 @@
+define $msg = 1=>2<Int>;Gend
+in
+(nu a: 1=>2<$msg@(1 of 2)>;Gend)
+(nu b: $msg)
+( link(2,a,s,1);
+  ( link(2,b,t,1);
+    s[2]<<t;
+    end
+  | link(2,b,t,2);
+    t[1]>>val;
+    end
+  )
+| link(2,a,s,2);
+  s[1]>>t@(1 of 2);
+  t[2]<<5;
+  end
+)
