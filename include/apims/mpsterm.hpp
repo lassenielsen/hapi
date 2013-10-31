@@ -387,7 +387,7 @@ class MpsEnd : public MpsTerm // {{{
 class MpsSnd : public MpsTerm // {{{
 {
   public:
-    MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ, const MpsMsgType &type);
+    MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ, const MpsMsgType &type, bool final);
     virtual ~MpsSnd();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -425,11 +425,22 @@ class MpsSnd : public MpsTerm // {{{
     const MpsMsgType &GetMsgType() const;
     void SetMsgType(const MpsMsgType &type);
 
+    bool GetFinal() const;
+
   private:
+    //! \brief myChannel holds the channel to send on.
     MpsChannel myChannel;
+    //! \brief myExp holds the expression used to calculate the value to transmit.
     MpsExp *myExp;
+    //! \brief mySucc holds the actions following the message
+    //! transmission.
     MpsTerm *mySucc;
+    //! \brief myType holds type of the communicated message.
+    //! This is determined by the type-checking.
     MpsMsgType *myType;
+    //! \brief myFinal is true if myChannel can be closed after
+    //! the transmission. This is determined by the type-checking.
+    bool myFinal;
 }; // }}}
 // DOCUMENTATION: MpsRcv {{{
 /*!
@@ -439,7 +450,7 @@ class MpsSnd : public MpsTerm // {{{
 class MpsRcv : public MpsTerm // {{{
 {
   public:
-    MpsRcv(const MpsChannel &channel, const std::string &dest, int pid, int maxpid, const MpsTerm &succ, const MpsMsgType &type);
+    MpsRcv(const MpsChannel &channel, const std::string &dest, int pid, int maxpid, const MpsTerm &succ, const MpsMsgType &type, bool final);
     virtual ~MpsRcv();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -477,13 +488,28 @@ class MpsRcv : public MpsTerm // {{{
     const MpsMsgType &GetMsgType() const;
     void SetMsgType(const MpsMsgType &type);
 
+    bool GetFinal() const;
+
   private:
+    //! \brief myChannel holds the channel to send on.
     MpsChannel myChannel;
+    //! \brief myDest holds the name of the variable to be created and store the received value.
     std::string myDest;
-    int myPid; // Process ID of received session (if it is a sessios, otherwise -1)
-    int myMaxPid; // Process count of received session (if it is a sessios, otherwise -1)
+    //! \brief myPid holds the process ID of received session (if it is a
+    //! sessios, otherwise -1)
+    int myPid;
+    //! \brief myMaxPid holds the process count of received session (if it
+    //! is a sessios, otherwise -1)
+    int myMaxPid;
+    //! \brief mySucc holds the actions following the message
+    //! transmission.
     MpsTerm *mySucc;
+    //! \brief myType holds type of the communicated message.
+    //! This is determined by the type-checking.
     MpsMsgType *myType;
+    //! \brief myFinal is true if myChannel can be closed after
+    //! the transmission. This is determined by the type-checking.
+    bool myFinal;
 }; // }}}
 // DOCUMENTATION: MpsSelect {{{
 /*!
@@ -493,7 +519,7 @@ class MpsRcv : public MpsTerm // {{{
 class MpsSelect : public MpsTerm // {{{
 {
   public:
-    MpsSelect(const MpsChannel &channel, const std::string &label, const MpsTerm &succ);
+    MpsSelect(const MpsChannel &channel, const std::string &label, const MpsTerm &succ, bool final);
     virtual ~MpsSelect();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -528,10 +554,15 @@ class MpsSelect : public MpsTerm // {{{
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
+    bool GetFinal() const;
+
   private:
     MpsChannel myChannel;
     std::string myLabel;
     MpsTerm *mySucc;
+    //! \brief myFinal is true if myChannel can be closed after
+    //! the transmission. This is determined by the type-checking.
+    bool myFinal;
 }; // }}}
 // DOCUMENTATION: MpsBranch {{{
 /*!
@@ -541,7 +572,7 @@ class MpsSelect : public MpsTerm // {{{
 class MpsBranch : public MpsTerm // {{{
 {
   public:
-    MpsBranch(const MpsChannel &channel, const std::map< std::string, MpsTerm*> &branches);
+    MpsBranch(const MpsChannel &channel, const std::map<std::string, MpsTerm*> &branches, const std::vector<std::string> &finalBranches);
     virtual ~MpsBranch();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -576,9 +607,15 @@ class MpsBranch : public MpsTerm // {{{
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
+    const std::vector<std::string> &GetFinalBranches() const;
+
   private:
     MpsChannel myChannel;
     std::map< std::string, MpsTerm*> myBranches;
+    //! \brief myFinalBranches holds the names of the branches where
+    //! myChannel can be closed after the transmission. This is
+    //! determined by the type-checking.
+    std::vector<std::string> myFinalBranches;
 }; // }}}
 // DOCUMENTATION: MpsPar {{{
 /*!
@@ -588,7 +625,7 @@ class MpsBranch : public MpsTerm // {{{
 class MpsPar : public MpsTerm // {{{
 {
   public:
-    MpsPar(const MpsTerm &left, const MpsTerm &right);
+    MpsPar(const MpsTerm &left, const MpsTerm &right, const std::vector<std::string> &leftFinal, const std::vector<std::string> &rightFinal);
     virtual ~MpsPar();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -631,9 +668,14 @@ class MpsPar : public MpsTerm // {{{
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
 
+    const std::vector<std::string> &GetLeftFinal() const;
+    const std::vector<std::string> &GetRightFinal() const;
+
   private:
     MpsTerm *myLeft;
     MpsTerm *myRight;
+    std::vector<std::string> myLeftFinal;
+    std::vector<std::string> myRightFinal;
 }; // }}}
 // DOCUMENTATION: MpsDef {{{
 /*!

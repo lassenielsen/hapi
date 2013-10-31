@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 #include <map>
 #include <assert.h>
 
@@ -406,7 +407,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
   {
     MpsTerm *left = MpsTerm::Create(exp->content[0]);
     MpsTerm *right = MpsTerm::Create(exp->content[2]);
-    MpsTerm *result = new MpsPar(*left, *right);
+    MpsTerm *result = new MpsPar(*left, *right,vector<string>(),vector<string>());
     delete left;
     delete right;
     return result;
@@ -433,7 +434,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     MpsTerm *succ = MpsTerm::Create(exp->content[4]);
     MpsExp *value = MpsExp::Create(exp->content[2]);
     MpsChannel dest = ParseChannel(exp->content[0]);
-    MpsTerm *result = new MpsSnd(dest, *value, *succ, MpsMsgNoType());
+    MpsTerm *result = new MpsSnd(dest, *value, *succ, MpsMsgNoType(), false);
     delete succ;
     delete value;
     return result;
@@ -442,7 +443,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[4]);
     MpsChannel source=ParseChannel(exp->content[0]);
-    MpsTerm *result = new MpsRcv(source, exp->content[2]->root.content, -1, -1, *succ, MpsMsgNoType());
+    MpsTerm *result = new MpsRcv(source, exp->content[2]->root.content, -1, -1, *succ, MpsMsgNoType(), false);
 
     delete succ;
     return result;
@@ -451,7 +452,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[4]);
     MpsChannel dest = ParseChannel(exp->content[0]);
-    MpsTerm *result = new MpsSelect(dest, exp->content[2]->root.content, *succ);
+    MpsTerm *result = new MpsSelect(dest, exp->content[2]->root.content, *succ, false);
     delete succ;
     return result;
   } // }}}
@@ -464,7 +465,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     FindBranches(exp->content[3], branches, assertions);
     MpsChannel source=ParseChannel(exp->content[0]);
     // BRANCHE TERMS DOES NOT USE ASSERTIONS
-    MpsTerm *result = new MpsBranch(source, branches);
+    MpsTerm *result = new MpsBranch(source, branches, vector<string>());
 
     // Clean up
     while (branches.size() > 0)
@@ -776,7 +777,8 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
                                  string2int(exp->content[5]->root.content),
                                  string2int(exp->content[7]->root.content),
                                  *succ,
-                                 MpsMsgNoType());
+                                 MpsMsgNoType(),
+                                 false);
 
     delete succ;
     return result;
@@ -793,30 +795,35 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
 MpsEnd::MpsEnd() // {{{
 {
 } // }}}
-MpsSnd::MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ, const MpsMsgType &type) // {{{
+MpsSnd::MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ, const MpsMsgType &type, bool final) // {{{
 : myChannel(channel)
+, myFinal(final)
 {
   mySucc = succ.Copy();
   myExp = exp.Copy();
   myType = type.Copy();
 } // }}}
-MpsRcv::MpsRcv(const MpsChannel &channel, const string &dest, int pid, int maxpid, const MpsTerm &succ, const MpsMsgType &type) // {{{
+MpsRcv::MpsRcv(const MpsChannel &channel, const string &dest, int pid, int maxpid, const MpsTerm &succ, const MpsMsgType &type, bool final) // {{{
 : myChannel(channel)
 , myDest(dest)
 , myPid(pid)
 , myMaxPid(maxpid)
+, myFinal(final)
 {
   mySucc = succ.Copy();
   myType=type.Copy();
 } // }}}
-MpsSelect::MpsSelect(const MpsChannel &channel, const string &label, const MpsTerm &succ) // {{{
-: myChannel(channel), myLabel(label)
+MpsSelect::MpsSelect(const MpsChannel &channel, const string &label, const MpsTerm &succ, bool final) // {{{
+: myChannel(channel)
+, myLabel(label)
+, myFinal(final)
 {
   // Assert succ!=NULL
   mySucc = succ.Copy();
 } // }}}
-MpsBranch::MpsBranch(const MpsChannel &channel, const map<string,MpsTerm*> &branches) // {{{
+MpsBranch::MpsBranch(const MpsChannel &channel, const map<string,MpsTerm*> &branches, const vector<string> &finalBranches) // {{{
 : myChannel(channel)
+, myFinalBranches(finalBranches)
 {
   myBranches.clear();
   for (map<string,MpsTerm*>::const_iterator it = branches.begin(); it != branches.end(); ++it)
@@ -826,7 +833,9 @@ MpsBranch::MpsBranch(const MpsChannel &channel, const map<string,MpsTerm*> &bran
     myBranches[it->first] = branch;
   }
 } // }}}
-MpsPar::MpsPar(const MpsTerm &left, const MpsTerm &right) // {{{
+MpsPar::MpsPar(const MpsTerm &left, const MpsTerm &right, const vector<string> &leftFinal, const vector<string> &rightFinal) // {{{
+: myLeftFinal(leftFinal)
+, myRightFinal(rightFinal)
 {
   // Assert left != NULL
   // Assert right != NULL
@@ -1265,6 +1274,9 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
     newDelta.erase(newDelta.find(myExp->ToString()));
   // Check rest of program
   bool result = mySucc->TypeCheck(Theta,Gamma,newDelta,Sigma,Omega);
+  // Store if this is final action in session
+  myFinal=newType->IsDone();
+  cout << "TYPE: " << newType->ToString() << endl << "ISDONE: " << myFinal << endl;
   // Clean Up
   delete newType;
   // Store message type in term
@@ -1388,6 +1400,8 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
     newTheta=Theta.Copy();
   // Check rest of program
   bool result = mySucc->TypeCheck(*newTheta,newGamma,newDelta,newSigma,Omega);
+  // Store if this is final action in session
+  myFinal=newType->IsDone();
   // Clean Up
   delete newTheta;
   if (rename)
@@ -1441,6 +1455,9 @@ bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
   MpsLocalEnv newDelta = Delta;
   newDelta[myChannel.GetName()].type = branch->second;
 
+  // Store if this is final action in session
+  myFinal=branch->second->IsDone();
+  
   // Check rest of program
   return mySucc->TypeCheck(Theta,Gamma,newDelta,Sigma,Omega);
 } // }}}
@@ -1466,6 +1483,10 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
   map<string,MpsLocalType*> &branches=typeptr->GetBranches();
   for (map<string,MpsLocalType*>::const_iterator branch=branches.begin();branch!=branches.end();++branch)
   {
+    // Add branch to myFinalBranches if type is Done
+    if (branch->second->IsDone())
+      myFinalBranches.push_back(branch->first);
+    // Create new session environment
     MpsLocalEnv newDelta = Delta;
     newDelta[myChannel.GetName()].type = branch->second;
     map<string,MpsTerm*>::iterator succ = myBranches.find(branch->first);
@@ -1488,21 +1509,30 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const 
 bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma, const MpsProcEnv &Omega) // Use rule Par {{{
 {
   // Split Delta
-  MpsLocalEnv newDelta1;
-  newDelta1.clear();
-  MpsLocalEnv newDelta2;
-  newDelta2.clear();
+  MpsLocalEnv leftDelta;
+  leftDelta.clear();
+  MpsLocalEnv rightDelta;
+  rightDelta.clear();
   set<string> leftSessions = myLeft->FEV();
   for (MpsLocalEnv::const_iterator session=Delta.begin(); session!=Delta.end(); ++session)
   {
     if (leftSessions.find(session->first)!=leftSessions.end())
-      newDelta1[session->first]=session->second;
+    {
+      leftDelta[session->first]=session->second;
+      if (!session->second.type->IsDone())
+        myRightFinal.push_back(session->first);
+    }
     else
-      newDelta2[session->first]=session->second;
+    {
+      rightDelta[session->first]=session->second;
+      if (!session->second.type->IsDone())
+        myLeftFinal.push_back(session->first);
+    }
   }
 
   // Check each sub-process with the split Deltas
-  return myLeft->TypeCheck(Theta,Gamma,newDelta1,Sigma,Omega) && myRight->TypeCheck(Theta,Gamma,newDelta2,Sigma,Omega);
+  return myLeft->TypeCheck(Theta,Gamma,leftDelta,Sigma,Omega) &&
+         myRight->TypeCheck(Theta,Gamma,rightDelta,Sigma,Omega);
 } // }}}
 bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma, const MpsProcEnv &Omega) // * Use rule Def {{{
 {
@@ -2421,7 +2451,7 @@ MpsTerm *MpsPar::ApplyRcv(const std::string &path, const MpsExp *val) const // {
   { left=myLeft->Copy();
     right=myRight->ApplyRcv(path.substr(1),val);
   }
-  MpsTerm *result = new MpsPar(*left,*right);
+  MpsTerm *result = new MpsPar(*left,*right,vector<string>(),vector<string>());
   delete left;
   delete right;
   return result;
@@ -2455,7 +2485,7 @@ MpsTerm *MpsPar::ApplySnd(const std::string &path, MpsExp **val, MpsChannel &ch)
   { left=myLeft->Copy();
     right=myRight->ApplySnd(path.substr(1),val,ch);
   }
-  MpsTerm *result = new MpsPar(*left,*right);
+  MpsTerm *result = new MpsPar(*left,*right,vector<string>(),vector<string>());
   delete left;
   delete right;
   return result;
@@ -2483,7 +2513,7 @@ MpsTerm *MpsPar::ApplyBRcv(const std::string &path, const std::string &label) co
   { left=myLeft->Copy();
     right=myRight->ApplyBRcv(path.substr(1),label);
   }
-  MpsTerm *result = new MpsPar(*left,*right);
+  MpsTerm *result = new MpsPar(*left,*right,vector<string>(),vector<string>());
   delete left;
   delete right;
   return result;
@@ -2512,7 +2542,7 @@ MpsTerm *MpsPar::ApplyBSnd(const std::string &path, std::string &label, MpsChann
   { left=myLeft->Copy();
     right=myRight->ApplyBSnd(path.substr(1),label,ch);
   }
-  MpsTerm *result=new MpsPar(*left,*right);
+  MpsTerm *result=new MpsPar(*left,*right,vector<string>(),vector<string>());
   // Clean up
   delete left;
   delete right;
@@ -2548,7 +2578,7 @@ MpsTerm *MpsPar::ApplyLink(const std::vector<std::string> &paths, const std::str
   MpsTerm *left=myLeft->ApplyLink(pleft,session);
   MpsTerm *right=myRight->ApplyLink(pright,session);
   // Create result
-  MpsTerm *result=new MpsPar(*left,*right);
+  MpsTerm *result=new MpsPar(*left,*right,vector<string>(),vector<string>());
   // Clean up
   delete left;
   delete right;
@@ -2593,7 +2623,7 @@ MpsTerm *MpsPar::ApplySync(const std::vector<std::string> &paths, const std::str
   MpsTerm *left=myLeft->ApplySync(pleft,label);
   MpsTerm *right=myRight->ApplySync(pright,label);
   // Create result
-  MpsTerm *result=new MpsPar(*left,*right);
+  MpsTerm *result=new MpsPar(*left,*right,vector<string>(),vector<string>());
   // Clean up
   delete left;
   delete right;
@@ -2655,7 +2685,7 @@ MpsTerm *MpsPar::ApplyDef(const std::string &path, std::vector<MpsFunction> &des
   { left=myLeft->Copy();
     right=myRight->ApplyDef(path.substr(1),dest);
   }
-  MpsTerm *result=new MpsPar(*left,*right);
+  MpsTerm *result=new MpsPar(*left,*right,vector<string>(),vector<string>());
   // Clean up
   delete left;
   delete right;
@@ -2688,7 +2718,7 @@ MpsTerm *MpsPar::ApplyCall(const std::string &path, const std::vector<MpsFunctio
   { left=myLeft->Copy();
     right=myRight->ApplyCall(path.substr(1),funs);
   }
-  MpsTerm *result=new MpsPar(*left,*right);
+  MpsTerm *result=new MpsPar(*left,*right,vector<string>(),vector<string>());
   // Clean up
   delete left;
   delete right;
@@ -2720,7 +2750,7 @@ MpsTerm *MpsPar::ApplyOther(const std::string &path) const // {{{
   { left=myLeft->Copy();
     right=myRight->ApplyOther(path.substr(1));
   }
-  MpsTerm *result=new MpsPar(*left,*right);
+  MpsTerm *result=new MpsPar(*left,*right,vector<string>(),vector<string>());
   // Clean up
   delete left;
   delete right;
@@ -3041,7 +3071,7 @@ MpsTerm *MpsSnd::PRename(const string &src, const string &dst) const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType());
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType(), GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -3049,7 +3079,7 @@ MpsTerm *MpsRcv::PRename(const string &src, const string &dst) const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType());
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType(), GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -3057,7 +3087,7 @@ MpsTerm *MpsSelect::PRename(const string &src, const string &dst) const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PRename(src, dst);
-  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc);
+  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -3072,7 +3102,7 @@ MpsTerm *MpsBranch::PRename(const string &src, const string &dst) const // {{{
     MpsTerm *newBranch = it->second->PRename(src,dst);
     newBranches[it->first] = newBranch;
   }
-  MpsTerm *result = new MpsBranch(myChannel, newBranches);
+  MpsTerm *result = new MpsBranch(myChannel, newBranches, GetFinalBranches());
   // Clean up
   DeleteMap(newBranches);
   return result;
@@ -3083,7 +3113,7 @@ MpsTerm *MpsPar::PRename(const string &src, const string &dst) const // {{{
   // assert myRight != NULL
   MpsTerm *newLeft = myLeft->PRename(src,dst);
   MpsTerm *newRight = myRight->PRename(src,dst);
-  MpsTerm *result = new MpsPar(*newLeft, *newRight);
+  MpsTerm *result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal());
   delete newLeft;
   delete newRight;
   return result;
@@ -3208,7 +3238,7 @@ MpsTerm *MpsSnd::ERename(const string &src, const string &dst) const // {{{
   MpsTerm *newSucc = mySucc->ERename(src,dst);
   MpsExp *newExp=myExp->Rename(src,dst);
   MpsChannel newChannel=myChannel.Rename(src,dst);
-  MpsTerm *result = new MpsSnd(newChannel, *newExp, *newSucc, GetMsgType());
+  MpsTerm *result = new MpsSnd(newChannel, *newExp, *newSucc, GetMsgType(), GetFinal());
   delete newSucc;
   delete newExp;
   return result;
@@ -3219,7 +3249,7 @@ MpsTerm *MpsRcv::ERename(const string &src, const string &dst) const // {{{
   MpsChannel newChannel=myChannel.Rename(src,dst);
   MpsMsgType *newType = GetMsgType().ERename(src,dst);
   if (src == myDest) // No substitution is needed in successor
-  { MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc, *newType);
+  { MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc, *newType, GetFinal());
     delete newType;
     return result;
   }
@@ -3235,7 +3265,7 @@ MpsTerm *MpsRcv::ERename(const string &src, const string &dst) const // {{{
   }
   else
     newSucc = mySucc->ERename(src,dst);
-  MpsTerm *result = new MpsRcv(newChannel, newDest, myPid, myMaxPid, *newSucc, *newType);
+  MpsTerm *result = new MpsRcv(newChannel, newDest, myPid, myMaxPid, *newSucc, *newType, GetFinal());
   delete newType;
   delete newSucc;
   return result;
@@ -3246,7 +3276,7 @@ MpsTerm *MpsSelect::ERename(const string &src, const string &dst) const // {{{
   // assert myChannel != dest
   MpsChannel newChannel=myChannel.Rename(src,dst);
   MpsTerm *newSucc = mySucc->ERename(src,dst);
-  MpsTerm *result = new MpsSelect(newChannel, myLabel, *newSucc);
+  MpsTerm *result = new MpsSelect(newChannel, myLabel, *newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -3261,7 +3291,7 @@ MpsTerm *MpsBranch::ERename(const string &src, const string &dst) const // {{{
     MpsTerm *newBranch = it->second->ERename(src,dst);
     newBranches[it->first] = newBranch;
   }
-  MpsTerm *result = new MpsBranch(newChannel, newBranches);
+  MpsTerm *result = new MpsBranch(newChannel, newBranches, GetFinalBranches());
   // Clean up
   DeleteMap(newBranches);
   return result;
@@ -3270,7 +3300,19 @@ MpsTerm *MpsPar::ERename(const string &src, const string &dst) const // {{{
 {
   MpsTerm *newLeft = myLeft->ERename(src,dst); // Rename in left term
   MpsTerm *newRight = myRight->ERename(src,dst); // Rename in right term
-  MpsTerm *result = new MpsPar(*newLeft, *newRight); // Combine renamed terms
+  vector<string> leftFinal;
+  for (vector<string>::const_iterator it=GetLeftFinal().begin(); it!=GetLeftFinal().end(); ++it)
+    if (*it==src)
+      leftFinal.push_back(dst);
+    else
+      leftFinal.push_back(*it);
+  vector<string> rightFinal;
+  for (vector<string>::const_iterator it=GetRightFinal().begin(); it!=GetRightFinal().end(); ++it)
+    if (*it==src)
+      rightFinal.push_back(dst);
+    else
+      rightFinal.push_back(*it);
+  MpsTerm *result = new MpsPar(*newLeft, *newRight, leftFinal, rightFinal); // Combine renamed terms
   delete newLeft;
   delete newRight;
   return result;
@@ -3555,7 +3597,7 @@ MpsTerm *MpsSnd::ReIndex(const string &session, int pid, int maxpid) const // {{
   MpsChannel newChannel=myChannel;
   if (session==myChannel.GetName())
     newChannel=MpsChannel(myChannel.GetName(),myChannel.GetIndex()*maxpid+pid);
-  MpsTerm *result = new MpsSnd(newChannel, *myExp, *newSucc, GetMsgType());
+  MpsTerm *result = new MpsSnd(newChannel, *myExp, *newSucc, GetMsgType(), GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -3566,10 +3608,10 @@ MpsTerm *MpsRcv::ReIndex(const string &session, int pid, int maxpid) const // {{
   if (session==myChannel.GetName())
     newChannel=MpsChannel(myChannel.GetName(),myChannel.GetIndex()+maxpid*pid);
   if (session == myDest) // No substitution is needed in successor
-    return new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc, GetMsgType());
+    return new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc, GetMsgType(), GetFinal());
 
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
-  MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType());
+  MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType(), GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -3581,7 +3623,7 @@ MpsTerm *MpsSelect::ReIndex(const string &session, int pid, int maxpid) const //
   if (session==myChannel.GetName())
     newChannel=MpsChannel(myChannel.GetName(),myChannel.GetIndex()*maxpid+pid);
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
-  MpsTerm *result = new MpsSelect(newChannel, myLabel, *newSucc);
+  MpsTerm *result = new MpsSelect(newChannel, myLabel, *newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -3598,7 +3640,7 @@ MpsTerm *MpsBranch::ReIndex(const string &session, int pid, int maxpid) const //
     MpsTerm *newBranch = it->second->ReIndex(session,pid,maxpid);
     newBranches[it->first] = newBranch;
   }
-  MpsTerm *result = new MpsBranch(newChannel, newBranches);
+  MpsTerm *result = new MpsBranch(newChannel, newBranches, GetFinalBranches());
   // Clean up
   DeleteMap(newBranches);
   return result;
@@ -3607,7 +3649,7 @@ MpsTerm *MpsPar::ReIndex(const string &session, int pid, int maxpid) const // {{
 {
   MpsTerm *newLeft = myLeft->ReIndex(session,pid,maxpid); // Rename in left term
   MpsTerm *newRight = myRight->ReIndex(session,pid,maxpid); // Rename in right term
-  MpsTerm *result = new MpsPar(*newLeft, *newRight); // Combine renamed terms
+  MpsTerm *result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal()); // Combine renamed terms
   delete newLeft;
   delete newRight;
   return result;
@@ -3778,7 +3820,7 @@ MpsTerm *MpsSnd::PSubst(const string &var, const MpsTerm &exp, const vector<stri
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType());
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType(), GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -3786,7 +3828,7 @@ MpsTerm *MpsRcv::PSubst(const string &var, const MpsTerm &exp, const vector<stri
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType());
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType(), GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -3794,7 +3836,7 @@ MpsTerm *MpsSelect::PSubst(const string &var, const MpsTerm &exp, const vector<s
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
-  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc);
+  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -3809,7 +3851,7 @@ MpsTerm *MpsBranch::PSubst(const string &var, const MpsTerm &exp, const vector<s
     MpsTerm *newBranch = it->second->PSubst(var,exp,args,argpids,stateargs);
     newBranches[it->first] = newBranch;
   }
-  MpsTerm *result = new MpsBranch(myChannel, newBranches);
+  MpsTerm *result = new MpsBranch(myChannel, newBranches, GetFinalBranches());
   // Clean up
   while (newBranches.size() > 0)
   {
@@ -3824,7 +3866,7 @@ MpsTerm *MpsPar::PSubst(const string &var, const MpsTerm &exp, const vector<stri
   // assert myRight != NULL
   MpsTerm *newLeft = myLeft->PSubst(var,exp,args,argpids,stateargs);
   MpsTerm *newRight = myRight->PSubst(var,exp,args,argpids,stateargs);
-  MpsTerm *result = new MpsPar(*newLeft, *newRight);
+  MpsTerm *result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal());
   delete newLeft;
   delete newRight;
   return result;
@@ -4113,7 +4155,7 @@ MpsTerm *MpsSnd::ESubst(const string &source, const MpsExp &dest) const // {{{
   MpsExp *newExp=myExp->Subst(source,dest);
   MpsChannel newChannel=myChannel.Subst(source,dest);
   MpsMsgType *newType = GetMsgType().ESubst(source,dest);
-  MpsTerm *result = new MpsSnd(newChannel, *newExp, *newSucc, *newType);
+  MpsTerm *result = new MpsSnd(newChannel, *newExp, *newSucc, *newType, GetFinal());
   delete newType;
   delete newSucc;
   delete newExp;
@@ -4125,7 +4167,7 @@ MpsTerm *MpsRcv::ESubst(const string &source, const MpsExp &dest) const // {{{
   MpsChannel newChannel=myChannel.Subst(source,dest);
   MpsMsgType *newType=GetMsgType().ESubst(source,dest);
   if (source == myDest) // No substitution is needed in successor
-  { MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc, *newType);
+  { MpsTerm *result = new MpsRcv(newChannel, myDest, myPid, myMaxPid, *mySucc, *newType, GetFinal());
     delete newType;
     return result;
   }
@@ -4144,7 +4186,7 @@ MpsTerm *MpsRcv::ESubst(const string &source, const MpsExp &dest) const // {{{
   }
   else
     newSucc = mySucc->ESubst(source,dest);
-  MpsTerm *result = new MpsRcv(newChannel, newDest, myPid, myMaxPid, *newSucc, *newType);
+  MpsTerm *result = new MpsRcv(newChannel, newDest, myPid, myMaxPid, *newSucc, *newType, GetFinal());
   delete newType;
   delete newSucc;
   return result;
@@ -4156,7 +4198,7 @@ MpsTerm *MpsSelect::ESubst(const string &source, const MpsExp &dest) const // {{
   MpsChannel newChannel=myChannel.Subst(source,dest);
   string newLabel = myLabel;
   MpsTerm *newSucc = mySucc->ESubst(source,dest);
-  MpsTerm *result = new MpsSelect(newChannel, newLabel, *newSucc);
+  MpsTerm *result = new MpsSelect(newChannel, newLabel, *newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -4172,7 +4214,7 @@ MpsTerm *MpsBranch::ESubst(const string &source, const MpsExp &dest) const // {{
     MpsTerm *newBranch = it->second->ESubst(source,dest);
     newBranches[it->first] = newBranch;
   }
-  MpsTerm *result = new MpsBranch(newChannel, newBranches);
+  MpsTerm *result = new MpsBranch(newChannel, newBranches, GetFinalBranches());
   // Clean up
   while (newBranches.size() > 0)
   {
@@ -4187,7 +4229,7 @@ MpsTerm *MpsPar::ESubst(const string &source, const MpsExp &dest) const // {{{
   // assert myRight != NULL
   MpsTerm *newLeft = myLeft->ESubst(source,dest); // Substitute left term
   MpsTerm *newRight = myRight->ESubst(source,dest); // Substitute right term
-  MpsTerm *result = new MpsPar(*newLeft, *newRight); // Combine substituted terms
+  MpsTerm *result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal()); // Combine substituted terms
   delete newLeft;
   delete newRight;
   return result;
@@ -4492,7 +4534,7 @@ MpsTerm *MpsSnd::GSubst(const string &source, const MpsGlobalType &dest, const v
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
   MpsMsgType *newType = GetMsgType().GSubst(source,dest,args);
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *newType);
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *newType, GetFinal());
 
   // Clean Up
   delete newType;
@@ -4504,7 +4546,7 @@ MpsTerm *MpsRcv::GSubst(const string &source, const MpsGlobalType &dest, const v
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
   MpsMsgType *newType = GetMsgType().GSubst(source,dest,args);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *newType);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *newType, GetFinal());
 
   // Clean Up
   delete newType;
@@ -4515,7 +4557,7 @@ MpsTerm *MpsRcv::GSubst(const string &source, const MpsGlobalType &dest, const v
 MpsTerm *MpsSelect::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
-  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc);
+  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc, GetFinal());
 
   // Clean Up
   delete newSucc;
@@ -4529,7 +4571,7 @@ MpsTerm *MpsBranch::GSubst(const string &source, const MpsGlobalType &dest, cons
   // GSubst each branch
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
     newBranches[it->first] = it->second->GSubst(source,dest,args);
-  MpsTerm *result = new MpsBranch(myChannel, newBranches);
+  MpsTerm *result = new MpsBranch(myChannel, newBranches, GetFinalBranches());
 
   // Clean up
   DeleteMap(newBranches);
@@ -4540,7 +4582,7 @@ MpsTerm *MpsPar::GSubst(const string &source, const MpsGlobalType &dest, const v
 {
   MpsTerm *newLeft = myLeft->GSubst(source,dest,args); // Substitute left term
   MpsTerm *newRight = myRight->GSubst(source,dest,args); // Substitute right term
-  MpsTerm *result = new MpsPar(*newLeft, *newRight); // Combine substituted terms
+  MpsTerm *result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal()); // Combine substituted terms
 
   // Clean Up
   delete newLeft;
@@ -4707,7 +4749,7 @@ MpsTerm *MpsSnd::LSubst(const string &source, const MpsLocalType &dest, const ve
 {
   MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
   MpsMsgType *newType = GetMsgType().LSubst(source,dest,args);
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *newType);
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *newType, GetFinal());
 
   // Clean Up
   delete newType;
@@ -4719,7 +4761,7 @@ MpsTerm *MpsRcv::LSubst(const string &source, const MpsLocalType &dest, const ve
 {
   MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
   MpsMsgType * newType = GetMsgType().LSubst(source,dest,args);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *newType);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *newType, GetFinal());
 
   // Clean Up
   delete newType;
@@ -4730,7 +4772,7 @@ MpsTerm *MpsRcv::LSubst(const string &source, const MpsLocalType &dest, const ve
 MpsTerm *MpsSelect::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
-  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc);
+  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc, GetFinal());
 
   // Clean Up
   delete newSucc;
@@ -4744,7 +4786,7 @@ MpsTerm *MpsBranch::LSubst(const string &source, const MpsLocalType &dest, const
   // LSubst each branch
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
     newBranches[it->first] = it->second->LSubst(source,dest,args);
-  MpsTerm *result = new MpsBranch(myChannel, newBranches);
+  MpsTerm *result = new MpsBranch(myChannel, newBranches, GetFinalBranches());
 
   // Clean up
   DeleteMap(newBranches);
@@ -4755,7 +4797,7 @@ MpsTerm *MpsPar::LSubst(const string &source, const MpsLocalType &dest, const ve
 {
   MpsTerm *newLeft = myLeft->LSubst(source,dest,args); // Substitute left term
   MpsTerm *newRight = myRight->LSubst(source,dest,args); // Substitute right term
-  MpsTerm *result = new MpsPar(*newLeft, *newRight); // Combine substituted terms
+  MpsTerm *result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal()); // Combine substituted terms
 
   // Clean Up
   delete newLeft;
@@ -5167,25 +5209,25 @@ MpsTerm *MpsEnd::Copy() const // {{{
 MpsTerm *MpsSnd::Copy() const // {{{
 {
   // assert mySucc != NULL
-  return new MpsSnd(myChannel, *myExp, *mySucc, GetMsgType());
+  return new MpsSnd(myChannel, *myExp, *mySucc, GetMsgType(), GetFinal());
 } // }}}
 MpsTerm *MpsRcv::Copy() const // {{{
 {
   // assert mySucc != NULL
-  return new MpsRcv(myChannel, myDest, myPid, myMaxPid, *mySucc, GetMsgType());
+  return new MpsRcv(myChannel, myDest, myPid, myMaxPid, *mySucc, GetMsgType(), GetFinal());
 } // }}}
 MpsTerm *MpsSelect::Copy() const // {{{
 {
   // assert mySucc != NULL
-  return new MpsSelect(myChannel, myLabel, *mySucc);
+  return new MpsSelect(myChannel, myLabel, *mySucc, GetFinal());
 } // }}}
 MpsTerm *MpsBranch::Copy() const // {{{
 {
-  return new MpsBranch(myChannel,myBranches);
+  return new MpsBranch(myChannel,myBranches, GetFinalBranches());
 } // }}}
 MpsTerm *MpsPar::Copy() const // {{{
 {
-  return new MpsPar(*myLeft, *myRight);
+  return new MpsPar(*myLeft, *myRight, GetLeftFinal(), GetRightFinal());
 } // }}}
 MpsTerm *MpsDef::Copy() const // {{{
 {
@@ -5304,7 +5346,7 @@ MpsTerm *MpsSnd::Simplify() const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->Simplify();
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType());
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType(), GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -5312,7 +5354,7 @@ MpsTerm *MpsRcv::Simplify() const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->Simplify();
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType());
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType(), GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -5320,7 +5362,7 @@ MpsTerm *MpsSelect::Simplify() const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->Simplify();
-  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc);
+  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -5330,7 +5372,7 @@ MpsTerm *MpsBranch::Simplify() const // {{{
   newBranches.clear();
   for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
     newBranches[it->first] = it->second->Simplify();
-  MpsTerm *result = new MpsBranch(myChannel,newBranches);
+  MpsTerm *result = new MpsBranch(myChannel,newBranches, GetFinalBranches());
   // Clean up
   while (newBranches.size() > 0)
   {
@@ -5349,7 +5391,7 @@ MpsTerm *MpsPar::Simplify() const // {{{
   else if (newRight->ToString() == "end")
     result = newLeft->Copy();
   else
-    result = new MpsPar(*newLeft, *newRight);
+    result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal());
   delete newLeft;
   delete newRight;
   return result;
@@ -5877,6 +5919,17 @@ string MpsSnd::ToC() const // {{{
                      << msgName << ");" << endl; // Send computed value
   }
   result << "  }" << endl;
+  if (delType!=NULL)
+  {
+    result << "  " << valName << "->Close(false);" << endl
+           << "  delete " << valName << ";" << endl;
+  }
+  cout << "ToC: ISDONE: " << myFinal << endl;
+  if (myFinal)
+  {
+    result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
+           << "  delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
+  }
   result << mySucc->ToC();
   return result.str();
 } // }}}
@@ -5897,6 +5950,11 @@ string MpsRcv::ToC() const // {{{
     result << "    " << msgName << ".GetValue(" << ToC_Name(myDest) << ");" << endl;
     result << "  }" << endl;
   }
+  if (myFinal)
+  {
+    result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
+           << "  delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
+  }
   result << mySucc->ToC();
   return result.str();
 } // }}}
@@ -5910,6 +5968,11 @@ string MpsSelect::ToC() const // {{{
          << ToC_Name(myChannel.GetName()) << "->Send(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl
          << "  }" << endl; // Send label
   result << mySucc->ToC();
+  if (myFinal)
+  {
+    result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
+           << "  delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
+  }
   return result.str();
 } // }}}
 string MpsBranch::ToC() const // {{{
@@ -5929,6 +5992,10 @@ string MpsBranch::ToC() const // {{{
       result << "  else ";
     result << "  if (" << lblName << ".ToString()==\"" << it->first << "\")" << endl
            << "  {" << endl;
+    if (find(myFinalBranches.begin(),myFinalBranches.end(),lblName)!=myFinalBranches.end()) {
+      result << "    " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
+             << "    delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
+    }
     result << it->second->ToC();
     result << "  }" << endl;
   }
@@ -5941,12 +6008,20 @@ string MpsPar::ToC() const // {{{
   string newName = ToC_Name(MpsExp::NewVar("fork")); // Create variable name foor the mmessagee to send
   result << "  int " << newName << "=fork();" << endl
          << "  if (" << newName << ">0)" << endl
-         << "  {" << endl
-         <<  myLeft->ToC()
+         << "  {" << endl;
+  for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it) {
+    result << "    " << ToC_Name(*it) << "->Close(false);" << endl
+           << "    delete " << ToC_Name(*it) << ";" << endl;
+  }
+  result <<  myLeft->ToC()
          << "  }" << endl
          << "  else if (" << newName << "==0)" << endl
-         << "  {" << endl
-         <<  myRight->ToC()
+         << "  {" << endl;
+  for (vector<string>::const_iterator it=myRightFinal.begin(); it!=myRightFinal.end(); ++it) {
+    result << "    " << ToC_Name(*it) << "->Close(false);" << endl
+           << "    delete " << ToC_Name(*it) << ";" << endl;
+  }
+  result <<  myRight->ToC()
          << "  }" << endl
          << "else throw (string)\"Error during fork!\";" << endl
          << "return 0;" << endl;
@@ -6043,7 +6118,7 @@ MpsTerm *MpsEnd::RenameAll() const // {{{
 MpsTerm *MpsSnd::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   MpsMsgType *newType=myType->RenameAll();
-  MpsTerm *result=new MpsSnd(myChannel,*myExp,*newSucc,*newType);
+  MpsTerm *result=new MpsSnd(myChannel,*myExp,*newSucc,*newType, GetFinal());
   delete newSucc;
   delete newType;
   return result;
@@ -6054,14 +6129,14 @@ MpsTerm *MpsRcv::RenameAll() const // {{{
   MpsTerm *newSucc=tmpSucc->RenameAll();
   delete tmpSucc;
   MpsMsgType *newType=myType->RenameAll();
-  MpsTerm *result=new MpsRcv(myChannel,newDest,myPid,myMaxPid,*newSucc,*newType);
+  MpsTerm *result=new MpsRcv(myChannel,newDest,myPid,myMaxPid,*newSucc,*newType, GetFinal());
   delete newSucc;
   delete newType;
   return result;
 } // }}}
 MpsTerm *MpsSelect::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
-  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc);
+  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -6069,14 +6144,14 @@ MpsTerm *MpsBranch::RenameAll() const // {{{
 { map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
     newBranches[it->first]=it->second->RenameAll();
-  MpsTerm *result=new MpsBranch(myChannel,newBranches);
+  MpsTerm *result=new MpsBranch(myChannel,newBranches, GetFinalBranches());
   DeleteMap(newBranches);
   return result;
 } // }}}
 MpsTerm *MpsPar::RenameAll() const // {{{
 { MpsTerm *newLeft=myLeft->RenameAll();
   MpsTerm *newRight=myRight->RenameAll();
-  MpsTerm *result=new MpsPar(*newLeft,*newRight);
+  MpsTerm *result=new MpsPar(*newLeft,*newRight, GetLeftFinal(), GetRightFinal());
   delete newLeft;
   delete newRight;
   return result;
@@ -6257,7 +6332,7 @@ MpsTerm *MpsEnd::CloseDefinitions() const // {{{
 MpsTerm *MpsSnd::CloseDefinitions() const // {{{
 {
   MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *myType);
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *myType, GetFinal());
   delete newSucc;
 
   return result;
@@ -6265,7 +6340,7 @@ MpsTerm *MpsSnd::CloseDefinitions() const // {{{
 MpsTerm *MpsRcv::CloseDefinitions() const // {{{
 {
   MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *myType);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *myType, GetFinal());
   delete newSucc;
 
   return result;
@@ -6273,7 +6348,7 @@ MpsTerm *MpsRcv::CloseDefinitions() const // {{{
 MpsTerm *MpsSelect::CloseDefinitions() const // {{{
 {
   MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc);
+  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc, GetFinal());
   delete newSucc;
 
   return result;
@@ -6284,7 +6359,7 @@ MpsTerm *MpsBranch::CloseDefinitions() const // {{{
   for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
     newBranches[it->first]=it->second->CloseDefinitions();
 
-  MpsTerm *result=new MpsBranch(myChannel,newBranches);
+  MpsTerm *result=new MpsBranch(myChannel,newBranches, GetFinalBranches());
   DeleteMap(newBranches);
 
   return result;
@@ -6294,7 +6369,7 @@ MpsTerm *MpsPar::CloseDefinitions() const // {{{
   MpsTerm *newLeft = myLeft->CloseDefinitions();
   MpsTerm *newRight = myRight->CloseDefinitions();
 
-  MpsTerm *result=new MpsPar(*newLeft,*newRight);
+  MpsTerm *result=new MpsPar(*newLeft,*newRight, GetLeftFinal(), GetRightFinal());
 
   delete newLeft;
   delete newRight;
@@ -6445,19 +6520,19 @@ MpsTerm *MpsEnd::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 } // }}}
 MpsTerm *MpsSnd::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
-  MpsTerm *result=new MpsSnd(myChannel,*myExp,*newSucc,*myType);
+  MpsTerm *result=new MpsSnd(myChannel,*myExp,*newSucc,*myType, GetFinal());
   delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsRcv::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
-  MpsTerm *result=new MpsRcv(myChannel,myDest,myPid,myMaxPid,*newSucc,*myType);
+  MpsTerm *result=new MpsRcv(myChannel,myDest,myPid,myMaxPid,*newSucc,*myType, GetFinal());
   delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsSelect::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
-  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc);
+  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}
@@ -6465,14 +6540,14 @@ MpsTerm *MpsBranch::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
     newBranches[it->first]=it->second->ExtractDefinitions(env);
-  MpsTerm *result=new MpsBranch(myChannel,newBranches);
+  MpsTerm *result=new MpsBranch(myChannel,newBranches, GetFinalBranches());
   DeleteMap(newBranches);
   return result;
 } // }}}
 MpsTerm *MpsPar::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newLeft=myLeft->ExtractDefinitions(env);
   MpsTerm *newRight=myRight->ExtractDefinitions(env);
-  MpsTerm *result=new MpsPar(*newLeft,*newRight);
+  MpsTerm *result=new MpsPar(*newLeft,*newRight, GetLeftFinal(), GetRightFinal());
   delete newLeft;
   delete newRight;
   return result;
@@ -6613,4 +6688,22 @@ void MpsSnd::SetMsgType(const MpsMsgType &type) // {{{
 } // }}}
 const MpsMsgType &MpsAssign::GetExpType() const // {{{
 { return *myType;
+} // }}}
+bool MpsSnd::GetFinal() const // {{{
+{ return myFinal;
+} // }}}
+bool MpsRcv::GetFinal() const // {{{
+{ return myFinal;
+} // }}}
+bool MpsSelect::GetFinal() const // {{{
+{ return myFinal;
+} // }}}
+const vector<string> &MpsBranch::GetFinalBranches() const // {{{
+{ return myFinalBranches;
+} // }}}
+const vector<string> &MpsPar::GetLeftFinal() const // {{{
+{ return myLeftFinal;
+} // }}}
+const vector<string> &MpsPar::GetRightFinal() const // {{{
+{ return myRightFinal;
 } // }}}

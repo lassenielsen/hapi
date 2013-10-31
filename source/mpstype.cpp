@@ -2669,6 +2669,44 @@ bool MpsLocalSyncType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) const
   return true;
 } // }}}
 
+
+bool MpsLocalSendType::IsDone() const // {{{
+{
+  return false;
+} // }}}
+bool MpsLocalRcvType::IsDone() const // {{{
+{
+  return false;
+} // }}}
+bool MpsLocalForallType::IsDone() const // {{{
+{
+  return mySucc->IsDone();
+} // }}}
+bool MpsLocalSelectType::IsDone() const // {{{
+{
+  return false;
+} // }}}
+bool MpsLocalBranchType::IsDone() const // {{{
+{
+  return false;
+} // }}}
+bool MpsLocalRecType::IsDone() const // {{{
+{
+  return mySucc->IsDone();
+} // }}}
+bool MpsLocalVarType::IsDone() const // {{{
+{
+  return true;
+} // }}}
+bool MpsLocalEndType::IsDone() const // {{{
+{
+  return true;
+} // }}}
+bool MpsLocalSyncType::IsDone() const // {{{
+{
+  return false;
+} // }}}
+
 // Free Global Type Variables
 set<string> MpsLocalSendType::FGV() const // {{{
 { set<string> result = mySucc->FGV();

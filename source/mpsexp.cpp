@@ -1065,7 +1065,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
     dest << "==";
   else if (myName=="or")
     dest << "||";
-  else if (myName=="and")9
+  else if (myName=="and")
     dest << "&&";
   else
     dest << myName;

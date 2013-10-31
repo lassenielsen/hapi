@@ -1,5 +1,5 @@
-#ifndef MPSTYPES
-#define MPSTYPES
+#ifndef MPSTYPE_HPP
+#define MPSTYPE_HPP
 
 #include <dpl/parser.hpp>
 #include <string>
@@ -289,9 +289,12 @@ class MpsLocalType // {{{
     // Constructor, Copy and operator methods
     virtual ~MpsLocalType();
     virtual MpsLocalType *Copy() const=0;
-    //virtual bool operator==(const MpsLocalType &rhs) const=0;
     virtual bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const=0;
-    // FIXME: virtual bool operator<=(const MpsLocalType &rhs) const = 0;
+    //! \brief IsDone determines if the local type is equivalent to
+    //! Lend.
+    virtual bool IsDone() const=0;
+    //FIXME: virtual bool operator==(const MpsLocalType &rhs) const=0;
+    //FIXME: virtual bool operator<=(const MpsLocalType &rhs) const=0;
 
     // Substitution (and helper functions)
     virtual std::set<std::string> FGV() const = 0;
@@ -327,7 +330,7 @@ class MpsLocalSendType : public MpsLocalType // {{{
     virtual ~MpsLocalSendType();
     MpsLocalSendType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
-    //bool operator==(const MpsLocalType &rhs) const;
+    bool IsDone() const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -370,7 +373,7 @@ class MpsLocalRcvType : public MpsLocalType // {{{
     virtual ~MpsLocalRcvType();
     MpsLocalRcvType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
-    //bool operator==(const MpsLocalType &rhs) const;
+    bool IsDone() const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -412,7 +415,7 @@ class MpsLocalForallType : public MpsLocalType // {{{
     virtual ~MpsLocalForallType();
     MpsLocalForallType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
-    //bool operator==(const MpsLocalType &rhs) const;
+    bool IsDone() const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -447,7 +450,7 @@ class MpsLocalSelectType : public MpsLocalType // {{{
     virtual ~MpsLocalSelectType();
     MpsLocalSelectType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
-    //bool operator==(const MpsLocalType &rhs) const;
+    bool IsDone() const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -481,7 +484,7 @@ class MpsLocalBranchType : public MpsLocalType // {{{
     virtual ~MpsLocalBranchType();
     MpsLocalBranchType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
-    //bool operator==(const MpsLocalType &rhs) const;
+    bool IsDone() const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -515,7 +518,7 @@ class MpsLocalRecType : public MpsLocalType // {{{
     virtual ~MpsLocalRecType();
     MpsLocalRecType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
-    //bool operator==(const MpsLocalType &rhs) const;
+    bool IsDone() const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -549,7 +552,7 @@ class MpsLocalVarType : public MpsLocalType // {{{
     virtual ~MpsLocalVarType();
     MpsLocalVarType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
-    //bool operator==(const MpsLocalType &rhs) const;
+    bool IsDone() const;
 
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
@@ -577,7 +580,7 @@ class MpsLocalEndType : public MpsLocalType // {{{
     virtual ~MpsLocalEndType();
     MpsLocalEndType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
-    //bool operator==(const MpsLocalType &rhs) const;
+    bool IsDone() const;
 
     std::set<std::string> FEV() const;
     std::set<std::string> FGV() const;
@@ -601,7 +604,7 @@ class MpsLocalSyncType : public MpsLocalType // {{{
     virtual ~MpsLocalSyncType();
     MpsLocalSyncType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
-    //bool operator==(const MpsLocalType &rhs) const;
+    bool IsDone() const;
 
     std::set<std::string> FEV() const;
     std::set<std::string> FGV() const;
