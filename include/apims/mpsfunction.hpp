@@ -56,6 +56,7 @@ class MpsFunction // {{{
  //   std::string ToTex() const;
     std::string ToCDecl() const;
     std::string ToC() const;
+    std::string ToCCnt() const;
 
   private:
     std::string myName;

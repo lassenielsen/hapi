@@ -22,10 +22,19 @@ std::string DefEnvToString(const MpsFunctionEnv &env) // {{{
 std::string DefEnvToC(const MpsFunctionEnv &env) // {{{
 {
   stringstream ss;
-  ss << endl << "/* Procedure declerations */" << endl;
+  ss << endl << "/* Procedure declerations */" << endl
+     << "class Cnt" << endl
+     << "{" << endl
+     << "  public:" << endl
+     << "    Cnt() {}" << endl
+     << "    virtual ~Cnt() {}" << endl
+     << "    virtual bool IsEmpty() { return true; }" << endl
+     << "    virtual Cnt *Run() { return new Cnt(); }" << endl
+     << "};" << endl;
   for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
   {
     ss << def->ToCDecl() << ";" << endl;
+    ss << def->ToCCnt() << ";" << endl;
   }
   ss << endl << "/* Procedure implementations */" << endl;
   for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
@@ -140,7 +149,7 @@ string MpsFunction::ToString() const // {{{
 string MpsFunction::ToCDecl() const // {{{
 {
   stringstream ss;
-  ss << "int " << ToC_Name(GetName()) << "(";
+  ss << "Cnt *" << ToC_Name(GetName()) << "(";
   // Print state arguments
   vector<MpsMsgType*>::const_iterator type=GetStateTypes().begin();
   for (vector<string>::const_iterator arg=GetStateArgs().begin();
@@ -170,6 +179,92 @@ string MpsFunction::ToC() const // {{{
      << "{" << endl
      << GetBody().ToC()
      << "}";
+  return ss.str();
+} // }}}
+string MpsFunction::ToCCnt() const // {{{
+{
+  stringstream ss;
+  string name=string("__Cnt__")+ToC_Name(GetName());
+  ss << "class " << name << " : public Cnt" << endl
+     << "{" << endl
+     << "  public:" << endl
+     << "    " << name << "(";
+  // Print state arguments
+  vector<MpsMsgType*>::const_iterator type=GetStateTypes().begin();
+  for (vector<string>::const_iterator arg=GetStateArgs().begin();
+       arg!=GetStateArgs().end() &&
+       type!=GetStateTypes().end();
+       ++arg, ++type)
+  {
+    if (arg!=GetStateArgs().begin())
+      ss << ",";
+    ss << (*type)->ToC() << " &" << ToC_Name(*arg);
+  }
+  // Print arguments
+  type=GetTypes().begin();
+  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg,++type)
+  {
+    if (arg!=GetArgs().begin() || GetStateArgs().size()>0)
+      ss << ",";
+    ss << (*type)->ToC() << " &" << ToC_Name(*arg);
+  }
+  ss << ")";
+  ss << ": ";
+  // Print state arguments
+  for (vector<string>::const_iterator arg=GetStateArgs().begin();
+       arg!=GetStateArgs().end();
+       ++arg)
+  {
+    if (arg!=GetStateArgs().begin())
+      ss << ", ";
+    ss << ToC_Name(*arg) << "(" << ToC_Name(*arg) << ")" << endl;
+  }
+  // Print arguments
+  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg)
+  {
+    if (arg!=GetArgs().begin() || GetStateArgs().size()>0)
+      ss << ", ";
+    ss << ToC_Name(*arg) << "(" << ToC_Name(*arg) << ")" << endl;
+  }
+  ss << "{}" << endl;
+  ss << "    virtual ~" << name << "() {}" << endl
+     << "    virtual bool IsEmpty() { return false; }" << endl
+     << "    virtual Cnt *Run() { return " << ToC_Name(GetName()) << "(";
+  // Print state arguments
+  for (vector<string>::const_iterator arg=GetStateArgs().begin();
+       arg!=GetStateArgs().end();
+       ++arg)
+  {
+    if (arg!=GetStateArgs().begin())
+      ss << ", ";
+    ss << ToC_Name(*arg);
+  }
+  // Print arguments
+  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg)
+  {
+    if (arg!=GetArgs().begin() || GetStateArgs().size()>0)
+      ss << ", ";
+    ss << ToC_Name(*arg);
+  }
+
+  ss << "); }" << endl
+     << "  private:" << endl;
+  // Print state arguments
+  type=GetStateTypes().begin();
+  for (vector<string>::const_iterator arg=GetStateArgs().begin();
+       arg!=GetStateArgs().end() &&
+       type!=GetStateTypes().end();
+       ++arg, ++type)
+  {
+    ss << (*type)->ToC() << " " << ToC_Name(*arg) << ";" << endl;
+  }
+  // Print arguments
+  type=GetTypes().begin();
+  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg,++type)
+  {
+    ss << (*type)->ToC() << " " << ToC_Name(*arg) << ";" << endl;
+  }
+  ss << "};" << endl;
   return ss.str();
 } // }}}
 }

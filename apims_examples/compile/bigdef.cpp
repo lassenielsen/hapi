@@ -13,51 +13,81 @@ in ( X(10000000)
 #include <unistd.h>
 #include <vector>
 #include <iostream>
-#include <libpi/session_mq.hpp>
+#include <libpi/session_fifo.hpp>
 #include <libpi/value.hpp>
 using namespace std;
 using namespace libpi;
 
 
 /* Procedure declerations */
-int __SIM__X1(IntValue __SIM__i1);
+class Cnt
+{
+  public:
+    Cnt() {}
+    virtual ~Cnt() {}
+    virtual bool IsEmpty() { return true; }
+    virtual Cnt *Run() { return new Cnt(); }
+};
+Cnt *__SIM__X1(IntValue &__SIM__i1);
+class __Cnt____SIM__X1 : public Cnt
+{
+  public:
+    __Cnt____SIM__X1(IntValue &__SIM__i1): __SIM__i1(__SIM__i1)
+{}
+    virtual ~__Cnt____SIM__X1() {}
+    virtual bool IsEmpty() { return false; }
+    virtual Cnt *Run() { return __SIM__X1(__SIM__i1); }
+  private:
+IntValue __SIM__i1;
+};
 
 /* Procedure implementations */
-int __SIM__X1(IntValue __SIM__i1)
+Cnt *__SIM__X1(IntValue &__SIM__i1)
 {
-  cout << "call: " << __SIM__i1.ToString() << endl;
     IntValue __SIM__intval9("0");
     BoolValue __SIM__binop8(__SIM__i1 <= __SIM__intval9);
   if (__SIM__binop8.GetValue())
   {
-  return 0;
+  return new Cnt();
   }
   else
   {
     IntValue __SIM__intval11("1");
     IntValue __SIM__binop10(__SIM__i1 - __SIM__intval11);
-  return __SIM__X1(__SIM__binop10);
+  return new __Cnt____SIM__X1(__SIM__binop10);
   }
 }
 
 /* Main process */
-int main()
+Cnt *__MAIN__()
 {
-  try {
   int __SIM__fork5=fork();
   if (__SIM__fork5>0)
   {
-    IntValue __SIM__intval7("10000000");
-  return __SIM__X1(__SIM__intval7);
+    IntValue __SIM__intval6("10000000");
+  return new __Cnt____SIM__X1(__SIM__intval6);
   }
   else if (__SIM__fork5==0)
   {
-    IntValue __SIM__intval6("10000000");
-  return __SIM__X1(__SIM__intval6);
+    IntValue __SIM__intval7("10000000");
+  return new __Cnt____SIM__X1(__SIM__intval7);
   }
 else throw (string)"Error during fork!";
 return 0;
+}
+
+/*Start process, and its continuations */
+int main()
+{ try {
+    Cnt *cnt = __MAIN__();
+    while (!cnt->IsEmpty())
+    { Cnt *cnt2=cnt->Run();
+      delete cnt;
+      cnt=cnt2;
+    }
   } catch (const string &error) {
     cerr << "Error: " << error << endl;
+    return 1;
   }
+  return 0;
 }

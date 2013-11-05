@@ -5883,19 +5883,30 @@ string MpsTerm::MakeC() const // {{{
        + "using namespace std;\n"
        + "using namespace libpi;\n\n"
        + DefEnvToC(defs)
-       + "\n\n/* Main process */\nint main()\n{\n"
-       + "  try {\n"
+       + "\n\n/* Main process */\nCnt *__MAIN__()\n{\n"
        + main->ToC()
+       + "}"
+       + "\n\n/*Start process, and its continuations */\n"
+       + "int main()\n"
+       + "{ try {\n"
+       + "    Cnt *cnt = __MAIN__();\n"
+       + "    while (!cnt->IsEmpty())\n"
+       + "    { Cnt *cnt2=cnt->Run();\n"
+       + "      delete cnt;\n"
+       + "      cnt=cnt2;\n"
+       + "    }\n"
        + "  } catch (const string &error) {\n"
        + "    cerr << \"Error: \" << error << endl;\n"
+       + "    return 1;\n"
        + "  }\n"
+       + "  return 0;\n"
        + "}";
   delete main;
   return result;
 } // }}}
 string MpsEnd::ToC() const // {{{
 {
-  return "  return 0;\n";
+  return "  return new Cnt();\n";
 } // }}}
 string MpsSnd::ToC() const // {{{
 {
@@ -6035,8 +6046,7 @@ string MpsCall::ToC() const // {{{
 {
   stringstream precall;
   stringstream call;
-  stringstream postcall;
-  call << "  return " << ToC_Name(myName) << "(";
+  call << "  return new __Cnt__" << ToC_Name(myName) << "(";
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
   { string newName = (*it)->ToC(precall, (*tit)->ToC());
@@ -6052,7 +6062,7 @@ string MpsCall::ToC() const // {{{
     call << newName;
   }
   call << ");" << endl;
-  return precall.str() + call.str() + postcall.str();
+  return precall.str() + call.str();
 } // }}}
 string MpsNu::ToC() const // {{{
 {
