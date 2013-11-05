@@ -13,8 +13,8 @@
          else link(2,fib,s1,1);
               s1[2] << (x - 1);
               link(2,fib,s2,1);
-              s1[2] >> f1;
               s2[2] << (x - 2);
+              s1[2] >> f1;
               s2[2] >> f2;
               s[1] << (f1 + f2);
               end
@@ -38,16 +38,38 @@ using namespace libpi;
 
 
 /* Procedure declerations */
-int __SIM__Fib1(ChannelsValue &__SIM__fib1);
+class Cnt
+{
+  public:
+    Cnt() {}
+    virtual ~Cnt() {}
+    virtual bool IsEmpty() { return true; }
+    virtual Cnt *Run() { return new Cnt(); }
+};
+Cnt *__SIM__Fib1(ChannelsValue &__SIM__fib1);
+class __Cnt____SIM__Fib1 : public Cnt
+{
+  public:
+    __Cnt____SIM__Fib1(ChannelsValue &__SIM__fib1): __SIM__fib1(__SIM__fib1)
+{}
+    virtual ~__Cnt____SIM__Fib1() {}
+    virtual bool IsEmpty() { return false; }
+    virtual Cnt *Run() { return __SIM__Fib1(__SIM__fib1); }
+  private:
+ChannelsValue __SIM__fib1;
+};
+;
 
 /* Procedure implementations */
-int __SIM__Fib1(ChannelsValue &__SIM__fib1)
+Cnt *__SIM__Fib1(ChannelsValue &__SIM__fib1)
 {
   Session*__SIM__s2=new Session_FIFO(__SIM__fib1.GetValues(), 1, 2);
   int __SIM__fork17=fork();
   if (__SIM__fork17>0)
   {
-  return __SIM__Fib1(__SIM__fib1);
+    __SIM__s2->Close(false);
+    delete __SIM__s2;
+  return new __Cnt____SIM__Fib1(__SIM__fib1);
   }
   else if (__SIM__fork17==0)
   {
@@ -66,7 +88,9 @@ int __SIM__Fib1(ChannelsValue &__SIM__fib1)
     __SIM__intval32.ToMessage(__SIM__send31);
     __SIM__s2->Send(0,__SIM__send31);
   }
-  return 0;
+  __SIM__s2->Close(true);
+  delete __SIM__s2;
+  return new Cnt();
   }
   else
   {
@@ -79,30 +103,36 @@ int __SIM__Fib1(ChannelsValue &__SIM__fib1)
     __SIM__s14->Send(1,__SIM__send21);
   }
   Session*__SIM__s25=new Session_FIFO(__SIM__fib1.GetValues(), 0, 2);
-  IntValue __SIM__f16;
-  { Message __SIM__receive24;
-    __SIM__s14->Receive(1,__SIM__receive24);
-    __SIM__receive24.GetValue(__SIM__f16);
-  }
   { 
-    IntValue __SIM__intval27("2");
-    IntValue __SIM__binop26(__SIM__x3 - __SIM__intval27);
-    Message  __SIM__send25;
-    __SIM__binop26.ToMessage(__SIM__send25);
-    __SIM__s25->Send(1,__SIM__send25);
+    IntValue __SIM__intval26("2");
+    IntValue __SIM__binop25(__SIM__x3 - __SIM__intval26);
+    Message  __SIM__send24;
+    __SIM__binop25.ToMessage(__SIM__send24);
+    __SIM__s25->Send(1,__SIM__send24);
   }
+  IntValue __SIM__f16;
+  { Message __SIM__receive27;
+    __SIM__s14->Receive(1,__SIM__receive27);
+    __SIM__receive27.GetValue(__SIM__f16);
+  }
+  __SIM__s14->Close(true);
+  delete __SIM__s14;
   IntValue __SIM__f27;
   { Message __SIM__receive28;
     __SIM__s25->Receive(1,__SIM__receive28);
     __SIM__receive28.GetValue(__SIM__f27);
   }
+  __SIM__s25->Close(true);
+  delete __SIM__s25;
   { 
     IntValue __SIM__binop30(__SIM__f16 + __SIM__f27);
     Message  __SIM__send29;
     __SIM__binop30.ToMessage(__SIM__send29);
     __SIM__s2->Send(0,__SIM__send29);
   }
-  return 0;
+  __SIM__s2->Close(true);
+  delete __SIM__s2;
+  return new Cnt();
   }
   }
 else throw (string)"Error during fork!";
@@ -110,16 +140,15 @@ return 0;
 }
 
 /* Main process */
-int main()
+Cnt *__MAIN__()
 {
-  try {
   vector<Channel*> __SIM__chvector12;
   __SIM__chvector12.push_back(new Channel_FIFO());
   ChannelsValue __SIM__fib1(__SIM__chvector12);
   int __SIM__fork13=fork();
   if (__SIM__fork13>0)
   {
-  return __SIM__Fib1(__SIM__fib1);
+  return new __Cnt____SIM__Fib1(__SIM__fib1);
   }
   else if (__SIM__fork13==0)
   {
@@ -135,11 +164,26 @@ int main()
     __SIM__f8->Receive(1,__SIM__receive16);
     __SIM__receive16.GetValue(__SIM__f109);
   }
-  return 0;
+  __SIM__f8->Close(true);
+  delete __SIM__f8;
+  return new Cnt();
   }
 else throw (string)"Error during fork!";
 return 0;
+}
+
+/*Start process, and its continuations */
+int main()
+{ try {
+    Cnt *cnt = __MAIN__();
+    while (!cnt->IsEmpty())
+    { Cnt *cnt2=cnt->Run();
+      delete cnt;
+      cnt=cnt2;
+    }
   } catch (const string &error) {
     cerr << "Error: " << error << endl;
+    return 1;
   }
+  return 0;
 }
