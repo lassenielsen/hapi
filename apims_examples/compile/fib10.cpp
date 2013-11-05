@@ -181,6 +181,7 @@ int main()
       delete cnt;
       cnt=cnt2;
     }
+    delete cnt;
   } catch (const string &error) {
     cerr << "Error: " << error << endl;
     return 1;

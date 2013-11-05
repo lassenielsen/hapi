@@ -40,6 +40,7 @@ class __Cnt____SIM__X1 : public Cnt
   private:
 IntValue __SIM__i1;
 };
+;
 
 /* Procedure implementations */
 Cnt *__SIM__X1(IntValue &__SIM__i1)
@@ -85,6 +86,7 @@ int main()
       delete cnt;
       cnt=cnt2;
     }
+    delete cnt;
   } catch (const string &error) {
     cerr << "Error: " << error << endl;
     return 1;

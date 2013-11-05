@@ -1276,7 +1276,6 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsGlobalEnv &Gamma, const Mps
   bool result = mySucc->TypeCheck(Theta,Gamma,newDelta,Sigma,Omega);
   // Store if this is final action in session
   myFinal=newType->IsDone();
-  cout << "TYPE: " << newType->ToString() << endl << "ISDONE: " << myFinal << endl;
   // Clean Up
   delete newType;
   // Store message type in term
@@ -5895,6 +5894,7 @@ string MpsTerm::MakeC() const // {{{
        + "      delete cnt;\n"
        + "      cnt=cnt2;\n"
        + "    }\n"
+       + "    delete cnt;\n"
        + "  } catch (const string &error) {\n"
        + "    cerr << \"Error: \" << error << endl;\n"
        + "    return 1;\n"
