@@ -160,9 +160,7 @@ class MpsTerm // {{{
      */
     // }}}
     virtual bool TypeCheck(const MpsExp &Theta,
-                           const MpsGlobalEnv &Gamma,
-                           const MpsLocalEnv &Delta,
-                           const MpsMsgEnv &Sigma,
+                           const MpsMsgEnv &Gamma,
                            const MpsProcEnv &Omega) = 0;
 
     // DOCUMENTATION: MpsTerm::Compile {{{
@@ -321,6 +319,8 @@ class MpsTerm // {{{
      */
     // }}}
     virtual std::string ToC() const=0;
+    void FreeLink(const std::string &name);
+    const std::vector<std::string> &GetFreeLinks() const;
 
     // DOCUMENTATION: MpsTerm::NewName {{{
     /*!
@@ -335,6 +335,7 @@ class MpsTerm // {{{
     static MpsTerm *Error(const std::string &msg);
   protected:
     static int ourNextId;
+    std::vector<std::string> myFreeLinks;
 }; // }}}
 // DOCUMENTATION: MpsEnd {{{
 /*!
@@ -348,9 +349,7 @@ class MpsEnd : public MpsTerm // {{{
     virtual ~MpsEnd();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -391,9 +390,7 @@ class MpsSnd : public MpsTerm // {{{
     virtual ~MpsSnd();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -454,9 +451,7 @@ class MpsRcv : public MpsTerm // {{{
     virtual ~MpsRcv();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -523,9 +518,7 @@ class MpsSelect : public MpsTerm // {{{
     virtual ~MpsSelect();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -576,9 +569,7 @@ class MpsBranch : public MpsTerm // {{{
     virtual ~MpsBranch();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -629,9 +620,7 @@ class MpsPar : public MpsTerm // {{{
     virtual ~MpsPar();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -689,9 +678,7 @@ class MpsDef : public MpsTerm // {{{
     virtual ~MpsDef();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -745,9 +732,7 @@ class MpsCall : public MpsTerm // {{{
     virtual ~MpsCall();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -795,9 +780,7 @@ class MpsNu : public MpsTerm // {{{
     virtual ~MpsNu();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -844,9 +827,7 @@ class MpsLink : public MpsTerm // {{{
     virtual ~MpsLink();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -894,9 +875,7 @@ class MpsSync : public MpsTerm // {{{
     virtual ~MpsSync();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -943,9 +922,7 @@ class MpsCond : public MpsTerm // {{{
     virtual ~MpsCond();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -1003,9 +980,7 @@ class MpsGuiSync : public MpsTerm // {{{
     virtual ~MpsGuiSync();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -1052,9 +1027,7 @@ class MpsGuiValue : public MpsTerm // {{{
     virtual ~MpsGuiValue();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
@@ -1108,9 +1081,7 @@ class MpsAssign : public MpsTerm // {{{
     virtual ~MpsAssign();
 
     bool TypeCheck(const MpsExp &Theta,
-                   const MpsGlobalEnv &Gamma,
-                   const MpsLocalEnv &Delta,
-                   const MpsMsgEnv &Sigma,
+                   const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
     void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);

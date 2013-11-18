@@ -348,9 +348,9 @@ class MpsLocalSendType : public MpsLocalType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
 
     // Accessors
-    int GetReceiver();
+    int GetReceiver() const;
     const MpsLocalType *GetSucc() const;
-    MpsMsgType *GetMsgType();
+    const MpsMsgType *GetMsgType() const;
     bool GetAssertionType() const;
     const std::string &GetAssertionName() const;
     const MpsExp &GetAssertion() const;
@@ -391,9 +391,9 @@ class MpsLocalRcvType : public MpsLocalType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
 
     // Accessors
-    int GetSender();
+    const int GetSender() const;
     const MpsLocalType *GetSucc() const;
-    MpsMsgType *GetMsgType();
+    const MpsMsgType *GetMsgType() const;
     bool GetAssertionType() const;
     const std::string &GetAssertionName() const;
     const MpsExp &GetAssertion() const;
@@ -923,13 +923,6 @@ class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegat
 }; // }}}
 
 // Define environments
-struct delta // {{{
-{
-  MpsLocalType *type;
-  int pid;
-  int maxpid;
-}; // }}}
-
 struct omega // {{{
 {
   std::vector<MpsMsgType*> stypes;
@@ -937,8 +930,8 @@ struct omega // {{{
   std::vector<MpsMsgType*> types;
 }; // }}}
 
-typedef std::map<std::string,MpsGlobalType*> MpsGlobalEnv;
-typedef std::map<std::string,delta> MpsLocalEnv;
+//typedef std::map<std::string,MpsGlobalType*> MpsGlobalEnv;
+//typedef std::map<std::string,delta> MpsLocalEnv;
 typedef std::map<std::string,MpsMsgType*> MpsMsgEnv;
 typedef std::map<std::string,omega> MpsProcEnv;
 }

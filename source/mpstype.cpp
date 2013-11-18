@@ -4653,11 +4653,11 @@ const string &MpsLocalRecType::GetName() const // {{{
 {
   return myName;
 } // }}}
-int MpsLocalSendType::GetReceiver() // {{{
+int MpsLocalSendType::GetReceiver() const // {{{
 {
   return myReceiver;
 } // }}}
-int MpsLocalRcvType::GetSender() // {{{
+const int MpsLocalRcvType::GetSender() const // {{{
 {
   return mySender;
 } // }}}
@@ -4730,11 +4730,11 @@ map<string,MpsExp*> &MpsLocalSyncType::GetAssertions() // {{{
 {
   return myAssertions;
 } // }}}
-MpsMsgType *MpsLocalSendType::GetMsgType() // {{{
+const MpsMsgType *MpsLocalSendType::GetMsgType() const // {{{
 {
   return myMsgType;
 } // }}}
-MpsMsgType *MpsLocalRcvType::GetMsgType() // {{{
+const MpsMsgType *MpsLocalRcvType::GetMsgType() const // {{{
 {
   return myMsgType;
 } // }}}
