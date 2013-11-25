@@ -1212,7 +1212,7 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   // Check session is open
   if (session==Gamma.end())
     return PrintTypeError((string)"Sending on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
-  // Check is session type
+  // Check if session type
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
     return PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
@@ -1276,226 +1276,237 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
 {
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
-  if (session==Delta.end())
-    return PrintTypeError((string)"Receiving on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
+  if (session==Gamma.end())
+    return PrintTypeError((string)"Receiving on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
+  // Check if session type
+  const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
+  if (msgType==NULL)
+    return PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
-  if (typeid(*session->second.type)==typeid(MpsLocalRecType))
-    return TypeCheckRec(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
-  if (typeid(*session->second.type)==typeid(MpsLocalForallType))
-    return TypeCheckForall(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+  if (recType!=NULL)
+    return TypeCheckRec(Theta,Gamma, Omega, *this, session->first);
+  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
+  if (allType!=NULL)
+    return TypeCheckForall(Theta, Gamma, Omega, *this, session->first);
   // Check session has receive type
-  MpsLocalRcvType *typeptr = dynamic_cast<MpsLocalRcvType*>(session->second.type);
-  if (typeptr==NULL)
-    return PrintTypeError((string)"Receiving on session: " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
+  const MpsLocalRcvType *rcvType = dynamic_cast<const MpsLocalRcvType*>(msgType->GetLocalType());
+  if (rcvType==NULL)
+    return PrintTypeError((string)"Receiving on session: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
   // Check channel index is correct
-  if (myChannel.GetIndex() != typeptr->GetSender())
-    return PrintTypeError((string)"Receiving on session(wrong index): " + myChannel.ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
+  if (myChannel.GetIndex() != rcvType->GetSender())
+    return PrintTypeError((string)"Receiving on session(wrong index): " + myChannel.ToString(),*this,Theta,Gamma,Omega);
   // Is renaming of myDest necessary?
   bool rename = false;
-  if (typeptr->GetAssertionType())
+  if (rcvType->GetAssertionType())
   { set<string> fv=Theta.FV();
     if (fv.find(myDest)!=fv.end())
       rename=true;
     for (MpsMsgEnv::const_iterator it=Gamma.begin(); (not rename) && it!=Gamma.end(); ++it)
-    { fv = it->second.type->FEV();
+    { fv = it->second->FEV();
       if (fv.find(myDest)!=fv.end())
         rename=true;
     }
   }
   string newDest=rename?MpsExp::NewVar(myDest):myDest;
-  // Make new Delta
+  // Make new Gamma
   MpsMsgEnv newGamma;
   for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
   { const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(it->second);
     if (delType==NULL) // Not session type
       newGamma[it->first]=it->second;
-    else
-    // IF SESSION TYPE!!!
-    MpsLocalType *newType=NULL;
-    if (it->first==myChannel.GetName())
-    { if (typeptr->GetAssertionType())
-      { MpsLocalType *tmpType=NULL;
-        if (rename && typeptr->GetAssertionName()!=myDest) // Rename in succ
-          tmpType=typeptr->GetSucc()->ERename(myDest,newDest);
+    else // SESSION TYPE
+    { MpsLocalType *newType=NULL;
+      if (it->first==myChannel.GetName())
+      { if (rcvType->GetAssertionType())
+        { MpsLocalType *tmpType=NULL;
+          if (rename && rcvType->GetAssertionName()!=myDest) // Rename in succ
+            tmpType=rcvType->GetSucc()->ERename(myDest,newDest);
+          else
+            tmpType=rcvType->GetSucc()->Copy();
+          newType=tmpType->ERename(rcvType->GetAssertionName(),myDest);
+        }
         else
-          tmpType=typeptr->GetSucc()->Copy();
-        newType=tmpType->ERename(typeptr->GetAssertionName(),myDest);
+          newType=rcvType->GetSucc()->Copy();
       }
       else
-        newType=typeptr->GetSucc()->Copy();
+      { if (rename)
+          newType=rcvType->ERename(myDest,newDest);
+        else
+          newType=rcvType->Copy();
+      }
+      newGamma[it->first] = new MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetMaxpid());
+      delete newType;
     }
-    else
-    { if (rename)
-        newType=it->second.type->ERename(myDest,newDest);
-      else
-        newType=it->second.type;
-    }
-    newGamma[it->first] = new MpsDeletateLocalMsgType(newType,it->second.pid,it->second.maxpid;
   }
   // Save created type for deletion
-  MpsLocalType *newType=newDelta[myChannel.GetName()].type;
-  // Create new Gamma (and Sigma)
-  MpsGlobalEnv newGamma = Gamma;
-  MpsMsgEnv newSigma = Sigma;
+  MpsDelegateMsgType *newType=dynamic_cast<MpsDelegateMsgType*>(newGamma[myChannel.GetName()]);
   // Check if assertion domain is respected
-  if (typeptr->GetAssertionType() && typeid(*typeptr->GetMsgType()) != typeid(MpsBoolMsgType))
-    return PrintTypeError((string)"Assertion of non-boolean type: " + typeptr->ToString("!!!!!      "),*this,Theta,Gamma,Delta,Sigma,Omega);
+  if (rcvType->GetAssertionType() && typeid(*rcvType->GetMsgType()) != typeid(MpsBoolMsgType))
+    return PrintTypeError((string)"Assertion of non-boolean type: " + rcvType->ToString("!!!!!      "),*this,Theta,Gamma,Omega);
 
-  // If simple type or tuple add to Sigma
-  if (typeid(*typeptr->GetMsgType()) == typeid(MpsIntMsgType) ||
-      typeid(*typeptr->GetMsgType()) == typeid(MpsStringMsgType) ||
-      typeid(*typeptr->GetMsgType()) == typeid(MpsBoolMsgType) ||
-      typeid(*typeptr->GetMsgType()) == typeid(MpsTupleMsgType))
-  {
-    newSigma[myDest]=typeptr->GetMsgType();
-  }
-  // If channel, add to Gamma
-  else if (typeid(*typeptr->GetMsgType()) == typeid(MpsChannelMsgType))
-  {
-    MpsChannelMsgType *mtptr = (MpsChannelMsgType*)typeptr->GetMsgType();
-    newGamma[myDest] = mtptr->GetGlobalType();
-  }
-  // If delegation then add delegated session
-  else if (dynamic_cast<MpsDelegateMsgType*>(typeptr->GetMsgType())!=NULL)
-  {
-    // Check that no unfinished session is replaced
-    MpsMsgEnv::const_iterator oldsession = newGamma.find(myDest);
-    if (oldsession != newGamma.end() && typeid(*oldsession->second)!=typeid(MpsLocalEndType))
-      return PrintTypeError((string)"Overwriting open session: " + myDest,*this,Theta,Gamma,Delta,Sigma,Omega);
-    // Check specification of pid and maxpid
-    MpsDelegateMsgType *mtptr = dynamic_cast<MpsDelegateMsgType*>(typeptr->GetMsgType());
-    if (myPid!=mtptr->GetPid() || myMaxPid!=mtptr->GetMaxpid())
-      return PrintTypeError((string)"Receiving session with pid or maxpid different than specified",*this,Theta,Gamma,Delta,Sigma,Omega);
-    newDelta[myDest].type = mtptr->GetLocalType();
-    newDelta[myDest].pid = mtptr->GetPid();
-    newDelta[myDest].maxpid = mtptr->GetMaxpid();
-  }
-  else // Unknown MsgType
-    return PrintTypeError((string)"Unknown Message-Type: " + typeptr->GetMsgType()->ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
+  // Check not overwriting unfinished session
+  MpsMsgEnv::const_iterator dstVar=Gamma.find(myDest);
+  if (dstVar!=Gamma.end() &&
+      dynamic_cast<const MpsDelegateMsgType*>(dstVar->second)!=NULL &&
+      !dynamic_cast<const MpsDelegateMsgType*>(dstVar->second)->GetLocalType()->Equal(Theta,MpsLocalEndType()))
+    return PrintTypeError((string)"Overwriting open session: " + myDest,*this,Theta,Gamma,Omega);
+  // Check specification of pid and maxpid
+  if (dynamic_cast<const MpsDelegateMsgType*>(rcvType->GetMsgType())!=NULL &&
+      (dynamic_cast<const MpsDelegateMsgType*>(rcvType->GetMsgType())->GetPid()!=myPid ||
+       dynamic_cast<const MpsDelegateMsgType*>(rcvType->GetMsgType())->GetMaxpid()!=myMaxPid) )
+      return PrintTypeError((string)"Receiving session with pid or maxpid different than specified",*this,Theta,Gamma,Omega);
+  newGamma[myDest]=rcvType->GetMsgType()->Copy();
   // Create new Assumptions
   MpsExp *newTheta=NULL;
-  if (typeptr->GetAssertionType())
+  if (rcvType->GetAssertionType())
   { MpsExp *newAssertion=NULL;
-    if (typeptr->GetAssertionName()!=myDest)
+    if (rcvType->GetAssertionName()!=myDest)
     { MpsExp *tmpAssertion=NULL;
       if (rename)
-        tmpAssertion=typeptr->GetAssertion().Rename(myDest,newDest);
+        tmpAssertion=rcvType->GetAssertion().Rename(myDest,newDest);
       else
-        tmpAssertion=typeptr->GetAssertion().Copy();
-      newAssertion=tmpAssertion->Rename(typeptr->GetAssertionName(),myDest);
+        tmpAssertion=rcvType->GetAssertion().Copy();
+      newAssertion=tmpAssertion->Rename(rcvType->GetAssertionName(),myDest);
       delete tmpAssertion;
     }
     else
-      newAssertion=typeptr->GetAssertion().Copy();
+      newAssertion=rcvType->GetAssertion().Copy();
     newTheta=new MpsBinOpExp("and",Theta,*newAssertion,MpsBoolMsgType(),MpsBoolMsgType());
     delete newAssertion;
   }
   else
     newTheta=Theta.Copy();
   // Check rest of program
-  bool result = mySucc->TypeCheck(*newTheta,newGamma,newDelta,newSigma,Omega);
+  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega);
   // Store if this is final action in session
-  myFinal=newType->IsDone();
+  myFinal=newType->GetLocalType()->IsDone();
   // Clean Up
   delete newTheta;
   if (rename)
   {
     while (newGamma.size()>0)
-    { const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(it->second);
-      if (delType!=NULL) // Is session type
+    { const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(newGamma.begin()->second);
+      if (delType!=NULL || newGamma.begin()->first==myDest) // Is session type
         delete newGamma.begin()->second;
       newGamma.erase(newGamma.begin());
     }
   }
   else
-    delete newType;
+  {
+    delete newGamma[session->first];
+    delete newGamma[myDest];
+  }
 
   // Store message type in term
-  SetMsgType(*(typeptr->GetMsgType()));
+  SetMsgType(*(rcvType->GetMsgType()));
   return result;
 } // }}}
 bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Sel {{{
 {
-  MpsLocalEnv::const_iterator session=Delta.find(myChannel.GetName());
+  MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
-  if (session==Delta.end())
+  if (session==Gamma.end())
   {
-    return PrintTypeError((string)"Typechecking error - Selecting on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
+    return PrintTypeError((string)"Typechecking error - Selecting on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
   }
+  // Check if session type
+  const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
+  if (msgType==NULL)
+    return PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
-  if (typeid(*session->second.type)==typeid(MpsLocalRecType))
-    return TypeCheckRec(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
-  if (typeid(*session->second.type)==typeid(MpsLocalForallType))
-    return TypeCheckForall(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
+  if (recType!=NULL)
+    return TypeCheckRec(Theta,Gamma, Omega, *this, session->first);
+  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
+  if (allType!=NULL)
+    return TypeCheckForall(Theta, Gamma, Omega, *this, session->first);
   // Check session has select type
-  MpsLocalSelectType *typeptr = dynamic_cast<MpsLocalSelectType*>(session->second.type);
-  if (typeptr==NULL)
-    return PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + session->second.type->ToString("           "),*this,Theta,Gamma,Delta,Sigma,Omega);
+  const MpsLocalSelectType *selType = dynamic_cast<const MpsLocalSelectType*>(msgType->GetLocalType());
+  if (selType==NULL)
+    return PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + msgType->GetLocalType()->ToString("           "),*this,Theta,Gamma,Omega);
   // Check channel index is correct
-  if (myChannel.GetIndex() != typeptr->GetReceiver())
-    return PrintTypeError((string)"Typechecking error - Sending on session: " + myChannel.ToString() + "with type: " + typeptr->ToString("           "),*this,Theta,Gamma,Delta,Sigma,Omega);
+  if (myChannel.GetIndex() != selType->GetReceiver())
+    return PrintTypeError((string)"Typechecking error - Sending on session: " + myChannel.ToString() + "with type: " + selType->ToString("           "),*this,Theta,Gamma,Omega);
   // Check label ok
-  map<string,MpsLocalType*>::iterator branch=typeptr->GetBranches().find(myLabel);
-  if (branch==typeptr->GetBranches().end())
-    return PrintTypeError((string)"Typechecking error - Sending label: " + myLabel + "on session: " + myChannel.ToString() + "with type: " + typeptr->ToString("           "),*this,Theta,Gamma,Delta,Sigma,Omega);
+  map<string,MpsLocalType*>::const_iterator branch=selType->GetBranches().find(myLabel);
+  if (branch==selType->GetBranches().end())
+    return PrintTypeError((string)"Typechecking error - Sending label: " + myLabel + "on session: " + myChannel.ToString() + "with type: " + selType->ToString("           "),*this,Theta,Gamma,Omega);
   // Check label is active (assertion valid)
   vector<const MpsExp*> hyps;
   hyps.push_back(&Theta);
-  map<string,MpsExp*>::const_iterator assertion=typeptr->GetAssertions().find(myLabel);
-  if (assertion==typeptr->GetAssertions().end())
-    return PrintTypeError((string)"Label has no assertion",*this,Theta,Gamma,Delta,Sigma,Omega);
+  map<string,MpsExp*>::const_iterator assertion=selType->GetAssertions().find(myLabel);
+  if (assertion==selType->GetAssertions().end())
+    return PrintTypeError((string)"Label has no assertion",*this,Theta,Gamma,Omega);
   if (not assertion->second->ValidExp(hyps))
-    return PrintTypeError((string)"Assertion not respected",*this,Theta,Gamma,Delta,Sigma,Omega);
+    return PrintTypeError((string)"Assertion not respected",*this,Theta,Gamma,Omega);
   
   // Make new environment
-  MpsLocalEnv newDelta = Delta;
-  newDelta[myChannel.GetName()].type = branch->second;
+  MpsMsgEnv newGamma = Gamma;
+  newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second,msgType->GetPid(),msgType->GetMaxpid());
 
   // Store if this is final action in session
   myFinal=branch->second->IsDone();
   
   // Check rest of program
-  return mySucc->TypeCheck(Theta,Gamma,newDelta,Sigma,Omega);
+  bool result = mySucc->TypeCheck(Theta,newGamma,Omega);
+
+  // Clean up
+  delete newGamma[myChannel.GetName()];
+
+  return result;
 } // }}}
 bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Branch {{{
 {
-  MpsLocalEnv::const_iterator session=Delta.find(myChannel.GetName());
+  MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
-  if (session==Delta.end())
-    return PrintTypeError((string)"Branching on closed session " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
+  if (session==Gamma.end())
+  {
+    return PrintTypeError((string)"Typechecking error - Branching on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
+  }
+  // Check if session type
+  const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
+  if (msgType==NULL)
+    return PrintTypeError((string)"Branching on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
-  if (typeid(*session->second.type)==typeid(MpsLocalRecType))
-    return TypeCheckRec(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
-  if (typeid(*session->second.type)==typeid(MpsLocalForallType))
-    return TypeCheckForall(Theta,Gamma, Delta, Sigma, Omega, *this, session->first);
-  // Check session has branch type
-  MpsLocalBranchType *typeptr = dynamic_cast<MpsLocalBranchType*>(session->second.type);
-  if (typeptr==NULL)
-    return PrintTypeError((string)"Branching on non-branch session: " + myChannel.GetName(),*this,Theta,Gamma,Delta,Sigma,Omega);
+  if (recType!=NULL)
+    return TypeCheckRec(Theta,Gamma, Omega, *this, session->first);
+  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
+  if (allType!=NULL)
+    return TypeCheckForall(Theta, Gamma, Omega, *this, session->first);
+  // Check session has select type
+  const MpsLocalBranchType *branchType = dynamic_cast<const MpsLocalBranchType*>(msgType->GetLocalType());
+  if (branchType==NULL)
+    return PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + msgType->GetLocalType()->ToString("           "),*this,Theta,Gamma,Omega);
   // Check channel index is correct
-  if (myChannel.GetIndex() != typeptr->GetSender())
-    return PrintTypeError((string)"Branching on wrong index: " + myChannel.ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
+  if (myChannel.GetIndex() != branchType->GetSender())
+    return PrintTypeError((string)"Branching on wrong index: " + myChannel.ToString(),*this,Theta,Gamma,Omega);
   // Check label ok
-  map<string,MpsLocalType*> &branches=typeptr->GetBranches();
+  const map<string,MpsLocalType*> &branches=branchType->GetBranches();
   for (map<string,MpsLocalType*>::const_iterator branch=branches.begin();branch!=branches.end();++branch)
   {
     // Add branch to myFinalBranches if type is Done
     if (branch->second->IsDone())
       myFinalBranches.push_back(branch->first);
     // Create new session environment
-    MpsLocalEnv newDelta = Delta;
-    newDelta[myChannel.GetName()].type = branch->second;
-    map<string,MpsTerm*>::iterator succ = myBranches.find(branch->first);
+    MpsMsgEnv newGamma = Gamma;
+    newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second, msgType->GetPid(), msgType->GetMaxpid());
+    map<string,MpsTerm*>::const_iterator succ = myBranches.find(branch->first);
     if (succ==myBranches.end())
-      return PrintTypeError((string)"Branching cannot receive label: " + branch->first,*this,Theta,Gamma,Delta,Sigma,Omega);
+      return PrintTypeError((string)"Branching cannot receive label: " + branch->first,*this,Theta,Gamma,Omega);
     // Make new Theta
-    map<string,MpsExp*>::const_iterator assertion=typeptr->GetAssertions().find(branch->first);
-    if (assertion==typeptr->GetAssertions().end())
-      return PrintTypeError((string)"Branch has no assertion: " + branch->first,*this,Theta,Gamma,Delta,Sigma,Omega);
+    map<string,MpsExp*>::const_iterator assertion=branchType->GetAssertions().find(branch->first);
+    if (assertion==branchType->GetAssertions().end())
+      return PrintTypeError((string)"Branch has no assertion: " + branch->first,*this,Theta,Gamma,Omega);
     MpsExp *newTheta = new MpsBinOpExp("and",Theta,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Typecheck Branch
-    bool brcheck=succ->second->TypeCheck(*newTheta,Gamma,newDelta,Sigma,Omega);
+    bool brcheck=succ->second->TypeCheck(*newTheta,newGamma,Omega);
+
+    // Clean up
     delete newTheta;
+    delete newGamma[myChannel.GetName()];
+
     if (not brcheck)
       return false;
   }
@@ -1505,115 +1516,95 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
 bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Par {{{
 {
   // Split Delta
-  MpsLocalEnv leftDelta;
-  leftDelta.clear();
-  MpsLocalEnv rightDelta;
-  rightDelta.clear();
+  MpsMsgEnv leftGamma;
+  MpsMsgEnv rightGamma;
   set<string> leftSessions = myLeft->FEV();
-  for (MpsLocalEnv::const_iterator session=Delta.begin(); session!=Delta.end(); ++session)
+  for (MpsMsgEnv::const_iterator var=Gamma.begin(); var!=Gamma.end(); ++var)
   {
-    if (leftSessions.find(session->first)!=leftSessions.end())
-    {
-      leftDelta[session->first]=session->second;
-      if (!session->second.type->IsDone())
-        myRightFinal.push_back(session->first);
+    const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(var->second);
+    if (delType==NULL) // Is not session type
+    { leftGamma[var->first]=var->second;
+      rightGamma[var->first]=var->second;
     }
     else
-    {
-      rightDelta[session->first]=session->second;
-      if (!session->second.type->IsDone())
-        myLeftFinal.push_back(session->first);
+    { if (leftSessions.find(var->first)!=leftSessions.end())
+      {
+        leftGamma[var->first]=var->second;
+        if (!delType->GetLocalType()->IsDone())
+          myRightFinal.push_back(var->first);
+      }
+      else
+      {
+        rightGamma[var->first]=var->second;
+        if (!delType->GetLocalType()->IsDone())
+          myLeftFinal.push_back(var->first);
+      }
     }
   }
 
   // Check each sub-process with the split Deltas
-  return myLeft->TypeCheck(Theta,Gamma,leftDelta,Sigma,Omega) &&
-         myRight->TypeCheck(Theta,Gamma,rightDelta,Sigma,Omega);
+  return myLeft->TypeCheck(Theta,leftGamma,Omega) &&
+         myRight->TypeCheck(Theta,rightGamma,Omega);
 } // }}}
 bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Use rule Def {{{
 {
   // Check if def is sound
   if (myArgs.size() != myTypes.size())
-    return PrintTypeError((string)"Bad def: difference in number of arguments and number of types",*this,Theta,Gamma,Delta,Sigma,Omega);
+    return PrintTypeError((string)"Bad def: difference in number of arguments and number of types",*this,Theta,Gamma,Omega);
   if (myStateArgs.size() != myStateTypes.size())
-    return PrintTypeError((string)"Bad def: difference in number of state arguments and number of state types",*this,Theta,Gamma,Delta,Sigma,Omega);
+    return PrintTypeError((string)"Bad def: difference in number of state arguments and number of state types",*this,Theta,Gamma,Omega);
   // Make new process-environment
   MpsProcEnv newOmega = Omega;
   newOmega[myName].types = myTypes;
   newOmega[myName].snames = myStateArgs;
   for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin(); it!=myStateTypes.end(); ++it)
     if (dynamic_cast<const MpsBoolMsgType*>(*it)==NULL)
-      return PrintTypeError((string)"State argument of unsupported type: " + (*it)->ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
+      return PrintTypeError((string)"State argument of unsupported type: " + (*it)->ToString(),*this,Theta,Gamma,Omega);
   newOmega[myName].stypes = myStateTypes;
   // Make new environments for body
-  MpsMsgEnv newSigma = Sigma;
-  MpsGlobalEnv newGamma=Gamma;
-  MpsLocalEnv newDelta;
-  newDelta.clear();
+  MpsMsgEnv newGamma;
+  for (MpsMsgEnv::const_iterator var = Gamma.begin(); var!=Gamma.end(); ++var)
+    if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Npt session type
+      newGamma[var->first]=var->second;
   // Update environments from state-arguments
   set<string> usedArgs;
   for (int i=0; i<myStateArgs.size() /* && i<myStateTypes.size()*/; ++i)
   { // Only type bool already verified
+    newGamma[myStateArgs[i]]=myStateTypes[i];
     usedArgs.insert(myStateArgs[i]);
-    newSigma[myStateArgs[i]]=myStateTypes[i];
   }
   // Update environments from arguments
   for (int i=0; i<myArgs.size() /* && i<myTypes.size()*/; ++i)
   {
-    if (typeid(*myTypes[i]) == typeid(MpsChannelMsgType))
-    {
-      if (usedArgs.find(myArgs[i]) != usedArgs.end())
-        return PrintTypeError((string)"Bad def: cannot type multiple input of channel: " + myArgs[i],*this,Theta,Gamma,Delta,Sigma,Omega);
-      MpsChannelMsgType *type = (MpsChannelMsgType*)myTypes[i];
-      newGamma[myArgs[i]] = type->GetGlobalType();
-      usedArgs.insert(myArgs[i]);
-    }
-    else if (dynamic_cast<MpsDelegateMsgType*>(myTypes[i])!=NULL)
-    {
-      MpsDelegateMsgType *type = dynamic_cast<MpsDelegateMsgType*>(myTypes[i]);
-      if (usedArgs.find(myArgs[i]) != usedArgs.end())
-        return PrintTypeError((string)"Bad def: cannot type multiple input of session: " + myArgs[i],*this,Theta,Gamma,Delta,Sigma,Omega);
-      newDelta[myArgs[i]].type = type->GetLocalType();
-      newDelta[myArgs[i]].pid = type->GetPid();
-      newDelta[myArgs[i]].maxpid = type->GetMaxpid();
-      usedArgs.insert(myArgs[i]);
-    }
-    else
-    {
-      if (usedArgs.find(myArgs[i]) != usedArgs.end())
-        return PrintTypeError((string)"Bad def: cannot type multiple input of channel: " + myArgs[i],*this,Theta,Gamma,Delta,Sigma,Omega);
-      newSigma[myArgs[i]]=myTypes[i];
-      usedArgs.insert(myArgs[i]);
-    }
+    if (usedArgs.find(myArgs[i]) != usedArgs.end())
+      return PrintTypeError((string)"Bad def: cannot type multiple input of channel: " + myArgs[i],*this,Theta,Gamma,Omega);
+    newGamma[myArgs[i]]=myTypes[i];
+    usedArgs.insert(myArgs[i]);
   }
   // Store env for later (compilation)
   DeleteMap(myEnv);
-  for (MpsGlobalEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
-    myEnv[it->first]= new MpsChannelMsgType(*it->second);
-  for (MpsLocalEnv::const_iterator it=Delta.begin(); it!=Delta.end(); ++it)
-    myEnv[it->first]= new MpsDelegateLocalMsgType(*it->second.type,it->second.pid,it->second.maxpid);
-  for (MpsMsgEnv::const_iterator it=Sigma.begin(); it!=Sigma.end(); ++it)
+  for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
     myEnv[it->first]=it->second->Copy();
   // Make subcalls
-  return mySucc->TypeCheck(Theta,Gamma,Delta,Sigma,newOmega) && myBody->TypeCheck(Theta,newGamma,newDelta,newSigma,newOmega);
+  return mySucc->TypeCheck(Theta,Gamma,newOmega) && myBody->TypeCheck(Theta,newGamma,newOmega);
 } // }}}
 bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Use rule Var {{{
 {
   // Check variable is defined
   MpsProcEnv::const_iterator omega = Omega.find(myName);
   if (omega == Omega.end())
-    return PrintTypeError((string)"Process Variable not defined: " + myName,*this,Theta,Gamma,Delta,Sigma,Omega);
+    return PrintTypeError((string)"Process Variable not defined: " + myName,*this,Theta,Gamma,Omega);
   // Check correct number of arguments
   if (omega->second.stypes.size() != myState.size() ||
       omega->second.stypes.size() != myState.size() ||
       omega->second.types.size() != myArgs.size())
-    return PrintTypeError((string)"Process Variable wrong argument-count: " + myName,*this,Theta,Gamma,Delta,Sigma,Omega);
+    return PrintTypeError((string)"Process Variable wrong argument-count: " + myName,*this,Theta,Gamma,Omega);
   // Check argument-types and remove used sessions from endDelta
-  MpsLocalEnv endDelta=Delta;
+  MpsMsgEnv endGamma=Gamma;
   DeleteVector(myStateTypes);
   for (int i=0;i<myState.size();++i)
   {
-    MpsMsgType *statetype = myState[i]->TypeCheck(Gamma, Delta, Sigma);
+    MpsMsgType *statetype = myState[i]->TypeCheck(Gamma);
 #if APIMS_DEBUG_LEVEL>99
     cerr << ">>>>Comparing: " << endl
          << ">>>>>>>>Theta: " << Theta.ToString() << endl
@@ -1623,14 +1614,14 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     bool statetypematch = statetype->Equal(Theta,*omega->second.stypes[i]);
     delete statetype;    
     if (!statetypematch)
-      return PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
+      return PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString(),*this,Theta,Gamma,Omega);
     // Store type for compilation
     myStateTypes.push_back(omega->second.stypes[i]->Copy());
   }
   DeleteVector(myTypes);
   for (int i=0;i<myArgs.size();++i)
   {
-    MpsMsgType *argType = myArgs[i]->TypeCheck(Gamma,endDelta,Sigma);
+    MpsMsgType *argType = myArgs[i]->TypeCheck(endGamma);
     MpsMsgType *callType = omega->second.types[i]->Copy();
     for (int j=0; j<myState.size(); ++j)
     {
@@ -1652,26 +1643,29 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     delete argType;
     delete callType;
     if (not argtypematch)
-      return PrintTypeError((string)"Argument does not have type: " + callTypeString,*this,Theta,Gamma,Delta,Sigma,Omega);
+      return PrintTypeError((string)"Argument does not have type: " + callTypeString,*this,Theta,Gamma,Omega);
     if (dynamic_cast<MpsDelegateMsgType*>(omega->second.types[i]) != NULL)
     {
       if (typeid(*myArgs[i]) != typeid(MpsVarExp))
-        return PrintTypeError((string)"Argument must be session: " + myArgs[i]->ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
+        return PrintTypeError((string)"Argument must be session: " + myArgs[i]->ToString(),*this,Theta,Gamma,Omega);
       else
       {
         MpsVarExp *var=(MpsVarExp*)myArgs[i];
-        MpsLocalEnv::iterator session=endDelta.find(var->ToString());
-        if (session == endDelta.end())
-          return PrintTypeError((string)"Argument session used more than once: " + var->ToString(),*this,Theta,Gamma,Delta,Sigma,Omega);
+        MpsMsgEnv::iterator session=endGamma.find(var->ToString());
+        if (session == endGamma.end())
+          return PrintTypeError((string)"Argument session not defined or used more than once: " + var->ToString(),*this,Theta,Gamma,Omega);
         // Remove the used session (linearity)
-        endDelta.erase(session);
+        endGamma.erase(session);
       }
     }
   }
-  // Check that endDelta is completed
-  for (MpsLocalEnv::const_iterator session=endDelta.begin();session!=endDelta.end();++session)
-    if (typeid(*session->second.type)!=typeid(MpsLocalEndType))
-      return PrintTypeError((string)"Unfinished Session: " + session->first,*this,Theta,Gamma,Delta,Sigma,Omega);
+  // Check that endGamma is completed
+  for (MpsMsgEnv::const_iterator var=endGamma.begin();var!=endGamma.end();++var)
+  { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
+    if (session!=NULL &&
+        !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
+      return PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega);
+  }
   return true;
 } // }}}
 bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Nres {{{

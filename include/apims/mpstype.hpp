@@ -468,9 +468,11 @@ class MpsLocalSelectType : public MpsLocalType // {{{
     MpsLocalType *Merge(MpsLocalType &rhs) const;
 
     // Accessors
-    int GetReceiver();
+    int GetReceiver() const;
     std::map<std::string,MpsLocalType*> &GetBranches();
+    const std::map<std::string,MpsLocalType*> &GetBranches() const;
     std::map<std::string,MpsExp*> &GetAssertions();
+    const std::map<std::string,MpsExp*> &GetAssertions() const;
 
   private:
     int myReceiver;
@@ -502,9 +504,11 @@ class MpsLocalBranchType : public MpsLocalType // {{{
     MpsLocalType *Merge(MpsLocalType &rhs) const;
 
     // Accessors
-    int GetSender();
+    int GetSender() const;
     std::map<std::string,MpsLocalType*> &GetBranches();
+    const std::map<std::string,MpsLocalType*> &GetBranches() const;
     std::map<std::string,MpsExp*> &GetAssertions();
+    const std::map<std::string,MpsExp*> &GetAssertions() const;
 
   private:
     int mySender;
@@ -623,7 +627,9 @@ class MpsLocalSyncType : public MpsLocalType // {{{
 
     // Accessors
     std::map<std::string,MpsLocalType*> &GetBranches();
+    const std::map<std::string,MpsLocalType*> &GetBranches() const;
     std::map<std::string,MpsExp*> &GetAssertions();
+    const std::map<std::string,MpsExp*> &GetAssertions() const;
 
   private:
     std::map<std::string,MpsLocalType*> myBranches;

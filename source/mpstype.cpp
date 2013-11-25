@@ -4661,11 +4661,11 @@ const int MpsLocalRcvType::GetSender() const // {{{
 {
   return mySender;
 } // }}}
-int MpsLocalSelectType::GetReceiver() // {{{
+int MpsLocalSelectType::GetReceiver() const // {{{
 {
   return myReceiver;
 } // }}}
-int MpsLocalBranchType::GetSender() // {{{
+int MpsLocalBranchType::GetSender() const // {{{
 {
   return mySender;
 } // }}}
@@ -4689,11 +4689,23 @@ map<string,MpsLocalType*> &MpsLocalSelectType::GetBranches() // {{{
 {
   return myBranches;
 } // }}}
+const map<string,MpsLocalType*> &MpsLocalSelectType::GetBranches() const // {{{
+{
+  return myBranches;
+} // }}}
 map<string,MpsLocalType*> &MpsLocalBranchType::GetBranches() // {{{
 {
   return myBranches;
 } // }}}
+const map<string,MpsLocalType*> &MpsLocalBranchType::GetBranches() const // {{{
+{
+  return myBranches;
+} // }}}
 map<string,MpsLocalType*> &MpsLocalSyncType::GetBranches() // {{{
+{
+  return myBranches;
+} // }}}
+const map<string,MpsLocalType*> &MpsLocalSyncType::GetBranches() const // {{{
 {
   return myBranches;
 } // }}}
@@ -4722,11 +4734,23 @@ map<string,MpsExp*> &MpsLocalSelectType::GetAssertions() // {{{
 {
   return myAssertions;
 } // }}}
+const map<string,MpsExp*> &MpsLocalSelectType::GetAssertions() const // {{{
+{
+  return myAssertions;
+} // }}}
 map<string,MpsExp*> &MpsLocalBranchType::GetAssertions() // {{{
 {
   return myAssertions;
 } // }}}
+const map<string,MpsExp*> &MpsLocalBranchType::GetAssertions() const // {{{
+{
+  return myAssertions;
+} // }}}
 map<string,MpsExp*> &MpsLocalSyncType::GetAssertions() // {{{
+{
+  return myAssertions;
+} // }}}
+const map<string,MpsExp*> &MpsLocalSyncType::GetAssertions() const // {{{
 {
   return myAssertions;
 } // }}}
