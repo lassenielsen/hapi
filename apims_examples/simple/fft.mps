@@ -184,7 +184,7 @@ in ( CompExp() | // }}}
   //       i*2^(n-1)+k*2^(n-l-1)+j -> i*2^(n-l)+k'*2^(n-l-1)+j :<nat> }} }} }
   // We use n=3
   // Phase One
-  1=>1<((Int,Int),(Int,Int))>;  // i=0
+  1=>1<((Int,Int),(Int,Int))>; // i=0
   2=>2<((Int,Int),(Int,Int))>; // i=1
   3=>3<((Int,Int),(Int,Int))>; // i=2
   4=>4<((Int,Int),(Int,Int))>; // i=3
@@ -194,9 +194,9 @@ in ( CompExp() | // }}}
   8=>8<((Int,Int),(Int,Int))>; // i=7
   // Phase Two
   // l=2, i=0, j=0
-  1=>2<((Int,Int),(Int,Int))>;  // k=0, k'=1
-  2=>1<((Int,Int),(Int,Int))>;  // k=1, k'=0
-  1=>1<((Int,Int),(Int,Int))>;  // k=0, k'=0
+  1=>2<((Int,Int),(Int,Int))>; // k=0, k'=1
+  2=>1<((Int,Int),(Int,Int))>; // k=1, k'=0
+  1=>1<((Int,Int),(Int,Int))>; // k=0, k'=0
   2=>2<((Int,Int),(Int,Int))>; // k=1, k'=1
   // l=2, i=1, j=0
   3=>4<((Int,Int),(Int,Int))>; // k=0, k'=1
@@ -214,9 +214,9 @@ in ( CompExp() | // }}}
   7=>7<((Int,Int),(Int,Int))>; // k=0, k'=0
   8=>8<((Int,Int),(Int,Int))>; // k=1, k'=1
   // l=1, i=0, j=0
-  1=>3<((Int,Int),(Int,Int))>;  // k=0, k'=1
+  1=>3<((Int,Int),(Int,Int))>; // k=0, k'=1
   3=>1<((Int,Int),(Int,Int))>; // k=1, k'=0
-  1=>1<((Int,Int),(Int,Int))>;  // k=0, k'=0
+  1=>1<((Int,Int),(Int,Int))>; // k=0, k'=0
   3=>3<((Int,Int),(Int,Int))>; // k=1, k'=1
   // l=1, i=0, j=1
   2=>4<((Int,Int),(Int,Int))>; // k=0, k'=1
@@ -234,9 +234,9 @@ in ( CompExp() | // }}}
   6=>6<((Int,Int),(Int,Int))>; // k=0, k'=0
   8=>8<((Int,Int),(Int,Int))>; // k=1, k'=1
   // l=0, i=0, j=0
-  1=>5<((Int,Int),(Int,Int))>;  // k=0, k'=1
+  1=>5<((Int,Int),(Int,Int))>; // k=0, k'=1
   5=>1<((Int,Int),(Int,Int))>; // k=1, k'=0
-  1=>1<((Int,Int),(Int,Int))>;  // k=0, k'=0
+  1=>1<((Int,Int),(Int,Int))>; // k=0, k'=0
   5=>5<((Int,Int),(Int,Int))>; // k=1, k'=1
   // l=0, i=0, j=1
   2=>6<((Int,Int),(Int,Int))>; // k=0, k'=1
@@ -292,7 +292,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   t[2]>>x;
   s[1]<<x;
   // DONE
-  ((nu a:Gend)link(2,a,bot,1); s[1]>>x; end)
+  ((nu a:2=>2<Int>;Gend)link(2,a,bot,1); s[1]>>x; end)
   // }}}
   // Process 1 {{{
 | link(8,fft,s,2);
@@ -336,7 +336,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   t[2]>>x;
   s[2]<<x;
   // DONE
-  ((nu a:Gend)link(2,a,bot,1); s[2]>>x; end)
+  ((nu a:2=>2<Int>;Gend)link(2,a,bot,1); s[2]>>x; end)
   // }}}
   // Process 2 {{{
 | link(8,fft,s,3);
@@ -380,7 +380,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   t[2]>>x;
   s[3]<<x;
   // DONE
-  ((nu a:Gend)link(2,a,bot,1); s[3]>>x; end)
+  ((nu a:2=>2<Int>;Gend)link(2,a,bot,1); s[3]>>x; end)
   // }}}
   // Process 3 {{{
 | link(8,fft,s,4);
@@ -424,7 +424,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   t[2]>>x;
   s[4]<<x;
   // DONE
-  ((nu a:Gend)link(2,a,bot,1); s[4]>>x; end)
+  ((nu a:2=>2<Int>;Gend)link(2,a,bot,1); s[4]>>x; end)
   // }}}
   // Process 4 {{{
 | link(8,fft,s,5);
@@ -460,7 +460,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   t[2]>>x;
   s[5]<<x;
   // DONE
-  ((nu a:Gend)link(2,a,bot,1); s[5]>>x; end)
+  ((nu a:2=>2<Int>;Gend)link(2,a,bot,1); s[5]>>x; end)
   // }}}
   // Process 5 {{{
 | link(8,fft,s,6);
@@ -504,7 +504,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   t[2]>>x;
   s[6]<<x;
   // DONE
-  ((nu a:Gend)link(2,a,bot,1); s[6]>>x; end)
+  ((nu a:2=>2<Int>;Gend)link(2,a,bot,1); s[6]>>x; end)
   // }}}
   // Process 6 {{{
 | link(8,fft,s,7);
@@ -544,7 +544,7 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   t[2]>>x;
   s[7]<<x;
   // DONE
-  ((nu a:Gend)link(2,a,bot,1); s[7]>>x; end)
+  ((nu a:2=>2<Int>;Gend)link(2,a,bot,1); s[7]>>x; end)
   // }}}
   // Process 7 {{{
 | link(8,fft,s,8);
@@ -588,6 +588,6 @@ omega3 : ((Int,Int),(Int,Int)) = ((0-1000,1414),(1000,1414)); // (-1+i)/sqrt(2)
   t[2]>>x;
   s[8]<<x;
   // DONE
-  ((nu a:Gend)link(2,a,bot,1); s[8]>>x; end)
+  ((nu a:2=>2<Int>;Gend)link(2,a,bot,1); s[8]>>x; end)
   // }}}
 ) ) ) ) ) ) ) ) )

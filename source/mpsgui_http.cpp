@@ -790,13 +790,9 @@ bool MpsGuiParticipant::SetChoiceValue(const string &choice, const string &arg, 
             exp=new MpsStringVal(stuff_string(value));
           else
             exp=apims::MpsExp::Create(value);
-          apims::MpsGlobalEnv Gamma;
+          apims::MpsMsgEnv Gamma;
           Gamma.clear();
-          apims::MpsLocalEnv Delta;
-          Delta.clear();
-          apims::MpsMsgEnv Sigma;
-          Sigma.clear();
-          MpsMsgType *inputtype=exp->TypeCheck(Gamma,Delta,Sigma);
+          MpsMsgType *inputtype=exp->TypeCheck(Gamma);
           bool inputtypematch=inputtype->Equal(MpsBoolVal(true),*it2->type);
           delete inputtype;
           if (inputtypematch)

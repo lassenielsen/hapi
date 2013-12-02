@@ -530,42 +530,36 @@ MpsTupleExp *MpsTupleExp::Eval() const// {{{
 
 /* Typechecking
  */
-MpsMsgType *MpsVarExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
+MpsMsgType *MpsVarExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 { MpsMsgType *result=new MpsMsgNoType();
-  MpsGlobalEnv::const_iterator it_gamma = Gamma.find(myName);
-  if (it_gamma != Gamma.end())
-    result=new MpsChannelMsgType(*(it_gamma->second));
-  MpsLocalEnv::const_iterator it_delta = Delta.find(myName);
-  if (it_delta != Delta.end())
-    result=new MpsDelegateLocalMsgType(*it_delta->second.type, it_delta->second.pid, it_delta->second.maxpid);
-  MpsMsgEnv::const_iterator it_sigma = Sigma.find(myName);
-  if (it_sigma != Sigma.end())
-    result=it_sigma->second->Copy();
+  MpsMsgEnv::const_iterator it = Gamma.find(myName);
+  if (it != Gamma.end())
+    result=it->second->Copy();
 
   delete myType;
   myType = result->Copy();
   return result;;
 } // }}}
-MpsMsgType *MpsIntVal::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
+MpsMsgType *MpsIntVal::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   return new MpsIntMsgType();
 } // }}}
-MpsMsgType *MpsStringVal::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
+MpsMsgType *MpsStringVal::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   return new MpsStringMsgType();
 } // }}}
-MpsMsgType *MpsBoolVal::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
+MpsMsgType *MpsBoolVal::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   return new MpsBoolMsgType();
 } // }}}
-MpsMsgType *MpsCondExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
+MpsMsgType *MpsCondExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   MpsMsgType *result=NULL;
-  MpsMsgType *condtype=myCond->TypeCheck(Gamma,Delta,Sigma);
+  MpsMsgType *condtype=myCond->TypeCheck(Gamma);
   if (dynamic_cast<MpsBoolMsgType*>(condtype) != NULL)
   {
-    MpsMsgType *truetype=myTrueBranch->TypeCheck(Gamma,Delta,Sigma);
-    MpsMsgType *falsetype=myFalseBranch->TypeCheck(Gamma,Delta,Sigma);
+    MpsMsgType *truetype=myTrueBranch->TypeCheck(Gamma);
+    MpsMsgType *falsetype=myFalseBranch->TypeCheck(Gamma);
     if (truetype->Equal(MpsBoolVal(true),*falsetype))
     {
       result=truetype;
@@ -583,10 +577,10 @@ MpsMsgType *MpsCondExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &
   delete condtype;
   return result;
 } // }}}
-MpsMsgType *MpsUnOpExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
+MpsMsgType *MpsUnOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   if (myName == "not") // Boolean operation [bool -> bool] // {{{
-  { MpsMsgType *argtype = myRight->TypeCheck(Gamma,Delta,Sigma);
+  { MpsMsgType *argtype = myRight->TypeCheck(Gamma);
     if (dynamic_cast<MpsBoolMsgType*>(argtype)!=NULL) 
       return argtype;
     else
@@ -597,12 +591,12 @@ MpsMsgType *MpsUnOpExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &
   else // Unknown operator
     return new MpsMsgNoType();
 } // }}}
-MpsMsgType *MpsBinOpExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
+MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   delete myLeftType;
-  myLeftType=myLeft->TypeCheck(Gamma,Delta,Sigma);
+  myLeftType=myLeft->TypeCheck(Gamma);
   delete myRightType;
-  myRightType=myRight->TypeCheck(Gamma,Delta,Sigma);
+  myRightType=myRight->TypeCheck(Gamma);
   if (myName == "+" || // Integer operation [int -> int -> int] // {{{
       myName == "-" ||
       myName == "*" ||
@@ -651,13 +645,13 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv 
   else // Unknown operator
     return new MpsMsgNoType();
 } // }}}
-MpsMsgType *MpsTupleExp::TypeCheck(const MpsGlobalEnv &Gamma, const MpsLocalEnv &Delta, const MpsMsgEnv &Sigma) // {{{
+MpsMsgType *MpsTupleExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   bool error=false;
   vector<MpsMsgType*> types;
   for (int i=0; i<myElements.size() && not error; ++i)
   {
-    MpsMsgType *type=myElements[i]->TypeCheck(Gamma,Delta,Sigma);
+    MpsMsgType *type=myElements[i]->TypeCheck(Gamma);
     if (dynamic_cast<MpsMsgNoType*>(type))
     { delete type;
       error=true;
