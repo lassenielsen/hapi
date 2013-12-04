@@ -5,7 +5,7 @@
 ( link(2,a,s,1);
   s[2] << (3,"aaa");
   s[2] >> x;
-  s[2] >> s;
+  s[2] >> str;
   end
 | link(2,a,s,2);
   s[1] >> pair;

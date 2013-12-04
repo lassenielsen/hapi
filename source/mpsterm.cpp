@@ -1189,7 +1189,6 @@ inline bool TypeCheckForall(const MpsExp &Theta, const MpsMsgEnv &Gamma, const M
   newGamma[session] = newMsgType;
   bool result = term.TypeCheck(*newTheta,newGamma,Omega);
   // Clean Up
-  delete newType;
   delete newTheta;
   return result;
 } // }}}
