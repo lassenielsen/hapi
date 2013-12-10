@@ -38,7 +38,7 @@ namespace apims
  * nu is the creation of a global channel. <br/>
  */
 // }}}
-enum event_type {tau=0, snd=10, rcv=11, bsnd=12, brcv=13, link=20, sync=21, guivalue=30, fundef=40, funcall=41, nu=42, cond=43, assign=44};
+enum event_type {tau=0, snd=10, rcv=11, bsnd=12, brcv=13, link=20, sync=21, guivalue=30, fundef=40, funcall=41, nu=42, cond=43, assign=44, host=101};
 
 // DOCUMENTATION: MpsEvent {{{
 /*! MpsEvent represents an event that can be omitted by a process during evaluation.

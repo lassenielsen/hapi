@@ -1,3 +1,5 @@
+#ifndef MPSTERM_HPP
+#define MPSTERM_HPP
 // DOCUMENTATION: Main page {{{
 /*! \mainpage Introduction
  * This is the documentation for the apims library. It is generated from the
@@ -76,8 +78,6 @@
  * step object. This is repeated until there are no possible steps.
  */
 // }}}
-#ifndef MPSTERM_HPP
-#define MPSTERM_HPP
 
 #include <dpl/parser.hpp>
 #include <vector>
@@ -162,24 +162,6 @@ class MpsTerm // {{{
     virtual bool TypeCheck(const MpsExp &Theta,
                            const MpsMsgEnv &Gamma,
                            const MpsProcEnv &Omega) = 0;
-
-    // DOCUMENTATION: MpsTerm::Compile {{{
-    /*!
-     * Creates equivalent C code.
-     * This functionality is not yet fully implemented.
-     */
-    // }}}
-    std::string Compile();
-    // DOCUMENTATION: MpsTerm::Compile {{{
-    /*!
-     * Creates  function declarations, function definitions and main body for equivalent C code.
-     * This functionality is not yet fully implemented.
-     * @param decls String to put the function declarations in.
-     * @param defs String to tut the function definitions in.
-     * @param main String to put the main body in.
-     */
-    // }}}
-    virtual void Compile(std::string &decls, std::string &defs, std::string &main) = 0;
 
     // DOCUMENTATION: MpsTerm::Step {{{
     /*! 
@@ -273,7 +255,7 @@ class MpsTerm // {{{
     virtual std::string ToTex(int indent=0, int sw=2) const = 0;
     // DOCUMENTATION: MpsTerm::MakeC {{{
     /*!
-     * Compilation to C++code is perfomed in 4 steps:
+     * Compilation to C++ code is perfomed in 4 steps:
      * 1. Rename all variables, so no name is introduced more than once
      *    (avoid things like s>>x;t>>x;...)
      * 2. Add all free variables in function bodies to the function
@@ -281,7 +263,7 @@ class MpsTerm // {{{
      * 3. Move all functions to the global function environment, also
      *    functions defined in function bodies
      * 4. Translate each function separately, and translate the main
-     *    process sa the function 'main'.
+     *    process as the function 'main'.
      */
     // }}}
     std::string MakeC() const;
@@ -351,7 +333,6 @@ class MpsEnd : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ReIndex(const std::string &session,
                      int pid, int maxpid) const;
@@ -392,7 +373,6 @@ class MpsSnd : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySnd(const std::string &path, MpsExp **val, MpsChannel &ch) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -453,7 +433,6 @@ class MpsRcv : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyRcv(const std::string &path, const MpsExp *val) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -520,7 +499,6 @@ class MpsSelect : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyBSnd(const std::string &path, std::string &label, MpsChannel &ch) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -571,7 +549,6 @@ class MpsBranch : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyBRcv(const std::string &path, const std::string &label) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -622,7 +599,6 @@ class MpsPar : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyRcv(const std::string &path, const MpsExp *val) const;
     MpsTerm *ApplySnd(const std::string &path, MpsExp **val, MpsChannel &ch) const;
@@ -680,7 +656,6 @@ class MpsDef : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -734,7 +709,6 @@ class MpsCall : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyCall(const std::string &path, const std::vector<MpsFunction> &funs) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -782,7 +756,6 @@ class MpsNu : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -829,7 +802,6 @@ class MpsLink : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyLink(const std::vector<std::string> &paths, const std::string &session) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -877,7 +849,6 @@ class MpsSync : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySync(const std::vector<std::string> &paths, const std::string &label) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -924,7 +895,6 @@ class MpsCond : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -982,7 +952,6 @@ class MpsGuiSync : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySync(const std::vector<std::string> &paths, const std::string &label) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -1029,7 +998,6 @@ class MpsGuiValue : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -1083,7 +1051,6 @@ class MpsAssign : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega);
-    void Compile(std::string &decls, std::string &defs, std::string &main);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsAssign *ReIndex(const std::string &session,
@@ -1116,6 +1083,57 @@ class MpsAssign : public MpsTerm // {{{
     std::string myId;
     MpsExp *myExp;
     MpsMsgType *myType;
+    MpsTerm *mySucc;
+}; // }}}
+// DOCUMENTATION: MpsHostStatement {{{
+/*!
+ * MpsHostStatement enables inlining of host-language statements that are
+ * preserver through compilation.
+ *
+ * This enables the utilization of the host language and its libraries,
+ * although care should be taken as the terms do not enjoy the same type
+ * safety as the native apims terms.
+ */
+// }}}
+class MpsHostStatement : public MpsTerm // {{{
+{
+  public:
+    MpsHostStatement(const std::vector<std::string> &hostParts, const std::vector<MpsExp*> &expParts, const MpsTerm &succ, const std::vector<MpsMsgType*> expTypes); //
+    virtual ~MpsHostStatement();
+
+    bool TypeCheck(const MpsExp &Theta,
+                   const MpsMsgEnv &Gamma,
+                   const MpsProcEnv &Omega);
+    bool SubSteps(std::vector<MpsStep> &dest);
+    MpsTerm *ApplyOther(const std::string &path) const;
+    MpsHostStatement *ReIndex(const std::string &session,
+                     int pid, int maxpid) const;
+    MpsHostStatement *PRename(const std::string &src, const std::string &dst) const;
+    MpsHostStatement *ERename(const std::string &src, const std::string &dst) const;
+    MpsHostStatement *PSubst(const std::string &var,
+                             const MpsTerm &exp,
+                             const std::vector<std::string> &args,
+                             const std::vector<std::pair<int,int> > &argpids,
+                             const std::vector<std::string> &stateargs) const;
+    MpsHostStatement *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsHostStatement *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
+    MpsHostStatement *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
+    std::set<std::string> FPV() const;
+    std::set<std::string> FEV() const;
+    MpsHostStatement *Copy() const;
+    bool Terminated() const;
+    MpsHostStatement *Simplify() const;
+    std::string ToString(std::string indent="") const;
+    std::string ToTex(int indent=0, int sw=2) const;
+    MpsHostStatement *RenameAll() const;
+    MpsHostStatement *CloseDefinitions() const;
+    MpsHostStatement *ExtractDefinitions(MpsFunctionEnv &env) const;
+    std::string ToC() const;
+
+  private:
+    std::vector<std::string> myHostParts;
+    std::vector<MpsExp*> myExpParts;
+    std::vector<MpsMsgType*> myTypes;
     MpsTerm *mySucc;
 }; // }}}
 

@@ -1,15 +1,15 @@
-(nu a: 1=>2:1<\RE{(a+b)*}>; 2=>1:2<\RE{a*}>;Gend)
+(nu a: 1=>2<String[(a+b)*]>; 2=>1<String[a*]>;Gend)
 ( def CollectAsService() =
     link(2,a,s,2);
     s[1]>>str;
-    def CollectAs(abs : \RE{(a+b)*}, s: 2=>1:2<\RE{a*}@(2 of 2) ) =
+    def CollectAs(abs : String[(a+b)*], s: 2=>1:2<String[a*]>@(2 of 2) ) =
       match abs
-      { b* => s[1]<<nil;end,
-        (b*,(a,tail:(a+b)*)) => s[1]<<cons; CollectAs(tail,s)
+      { r"b*" => s[1]<<nil;end,
+        r"(b*a)(a+b)*" as ((bs,a),abs2) => s[1]<<cons; CollectAs(abs2,s)
       }
     in CollectAs(str,s)
   in CollectAsService()
 | link(2,a,s,1);
-  s[1]<< \RE{(a+b)*}("abba"); // Sends cons inl cons inr cons inr cons inl nil
-  s[2]>> x; // Receives \RE{a*}("aa") = cons cons nil;
+  s[1]<< String[(a+b)*]("abba"); // Sends cons inl cons inr cons inr cons inl nil
+  s[2]>> x; // Receives String[a*]("aa") = cons cons nil;
 )

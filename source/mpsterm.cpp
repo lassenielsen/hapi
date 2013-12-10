@@ -120,14 +120,15 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefToken("pvar", "[A-Z][a-zA-Z0-9_]*",10); // Process var
   MpsParser.DefKeywordToken("guisync",2);    // Used for GUI generation
   MpsParser.DefKeywordToken("guivalue",2);   // Used for GUI generation
+  MpsParser.DefToken("host", "HOST",2); // Indicate host statement
   /*** Define grammars ***/
   // Expression Grammar
   MpsParser.DefType(MpsExp::BNF_EXP);
-  MpsParser.DefType(MpsExp::BNF_EXPS);         // Expression Tuple
-  MpsParser.DefType(MpsExp::BNF_EXPS2);        // Nonempty Expression Tuple
-  MpsParser.DefType(MpsGlobalType::BNF_ASSERTION); // Assertion
-  MpsParser.DefType(MpsGlobalType::BNF_NAMEDASSERTION); // Name and Assertion
-  MpsParser.DefType(MpsGlobalType::BNF_LABEL); // Branch Label
+  MpsParser.DefType(MpsExp::BNF_EXPS);                             // Expression Tuple
+  MpsParser.DefType(MpsExp::BNF_EXPS2);                            // Nonempty Expression Tuple
+  MpsParser.DefType(MpsGlobalType::BNF_ASSERTION);                 // Assertion
+  MpsParser.DefType(MpsGlobalType::BNF_NAMEDASSERTION);            // Name and Assertion
+  MpsParser.DefType(MpsGlobalType::BNF_LABEL);                     // Branch Label
   // Type grammars
   MpsParser.DefType(MpsMsgType::BNF_STYPE);
   MpsParser.DefType(MpsMsgType::BNF_STYPES);
@@ -138,8 +139,8 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   // Typed Args (with initial value)
   MpsParser.DefType(MpsGlobalType::BNF_TARGS);
   MpsParser.DefType(MpsGlobalType::BNF_TARGS2);                    // Targ list
-  MpsParser.DefType(MpsGlobalType::BNF_TARGS3);            // Nonempty Targ list
-  MpsParser.DefType(MpsGlobalType::BNF_TARG);                  // Typed argument with default value
+  MpsParser.DefType(MpsGlobalType::BNF_TARGS3);                    // Nonempty Targ list
+  MpsParser.DefType(MpsGlobalType::BNF_TARG);                      // Typed argument with default value
   MpsParser.DefType(MpsGlobalType::BNF_TVALS);
   MpsParser.DefType(MpsGlobalType::BNF_GTYPE);                     // Global Types
   MpsParser.DefType(MpsGlobalType::BNF_GBRANCHES);
@@ -155,6 +156,7 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefType("dargs ::= < args > |");                       // Optional dependant args
   MpsParser.DefType("dexps ::= < exps > |");                       // Optional dependant args
   MpsParser.DefType("ids ::= | id  ids");                          // Name list
+  MpsParser.DefType("hstmt ::= string | string , exp , hstmt");    // Host statement interleaving of string and expressions
   MpsParser.DefType("pi ::= pi par pi2 | pi2");                    // Processes
   MpsParser.DefType("pi2 ::= ( pi ) \
                            | ( nu id : Gtype ) pi2 \
@@ -173,7 +175,8 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
                            | id : Mtype = exp ; pi2 \
                            | define gvar ids = Gtype in pi2 \
                            | define lvar ids = Ltype in pi2 \
-                           | ch >> id @ ( int of int ) ; pi2");         // More processes
+                           | ch >> id @ ( int of int ) ; pi2 \
+                           | host ( hstmt ) ; pi2");                     // More processes
 
   parsed_tree *tree = MpsParser.Parse(exp);
   MpsTerm *result=MpsTerm::Create(tree);
@@ -406,6 +409,23 @@ vector<string> FindNames(const parsed_tree *names) // {{{
   cerr << "Unknown name list parsetree: " << names->type_name << "." << names->case_name << endl;
 #endif
   return vector<string>();
+} // }}}
+void HostStmt(vector<string> &hostParts, vector<MpsExp*> &expParts, const parsed_tree *hstmt) // {{{
+{ if (hstmt->type_name == "hstmt" && hstmt->case_name == "case1") // string
+  { hostParts.push_back(hstmt->content[0]->root.content.substr(1,hstmt->content[0]->root.content.size()-1));
+    return;
+  }
+  else if (hstmt->type_name == "hstmt" && hstmt->case_name == "case2") // string , exp , hstmt
+  { hostParts.push_back(hstmt->content[0]->root.content.substr(1,hstmt->content[0]->root.content.size()-1));
+    expParts.push_back(MpsExp::Create(hstmt->content[2]));
+    HostStmt(hostParts, expParts, hstmt->content[4]);
+    return;
+  }
+
+#if APIMS_DEBUG_LEVEL>1
+  cerr << "Unknown name list parsetree: " << hstmt->type_name << "." << hstmt->case_name << endl;
+#endif
+  return;
 } // }}}
 MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
 {
@@ -789,6 +809,24 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete succ;
     return result;
   } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case19") // host ( hstmt ) ; pi2 {{{
+  {
+    MpsTerm *succ = MpsTerm::Create(exp->content[5]);
+    vector<string> hostParts;
+    vector<MpsExp*> expParts;
+
+    MpsChannel source=ParseChannel(exp->content[0]);
+    MpsTerm *result = new MpsRcv(source,
+                                 exp->content[2]->root.content,
+                                 string2int(exp->content[5]->root.content),
+                                 string2int(exp->content[7]->root.content),
+                                 *succ,
+                                 MpsMsgNoType(),
+                                 false);
+
+    delete succ;
+    return result;
+  } // }}}
 
 #if APIMS_DEBUG_LEVEL>1
   cerr << "Unknown term parsetree: " << exp->type_name << "." << exp->case_name << endl;
@@ -952,6 +990,16 @@ MpsAssign::MpsAssign(const string &id, const MpsExp &exp, const MpsMsgType &type
   myType = type.Copy();
   mySucc = succ.Copy();
 } // }}}
+MpsHostStatement::MpsHostStatement(const vector<string> &hostParts, const vector<MpsExp*> &expParts, const MpsTerm &succ, vector<MpsMsgType*> types) // {{{
+: myHostParts(hostParts)
+{
+  for (vector<MpsExp*>::const_iterator exp=expParts.begin(); exp!=expParts.end(); ++exp)
+    myExpParts.push_back((*exp)->Copy());
+  for (vector<MpsMsgType*>::const_iterator tit=types.begin(); tit!=types.end(); ++tit)
+    myTypes.push_back((*tit)->Copy());
+
+  mySucc = succ.Copy();
+} // }}}
 
 /* MpsTerm Destructors
  */
@@ -1005,12 +1053,6 @@ MpsCall::~MpsCall() // {{{
   DeleteVector(myTypes);
   DeleteVector(myStateTypes);
 } // }}}
-MpsNu::~MpsNu() // {{{
-{
-  // assert mySucc != NULL
-  delete mySucc;
-  delete myType;
-} // }}}
 MpsLink::~MpsLink() // {{{
 {
   // assert mySucc != NULL
@@ -1057,6 +1099,12 @@ MpsAssign::~MpsAssign() // {{{
   delete myExp;
   delete myType;
   delete mySucc;
+} // }}}
+MpsHostStatement::~MpsHostStatement() // {{{
+{
+  delete mySucc;
+  DeleteVector(myExpParts);
+  DeleteVector(myTypes);
 } // }}}
 
 /* Static type-checking of deadlock and communication safety
@@ -2081,188 +2129,22 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
 
   return result;
 } // }}}
+bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Nres {{{
+{
+  // Clear infered typing info
+  DeleteVector(myTypes);
 
-/* Compile to C++ code
- */
-int _compile_id;
-string Compile_NewVar(string base) // {{{
-{
-  string result = (string)"_"+base;
-  result += int2string(_compile_id++);
-  return result;
-} // }}}
-string MpsTerm::Compile () // {{{
-{ _compile_id=1;
-  string decls;
-  string defs;
-  string main;
-  Compile(decls,defs,main);
-  return (string) "/* Procedure declerations */"
-                + decls
-                + "\n\n/* Procedure definitions */"
-                + defs
-                + "\n\n/* Main process */\nint main()\n{"
-                + main
-                + "\n}";
-} // }}}
-void MpsEnd::Compile(std::string &decls, string &defs, string &main) // Use rule Inact {{{
-{
-  main += "\n  return 0;";
-  return;
-} // }}}
-void MpsSnd::Compile(std::string &decls, string &defs, string &main) // Use rules Send and Deleg (and new rule for delegaing the session itself) {{{
-{
-  main += "\n  " + myChannel.GetName() + "->Send(, " + int2string(myChannel.GetIndex()) + ", " + myExp->ToString() + ");";
-  mySucc->Compile(decls,defs,main);
-  return;
-} // }}}
-void MpsRcv::Compile(std::string &decls, string &defs, string &main) // Use rules Rcv and Srec {{{
-{
-  string var = Compile_NewVar(myDest);
-  main += "\n string " + var + ";\n  MsgRcv(" + myChannel.ToString() + ", &" + var + ");";
-  MpsTerm *tmpSucc = mySucc->ERename(myDest,var);
-  tmpSucc->Compile(decls,defs,main);
-  delete tmpSucc;
-  return;
-} // }}}
-void MpsSelect::Compile(std::string &decls, string &defs, string &main) // Use rule Sel {{{
-{
-  main += "\n  MsgSend(" + myChannel.ToString() + ", \"" + myLabel + "\");";
-  mySucc->Compile(decls,defs,main);
-  return;
-} // }}}
-void MpsBranch::Compile(std::string &decls, string &defs, string &main) // Use rule Branch {{{
-{
-  string label=Compile_NewVar("label");
-  main += "\n  StringValue " + label + ";\n  MsgRcv(" + myChannel.ToString() + ", &" + label + ");";
-  for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
-  { if (branch!=myBranches.begin())
-      main += "\n  else";
-    main += "\n  if (" + label + "==\"" + branch->first + "\")\n  {";
-    branch->second->Compile(decls,defs,main);
-    main += "\n  }";
+  // Check that var-parts are wekk typed
+  for (vector<MpsExp*>::const_iterator part=myExpParts.begin(); part!=myExpParts.end(); ++part)
+  { MpsMsgType *partType=(*part)->TypeCheck(Gamma);
+    myTypes.push_back(partType);
+    if (dynamic_cast<MpsMsgNoType*>(partType)!=NULL)
+      return PrintTypeError("Host Language Statement uses expression untypable expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega);
+    if (dynamic_cast<const MpsDelegateMsgType*>(partType)!=NULL)
+      return PrintTypeError("Host Language Statement uses session variable in expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega);
   }
-  main += "\n  else cerr << \"ERROR: UNEXPECTED LABEL \" << " + label + " << endl;\n  return -1;";
-  return;
-} // }}}
-void MpsPar::Compile(std::string &decls, string &defs, string &main) // Use rule Par {{{
-{
-  main += "\n  if (fork()==0)\n  {";
-  myLeft->Compile(decls,defs,main);
-  main += "\n  }\n  else\n  {";
-  myRight->Compile(decls,defs,main);
-  main += "\n  }";
-  return;
-} // }}}
-void MpsDef::Compile(std::string &decls, string &defs, string &main) // * Use rule Def {{{
-{ // Fixme: include extra arguments (free variables in body)
-  string name=Compile_NewVar("Proc");
-  decls += "\nvoid " + name + "(";
-  bool separator = false;
-  for (int i=0; i<myStateArgs.size(); ++i)
-  { if (separator)
-      decls += ", ";
-    else
-      separator=true;
-    decls += myStateTypes[i]->ToString();
-    decls += " " + myStateArgs[i];
-  }
-  for (int i=0; i<myArgs.size(); ++i)
-  { if (separator)
-      decls += ", ";
-    else
-      separator=true;
-    decls += myTypes[i]->ToString();
-    decls += " " + myArgs[i];
-  }
-  decls += ");";
-  string body;
-  MpsTerm *tmpBody=myBody->PRename(myName,name);
-  tmpBody->Compile(decls,defs,body);
-  delete tmpBody;
-  defs += "\nvoid " + name + "(";
-  separator = false;
-  for (int i=0; i<myStateArgs.size(); ++i)
-  { if (separator)
-      defs += ", ";
-    else
-      separator=true;
-    defs += myStateTypes[i]->ToString();
-    defs += " " + myStateArgs[i];
-  }
-  for (int i=0; i<myArgs.size(); ++i)
-  { if (separator)
-      defs += ", ";
-    else
-      separator=true;
-    defs += myTypes[i]->ToString();
-    defs += " " + myArgs[i];
-  }
-  defs += ")\n\{" + body + "\n}";
-  MpsTerm *tmpSucc=mySucc->PRename(myName,name);
-  tmpSucc->Compile(decls,defs,main);
-  delete tmpSucc;
-  return;
-} // }}}
-void MpsCall::Compile(std::string &decls, string &defs, string &main) // * Use rule Var {{{
-{
-  // FIXME: Make call
-  main += "\n  return " + myName + "(";
-  bool separator=false;
-  for (int i=0; i<myState.size(); ++i)
-  { if (separator)
-      main +=", ";
-    else
-      separator=true;
-    main += myState[i]->ToString();
-  }
-  for (int i=0; i<myArgs.size(); ++i)
-  { if (separator)
-      main +=", ";
-    else
-      separator=true;
-    main += myArgs[i]->ToString();
-  }
-  main += ");";
-  return;
-} // }}}
-void MpsNu::Compile(std::string &decls, string &defs, string &main) // Use rule Nres {{{
-{
-  // FIXME: Create queues
-  mySucc->Compile(decls,defs,main);
-  return;
-} // }}}
-void MpsLink::Compile(std::string &decls, string &defs, string &main) // * Use rules Mcast and Macc {{{
-{
-  // FIXME: Create queues
-  mySucc->Compile(decls,defs,main);
-  return;
-} // }}}
-void MpsSync::Compile(std::string &decls, string &defs, string &main) // Use rule Sync {{{
-{
-  // FIXME: Perform Synchronization
-  return;
-} // }}}
-void MpsCond::Compile(std::string &decls, string &defs, string &main) // Use rule Cond {{{
-{
-  // FIXME: Create code
-  return;
-} // }}}
-void MpsGuiSync::Compile(std::string &decls, string &defs, string &main) // * Use rule Sync (extended) {{{
-{
-  // FIXME: Create code
-  return;
-} // }}}
-void MpsGuiValue::Compile(std::string &decls, string &defs, string &main) // Type check name, value and session {{{
-{
-  // FIXME: Create code
-  mySucc->Compile(decls,defs,main);
-  return;
-} // }}}
-void MpsAssign::Compile(std::string &decls, string &defs, string &main) // * Check exp has correct type, and check succ in updated sigma {{{
-{
-  // FIXME: Create code
-  return;
+
+  return mySucc->TypeCheck(Theta,Gamma,Omega);
 } // }}}
 
 /* Create list of possible steps
@@ -2825,6 +2707,12 @@ MpsTerm *MpsAssign::ApplyOther(const std::string &path) const // {{{
   delete value;
   return result;
 } // }}}
+MpsTerm *MpsHostStatement::ApplyOther(const std::string &path) const // {{{
+{ if (path.size()!=0)
+    return Error((string)"Applying Other with nonempty path on "+ToString());
+  MpsTerm *result = mySucc->Copy();
+  return result;
+} // }}}
 
 /* Create list of possible internal steps
  */
@@ -3083,6 +2971,16 @@ bool MpsAssign::SubSteps(vector<MpsStep> &dest) // {{{
   dest.push_back(MpsStep(event, paths));
   return false;
 } // }}}
+bool MpsHostStatement::SubSteps(vector<MpsStep> &dest) // {{{
+{
+  MpsEvent event;
+  event.myType = tau;
+  event.mySubType = host;
+  vector<string> paths;
+  paths.push_back("");
+  dest.push_back(MpsStep(event, paths));
+  return false;
+} // }}}
 
 /* Renaming of Process Variable
  */
@@ -3246,6 +3144,13 @@ MpsAssign *MpsAssign::PRename(const string &src, const string &dst) const // {{{
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PRename(src,dst);
   MpsAssign *result = new MpsAssign(myId, *myExp, *myType, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
+MpsHostStatement *MpsHostStatement::PRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newSucc = mySucc->PRename(src,dst);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
   delete newSucc;
   return result;
 } // }}}
@@ -3605,6 +3510,22 @@ MpsAssign *MpsAssign::ERename(const string &src, const string &dst) const // {{{
   delete newExp;
   return result;
 } // }}}
+MpsHostStatement *MpsHostStatement::ERename(const string &src, const string &dst) const // {{{
+{
+  // Rename in succ
+  MpsTerm *newSucc = mySucc->ERename(src,dst);
+  // Rename in exps
+  vector<MpsExp*> newExpParts;
+  for (vector<MpsExp*>::const_iterator part=myExpParts.begin(); part!=myExpParts.end(); ++part)
+    newExpParts.push_back((*part)->Rename(src,dst));
+
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  // Clean up
+  delete newSucc;
+  DeleteVector(newExpParts);
+
+  return result;
+} // }}}
 
 /* Reindex session channels such that
    session[i] << e becomes session[i*maxpid+pid], and
@@ -3829,6 +3750,16 @@ MpsAssign *MpsAssign::ReIndex(const string &session, int pid, int maxpid) const 
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
   MpsAssign *result = new MpsAssign(myId, *myExp, *myType, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
+MpsHostStatement *MpsHostStatement::ReIndex(const string &session, int pid, int maxpid) const // {{{
+{
+  // assert mySucc != NULL
+  MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
+  // myExpParts cannot use sessions!
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  // Clean up
   delete newSucc;
   return result;
 } // }}}
@@ -4158,6 +4089,14 @@ MpsAssign *MpsAssign::PSubst(const string &var, const MpsTerm &exp, const vector
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
   MpsAssign *result = new MpsAssign(myId, *myExp, *myType, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
+MpsHostStatement *MpsHostStatement::PSubst(const string &var, const MpsTerm &exp, const vector<string> &args, const vector<pair<int,int> > &argpids, const vector<string> &stateargs) const // {{{
+{
+  // assert mySucc != NULL
+  MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
   delete newSucc;
   return result;
 } // }}}
@@ -4546,6 +4485,22 @@ MpsAssign *MpsAssign::ESubst(const string &source, const MpsExp &dest) const // 
   delete newSucc;
   return result;
 } // }}}
+MpsHostStatement *MpsHostStatement::ESubst(const string &source, const MpsExp &dest) const // {{{
+{
+  // Substitute in succ
+  MpsTerm *newSucc = mySucc->ESubst(source,dest);
+  // Substitute in expParts
+  vector<MpsExp*> newExpParts;
+  for (vector<MpsExp*>::const_iterator part=myExpParts.begin(); part!=myExpParts.end(); ++part)
+    newExpParts.push_back((*part)->Subst(source,dest));
+  // Create result
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, newExpParts, *newSucc, myTypes);
+  // Clean up
+  delete newSucc;
+  DeleteVector(newExpParts);
+
+  return result;
+} // }}}
 
 /* Substitution of Global Type Variable
  */
@@ -4758,6 +4713,21 @@ MpsAssign *MpsAssign::GSubst(const string &source, const MpsGlobalType &dest, co
   // Clean Up
   delete newType;
   delete newSucc;
+
+  return result;
+} // }}}
+MpsHostStatement *MpsHostStatement::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
+{
+  MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator tit=myTypes.begin(); tit!=myTypes.end(); ++tit)
+    newTypes.push_back((*tit)->GSubst(source,dest,args));
+
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc,newTypes);
+
+  // Clean up
+  delete newSucc;
+  DeleteVector(newTypes);
 
   return result;
 } // }}}
@@ -4976,6 +4946,20 @@ MpsAssign *MpsAssign::LSubst(const string &source, const MpsLocalType &dest, con
 
   return result;
 } // }}}
+MpsHostStatement *MpsHostStatement::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
+{
+  MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator tit=myTypes.begin(); tit!=myTypes.end(); ++tit)
+    newTypes.push_back((*tit)->LSubst(source,dest,args));
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, newTypes);
+
+  // Clean up
+  delete newSucc;
+  DeleteVector(newTypes);
+
+  return result;
+} // }}}
 
 /* Free Process Variables
  */
@@ -5081,6 +5065,10 @@ set<string> MpsGuiValue::FPV() const // {{{
   return result;
 } // }}}
 set<string> MpsAssign::FPV() const // {{{
+{
+  return mySucc->FPV();
+} // }}}
+set<string> MpsHostStatement::FPV() const // {{{
 {
   return mySucc->FPV();
 } // }}}
@@ -5222,6 +5210,15 @@ set<string> MpsAssign::FEV() const // {{{
   result.insert(fv.begin(),fv.end());
   return result;
 } // }}}
+set<string> MpsHostStatement::FEV() const // {{{
+{
+  set<string> result = mySucc->FEV();
+  for (vector<MpsExp*>::const_iterator exp=myExpParts.begin(); exp!=myExpParts.end(); ++exp)
+  { set<string> fv = (*exp)->FV();
+    result.insert(fv.begin(),fv.end());
+  }
+  return result;
+} // }}}
 
 /* Make deep copy
  */
@@ -5295,6 +5292,10 @@ MpsAssign *MpsAssign::Copy() const // {{{
 {
   return new MpsAssign(myId, *myExp, *myType, *mySucc);
 } // }}}
+MpsHostStatement *MpsHostStatement::Copy() const // {{{
+{
+  return new MpsHostStatement(myHostParts, myExpParts, *mySucc, myTypes);
+} // }}}
 
 /* Is the process terminated/completed
  */
@@ -5355,6 +5356,10 @@ bool MpsGuiValue::Terminated() const // {{{
   return false;
 } // }}}
 bool MpsAssign::Terminated() const // {{{
+{
+  return false;
+} // }}}
+bool MpsHostStatement::Terminated() const // {{{
 {
   return false;
 } // }}}
@@ -5532,6 +5537,13 @@ MpsAssign *MpsAssign::Simplify() const // {{{
   delete newSucc;
   return result;
 } // }}}
+MpsHostStatement *MpsHostStatement::Simplify() const // {{{
+{
+  MpsTerm *newSucc = mySucc->Simplify();
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  delete newSucc;
+  return result;
+} // }}}
 
 /* Make parsable string representation of term
  */
@@ -5698,6 +5710,18 @@ string MpsGuiValue::ToString(string indent) const // {{{
 string MpsAssign::ToString(string indent) const // {{{
 {
   return myId + ":" + myType->ToString() + "=" + myExp->ToString() + ";\n" + indent + mySucc->ToString();
+} // }}}
+string MpsHostStatement::ToString(string indent) const // {{{
+{
+  stringstream result;
+  result << "HOST[[";
+  for (int i=0; i<myHostParts.size(); ++i)
+  { result << myHostParts[i];
+    if (myExpParts.size()>i)
+      result << "EXP[[" << myExpParts[i]->ToString() << "]]";
+  }
+  result << "]]";
+  return result.str();
 } // }}}
 
 /* Make string representation of term with latex markup
@@ -5885,7 +5909,20 @@ string MpsAssign::ToTex(int indent, int sw) const // {{{
   return ToTex_Var(myId) + ":" + myType->ToTex(indent + myId.size() + 1) + "=" + myExp->ToString() + ";\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
+string MpsHostStatement::ToTex(int indent, int sw) const // {{{
+{
+  stringstream result;
+  result << "HOST$\\llbracket$";
+  for (int i=0; i<myHostParts.size(); ++i)
+  { result << myHostParts[i];
+    if (myExpParts.size()>i)
+      result << "EXP$\\llbracket$" << myExpParts[i]->ToString() << "$\\rrbracket$";
+  }
+  result << "$\\rrbracket$";
+  return result.str();
+} // }}}
 
+int _compile_id=0;
 /* Make executable C++ code for processes
  */
 string MpsTerm::MakeC() const // {{{
@@ -6142,6 +6179,19 @@ string MpsAssign::ToC() const // {{{
   delete tmpSucc;
   return result.str();
 } // }}}
+string MpsHostStatement::ToC() const // {{{
+{
+  stringstream prestmt;
+  stringstream stmt;
+  for (int i=0; i<myHostParts.size(); ++i)
+  { stmt << myHostParts[i];
+    if (i<myExpParts.size())
+    { string newName = myExpParts[i]->ToC(prestmt, myTypes[i]->ToC());
+      stmt << " " << newName << " ";
+    }
+  }
+  return prestmt.str() + stmt.str();
+} // }}}
 
 /* MpsTerm::RenameAll
  */
@@ -6356,6 +6406,19 @@ MpsTerm *MpsAssign::RenameAll() const // {{{
 
   return result;
 } // }}}
+MpsHostStatement *MpsHostStatement::RenameAll() const // {{{
+{ MpsTerm *newSucc=mySucc->RenameAll();
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator tit=myTypes.begin(); tit!=myTypes.end(); ++tit)
+    newTypes.push_back((*tit)->RenameAll());
+
+  MpsHostStatement *result=new MpsHostStatement(myHostParts, myExpParts, *newSucc, newTypes);
+  // Clean up
+  delete newSucc;
+  DeleteVector(newTypes);
+
+  return result;
+} // }}}
 
 /* MpsTerm::CloseDefinitions
  */
@@ -6545,6 +6608,13 @@ MpsTerm *MpsAssign::CloseDefinitions() const // {{{
   delete newSucc;
   return result;
 } // }}}
+MpsHostStatement *MpsHostStatement::CloseDefinitions() const // {{{
+{
+  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  MpsHostStatement *result= new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  delete newSucc;
+  return result;
+} // }}}
 
 /* MpsTerm::ExtractDefinitions
  */
@@ -6684,6 +6754,12 @@ MpsTerm *MpsAssign::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
   
   delete newSucc;
 
+  return result;
+} // }}}
+MpsHostStatement *MpsHostStatement::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
+{ MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
+  MpsHostStatement *result=new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  delete newSucc;
   return result;
 } // }}}
 
