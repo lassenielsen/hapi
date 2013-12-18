@@ -3,6 +3,8 @@
 
 #include <apims/mpsexp.hpp>
 #include <apims/mpschannel.hpp>
+#include <apims/mpstype.hpp>
+#include <apims/mpsterm.hpp>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -186,3 +188,127 @@ inline std::string ToTex_Channel(apims::MpsChannel ch) // {{{
 inline std::string ToC_Name(const std::string &name) // {{{
 { return stringreplace(name,"~","__SIM__");
 } // }}}
+
+// Typechecking output functions
+inline std::string PrintGamma(const apims::MpsMsgEnv &Gamma, const std::string &indent) // {{{
+{
+  std::string result="";
+  for (apims::MpsMsgEnv::const_iterator it=Gamma.begin();it!=Gamma.end();++it)
+  {
+    if (it!=Gamma.begin())
+      result += ",\n" + indent;
+    std::string newIndent = indent + "  ";
+    for (int i=0; i<it->first.size(); ++i)
+      newIndent += " ";
+    result += it->first + ": " + it->second->ToString(newIndent);
+  }
+  return result;
+} // }}}
+inline std::string PrintOmega(const apims::MpsProcEnv &Omega, const std::string &indent) // {{{
+{
+  std::string result = "";
+  for (apims::MpsProcEnv::const_iterator it=Omega.begin();it!=Omega.end();++it)
+  {
+    if (it!=Omega.begin())
+      result += ",\n" + indent;
+    result += it->first + "< ";
+    std::string newIndent = indent + "  ";
+    for (int i=0;i < it->first.size();++i)
+      newIndent += " ";
+    for (int i=0; i<it->second.stypes.size(); ++i)
+    { if (i>0)
+        result += ",\n" + newIndent;
+      result += it->second.snames[i] + ": " + it->second.stypes[i]->ToString(newIndent);
+    }
+    result += " >\n"+newIndent+"( ";
+    for (std::vector<apims::MpsMsgType*>::const_iterator arg=it->second.types.begin(); arg!=it->second.types.end(); ++arg)
+    {
+      if (arg!=it->second.types.begin())
+        result += ",\n" + newIndent;
+      result += (*arg)->ToString(newIndent);
+    }
+    result += " )";
+  }
+  return result;
+} // }}}
+inline bool PrintTypeError(const std::string &message, const apims::MpsTerm &term, const apims::MpsExp &Theta,  const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega) // {{{
+{
+#if APIMS_DEBUG_LEVEL>1
+  std::cerr << "!!!!!!!!!!!!!!! Type Error: !!!!!!!!!!!!!!!" << std::endl
+            << "!!!!!!!Term: " << term.ToString("!!!!!        ") << std::endl
+            << "!Assertions: " << Theta.ToString() << std::endl
+            << "!!!Type Env: " << PrintGamma(Gamma,"!!!!         ") << std::endl
+            << "!Method Env: " << PrintOmega(Omega,"!!!!         ") << std::endl
+            << "!!!!Message: " << message << std::endl;
+#endif
+  return false;
+} // }}}
+
+// Helpfunction for when unfolding is necessary
+inline bool TypeCheckRec(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, apims::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
+{
+  apims::MpsMsgEnv::const_iterator it=Gamma.find(session);
+  if (it==Gamma.end())
+    return PrintTypeError((std::string)"Unfolding closed session: " + session,term,Theta,Gamma,Omega);
+  const apims::MpsDelegateMsgType *delType = dynamic_cast<const apims::MpsDelegateMsgType*>(it->second);
+  const apims::MpsLocalRecType *type = dynamic_cast<const apims::MpsLocalRecType*>(delType->GetLocalType());
+  if (type==NULL)
+    return PrintTypeError((std::string)"Unfolding non-rec type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+  apims::MpsMsgEnv newGamma = Gamma;
+  // Create type for substitution
+  std::vector<apims::TypeArg> args;
+  std::vector<std::string> argnames;
+  for (std::vector<apims::TypeArg>::const_iterator arg=type->GetArgs().begin(); arg!=type->GetArgs().end(); ++arg)
+  { apims::MpsExp *newValue = new apims::MpsVarExp(arg->myName, apims::MpsMsgNoType());
+    apims::TypeArg newArg(arg->myName, *arg->myType,  *newValue);
+    delete newValue;
+    args.push_back(newArg);
+    argnames.push_back(newArg.myName);
+  }
+  apims::MpsLocalType *substType=new apims::MpsLocalRecType(type->GetName(), *type->GetSucc(), args);
+  apims::MpsLocalType *newType = type->GetSucc()->LSubst(type->GetName(),*substType,argnames);
+  delete substType;
+  for (std::vector<apims::TypeArg>::const_iterator arg=type->GetArgs().begin(); arg!=type->GetArgs().end(); ++arg)
+  { apims::MpsLocalType *tmpType = newType->ESubst(arg->myName,*arg->myValue);
+    delete newType;
+    newType=tmpType;
+  }
+  apims::MpsDelegateLocalMsgType *newMsgType=new apims::MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetMaxpid());
+  newGamma[session] = newMsgType;
+  bool result = false;
+  if (dynamic_cast<apims::MpsLocalRecType*>(newType)==NULL)
+    result = term.TypeCheck(Theta,newGamma,Omega);
+  else
+    result = PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+  delete newType;
+  delete newMsgType;
+  return result;
+} // }}}
+inline bool TypeCheckForall(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, apims::MpsTerm &term, const std::string &session) // Using new rule forall {{{
+{
+  apims::MpsMsgEnv::const_iterator it=Gamma.find(session);
+  if (it==Gamma.end())
+    return PrintTypeError((std::string)"Forall on closed session: " + session,term,Theta,Gamma,Omega);
+  const apims::MpsDelegateMsgType *delType = dynamic_cast<const apims::MpsDelegateMsgType*>(it->second);
+  const apims::MpsLocalForallType *type = dynamic_cast<const apims::MpsLocalForallType*>(delType->GetLocalType());
+  if (type==NULL)
+    return PrintTypeError((std::string)"Forall on non-forall type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+  // Find new name for bound variable
+  std::string newName = apims::MpsExp::NewVar(type->GetName());
+  // Create type for substitution
+  apims::MpsLocalType *newType = type->GetSucc()->ERename(type->GetName(),newName);
+  apims::MpsDelegateLocalMsgType *newMsgType=new apims::MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetMaxpid());
+  delete newType;
+  // Create new Theta
+  apims::MpsExp *newAssertion = type->GetAssertion().Rename(type->GetName(),newName);
+  apims::MpsExp *newTheta=new apims::MpsBinOpExp("and",Theta,*newAssertion,apims::MpsBoolMsgType(),apims::MpsBoolMsgType());
+  delete newAssertion;
+  // Create new Gamma
+  apims::MpsMsgEnv newGamma = Gamma;
+  newGamma[session] = newMsgType;
+  bool result = term.TypeCheck(*newTheta,newGamma,Omega);
+  // Clean Up
+  delete newTheta;
+  return result;
+} // }}}
+
