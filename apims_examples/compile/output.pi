@@ -1,0 +1,41 @@
+define $io = rec $io.
+  1=>2
+  {^PutString: 1=>2<String>; $io,
+   ^PutInt:    1=>2<Int>;    $io,
+   ^GetString: 2=>1<String>; $io,
+   ^GetInt:    2=>1<Int>; $io,
+   ^End: Gend
+  }
+in
+(nu io: $io)
+( def IOServer() =
+    link(2,io,s,2);
+    def IOSession(s: $io@(2 of 2) ) =
+      s[1]>>
+      {^PutString: s[1]>>str;
+                   HOST("std::cout << (", str, ").ToString() << std::endl;");
+                   IOSession(s),
+       ^PutInt:    s[1]>>i;
+                   HOST("std::cout << (", i, ").ToString() << std::endl;");
+                   IOSession(s),
+       ^GetString: s[1]<<""; // FIXME
+                   IOSession(s),
+       ^GetInt:    s[1]<<0; // FIXME
+                   IOSession(s),
+       ^End:       IOServer()
+      }
+    in IOSession(s)
+  in IOServer()
+| link(2,io,s,1);
+  s[2]<<^PutString;s[2]<<"Hello";
+  s[2]<<^PutString;s[2]<<" ";
+  s[2]<<^PutString;s[2]<<"World";
+  s[2]<<^End;
+  end
+| link(2,io,s,1);
+  s[2]<<^PutInt;s[2]<<1;
+  s[2]<<^PutInt;s[2]<<2;
+  s[2]<<^PutInt;s[2]<<3;
+  s[2]<<^End;
+  end
+)
