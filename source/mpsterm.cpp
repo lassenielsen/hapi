@@ -149,7 +149,6 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefType("dargs ::= < args > |");                       // Optional dependant args
   MpsParser.DefType("dexps ::= < exps > |");                       // Optional dependant args
   MpsParser.DefType("ids ::= | id  ids");                          // Name list
-  MpsParser.DefType("hstmt ::= string | string , exp , hstmt");    // Host statement interleaving of string and expressions
   MpsParser.DefType("pi ::= pi par pi2 | pi2");                    // Processes
   MpsParser.DefType("pi2 ::= ( pi ) \
                            | ( nu id : Gtype ) pi2 \
@@ -169,7 +168,7 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
                            | define gvar ids = Gtype in pi2 \
                            | define lvar ids = Ltype in pi2 \
                            | ch >> id @ ( int of int ) ; pi2 \
-                           | host ( hstmt ) ; pi2");                     // More processes
+                           | host ( exps ) ; pi2");                     // More processes
 
   parsed_tree *tree = MpsParser.Parse(exp);
   MpsTerm *result=MpsTerm::Create(tree);
@@ -563,20 +562,12 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
                                     mpz_get_si(((MpsIntVal*)args[0])->GetValue()),
                                     *succ);
       delete succ;
-      while (args.size()>0)
-      {
-        delete *args.begin();
-        args.erase(args.begin());
-      }
+      DeleteVector(args);
       return result;
     }
     else
     {
-      while (args.size()>0)
-      {
-        delete *args.begin();
-        args.erase(args.begin());
-      }
+      DeleteVector(args);
 #if APIMS_DEBUG_LEVEL>1
       cerr << "Parsing error: Arguments for link must be: int, id, id, int" << endl;
 #endif
@@ -805,19 +796,35 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
   else if (exp->type_name == "pi2" && exp->case_name == "case19") // host ( hstmt ) ; pi2 {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[5]);
+    vector<MpsExp*> args;
+    args.clear();
+    FindExps(exp->content[2],args);
     vector<string> hostParts;
     vector<MpsExp*> expParts;
+    // exps must be alternately string and var
+    for (int i=0; i<args.size(); ++i)
+    { if (i%2==0) // expect string
+      { MpsStringVal *val=dynamic_cast<MpsStringVal*>(args[i]);
+        if (val==NULL) // Not string value
+        {
+#if APIMS_DEBUG_LEVEL>1
+          cerr << "Parsing error: Arguments for HOST must be string and variable alternately" << endl;
+#endif
+          break;
+        }
+        else
+        { hostParts.push_back(val->GetValue());
+        }
+      }
+      else
+        expParts.push_back(args[i]->Copy());
+    }
 
-    MpsChannel source=ParseChannel(exp->content[0]);
-    MpsTerm *result = new MpsRcv(source,
-                                 exp->content[2]->root.content,
-                                 string2int(exp->content[5]->root.content),
-                                 string2int(exp->content[7]->root.content),
-                                 *succ,
-                                 MpsMsgNoType(),
-                                 false);
-
+    MpsHostStatement *result = new MpsHostStatement(hostParts,expParts,*succ,vector<MpsMsgType*>());
+    // Clean up
     delete succ;
+    DeleteVector(expParts);
+    DeleteVector(args);
     return result;
   } // }}}
 

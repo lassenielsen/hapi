@@ -69,7 +69,7 @@ MpsHostStatement *MpsHostStatement::ERename(const string &src, const string &dst
   for (vector<MpsExp*>::const_iterator part=myExpParts.begin(); part!=myExpParts.end(); ++part)
     newExpParts.push_back((*part)->Rename(src,dst));
 
-  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, newExpParts, *newSucc, myTypes);
   // Clean up
   delete newSucc;
   DeleteVector(newExpParts);
@@ -202,7 +202,7 @@ string MpsHostStatement::ToC() const // {{{
       stmt << " " << newName << " ";
     }
   }
-  return prestmt.str() + stmt.str();
+  return prestmt.str() + stmt.str() + mySucc->ToC();
 } // }}}
 MpsHostStatement *MpsHostStatement::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();

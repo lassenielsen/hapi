@@ -10,6 +10,11 @@ MpsNu::MpsNu(const string &channel, const MpsTerm &succ, const MpsGlobalType &ty
   mySucc = succ.Copy();
   myType = type.Copy();
 } // }}}
+MpsNu::~MpsNu() // {{{
+{
+  delete mySucc;
+  delete myType;
+} // }}}
 bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Nres {{{
 {
   // Check that only completed sessions are hidden

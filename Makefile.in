@@ -29,6 +29,22 @@ args = -fPIC `sdl-config --cflags` $(opt) -I./include/
 
 library_objects = \
   objects/mpsterm.o \
+  objects/mpsend.o \
+  objects/mpssnd.o \
+  objects/mpsrcv.o \
+  objects/mpsselect.o \
+  objects/mpsbranch.o \
+  objects/mpsnu.o \
+  objects/mpslink.o \
+  objects/mpspar.o \
+  objects/mpsdef.o \
+  objects/mpscall.o \
+  objects/mpssync.o \
+  objects/mpscond.o \
+  objects/mpsguisync.o \
+  objects/mpsguivalue.o \
+  objects/mpsassign.o \
+  objects/mpshoststatement.o \
   objects/mpsexp.o \
   objects/mpschannel.o \
   objects/mpsevent.o \
