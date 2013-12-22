@@ -2,7 +2,7 @@
 BASE=$(echo $1 | sed "s/\..*$//")
 echo "Compiling $BASE from $1"
 echo "Stage 1: PreProcessing $1 to $BASE.pip using cpp"
-cpp $1 $BASE.pip
+cpp $1 $BASE.pip -I/opt/apims/include/
 echo "Stage 2: Stripping cpp comments from $BASE.pip to $BASE.pir"
 grep -v "^#" $BASE.pip > $BASE.pir
 echo "Stage 3: Generating C++ code from $BASE.pir to $BASE.cpp using apims"

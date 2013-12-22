@@ -108,10 +108,12 @@ install: $(libname)$(libversion)
 	@echo "Copying include-files"
 	mkdir -p /usr/include/$(name)
 	cp include/$(name)/*.hpp /usr/include/$(name)/
+	chmod -R a+rx /usr/include/$(name)
 	mkdir -p /opt/apims
 	mkdir -p /opt/apims/gfx
 	cp gfx/*.jpg /opt/apims/gfx/
-	chmod -R a+rx /usr/include/$(name)
+	mkdir -p /opt/apims/include
+	cp apims_libs/*.pi /opt/apims/include/
 #OS_LINUX	@echo "Reindexing libraries"
 #OS_LINUX	ldconfig -n /usr/lib
 

@@ -1,4 +1,4 @@
-#include "io.pi"
+#include <io.pi>
 
 define $fibres =
   2=>1<Int>;
