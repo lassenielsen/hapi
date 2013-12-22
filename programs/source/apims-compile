@@ -1,7 +1,12 @@
 #!/bin/bash
-echo "Compiling $1"
-echo "Stage one: Generating c++ code in $1.cpp ..."
-apims -compile -o $1.cpp -f $1.pi
-echo "Stage two: Compiling $1.cpp to $1"
-gcc -o $1 $1.cpp -lpi -lgmp
+BASE=$(echo $1 | sed "s/\..*$//")
+echo "Compiling $BASE from $1"
+echo "Stage 1: PreProcessing $1 to $BASE.pip using cpp"
+cpp $1 $BASE.pip
+echo "Stage 2: Stripping cpp comments from $BASE.pip to $BASE.pir"
+grep -v "^#" $BASE.pip > $BASE.pir
+echo "Stage 3: Generating C++ code from $BASE.pir to $BASE.cpp using apims"
+apims -compile -o $BASE.cpp -f $BASE.pir
+echo "Stage 4: Compiling $BASE.cpp to $BASE using g++"
+gcc -o $BASE $BASE.cpp -lpi
 echo Done

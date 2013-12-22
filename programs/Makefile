@@ -82,7 +82,7 @@ objects/%.o: source/%.cpp include/*.hpp include/config.hpp
 	mkdir -p objects
 	$(compiler) -c source/$*.cpp $(args) -o objects/$*.o
 
-apims-compile:
+apims-compile: source/apims-compile
 	cp source/apims-compile ./apims-compile
 
 %: $(objects) objects/%.o include/config.hpp

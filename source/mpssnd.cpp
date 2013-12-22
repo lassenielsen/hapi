@@ -244,7 +244,6 @@ string MpsSnd::ToC() const // {{{
     result << "  " << valName << "->Close(false);" << endl
            << "  delete " << valName << ";" << endl;
   }
-  cout << "ToC: ISDONE: " << myFinal << endl;
   if (myFinal)
   {
     result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl

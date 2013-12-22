@@ -13,9 +13,9 @@
 name = apims
 version = 2.5.0
 libname = lib$(name).so
-#OS_LINUXlibname = lib$(name).so
+libname = lib$(name).so
 #OS_MAClibname = lib$(name).dylib
-#OS_LINUXlibversion = .$(version)
+libversion = .$(version)
 #OS_MAClibversion =
 COMMENT = OS_
 OS_AUTO = $(shell uname -s)
@@ -25,7 +25,7 @@ compiler = g++
 ctags = ctags
 args = -fPIC `sdl-config --cflags` $(opt) -I./include/
 #OS_MAClibs = 
-#OS_LINUXlibs = -ldpl -lz -lgmpxx -lgmp
+libs = -ldpl -lz -lgmpxx -lgmp
 
 library_objects = \
   objects/mpsterm.o \
@@ -98,13 +98,13 @@ include/$(name)/config.hpp:
 	@echo "#define CONFIG_APIMS" >> include/$(name)/config.hpp
 	@echo "#include <string>" >> include/$(name)/config.hpp
 #OS_MAC	@echo "#define OS_X" >> include/$(name)/config.hpp
-#OS_LINUX	@echo "#define OS_LINUX" >> include/$(name)/config.hpp
+	@echo "#define OS_LINUX" >> include/$(name)/config.hpp
 	@echo "#endif" >> include/$(name)/config.hpp
 
 install: $(libname)$(libversion)
 	@echo "Copying library"
 	cp $(libname)$(libversion) /usr/lib/
-#OS_LINUX	ln -f -s /usr/lib/$(libname)$(libversion) /usr/lib/$(libname)
+	ln -f -s /usr/lib/$(libname)$(libversion) /usr/lib/$(libname)
 	@echo "Copying include-files"
 	mkdir -p /usr/include/$(name)
 	cp include/$(name)/*.hpp /usr/include/$(name)/
@@ -112,16 +112,16 @@ install: $(libname)$(libversion)
 	mkdir -p /opt/apims/gfx
 	cp gfx/*.jpg /opt/apims/gfx/
 	chmod -R a+rx /usr/include/$(name)
-#OS_LINUX	@echo "Reindexing libraries"
-#OS_LINUX	ldconfig -n /usr/lib
+	@echo "Reindexing libraries"
+	ldconfig -n /usr/lib
 
 uninstall:
 	@echo "Removing library"
 	rm -f /usr/lib/$(libname)*
 	@echo "Removing include-files"
 	rm -Rf /usr/include/$(name)
-#OS_LINUX	@echo "Reindexing libraries"
-#OS_LINUX	ldconfig -n /usr/lib
+	@echo "Reindexing libraries"
+	ldconfig -n /usr/lib
 
 clean:
 	touch clean~
@@ -186,7 +186,7 @@ deb: $(libname)$(libversion)
 	rm -Rf debs/lib$(name)_$(version)_i386
 
 $(libname)$(libversion): $(library_objects)
-#OS_LINUX	$(compiler) -shared -Wl,-soname,$(libname).1 -o $(libname)$(libversion) $(library_objects) $(libs)
+	$(compiler) -shared -Wl,-soname,$(libname).1 -o $(libname)$(libversion) $(library_objects) $(libs)
 #OS_MAC	$(compiler) -dynamiclib -o $(libname) $(library_objects) $(libs)
 
 objects/%.o: source/%.cpp include/$(name)/*.hpp  include/$(name)/config.hpp
