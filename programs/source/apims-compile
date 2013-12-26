@@ -8,5 +8,5 @@ grep -v "^#" $BASE.pip > $BASE.pir
 echo "Stage 3: Generating C++ code from $BASE.pir to $BASE.cpp using apims"
 apims -compile -o $BASE.cpp -f $BASE.pir
 echo "Stage 4: Compiling $BASE.cpp to $BASE using g++"
-gcc -o $BASE $BASE.cpp -lpi
+g++ -o $BASE $BASE.cpp -lpi
 echo Done

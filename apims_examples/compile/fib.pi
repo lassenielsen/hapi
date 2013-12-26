@@ -1,4 +1,4 @@
-#include <io.pi>
+#include <console.pi>
 
 define $fibres =
   2=>1<Int>;
@@ -26,17 +26,19 @@ in
            end
     )
   in Fib()
-| link(2,io,console,1);
-  console[2]<<^GetInt;
-  console[2]>>v;
+| link(2,console,c,1);
+  c[2]<<^PutString;
+  c[2]<<"What is n?";
+  c[2]<<^GetInt;
+  c[2]>>v;
   link(2,fib,f,1);
   f[2]<<v;
   f[2]>>r;
-  console[2]<<^PutString;
-  console[2]<<"Fib of that is";
-  console[2]<<^PutInt;
-  console[2]<<r;
-  console[2]<<^End;
+  c[2]<<^PutString;
+  c[2]<<"Fib(n) is";
+  c[2]<<^PutInt;
+  c[2]<<r;
+  c[2]<<^End;
   end
 )
-) // io.pi
+) // console.pi

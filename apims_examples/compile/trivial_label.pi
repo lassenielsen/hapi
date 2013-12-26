@@ -1,12 +1,12 @@
-#include "io.pi"
+#include<console.pi>
 (nu a: 1=>2{^X: 2=>1<String>;Gend, ^Y: 2=>1<String>;Gend})
 ( link(2,a,s,1);
   s[2]<<^Y;
   s[2]>>val;
-  link(2,io,console,1);
-  console[2]<<^PutString;
-  console[2]<<val;
-  console[2]<<^End;
+  link(2,console,c,1);
+  c[2]<<^PutString;
+  c[2]<<val;
+  c[2]<<^End;
   end
 | link(2,a,s,2);
   s[1]>>

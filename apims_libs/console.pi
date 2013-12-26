@@ -1,33 +1,33 @@
-define $io = rec $io.
+define $console = rec $console.
   1=>2
-  {^PutString: 1=>2<String>; $io,
-   ^PutInt:    1=>2<Int>;    $io,
-   ^GetString: 2=>1<String>; $io,
-   ^GetInt:    2=>1<Int>; $io,
+  {^PutString: 1=>2<String>; $console,
+   ^PutInt:    1=>2<Int>;    $console,
+   ^GetString: 2=>1<String>; $console,
+   ^GetInt:    2=>1<Int>; $console,
    ^End: Gend
   }
 in
-(nu io: $io)
-( def IOServer() =
-    link(2,io,s,2);
-    def IOSession(s: $io@(2 of 2) ) =
+(nu console: $console)
+( def ConsoleServer() =
+    link(2,console,s,2);
+    def ConsoleSession(s: $console@(2 of 2) ) =
       s[1]>>
       {^PutString: s[1]>>str;
                    HOST("std::cout << (", str, ").ToString() << std::endl;");
-                   IOSession(s),
+                   ConsoleSession(s),
        ^PutInt:    s[1]>>i;
                    HOST("std::cout << (", i, ").ToString() << std::endl;");
-                   IOSession(s),
+                   ConsoleSession(s),
        ^GetString: val:String="";
                    HOST("{ std::string _s; std::cin >> _s; ", val, "=libpi::StringValue(_s); }");
                    s[1]<<val;
-                   IOSession(s),
+                   ConsoleSession(s),
        ^GetInt:    val:Int=0;
                    HOST("{ long _l; std::cin >> _l; ", val, "=libpi::IntValue(_l); }");
                    s[1]<<val;
-                   IOSession(s),
-       ^End:       IOServer()
+                   ConsoleSession(s),
+       ^End:       ConsoleServer()
       }
-    in IOSession(s)
-  in IOServer()
+    in ConsoleSession(s)
+  in ConsoleServer()
 | 
