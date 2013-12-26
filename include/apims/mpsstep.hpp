@@ -33,7 +33,7 @@ class MpsStep // {{{
 { public:
     MpsStep(const MpsEvent &event, const std::vector<std::string> &paths);
     MpsStep(const MpsStep &rhs);
-    ~MpsStep();
+    virtual ~MpsStep();
 
     // DOCUMENTATION: GetEvent // {{{
     /*!

@@ -149,7 +149,7 @@ string MpsFunction::ToString() const // {{{
 string MpsFunction::ToCDecl() const // {{{
 {
   stringstream ss;
-  ss << "Cnt *" << ToC_Name(GetName()) << "(";
+  ss << "inline Cnt *" << ToC_Name(GetName()) << "(";
   // Print state arguments
   vector<MpsMsgType*>::const_iterator type=GetStateTypes().begin();
   for (vector<string>::const_iterator arg=GetStateArgs().begin();

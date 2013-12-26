@@ -414,7 +414,7 @@ string MpsPar::ToC() const // {{{
   result <<  myRight->ToC()
          << "  }" << endl
          << "else throw (string)\"Error during fork!\";" << endl
-         << "return 0;" << endl;
+         << "return new Cnt();" << endl;
   return result.str();
 } // }}}
 MpsTerm *MpsPar::RenameAll() const // {{{
