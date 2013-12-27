@@ -1,0 +1,39 @@
+#define $time rec $time. \
+  1=>2 \
+  {^ResetTimer: $time, \
+   ^ReadSeconds: 2=>1<Int>; $time, \
+   ^WaitSeconds: 1=>2<Int>; 2=>1<Bool>; $time, \
+   ^GetTimestamp: 2=>1<Int>; $time, \
+   ^End: Gend \
+  } \
+// HOSTHEADER("#include <time.h>");
+// HOSTHEADER("#include <unistd.h>");
+(nu time: $time)
+def TimeServer() =
+  link(2,time,t,2);
+  def TimeSession(t: $time@(2 of 2), start: Int ) =
+    t[1]>>
+    {^ResetTimer:   HOST("{ time_t _t=time(0); ", start, "=libpi::IntValue(_t); }");
+                    TimeSession(t,start),
+     ^ReadSeconds:  now:Int=0;
+                    HOST("{ time_t _t=time(0); ", now, "=libpi::IntValue(_t); }");
+                    t[1]<<now-start;
+                    TimeSession(t,start),
+     ^WaitSeconds:  t[1]>>wait;
+                    HOST("sleep( mpz_get_ui((", wait, ").GetValue()) );");
+                    t[1]<<true;
+                    TimeSession(t,start),
+     ^GetTimestamp: now:Int=0;
+                    HOST("{ time_t _t=time(0); ", start, "=libpi::IntValue(_t); }");
+                    t[1]<<now;
+                    TimeSession(t,start),
+     ^End:          end
+    }
+  in 
+  ( TimeServer()
+  | start:Int=0;
+    HOST("{ time_t _t=time(0); ", start, "=libpi::IntValue(_t); }");
+    TimeSession(t,start)
+  )
+in TimeServer()
+|

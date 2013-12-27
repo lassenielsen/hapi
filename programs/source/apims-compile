@@ -1,12 +1,39 @@
 #!/bin/bash
-BASE=$(echo $1 | sed "s/\..*$//")
-echo "Compiling $BASE from $1"
-echo "Stage 1: PreProcessing $1 to $BASE.pip using cpp"
-cpp $1 $BASE.pip -I/opt/apims/include/
-echo "Stage 2: Stripping cpp comments from $BASE.pip to $BASE.pir"
-grep -v "^#" $BASE.pip > $BASE.pir
-echo "Stage 3: Generating C++ code from $BASE.pir to $BASE.cpp using apims"
-apims -compile -o $BASE.cpp -f $BASE.pir
-echo "Stage 4: Compiling $BASE.cpp to $BASE using g++"
-g++ -o $BASE $BASE.cpp -lpi
+BASE=$(echo $1 | sed "s/^\(\(.*\)\.\)\([^.]*\)$/\2/")
+EXT=$(echo $1 | sed "s/^[^.]*$//" | sed "s/^\(\(.*\)\.\)\([^.]*\)$/\3/")
+case "$EXT" in
+"")
+SOURCE=$BASE.pi
+START=0
+;;
+"pip")
+SOURCE=$BASE.pip
+START=1
+;;
+"cpp")
+SOURCE=$BASE.cpp
+START=2
+;;
+*)
+SOURCE=$1
+START=0
+esac
+
+echo "Compiling $BASE from $SOURCE"
+
+if [ $START -lt 1 ]
+then
+  echo "Stage 1: PreProcessing $1 to $BASE.pip using cpp"
+  cpp $SOURCE -I/opt/apims/include/ | grep -v "^#" > $BASE.pip
+fi
+if [ $START -lt 2 ]
+then
+  echo "Stage 2: Generating C++ code from $BASE.pip to $BASE.cpp using apims"
+  apims -compile -o $BASE.cpp -f $BASE.pip
+fi
+if [ $START -lt 3 ]
+then
+  echo "Stage 3: Compiling $BASE.cpp to $BASE using g++"
+  g++ -o $BASE $BASE.cpp -lpi
+fi
 echo Done

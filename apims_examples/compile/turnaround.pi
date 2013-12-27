@@ -1,8 +1,8 @@
-define $tr =
-  1=>2<Int>;
-  2=>1<Int>;
+# define $tr \
+  1=>2<Int>; \
+  2=>1<Int>; \
   Gend
-in
+
 (nu tr: $tr)
 ( def A() =
     link(2,tr,s,2);

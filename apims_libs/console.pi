@@ -6,7 +6,7 @@
    ^GetInt:    2=>1<Int>; $console, \
    ^End: Gend \
   } \
-
+// HOSTHEADER("#include <iostream>");
 (nu console: $console)
 def ConsoleServer() =
   link(2,console,s,2);

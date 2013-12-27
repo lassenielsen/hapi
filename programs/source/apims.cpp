@@ -186,5 +186,5 @@ int main(int argc, char **argv)
   { cerr << "Error: " << s << endl;
     return -1;
   }
-  return 1;
+  return 0;
 }

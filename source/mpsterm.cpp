@@ -166,8 +166,6 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
                            | guisync ( exps ) { inputbranches } \
                            | guivalue ( exps ) ; pi2 \
                            | id : Mtype = exp ; pi2 \
-                           | define gvar ids = Gtype in pi2 \
-                           | define lvar ids = Ltype in pi2 \
                            | ch >> id @ ( int of int ) ; pi2 \
                            | host ( exps ) ; pi2");                // More processes
 
@@ -751,35 +749,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case15") // define gvar ids = Gtype in pi2 {{{
-  { 
-    MpsTerm *term = MpsTerm::Create(exp->content[6]);
-    MpsGlobalType *gtype = MpsGlobalType::Create(exp->content[4]);
-    vector<string> names = FindNames(exp->content[2]);
-    string name = exp->content[1]->root.content;
-    MpsTerm *result = term->GSubst(name,*gtype, names);
-
-    // Clean up
-    delete term;
-    delete gtype;
-
-    return result;
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case16") // define lvar ids = Ltype in pi2 {{{
-  { 
-    MpsTerm *term = MpsTerm::Create(exp->content[6]);
-    MpsLocalType *ltype = MpsLocalType::Create(exp->content[4]);
-    vector<string> names=FindNames(exp->content[2]);
-    string name = exp->content[1]->root.content;
-    MpsTerm *result = term->LSubst(name,*ltype, names);
-
-    // Clean up
-    delete term;
-    delete ltype;
-
-    return result;
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case17") // ch >> id @ ( int of int ) ; pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case15") // ch >> id @ ( int of int ) ; pi2 {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[10]);
     MpsChannel source=ParseChannel(exp->content[0]);
@@ -794,7 +764,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case18") // host ( hstmt ) ; pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case16") // host ( hstmt ) ; pi2 {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[5]);
     vector<MpsExp*> args;

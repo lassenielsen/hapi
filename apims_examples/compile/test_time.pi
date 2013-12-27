@@ -1,0 +1,24 @@
+#include <time.pi>
+#include <console.pi>
+link(2,console,c,1);
+link(2,time,t,1);
+
+// Start message
+c[2]<<^PutString;
+c[2]<<"Start";
+// Wait 5 secs
+t[2]<<^WaitSeconds;
+t[2]<<5;
+t[2]>>x;
+// Read timer (should be 5 seconds)
+t[2]<<^ReadSeconds;
+t[2]>>secs;
+// Print result
+c[2]<<^PutString;
+c[2]<<"Timer says";
+c[2]<<^PutInt;
+c[2]<<secs;
+// Clean up
+t[2]<<^End;
+c[2]<<^End;
+end
