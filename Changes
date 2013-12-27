@@ -16,3 +16,8 @@ Changes for version 2.0
 -Change from session channel spec to names session participants spec
 -Make C++ compiler
 Add selected language extensions
+
+-Changes for version 3.0
+ + Implement compilation from apims to C++
+ + Implementez host language statements
+ + 
