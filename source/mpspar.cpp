@@ -417,6 +417,13 @@ string MpsPar::ToC() const // {{{
          << "return new Cnt();" << endl;
   return result.str();
 } // }}}
+string MpsPar::ToCHeader() const // {{{
+{
+  stringstream result;
+  result << myLeft->ToCHeader();
+  result << myRight->ToCHeader();
+  return result.str();
+} // }}}
 MpsTerm *MpsPar::RenameAll() const // {{{
 { MpsTerm *newLeft=myLeft->RenameAll();
   MpsTerm *newRight=myRight->RenameAll();

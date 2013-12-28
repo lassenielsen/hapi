@@ -252,6 +252,10 @@ string MpsSnd::ToC() const // {{{
   result << mySucc->ToC();
   return result.str();
 } // }}}
+string MpsSnd::ToCHeader() const // {{{
+{
+  return mySucc->ToCHeader();
+} // }}}
 MpsTerm *MpsSnd::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   MpsMsgType *newType=myType->RenameAll();

@@ -89,6 +89,10 @@ string MpsEnd::ToC() const // {{{
 {
   return "  return new Cnt();\n";
 } // }}}
+string MpsEnd::ToCHeader() const // {{{
+{
+  return "";
+} // }}}
 MpsTerm *MpsEnd::RenameAll() const // {{{
 {
   return Copy();

@@ -170,25 +170,27 @@ MpsHostStatement *MpsHostStatement::Simplify() const // {{{
 string MpsHostStatement::ToString(string indent) const // {{{
 {
   stringstream result;
-  result << "HOST[[";
+  result << "HOST(\"";
   for (int i=0; i<myHostParts.size(); ++i)
   { result << myHostParts[i];
     if (myExpParts.size()>i)
-      result << "EXP[[" << myExpParts[i]->ToString() << "]]";
+      result << "\", " << myExpParts[i]->ToString() << "\", \"";
   }
-  result << "]]";
+  result << "\")" << endl
+         << indent << mySucc->ToString(indent);
   return result.str();
 } // }}}
 string MpsHostStatement::ToTex(int indent, int sw) const // {{{
 {
   stringstream result;
-  result << "HOST$\\llbracket$";
+  result << "HOST(\"";
   for (int i=0; i<myHostParts.size(); ++i)
   { result << myHostParts[i];
     if (myExpParts.size()>i)
-      result << "EXP$\\llbracket$" << myExpParts[i]->ToString() << "$\\rrbracket$";
+      result << "\", " << myExpParts[i]->ToString() << ", \"";
   }
-  result << "$\\rrbracket$";
+  result << "\");" << endl
+         << ToTex_Hspace(indent,sw) << mySucc->ToTex(indent,sw);
   return result.str();
 } // }}}
 string MpsHostStatement::ToC() const // {{{
@@ -203,6 +205,10 @@ string MpsHostStatement::ToC() const // {{{
     }
   }
   return prestmt.str() + stmt.str() + mySucc->ToC();
+} // }}}
+string MpsHostStatement::ToCHeader() const // {{{
+{
+  return mySucc->ToCHeader();
 } // }}}
 MpsHostStatement *MpsHostStatement::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();

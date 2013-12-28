@@ -43,6 +43,15 @@ std::string DefEnvToC(const MpsFunctionEnv &env) // {{{
   }
   return ss.str();
 } // }}}
+std::string DefEnvToCHeader(const MpsFunctionEnv &env) // {{{
+{
+  stringstream ss;
+  for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
+  {
+    ss << def->GetBody().ToCHeader();
+  }
+  return ss.str();
+} // }}}
 
 MpsFunction::MpsFunction(const string &name, // {{{
                          const vector<string> &stateargs,

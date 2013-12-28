@@ -15,3 +15,4 @@
 #include<apims/mpsguivalue.hpp>
 #include<apims/mpsassign.hpp>
 #include<apims/mpshoststatement.hpp>
+#include<apims/mpshostheader.hpp>

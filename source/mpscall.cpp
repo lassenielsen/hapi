@@ -374,6 +374,10 @@ string MpsCall::ToC() const // {{{
   call << ");" << endl;
   return precall.str() + call.str();
 } // }}}
+string MpsCall::ToCHeader() const // {{{
+{
+  return "";
+} // }}}
 MpsTerm *MpsCall::RenameAll() const // {{{
 { return Copy();
 } // }}}

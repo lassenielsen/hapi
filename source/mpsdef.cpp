@@ -518,6 +518,13 @@ string MpsDef::ToC() const // {{{
 {
   throw (string)"MpsDef::ToC(): Local definitions not supported in compilation, must be moved to global procedure";
 } // }}}
+string MpsDef::ToCHeader() const // {{{
+{
+  stringstream result;
+  result << myBody->ToCHeader();
+  result << mySucc->ToCHeader();
+  return result.str();
+} // }}}
 MpsTerm *MpsDef::RenameAll() const // {{{
 { string newName=MpsTerm::NewName(myName);
   // Create new statearg names

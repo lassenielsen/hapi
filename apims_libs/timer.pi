@@ -1,17 +1,17 @@
-#define $time rec $time. \
+#define $timer rec $timer. \
   1=>2 \
-  {^ResetTimer: $time, \
-   ^ReadSeconds: 2=>1<Int>; $time, \
-   ^WaitSeconds: 1=>2<Int>; 2=>1<Bool>; $time, \
-   ^GetTimestamp: 2=>1<Int>; $time, \
+  {^ResetTimer: $timer, \
+   ^ReadSeconds: 2=>1<Int>; $timer, \
+   ^WaitSeconds: 1=>2<Int>; 2=>1<Bool>; $timer, \
+   ^GetTimestamp: 2=>1<Int>; $timer, \
    ^End: Gend \
-  } \
-// HOSTHEADER("#include <time.h>");
-// HOSTHEADER("#include <unistd.h>");
-(nu time: $time)
+  }
+(nu timer: $timer)
+HOSTHEADER("#include <time.h>");
+HOSTHEADER("#include <unistd.h>");
 def TimeServer() =
-  link(2,time,t,2);
-  def TimeSession(t: $time@(2 of 2), start: Int ) =
+  link(2,timer,t,2);
+  def TimeSession(t: $timer@(2 of 2), start: Int ) =
     t[1]>>
     {^ResetTimer:   HOST("{ time_t _t=time(0); ", start, "=libpi::IntValue(_t); }");
                     TimeSession(t,start),
@@ -35,5 +35,4 @@ def TimeServer() =
     HOST("{ time_t _t=time(0); ", start, "=libpi::IntValue(_t); }");
     TimeSession(t,start)
   )
-in TimeServer()
-|
+in TimeServer() |

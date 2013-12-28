@@ -42,6 +42,7 @@ class MpsNu : public MpsTerm // {{{
     MpsTerm *CloseDefinitions() const;
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
+    std::string ToCHeader() const;
 
   private:
     std::string myChannel;

@@ -173,6 +173,10 @@ string MpsAssign::ToC() const // {{{
   delete tmpSucc;
   return result.str();
 } // }}}
+string MpsAssign::ToCHeader() const // {{{
+{
+  return mySucc->ToCHeader();
+} // }}}
 MpsTerm *MpsAssign::RenameAll() const // {{{
 { string newId=MpsExp::NewVar(myId);
   MpsTerm *tmpSucc=mySucc->ERename(myId,newId);

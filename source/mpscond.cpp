@@ -214,6 +214,13 @@ string MpsCond::ToC() const // {{{
          << "  }" << endl;
   return result.str();
 } // }}}
+string MpsCond::ToCHeader() const // {{{
+{
+  stringstream result;
+  result << myTrueBranch->ToCHeader();
+  result << myFalseBranch->ToCHeader();
+  return result.str();
+} // }}}
 MpsTerm *MpsCond::RenameAll() const // {{{
 { MpsTerm *newTrueBranch=myTrueBranch->RenameAll();
   MpsTerm *newFalseBranch=myFalseBranch->RenameAll();

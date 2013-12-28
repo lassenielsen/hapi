@@ -46,6 +46,7 @@ class MpsHostStatement : public MpsTerm // {{{
     MpsHostStatement *CloseDefinitions() const;
     MpsHostStatement *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
+    std::string ToCHeader() const;
 
   private:
     std::vector<std::string> myHostParts;

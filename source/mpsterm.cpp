@@ -114,6 +114,7 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefKeywordToken("guisync",2);    // Used for GUI generation
   MpsParser.DefKeywordToken("guivalue",2);   // Used for GUI generation
   MpsParser.DefToken("host", "HOST",2); // Indicate host statement
+  MpsParser.DefToken("hostheader", "HOSTHEADER",2); // Indicate host header
   /*** Define grammars ***/
   // Expression Grammar
   MpsParser.DefType(MpsExp::BNF_EXP);
@@ -151,7 +152,8 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefType("ids ::= | id  ids");                          // Name list
                                                                    // Processes
   MpsParser.DefType("pi ::= ( nu id : Gtype ) pi \
-                          | pi2 par pi | pi2");
+                          | pi2 par pi \
+                          | pi2");
   MpsParser.DefType("pi2 ::= ( pi ) \
                            | ch << exp ; pi2 \
                            | ch >> id ; pi2 \
@@ -167,7 +169,8 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
                            | guivalue ( exps ) ; pi2 \
                            | id : Mtype = exp ; pi2 \
                            | ch >> id @ ( int of int ) ; pi2 \
-                           | host ( exps ) ; pi2");                // More processes
+                           | host ( exps ) ; pi2 \
+                           | hostheader ( exps ) ; pi2");         // More processes
 
   parsed_tree *tree = MpsParser.Parse(exp);
   MpsTerm *result=MpsTerm::Create(tree);
@@ -764,7 +767,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case16") // host ( hstmt ) ; pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case16") // host ( exps ) ; pi2 {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[5]);
     vector<MpsExp*> args;
@@ -795,6 +798,38 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     // Clean up
     delete succ;
     DeleteVector(expParts);
+    DeleteVector(args);
+    return result;
+  } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case17") // hostheader ( exps ) ; pi2 {{{
+  {
+    MpsTerm *succ = MpsTerm::Create(exp->content[5]);
+    vector<MpsExp*> args;
+    args.clear();
+    FindExps(exp->content[2],args);
+    if (args.size()!=1)
+    {
+#if APIMS_DEBUG_LEVEL>1
+      cerr << "Parsing error: HOSTHEADER takes exactly 1 argument" << endl;
+#endif
+      delete succ;
+      DeleteVector(args);
+      return new MpsEnd();
+    }
+    MpsStringVal *header=dynamic_cast<MpsStringVal*>(args[0]);
+    if (header==NULL)
+    {
+#if APIMS_DEBUG_LEVEL>1
+      cerr << "Parsing error: Arguments for HOSTHEADER must be a string" << endl;
+#endif
+      delete succ;
+      DeleteVector(args);
+      return new MpsEnd();
+    }
+
+    MpsHostHeader *result = new MpsHostHeader(header->ToString(),*succ);
+    // Clean up
+    delete succ;
     DeleteVector(args);
     return result;
   } // }}}
@@ -1056,11 +1091,11 @@ string MpsTerm::MakeC() const // {{{
   MpsTerm *main=step2->ExtractDefinitions(defs);
   delete step2;
   string result = (string)
-         "#include <unistd.h>\n"
-       + "#include <vector>\n"
-       + "#include <iostream>\n"
+         "#include <vector>\n"
        + "#include <libpi/session_fifo.hpp>\n"
        + "#include <libpi/value.hpp>\n"
+       + main->ToCHeader()
+       + DefEnvToCHeader(defs)
        + "using namespace std;\n"
        + "using namespace libpi;\n\n"
        + DefEnvToC(defs)
@@ -1086,4 +1121,3 @@ string MpsTerm::MakeC() const // {{{
   delete main;
   return result;
 } // }}}
-

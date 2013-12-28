@@ -212,6 +212,10 @@ string MpsSelect::ToC() const // {{{
   }
   return result.str();
 } // }}}
+string MpsSelect::ToCHeader() const // {{{
+{
+  return mySucc->ToCHeader();
+} // }}}
 MpsTerm *MpsSelect::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc, GetFinal());

@@ -355,6 +355,10 @@ string MpsRcv::ToC() const // {{{
   result << mySucc->ToC();
   return result.str();
 } // }}}
+string MpsRcv::ToCHeader() const // {{{
+{
+  return mySucc->ToCHeader();
+} // }}}
 MpsTerm *MpsRcv::RenameAll() const // {{{
 { string newDest=MpsExp::NewVar(myDest);
   MpsTerm *tmpSucc=mySucc->ERename(myDest,newDest);

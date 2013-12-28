@@ -779,6 +779,10 @@ string MpsGuiSync::ToC() const // {{{
 {
   throw (string)"MpsGuiSync::ToC(): guisync is not implemented yet!";
 } // }}}
+string MpsGuiSync::ToCHeader() const // {{{
+{
+  throw (string)"MpsGuiSync::ToC(): guisync is not implemented yet!";
+} // }}}
 MpsTerm *MpsGuiSync::RenameAll() const // {{{
 { map<string,inputbranch> newBranches;
   for (map<string,inputbranch>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)

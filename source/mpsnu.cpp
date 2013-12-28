@@ -218,6 +218,10 @@ string MpsNu::ToC() const // {{{
   result << mySucc->ToC();
   return result.str();
 } // }}}
+string MpsNu::ToCHeader() const // {{{
+{
+  return mySucc->ToCHeader();
+} // }}}
 MpsTerm *MpsNu::RenameAll() const // {{{
 { string newChannel = MpsExp::NewVar(myChannel);
   MpsTerm *tmpSucc=mySucc->ERename(myChannel,newChannel);

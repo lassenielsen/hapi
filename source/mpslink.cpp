@@ -235,6 +235,10 @@ string MpsLink::ToC() const // {{{
   result << mySucc->ToC();
   return result.str();
 } // }}}
+string MpsLink::ToCHeader() const // {{{
+{
+  return mySucc->ToCHeader();
+} // }}}
 MpsTerm *MpsLink::RenameAll() const // {{{
 { string newSession=MpsExp::NewVar(mySession);
   MpsTerm *tmpSucc=mySucc->ERename(mySession,newSession);

@@ -45,6 +45,7 @@ library_objects = \
   objects/mpsguivalue.o \
   objects/mpsassign.o \
   objects/mpshoststatement.o \
+  objects/mpshostheader.o \
   objects/mpsexp.o \
   objects/mpschannel.o \
   objects/mpsevent.o \

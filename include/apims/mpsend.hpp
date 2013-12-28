@@ -42,6 +42,7 @@ class MpsEnd : public MpsTerm // {{{
     MpsTerm *CloseDefinitions() const;
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
+    std::string ToCHeader() const;
 }; // }}}
 }
 #endif

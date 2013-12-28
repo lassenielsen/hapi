@@ -400,6 +400,10 @@ string MpsSync::ToC() const // {{{
 {
   throw (string)"MpsSync::ToC(): Symmetric synchronization is not supported yet!";
 } // }}}
+string MpsSync::ToCHeader() const // {{{
+{
+  throw (string)"MpsSync::ToC(): Symmetric synchronization is not supported yet!";
+} // }}}
 MpsTerm *MpsSync::RenameAll() const // {{{
 { map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)

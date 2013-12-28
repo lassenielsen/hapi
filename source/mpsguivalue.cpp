@@ -207,6 +207,10 @@ string MpsGuiValue::ToC() const // {{{
 {
   throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
 } // }}}
+string MpsGuiValue::ToCHeader() const // {{{
+{
+  throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
+} // }}}
 MpsTerm *MpsGuiValue::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   MpsTerm *result=new MpsGuiValue(myMaxpid,mySession,myPid,*myName,*myValue,*newSucc);

@@ -303,6 +303,7 @@ class MpsTerm // {{{
      */
     // }}}
     virtual std::string ToC() const=0;
+    virtual std::string ToCHeader() const=0;
     void FreeLink(const std::string &name);
     const std::vector<std::string> &GetFreeLinks() const;
 

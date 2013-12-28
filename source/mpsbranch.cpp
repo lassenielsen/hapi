@@ -326,6 +326,15 @@ string MpsBranch::ToC() const // {{{
   result << "  else throw (string)\"Unknown branch: " << lblName << "\";" << endl;
   return result.str();
 } // }}}
+string MpsBranch::ToCHeader() const // {{{
+{
+  stringstream result;
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    result << it->second->ToCHeader();
+  }
+  return result.str();
+} // }}}
 MpsTerm *MpsBranch::RenameAll() const // {{{
 { map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)

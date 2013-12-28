@@ -78,6 +78,7 @@ typedef std::vector<MpsFunction> MpsFunctionEnv;
 
 std::string DefEnvToString(const MpsFunctionEnv &env);
 std::string DefEnvToC(const MpsFunctionEnv &env);
+std::string DefEnvToCHeader(const MpsFunctionEnv &env);
 
 }
 #endif
