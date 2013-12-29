@@ -1091,7 +1091,8 @@ string MpsTerm::MakeC() const // {{{
   MpsTerm *main=step2->ExtractDefinitions(defs);
   delete step2;
   string result = (string)
-         "#include <vector>\n"
+         "#include <iostream>\n"
+       + "#include <vector>\n"
        + "#include <libpi/session_fifo.hpp>\n"
        + "#include <libpi/value.hpp>\n"
        + main->ToCHeader()

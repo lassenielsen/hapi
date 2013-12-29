@@ -1,0 +1,185 @@
+// The interface for reading files
+#define $infile rec $infile. \
+  1=>2 \
+  {^Chunk: \
+    2=>1 \
+    {^Some: \
+      2=>1<String>; \
+      $infile, \
+     ^None: \
+      Gend \
+    }, \
+   ^Line: \
+    2=>1 \
+    {^Some: \
+      2=>1<String>; \
+      $infile, \
+     ^None: \
+      Gend \
+    }, \
+   ^All: \
+    2=>1<String>; \
+    Gend, \
+   ^Close: \
+    Gend \
+  }
+// The interface for writing files
+#define $outfile rec $outfile. \
+  1=>2 \
+  {^Write: \
+    1=>2<String>; \
+    $outfile, \
+   ^Close: \
+    Gend \
+  }
+// The interface for working with files
+#define $file \
+  1=>2 \
+  {^Read: \
+    1=>2<String>; \
+    2=>1 \
+    {^OK: $infile, \
+     ^Error: 2=>1<String>; Gend \
+    }, \
+   ^Create: \
+    1=>2<String>; \
+    2=>1 \
+    {^OK: $outfile, \
+     ^Error: 2=>1<String>; Gend \
+    }, \
+   ^Remove: \
+    1=>2<String>; \
+    2=>1 \
+    {^OK: Gend, \
+     ^Error: 2=>1<String>; Gend \
+    } \
+  }
+// Macros for file operations
+#define DelOFP(p) "delete ((ofstream*)mpz_get_ui((", p, ").GetValue()));"
+#define CloseIFP(p) "((ofstream*)mpz_get_ui((", p, ").GetValue()))->close();"
+#define DelIFP(p) "delete ((ifstream*)mpz_get_ui((", p, ").GetValue()));"
+#define EOF(b,p) "", b, " = BoolValue( ((ifstream*)mpz_get_ui((", p, ").GetValue()))->eof() );"
+#define GetError(s) "", s, " = StringValue(strerror(errno));"
+(nu file: $file)
+HOSTHEADER("#include <fstream>");
+HOSTHEADER("#include <errno.h>");
+HOSTHEADER("#include <string.h>");
+HOSTHEADER("#include <streambuf>");
+def FileServer() =
+  link(2,file,f,2);
+  ( FileServer()
+  | f[1]>>
+    {^Read:
+      def InFileSession(f: $infile@(2 of 2), fptr: Int, chunksize: Int) =
+        f[1]>>
+        {^Chunk:
+          t:Bool=true;
+          HOST( EOF(t, fptr) );
+          if t
+          then f[1]<<^None;
+               HOST( CloseIFP(fptr) );
+               HOST( DelIFP(fptr) );
+               end
+          else f[1]<<^Some;
+               chunk:String="";
+               HOST("{ char *buf = new char[ mpz_get_ui((", chunksize, ").GetValue()) +1 ];");
+               HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->read(buf, mpz_get_ui((", chunksize, ").GetValue()));");
+               HOST("  buf[ mpz_get_ui((", chunksize, ").GetValue()) ] = 0;");
+               HOST("  ", chunk, " = StringValue(std::string(buf));");
+               HOST("  delete [] buf;");
+               HOST("}");
+               f[1]<<chunk;
+               InFileSession(f,fptr,chunksize)
+        ,^Line:
+          t:Bool=true;
+          HOST( EOF(t, fptr) );
+          if t
+          then f[1]<<^None;
+               HOST( CloseIFP(fptr) );
+               HOST( DelIFP(fptr) );
+               end
+          else f[1]<<^Some;
+               chunk:String="";
+               HOST("{ std::string line;");
+               HOST("  std::getline(*((ifstream*)mpz_get_ui((", fptr, ").GetValue())), line);");
+               HOST("  ", chunk, " = StringValue(line);");
+               HOST("}");
+               f[1]<<chunk;
+               InFileSession(f,fptr,chunksize)
+        ,^All:
+          t:Bool=true;
+          HOST( EOF(t, fptr) );
+          if t
+          then f[1]<<"";
+               HOST( CloseIFP(fptr) );
+               HOST( DelIFP(fptr) );
+               end
+          else chunk:String="";
+               HOST("{ std::string str;");
+               HOST("  int pos=((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->tellg();");
+               HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->seekg(0,std::ios::end);");
+               HOST("  int size=((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->tellg();");
+               HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->seekg(pos);");
+               HOST("  str.reserve(size-pos+1);");
+               HOST("  str.assign((std::istreambuf_iterator<char>(*((ifstream*)mpz_get_ui((", fptr, ").GetValue())))),std::istreambuf_iterator<char>());");
+               HOST("  ", chunk, " = StringValue(str);");
+               HOST("}");
+               f[1]<<chunk;
+               HOST( CloseIFP(fptr) );
+               HOST( DelIFP(fptr) );
+               end
+        ,^Close:
+          HOST( CloseIFP(fptr) );
+          HOST( DelIFP(fptr) );
+          end
+        }
+      in
+        f[1]>>path;
+        fptr:Int=0;
+        HOST("", fptr, " = IntValue( (unsigned int)(new ifstream( (", path, ").ToString().c_str() ) ) );");
+        t:Bool=true;
+        HOST("", t, " = BoolValue(((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->is_open());");
+        if t
+        then f[1]<<^OK;
+             InFileSession(f, fptr, 1024*4)
+        else HOST( DelIFP(fptr) );
+             err:String="";
+             HOST( GetError(err) );
+             f[1]<<^Error;
+             f[1]<<err;
+             end
+    ,^Create:
+      def OutFileSession(f: $outfile@(2 of 2), fptr : Int ) =
+        f[1]>>
+        {^Close:
+          HOST("((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->close();");
+          HOST( DelOFP(fptr) );
+          end
+        ,^Write:
+          f[1]>>str;
+          HOST("((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->write( (", str , ").ToString().c_str(), (", str , ").ToString().size() );");
+          OutFileSession(f,fptr)
+        }
+      in
+        f[1]>>path;
+        fptr:Int=0;
+        HOST("", fptr, " = IntValue( (unsigned int)(new ofstream( (", path, ").ToString().c_str() ) ) );");
+        t:Bool=true;
+        HOST("", t, " = BoolValue(((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->is_open());");
+        if t
+        then f[1]<<^OK;
+             OutFileSession(f, fptr)
+        else HOST( DelOFP(fptr) );
+             err:String="";
+             HOST( GetError(err) );
+             f[1]<<^Error;
+             f[1]<<err;
+             end,
+     ^Remove:
+      f[1]>>path;
+      f[1]<<^Error;
+      f[1]<<"Not implemented";
+      end
+    }
+  )
+in FileServer() |
