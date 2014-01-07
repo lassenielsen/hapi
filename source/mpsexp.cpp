@@ -18,22 +18,23 @@ extern void FindExps(const parsed_tree *exp, vector<MpsExp*> &dest);
 // BNFs {{{
 const string MpsExp::BNF_EXP  =
 " exp ::= id \
-  | int \
-  | string \
-  | true \
-  | false \
-  | not exp \
-  | if exp then exp else exp \
-  | exp + exp \
-  | exp - exp \
-  | exp * exp \
-  | exp / exp \
-  | exp and exp \
-  | exp or exp \
-  | exp = exp \
-  | exp <= exp \
-  | ( exps ) \
-  | exp & int";
+        | int \
+        | string \
+        | true \
+        | false \
+        | not exp \
+        | if exp then exp else exp \
+        | exp + exp \
+        | exp - exp \
+        | exp * exp \
+        | exp / exp \
+        | exp and exp \
+        | exp or exp \
+        | exp = exp \
+        | exp <= exp \
+        | ( exps ) \
+        | exp & int \
+        | system & string";
 const string MpsExp::BNF_EXPS ="exps ::= exps2 |";
 const string MpsExp::BNF_EXPS2="exps2 ::= exp | exp , exps";
 // }}}
@@ -61,7 +62,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
   } // }}}
   if (exp->type_name == "exp" && exp->case_name == "case3") // string {{{
   {
-    return new MpsStringVal(exp->content[0]->root.content.substr(1,exp->content[0]->root.content.size()-2));
+    return new MpsStringVal(unwrap_string(exp->content[0]->root.content));
   } // }}}
   if (exp->type_name == "exp" && exp->case_name == "case4") // true {{{
   {
@@ -192,6 +193,10 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
     delete right;
     return result;
   } // }}}
+  if (exp->type_name == "exp" && exp->case_name == "case18") // system & int {{{
+  {
+    return new MpsSystemExp(unwrap_string(exp->content[2]->root.content));
+  } // }}}
 
   cerr << "Unknown exp-parsetree: " << exp->type_name << "." << exp->case_name << endl;
   return new MpsVarExp("_ERROR",MpsMsgNoType());
@@ -284,6 +289,10 @@ MpsTupleExp::MpsTupleExp(const vector<MpsExp*> &elements) // {{{
   for (vector<MpsExp*>::const_iterator it=elements.begin(); it!=elements.end(); ++it)
     myElements.push_back((*it)->Copy());
 } // }}}
+MpsSystemExp::MpsSystemExp(const std::string &field) // {{{
+: myField(field)
+{
+} // }}}
 
 /* MpsExp destructors
  */
@@ -323,11 +332,10 @@ MpsBinOpExp::~MpsBinOpExp() // {{{
 } // }}}
 MpsTupleExp::~MpsTupleExp() // {{{
 {
-  while (myElements.size()>0)
-  {
-    delete *myElements.begin();
-    myElements.erase(myElements.begin());
-  }
+  DeleteVector(myElements);
+} // }}}
+MpsSystemExp::~MpsSystemExp() // {{{
+{
 } // }}}
 
 /* MpsExp Deep Copy
@@ -363,6 +371,10 @@ MpsBinOpExp *MpsBinOpExp::Copy() const // {{{
 MpsTupleExp *MpsTupleExp::Copy() const // {{{
 {
   return new MpsTupleExp(myElements);
+} // }}}
+MpsSystemExp *MpsSystemExp::Copy() const // {{{
+{
+  return new MpsSystemExp(myField);
 } // }}}
 
 /* MpsExp Evaluation to value
@@ -527,6 +539,10 @@ MpsTupleExp *MpsTupleExp::Eval() const// {{{
 
   return result;
 } // }}}
+MpsExp *MpsSystemExp::Eval() const// {{{
+{
+  return Copy(); // Not implemented yet
+} // }}}
 
 /* Typechecking
  */
@@ -674,6 +690,13 @@ MpsMsgType *MpsTupleExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 
   return result;
 } // }}}
+MpsMsgType *MpsSystemExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
+{
+  if (myField=="aprocs" ||
+      myField=="tprocs")
+    return new MpsIntMsgType();
+  return new MpsMsgNoType();
+} // }}}
 
 /* Expression equality
  */
@@ -743,6 +766,16 @@ bool MpsTupleExp::operator==(const MpsExp &rhs) const // {{{
       return false;
   return true;
 } // }}}
+bool MpsSystemExp::operator==(const MpsExp &rhs) const // {{{
+{
+  const MpsSystemExp *rhsptr=dynamic_cast<const MpsSystemExp*>(&rhs);
+  if (rhsptr==NULL)
+    return false;
+  if (rhsptr->myField!=myField)
+    return false;
+
+  return true;
+} // }}}
 
 /* Free (Expression) Variables
  */
@@ -808,6 +841,10 @@ set<string> MpsTupleExp::FV() const// {{{
   }
   return result;
 } // }}}
+set<string> MpsSystemExp::FV() const// {{{
+{
+  return set<string>();
+} // }}}
 
 /* Renaming of variable
  */
@@ -872,6 +909,10 @@ MpsTupleExp *MpsTupleExp::Rename(const string &src, const string &dst) const // 
   DeleteVector(elements);
 
   return result;
+} // }}}
+MpsSystemExp *MpsSystemExp::Rename(const string &src, const string &dst) const // {{{
+{
+  return Copy();
 } // }}}
 
 /* Substitution (of expression variables)
@@ -941,6 +982,10 @@ MpsTupleExp *MpsTupleExp::Subst(const string &source, const MpsExp &dest) const/
 
   return result;
 } // }}}
+MpsSystemExp *MpsSystemExp::Subst(const string &source, const MpsExp &dest) const// {{{
+{
+  return Copy();
+} // }}}
 
 /* Create parsable string representation
  */
@@ -991,6 +1036,10 @@ string MpsTupleExp::ToString() const // {{{
   }
   result += ")";
   return result;
+} // }}}
+string MpsSystemExp::ToString() const // {{{
+{
+  return (string)"SYSTEM & \"" + myField + "\"";
 } // }}}
 
 /* Make C++ code that evaluates expression and stores the result in dest
@@ -1075,6 +1124,15 @@ string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
     string eltName = (*it)->ToC(dest,"Unknown");
     dest << "      " << varName << ".AddValue(" << eltName << ");" << endl
          << "    }" << endl;
+  }
+  return varName;
+} // }}}
+string MpsSystemExp::ToC(stringstream &dest, const string &typeName) const // {{{
+{
+  string varName = ToC_Name(MpsExp::NewVar("sysval"));
+  if (myField=="aprocs" ||
+      myField=="tprocs")
+  { dest << "    IntValue " << varName << "(__system_" << myField << ");" << endl;
   }
   return varName;
 } // }}}
@@ -1554,6 +1612,10 @@ MpsExp *MpsTupleExp::Negate() const// {{{
 { throw (string)"ERROR: Negate applied to tuple";
   return new MpsVarExp("ERROR: Negate applied to tuple",MpsMsgNoType());
 } // }}}
+MpsExp *MpsSystemExp::Negate() const// {{{
+{ throw (string)"ERROR: Negate applied to system expression";
+  return new MpsVarExp("ERROR: Negate applied to system expression",MpsMsgNoType());
+} // }}}
 
 /* Convert boolean expressions to CNF
  */
@@ -1665,6 +1727,10 @@ MpsExp *MpsTupleExp::MakeCNF() const// {{{
 { throw (string)"ERROR: MakeCNF applied to tuple";
   return new MpsVarExp("ERROR: MakeCNF applied to tuple",MpsMsgNoType());
 } // }}}
+MpsExp *MpsSystemExp::MakeCNF() const// {{{
+{ throw (string)"ERROR: MakeCNF applied to system expression";
+  return new MpsVarExp("ERROR: MakeCNF applied to system expression",MpsMsgNoType());
+} // }}}
 
 /* Convert boolean expressions to Negation Normal Form
  */
@@ -1726,6 +1792,10 @@ MpsExp *MpsTupleExp::MakeNNF(bool negate) const// {{{
 { throw (string)"ERROR: MakeNNF applied to tuple";
   return new MpsBoolVal(false);
 } // }}}
+MpsExp *MpsSystemExp::MakeNNF(bool negate) const// {{{
+{ throw (string)"ERROR: MakeNNF applied to system expression";
+  return new MpsBoolVal(false);
+} // }}}
 
 /* Check if CNF expression is valid
  */
@@ -1771,6 +1841,10 @@ bool MpsTupleExp::ValidCNF() const// {{{
 { throw (string)"ERROR: ValidCNF applied to tuple";
   return false;
 } // }}}
+bool MpsSystemExp::ValidCNF() const// {{{
+{ throw (string)"ERROR: ValidCNF applied to system expression";
+  return false;
+} // }}}
 
 /* Check if OR expression is valid
  */
@@ -1813,6 +1887,10 @@ bool MpsBinOpExp::ValidOR(set<string> &pos, set<string> &neg) const// {{{
 } // }}}
 bool MpsTupleExp::ValidOR(set<string> &pos, set<string> &neg) const// {{{
 { throw (string)"ERROR: ValidOR applied to tuple";
+  return false;
+} // }}}
+bool MpsSystemExp::ValidOR(set<string> &pos, set<string> &neg) const// {{{
+{ throw (string)"ERROR: ValidOR applied to system expression";
   return false;
 } // }}}
 

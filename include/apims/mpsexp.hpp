@@ -302,6 +302,30 @@ class MpsTupleExp : public MpsExp // {{{
     std::vector<MpsExp*> myElements;
 
 }; // }}}
+class MpsSystemExp : public MpsExp // {{{
+{
+  public:
+    MpsSystemExp(const std::string &field);
+    virtual ~MpsSystemExp();
+    MpsSystemExp *Copy() const;
+    MpsExp *Eval() const;
+    MpsMsgType *TypeCheck(const MpsMsgEnv &Gamma);
+    bool operator==(const MpsExp &rhs) const;
+    std::set<std::string> FV() const;
+    MpsSystemExp *Rename(const std::string &src, const std::string &dst) const;
+    MpsSystemExp *Subst(const std::string &source, const MpsExp &dest) const;
+    std::string ToString() const;
+    std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+
+    MpsExp *Negate() const;
+    MpsExp *MakeNNF(bool negate=false) const;
+    MpsExp *MakeCNF() const;
+    bool ValidOR(std::set<std::string> &lits, std::set<std::string> &neglits) const;
+    bool ValidCNF() const;
+
+  private:
+    std::string myField;
+}; // }}}
 }
 
 #endif

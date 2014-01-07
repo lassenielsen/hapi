@@ -231,7 +231,9 @@ string MpsLink::ToTex(int indent, int sw) const // {{{
 string MpsLink::ToC() const // {{{
 {
   stringstream result;
-  result << "  Session*" << ToC_Name(mySession) << "=new Session_FIFO(" << ToC_Name(myChannel) << ".GetValues(), " << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl;
+  result << "  --__system_aprocs;" << endl
+         << "  Session*" << ToC_Name(mySession) << "=new Session_FIFO(" << ToC_Name(myChannel) << ".GetValues(), " << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl
+         << "  ++__system_aprocs;" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}

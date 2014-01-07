@@ -6,8 +6,8 @@
  * sourcecode comments using the Doxygen tool.
  *
  * \section libapims What is libapims?
- * libAPIMS is a library written in C++, offering parsing, typechecking and
- * stepping capabilities for the <em>apims</em> language.
+ * libapims is a library written in C++, offering parsing, typechecking,
+ * stepping and compiling capabilities for the <em>apims</em> language.
  *
  * \section apims What is apims?
  * <em>apims</em> is an abreviation of Asynchronous PI-calculus with Multiparty

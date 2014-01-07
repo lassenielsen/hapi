@@ -55,9 +55,10 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   // Check message type
   MpsMsgType *exptype = myExp->TypeCheck(newGamma);
   bool msgtypematch = exptype->Equal(Theta,*sndType->GetMsgType());
+  string exptype_str= exptype->ToString("!!");
   delete exptype;
   if (not msgtypematch)
-    return PrintTypeError((string)"Message does not have type:\n!!" + sndType->GetMsgType()->ToString("!!"),*this,Theta,Gamma,Omega);
+    return PrintTypeError((string)"Message does not have type:\n!!" + sndType->GetMsgType()->ToString("!!") + "\nBut tyoe:\n!!" + exptype_str,*this,Theta,Gamma,Omega);
   // Check Assertion is fulfilled
   if (sndType->GetAssertionType())
   { if (sndType->GetMsgType()->ToString()!="Bool")

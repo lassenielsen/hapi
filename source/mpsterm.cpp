@@ -115,6 +115,7 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefKeywordToken("guivalue",2);   // Used for GUI generation
   MpsParser.DefToken("host", "HOST",2); // Indicate host statement
   MpsParser.DefToken("hostheader", "HOSTHEADER",2); // Indicate host header
+  MpsParser.DefToken("system", "SYSTEM",2); // Indicate host header
   /*** Define grammars ***/
   // Expression Grammar
   MpsParser.DefType(MpsExp::BNF_EXP);
@@ -1092,11 +1093,14 @@ string MpsTerm::MakeC() const // {{{
   delete step2;
   string result = (string)
          "#include <unistd.h>\n"
+       + "#include <signal.h>\n"
        + "#include <iostream>\n"
        + "#include <vector>\n"
        + "#include <libpi/session_fifo.hpp>\n"
        + "#include <libpi/value.hpp>\n"
        + main->ToCHeader()
+       + "  int __system_aprocs=1;  // Maintain number of active processes\n"
+       + "  int __system_tprocs=32; // Target number of active processes\n"
        + DefEnvToCHeader(defs)
        + "using namespace std;\n"
        + "using namespace libpi;\n\n"
@@ -1106,7 +1110,9 @@ string MpsTerm::MakeC() const // {{{
        + "}"
        + "\n\n/*Start process, and its continuations */\n"
        + "int main()\n"
-       + "{ try {\n"
+       + "{ // PARSE ARGS!!\n"
+       + "  try\n"
+       + "  { signal(SIGCHLD, SIG_IGN); // Fork optimization\n"
        + "    Cnt *cnt = __MAIN__();\n"
        + "    while (!cnt->IsEmpty())\n"
        + "    { Cnt *cnt2=cnt->Run();\n"
@@ -1114,8 +1120,9 @@ string MpsTerm::MakeC() const // {{{
        + "      cnt=cnt2;\n"
        + "    }\n"
        + "    delete cnt;\n"
-       + "  } catch (const string &error) {\n"
-       + "    cerr << \"Error: \" << error << endl;\n"
+       + "    --__system_aprocs;\n"
+       + "  } catch (const string &error)\n"
+       + "  { cerr << \"Error: \" << error << endl;\n"
        + "    return 1;\n"
        + "  }\n"
        + "  return 0;\n"
