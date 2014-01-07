@@ -1,6 +1,6 @@
 programs = apims apims-compile
 name = apims
-version = 2.5.0
+version = 3.0.0
 compiler = g++
 opt = -O3
 args = $(opt) `sdl-config --cflags`
@@ -99,22 +99,22 @@ deb: $(programs)
 	cp $(programs) debs/$(name)_$(version)_i386/usr/local/bin/
 	echo "Making control"
 	mkdir -p debs/$(name)_$(version)_i386/DEBIAN
-	echo "Package: $(name)"                                        > debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Version: $(version)"                                    >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Architecture: i386"                                     >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Maintainer: Lasse Nielsen <lasse.nielsen.dk@gmail.com>" >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Installed-Size: 1024"                                   >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Pre-Depends: dpkg (>= 1.14.12ubuntu3)"                  >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Depends: libapims (>= 2.5)"                             >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Recommends: "                                           >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Suggests: "                                             >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Conflicts: "                                            >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Replaces: "                                             >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Provides: apims"                                        >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Section: interpretor"                                   >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Priority: optional"                                     >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Homepage: http://www.thelas.dk"                         >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Description: Interpretor for the Apims Language."       >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Package: $(name)"                                         > debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Version: $(version)"                                     >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Architecture: i386"                                      >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Maintainer: Lasse Nielsen <lasse.nielsen.dk@gmail.com>"  >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Installed-Size: 1024"                                    >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Pre-Depends: dpkg (>= 1.14.12ubuntu3)"                   >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Depends: libapims (>= $(vsesion)), libpi (>= $(version))">> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Recommends: "                                            >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Suggests: "                                              >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Conflicts: "                                             >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Replaces: "                                              >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Provides: apims"                                         >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Section: interpretor"                                    >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Priority: optional"                                      >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Homepage: http://www.thelas.dk"                          >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Description: Interpretor for the Apims Language."        >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Finalizing package"
 	dpkg -b debs/$(name)_$(version)_i386/
 	rm -Rf debs/$(name)_$(version)_i386
