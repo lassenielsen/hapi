@@ -1,0 +1,19 @@
+#include <console.pi>
+#include <timer.pi>
+def X(i : Int) =
+  if i<=0
+  then end
+  else ( link(2,timer,t,1);
+         t[2]<<^WaitSeconds;
+         t[2]<<i;
+         t[2]>>ready;
+         t[2]<<^End;
+         link(2,console,c,1);
+         c[2]<<^PutInt;
+         c[2]<<SYSTEM&"aprocs";
+         c[2]<<^End;
+         end
+       | X(i-1)
+       )
+in
+X(100)
