@@ -1,0 +1,24 @@
+#include <sys.pi>
+#include <console.pi>
+link(2,console,c,1);
+link(2,sys,s,1);
+
+s[2]<<^CountArgs;
+s[2]>>argc;
+c[2]<<^PutString;
+c[2]<<"Number of args";
+c[2]<<^PutInt;
+c[2]<<argc;
+def PrintArgs( i:Int, c:$console@(1 of 2), s:$sys@(1 of 2) ) =
+  s[2]<<^GetArg;
+  s[2]<<i;
+  s[2]>>
+  {^Some: s[2]>>a;
+          c[2]<<^PutString;
+          c[2]<<a;
+          PrintArgs(i+1,c,s)
+  ,^None: s[2]<<^End;
+          c[2]<<^End;
+          end
+  }
+in PrintArgs(0,c,s)

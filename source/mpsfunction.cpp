@@ -23,14 +23,14 @@ std::string DefEnvToC(const MpsFunctionEnv &env) // {{{
 {
   stringstream ss;
   ss << endl << "/* Procedure declerations */" << endl
-     << "class Cnt" << endl
+     << "class Cnt // {{{" << endl
      << "{" << endl
      << "  public:" << endl
      << "    Cnt() {}" << endl
      << "    virtual ~Cnt() {}" << endl
      << "    virtual bool IsEmpty() { return true; }" << endl
      << "    virtual Cnt *Run() { return new Cnt(); }" << endl
-     << "};" << endl;
+     << "}; // }}}" << endl;
   for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
   {
     ss << def->ToCDecl() << ";" << endl;
@@ -39,7 +39,7 @@ std::string DefEnvToC(const MpsFunctionEnv &env) // {{{
   ss << endl << "/* Procedure implementations */" << endl;
   for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
   {
-    ss << def->ToC();
+    ss << def->ToC() << endl;
   }
   return ss.str();
 } // }}}
@@ -184,17 +184,17 @@ string MpsFunction::ToCDecl() const // {{{
 string MpsFunction::ToC() const // {{{
 {
   stringstream ss;
-  ss << ToCDecl() << endl
+  ss << ToCDecl() << " // {{{" << endl
      << "{" << endl
      << GetBody().ToC()
-     << "}";
+     << "} // }}}";
   return ss.str();
 } // }}}
 string MpsFunction::ToCCnt() const // {{{
 {
   stringstream ss;
   string name=string("__Cnt__")+ToC_Name(GetName());
-  ss << "class " << name << " : public Cnt" << endl
+  ss << "class " << name << " : public Cnt // {{{" << endl
      << "{" << endl
      << "  public:" << endl
      << "    " << name << "(";
@@ -273,7 +273,7 @@ string MpsFunction::ToCCnt() const // {{{
   {
     ss << (*type)->ToC() << " " << ToC_Name(*arg) << ";" << endl;
   }
-  ss << "};" << endl;
+  ss << "}; // }}}" << endl;
   return ss.str();
 } // }}}
 }

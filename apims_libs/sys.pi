@@ -1,0 +1,34 @@
+#define $sys rec $sys. \
+  1=>2 \
+  {^CountArgs: 2=>1<Int>; $sys \
+  ,^GetArg: 1=>2<Int>; 2=>1{^Some: 2=>1<String>; $sys, ^None: $sys} \
+  ,^End: Gend \
+  }
+#define __ARGC(x) HOST("  ", x, "=libpi::IntValue(__system_args.size());")
+#define __ARGV(x,i) HOST("  ", x, "=libpi::StringValue(__system_args[ mpz_get_ui(", i, ".GetValue())]);")
+(nu sys: $sys)
+( argc:Int=0;
+  __ARGC(argc);
+  def SysServer() =
+    def SysSession(s: $sys@(2 of 2) ) =
+      s[1]>>
+      {^CountArgs: s[1]<<argc;
+                   SysSession(s)
+      ,^GetArg:    s[1]>>idx;
+                   if (0<=idx) and (idx+1<=argc)
+                   then s[1]<<^Some;
+                        arg:String="";
+                        __ARGV(arg,idx);
+                        s[1]<<arg;
+                        SysSession(s)
+                   else s[1]<<^None;
+                        SysSession(s)
+      ,^End:       end
+      }
+    in 
+    link(2,sys,s,2);
+    ( SysServer()
+    | SysSession(s)
+    )
+  in SysServer()
+) |

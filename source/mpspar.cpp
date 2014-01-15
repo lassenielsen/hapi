@@ -396,7 +396,7 @@ string MpsPar::ToC() const // {{{
 {
   stringstream result;
   string newName = ToC_Name(MpsExp::NewVar("fork")); // Create variable name foor the mmessagee to send
-  result << "  ++__system_aprocs;" << endl
+  result << "  IncAprocs();" << endl
          << "  int " << newName << "=fork();" << endl
          << "  if (" << newName << ">0)" << endl
          << "  {" << endl;

@@ -307,9 +307,9 @@ string MpsBranch::ToC() const // {{{
   result << "  StringValue " << lblName << ";" << endl
          << "  {" << endl
          << "    Message " << msgName << ";" << endl // Declare message variable
-         << "    --__system_aprocs;" << endl
+         << "    DecAprocs();" << endl
          << "    " << ToC_Name(myChannel.GetName()) << "->Receive(" << int2string(myChannel.GetIndex()-1) << ", " << msgName << ");" << endl // Receive message
-         << "    ++__system_aprocs;" << endl
+         << "    IncAprocs();" << endl
          << "    " << msgName << ".GetValue(" << lblName << ");" << endl
          << "  }" << endl;
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)

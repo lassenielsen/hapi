@@ -36,7 +36,7 @@ const string MpsExp::BNF_EXP  =
         | exp & int \
         | system & string";
 const string MpsExp::BNF_EXPS ="exps ::= exps2 |";
-const string MpsExp::BNF_EXPS2="exps2 ::= exp | exp , exps";
+const string MpsExp::BNF_EXPS2="exps2 ::= exp | exp , exps2";
 // }}}
 MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
 {
@@ -1130,10 +1130,12 @@ string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
 string MpsSystemExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("sysval"));
-  if (myField=="aprocs" ||
-      myField=="tprocs")
-  { dest << "    IntValue " << varName << "(__system_" << myField << ");" << endl;
-  }
+  if (myField=="aprocs")
+    dest << "    IntValue " << varName << "(*__system_" << myField << ");" << endl;
+  else if (myField=="tprocs")
+    dest << "    IntValue " << varName << "(__system_" << myField << ");" << endl;
+  else
+    throw (string)"MpsSystemExp::ToC: Unknown field " + myField;
   return varName;
 } // }}}
 
@@ -1742,11 +1744,11 @@ MpsExp *MpsVarExp::MakeNNF(bool negate) const// {{{
     return Copy();
 } // }}}
 MpsExp *MpsIntVal::MakeNNF(bool negate) const// {{{
-{ throw (string)"ERROR: MakeNNF applied to Integer Value";
+{ cerr << (string)"WARNING: MakeNNF applied to Integer Value: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *MpsStringVal::MakeNNF(bool negate) const// {{{
-{ throw (string)"ERROR: MakeNNF applied to String Value";
+{ cerr << (string)"ERROR: MakeNNF applied to String Value: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *MpsBoolVal::MakeNNF(bool negate) const// {{{
@@ -1763,8 +1765,10 @@ MpsExp *MpsUnOpExp::MakeNNF(bool negate) const// {{{
 {
   if (GetOp()=="not")
     return myRight->MakeNNF(not negate);
-  throw (string)"ERROR: MakeNNF on unknown unary operator: "+GetOp();
-  return new MpsBoolVal(false);
+  else
+  { cerr << "WARNING: MakeNNF applied to unary operator: "+GetOp() << " - approximating as false!" << endl;
+    return new MpsBoolVal(false);
+  }
 } // }}}
 MpsExp *MpsBinOpExp::MakeNNF(bool negate) const// {{{
 { if (GetOp()=="and")
@@ -1789,11 +1793,11 @@ MpsExp *MpsBinOpExp::MakeNNF(bool negate) const// {{{
   }
 } // }}}
 MpsExp *MpsTupleExp::MakeNNF(bool negate) const// {{{
-{ throw (string)"ERROR: MakeNNF applied to tuple";
+{ cerr << (string)"ERROR: MakeNNF applied to tuple: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *MpsSystemExp::MakeNNF(bool negate) const// {{{
-{ throw (string)"ERROR: MakeNNF applied to system expression";
+{ cerr << (string)"ERROR: MakeNNF applied to system expression: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 
