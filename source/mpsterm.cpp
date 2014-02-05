@@ -1173,3 +1173,18 @@ string MpsTerm::MakeC() const // {{{
   delete main;
   return result;
 } // }}}
+MpsTerm *MpsTerm::Parallelize() const // {{{
+{ MpsTerm *seqTerm=NULL;
+  MpsTerm *parTerm=NULL;
+  MpsEnd receives;
+  Parallelize(receives,seqTerm,parTerm);
+  if (parTerm==NULL)
+    return seqTerm;
+  MpsTerm *result = new MpsCond(MpsBinOpExp("<=",MpsSystemExp("tprocs"),MpsSystemExp("aprocs"),MpsMsgNoType(),MpsMsgNoType()),*seqTerm,*parTerm);
+
+  // Clean up
+  delete seqTerm;
+  delete parTerm;
+
+  return result;
+} // }}}

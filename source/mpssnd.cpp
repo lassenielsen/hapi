@@ -265,6 +265,42 @@ MpsTerm *MpsSnd::RenameAll() const // {{{
   delete newType;
   return result;
 } // }}}
+void MpsSnd::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm &*parTerm) const // {{{
+{
+  // Find used vars
+  set<string> usedVars = myExp->FV();
+  usedVars.insert(myChannel.GetName());
+  // Split receives using the used vars
+  MpsTerm *pre;
+  MpsTerm *post;
+  receivers.SplitReceives(usedVars,pre,post);
+  // Parallelize succ with post receives
+  MpsTerm *seqSucc;
+  MpsTerm *parSucc;
+  mySucc->Parallelize(*post,seqSucc,parSucc);
+  delete post;
+  // Make parallelized term
+  MpsTerm *parTmp = new MpsSnd(myChannel, *myExp, *parSucc, GetMsgType(), GetFinal());
+  delete parSucc;
+  parTerm = pre->Append(parTmp);
+  delete pre;
+  delete parTmp;
+  if (seqSucc!=NULL)
+  { seqTerm = new MpsSnd(myChannel, *myExp, *seqSucc, GetMsgType(), GetFinal());
+    delete seqSucc;
+  }
+  else if (dynamic_cast<MpsEnd*>(post)!=NULL) // some optimization can be done
+    seqTerm=Copy();
+  else
+    seqTerm=NULL;
+} // }}}
+MpsTerm *MpsSnd::Append(const MpsTerm &term) const // {{{
+{
+  MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType(), GetFinal());
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsSnd::CloseDefinitions() const // {{{
 {
   MpsTerm *newSucc = mySucc->CloseDefinitions();

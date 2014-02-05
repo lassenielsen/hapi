@@ -374,6 +374,30 @@ MpsTerm *MpsRcv::RenameAll() const // {{{
   delete newType;
   return result;
 } // }}}
+void MpsRcv::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm &*parTerm) const // {{{
+{
+  // Create updated receivers
+  MpsTerm *rcvTerm = new MpsRcv(myChannel, myDest, myPid, myMaxPid, MpsEnd(), GetMsgType(), GetFinal());
+  MpsTerm *newReceivers = receivers.Append(*rcvTerm);
+  delete rcvTerm;
+  // Perform parallelization of succ
+  MpsTerm *seqSucc;
+  mySucc->Parallelize(*newReceivers,seqSucc,parTerm);
+  delete newReceivers;
+  if (seqSucc!=NULL)
+  { seqTerm = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *seqSucc, GetMsgType(), GetFinal());
+    delete seqSucc;
+  }
+  else
+    seqTerm=NULL;
+} // }}}
+MpsTerm *MpsRcv::Append(const MpsTerm &term) const // {{{
+{
+  MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, GetMsgType(), GetFinal());
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsRcv::CloseDefinitions() const // {{{
 {
   MpsTerm *newSucc = mySucc->CloseDefinitions();

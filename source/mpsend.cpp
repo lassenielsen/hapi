@@ -105,3 +105,14 @@ MpsTerm *MpsEnd::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 {
   return Copy();
 } // }}}
+void MpsEnd::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ parTerm = receives.Copy();
+  if (dynamic_cast<const MpsEnd*>(&receives)!=NULL)
+    seqTerm=Copy();
+  else
+    seqTerm=NULL;
+  return;
+} // }}}
+MpsTerm *MpsEnd::Append(const MpsTerm &term) const // {{{
+{ return term.Copy();
+} // }}}

@@ -148,15 +148,11 @@ class MpsTerm // {{{
      * Static verification of communication safety using explicit types
      *
      * Implementation of the judgement: Theta;Gamma |- P |> Delta.
-     * Notice that the Gamma from the judgement has been split into
-     * Gamma containing the global typeed names,
-     * Sigma containing the simply typped names and
-     * Omega containing the procedure names and types.
+     * Notice that Delta has been merged into Gamma. This is possible, because
+     * the type domains are non-overlapping.
      *
      * @param Theta The current assertion (the currently asserted expression)
-     * @param Gamma The global channel environment
-     * @param Delta The session environment
-     * @param Sigma The simple type environment
+     * @param Gamma The type environment
      * @param Omega The process environment
      * @result Returns true if the process is well typed, and false otherwise.
      */
@@ -277,6 +273,39 @@ class MpsTerm // {{{
      */
     // }}}
     virtual MpsTerm *RenameAll() const=0;
+    // DOCUMENTATION: MpsTerm::Parallelize {{{
+    /*!
+     * Parallelize rewrites terms, to enable more parallelism (dynamically
+     * using aprocs, to hit the tprocs number of parallel processes).
+     * The rewriting used for this is:
+     * s[n]>>x;t[m]<<e;P ->
+     * if SYSTEM&"aprocs"<=SYSTEM&"tprocs"
+     * then t[m]<<e;s[n]>>x;P
+     * else s[n]>>x;t[m]<<e;P
+     * when x not in fv(e).
+     */
+    // }}}
+    MpsTerm *Parallelize() const;
+    // DOCUMENTATION: MpsTerm::Parallelize {{{
+    /*!
+     * Parallelize generates two terms from the called term and returns them in the pointer references @parTerm and @seqTerm.
+     * @parTerm holds the term optimized for parallelization - thus
+     * postponing receives when possible.
+     * 4seqTerm holds the term without the parallelization optimization,
+     * but where subterms (as in @parTerm) dynamically selects a
+     * sequential or parallelized version depending on the number of
+     * active processes and target.
+     * If no optimizations have been performed, parTerm will be NULL.
+     */
+    // }}}
+    virtual void Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const=0;
+    // DOCUMENTATION: MpsTerm::Append {{{
+    /*!
+     * Appends the argument @term to the current term and returns the
+     * result.
+     */
+    // }}}
+    virtual MpsTerm *Append(const MpsTerm &term) const=0;
     // DOCUMENTATION: MpsTerm::CloseDefinitions {{{
     /*!
      * CloseDefinitions adds all the free variables of function bodies
