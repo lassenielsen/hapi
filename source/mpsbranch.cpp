@@ -345,13 +345,13 @@ MpsTerm *MpsBranch::RenameAll() const // {{{
   DeleteMap(newBranches);
   return result;
 } // }}}
-void MpsBranch::Parallelize(const MpsTerm &receives, MpsTerm &*seqTerm, MpsTerm &*parTerm) const // {{{
+void MpsBranch::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 {
 } // }}}
 MpsTerm *MpsBranch::Append(const MpsTerm &term) const // {{{
 { map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
-    newBranches[it->first]=it->second->Append(term);
+    newBranches[branch->first]=branch->second->Append(term);
   MpsTerm *result = new MpsBranch(myChannel,newBranches, GetFinalBranches());
   DeleteMap(newBranches);
   return result;

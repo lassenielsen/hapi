@@ -49,6 +49,7 @@ class MpsHostHeader : public MpsTerm // {{{
     MpsHostHeader *RenameAll() const;
     void Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
+    void Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &post) const;
     MpsHostHeader *CloseDefinitions() const;
     MpsHostHeader *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;

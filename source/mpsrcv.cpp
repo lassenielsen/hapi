@@ -1,4 +1,5 @@
 #include<apims/mpsrcv.hpp>
+#include<apims/mpsend.hpp>
 #include "common.cpp"
 
 using namespace std;
@@ -374,7 +375,7 @@ MpsTerm *MpsRcv::RenameAll() const // {{{
   delete newType;
   return result;
 } // }}}
-void MpsRcv::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm &*parTerm) const // {{{
+void MpsRcv::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 {
   // Create updated receivers
   MpsTerm *rcvTerm = new MpsRcv(myChannel, myDest, myPid, myMaxPid, MpsEnd(), GetMsgType(), GetFinal());

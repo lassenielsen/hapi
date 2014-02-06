@@ -1,4 +1,5 @@
 #include<apims/mpsselect.hpp>
+#include<apims/mpsend.hpp>
 #include "common.cpp"
 
 using namespace std;
@@ -222,7 +223,7 @@ MpsTerm *MpsSelect::RenameAll() const // {{{
   delete newSucc;
   return result;
 } // }}}
-void MpsSelect::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm &*parTerm) const // {{{
+void MpsSelect::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 {
   // Find used vars
   set<string> usedVars;
@@ -230,16 +231,15 @@ void MpsSelect::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm
   // Split receives using the used vars
   MpsTerm *pre;
   MpsTerm *post;
-  receivers.SplitReceives(usedVars,pre,post);
+  receivers.Split(usedVars,pre,post);
   // Parallelize succ with post receives
   MpsTerm *seqSucc;
   MpsTerm *parSucc;
   mySucc->Parallelize(*post,seqSucc,parSucc);
-  delete post;
   // Make parallelized term
   MpsTerm *parTmp = new MpsSelect(myChannel, myLabel, *parSucc, GetFinal());
   delete parSucc;
-  parTerm = pre->Append(parTmp);
+  parTerm = pre->Append(*parTmp);
   delete pre;
   delete parTmp;
   if (seqSucc!=NULL)
@@ -250,6 +250,7 @@ void MpsSelect::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm
     seqTerm=Copy();
   else
     seqTerm=NULL;
+  delete post;
 } // }}}
 MpsTerm *MpsSelect::Append(const MpsTerm &term) const // {{{
 {
