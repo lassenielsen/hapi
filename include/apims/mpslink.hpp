@@ -10,7 +10,7 @@ namespace apims {
 class MpsLink : public MpsTerm // {{{
 {
   public:
-    MpsLink(const std::string &channel, const std::string &session, int pid, int maxpid, const MpsTerm &succ);
+    MpsLink(const std::string &channel, const std::string &session, int pid, int maxpid, const MpsTerm &succ, bool pure);
     virtual ~MpsLink();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -38,9 +38,8 @@ class MpsLink : public MpsTerm // {{{
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     MpsTerm *RenameAll() const;
-    void Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
+    bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
-    void Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &post) const;
     MpsTerm *CloseDefinitions() const;
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
@@ -52,6 +51,7 @@ class MpsLink : public MpsTerm // {{{
     MpsTerm *mySucc;
     int myMaxpid;
     int myPid;
+    bool myPure; //<! The link is to a pure service, and allows certain optimizations
 }; // }}}
 }
 #endif

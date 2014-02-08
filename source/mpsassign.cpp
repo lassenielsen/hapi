@@ -1,4 +1,5 @@
 #include<apims/mpsassign.hpp>
+#include<apims/mpsend.hpp>
 #include "common.cpp"
 
 using namespace std;
@@ -188,6 +189,37 @@ MpsTerm *MpsAssign::RenameAll() const // {{{
   delete newSucc;
   delete newType;
 
+  return result;
+} // }}}
+bool MpsAssign::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ // Find used vars
+  set<string> usedVars = myExp->FV();
+  usedVars.insert(myId);
+  // Split receives using the used vars
+  MpsTerm *pre;
+  MpsTerm *post;
+  receives.Split(usedVars,pre,post);
+  bool opt1=dynamic_cast<const MpsEnd*>(post)!=NULL;
+  // Parallelize succ with post receives
+  MpsTerm *seqSucc;
+  MpsTerm *parSucc;
+  bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
+  delete post;
+  // Make parallelized term
+  MpsTerm *parTmp = new MpsAssign(myId, *myExp, *myType, *parSucc);
+  delete parSucc;
+  parTerm = pre->Append(*parTmp);
+  delete pre;
+  delete parTmp;
+  // Make sequential term
+  seqTerm = new MpsAssign(myId, *myExp, *myType, *seqSucc);
+  delete seqSucc;
+  return opt1 || opt2;
+} // }}}
+MpsTerm *MpsAssign::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsAssign(myId, *myExp, *myType, *newSucc);
+  delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsAssign::CloseDefinitions() const // {{{

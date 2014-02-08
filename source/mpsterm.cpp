@@ -563,7 +563,8 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
                                     ((MpsVarExp*)args[2])->ToString(),
                                     mpz_get_si(((MpsIntVal*)args[3])->GetValue()),
                                     mpz_get_si(((MpsIntVal*)args[0])->GetValue()),
-                                    *succ);
+                                    *succ,
+                                    false);
       delete succ;
       DeleteVector(args);
       return result;
@@ -1187,4 +1188,8 @@ MpsTerm *MpsTerm::Parallelize() const // {{{
   delete parTerm;
 
   return result;
+} // }}}
+void MpsTerm::Split(const set<string> &fv, MpsTerm* &pre, MpsTerm* &post) const // {{{
+{ pre=Copy();
+  post=new MpsEnd();
 } // }}}

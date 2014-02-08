@@ -38,9 +38,8 @@ class MpsBranch : public MpsTerm // {{{
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     MpsTerm *RenameAll() const;
-    void Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
+    bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
-    void Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &post) const;
     MpsTerm *CloseDefinitions() const;
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;

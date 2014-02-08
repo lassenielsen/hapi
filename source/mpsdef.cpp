@@ -424,7 +424,6 @@ set<string> MpsDef::FEV() const // {{{
 } // }}}
 MpsTerm *MpsDef::Copy() const // {{{
 {
-  // assert mySucc != NULL
   return new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *mySucc, myEnv);
 } // }}}
 bool MpsDef::Terminated() const // {{{
@@ -577,6 +576,21 @@ MpsTerm *MpsDef::RenameAll() const // {{{
   DeleteVector(newTypes);
   DeleteVector(newStateTypes);
 
+  return result;
+} // }}}
+bool MpsDef::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ MpsTerm *seqSucc = mySucc->Parallelize();
+  MpsTerm *seqBody = myBody->Parallelize();
+  seqTerm=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *seqBody, *seqSucc, myEnv);
+  delete seqSucc;
+  delete seqBody;
+  parTerm=receives.Append(*seqTerm);
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsDef::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *newSucc, myEnv);
+  delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsDef::CloseDefinitions() const // {{{

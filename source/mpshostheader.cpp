@@ -1,4 +1,5 @@
 #include<apims/mpshostheader.hpp>
+#include<apims/mpsend.hpp>
 #include "common.cpp"
 
 using namespace std;
@@ -147,6 +148,34 @@ MpsHostHeader *MpsHostHeader::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   MpsHostHeader *result=new MpsHostHeader(myHeader, *newSucc);
   // Clean up
+  delete newSucc;
+  return result;
+} // }}}
+bool MpsHostHeader::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ // Split receives using the used vars
+  MpsTerm *pre;
+  MpsTerm *post;
+  receives.Split(set<string>(),pre,post);
+  bool opt1=dynamic_cast<const MpsEnd*>(post)!=NULL;
+  // Parallelize succ with post receives
+  MpsTerm *seqSucc;
+  MpsTerm *parSucc;
+  bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
+  delete post;
+  // Make parallelized term
+  MpsTerm *parTmp = new MpsHostHeader(myHeader, *parSucc);
+  delete parSucc;
+  parTerm = pre->Append(*parTmp);
+  delete pre;
+  delete parTmp;
+  // Make sequential term
+  seqTerm = new MpsHostHeader(myHeader, *seqSucc);
+  delete seqSucc;
+  return opt1 || opt2;
+} // }}}
+MpsTerm *MpsHostHeader::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsHostHeader(myHeader, *newSucc);
   delete newSucc;
   return result;
 } // }}}

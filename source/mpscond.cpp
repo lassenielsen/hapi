@@ -232,6 +232,21 @@ MpsTerm *MpsCond::RenameAll() const // {{{
 
   return result;
 } // }}}
+bool MpsCond::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ MpsTerm *seqTrueBranch = myTrueBranch->Parallelize();
+  MpsTerm *seqFalseBranch = myFalseBranch->Parallelize();
+  seqTerm=new MpsCond(*myCond, *seqTrueBranch, *seqFalseBranch);
+  parTerm=receives.Append(*seqTerm);
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsCond::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newTrueBranch=myTrueBranch->Append(term);
+  MpsTerm *newFalseBranch=myFalseBranch->Append(term);
+  MpsTerm *result=new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
+  delete newTrueBranch;
+  delete newFalseBranch;
+  return result;
+} // }}}
 MpsTerm *MpsCond::CloseDefinitions() const // {{{
 {
   MpsTerm *newTrueBranch=myTrueBranch->CloseDefinitions();

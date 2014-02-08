@@ -1,4 +1,5 @@
 #include<apims/mpshoststatement.hpp>
+#include<apims/mpsend.hpp>
 #include "common.cpp"
 
 using namespace std;
@@ -221,6 +222,40 @@ MpsHostStatement *MpsHostStatement::RenameAll() const // {{{
   delete newSucc;
   DeleteVector(newTypes);
 
+  return result;
+} // }}}
+bool MpsHostStatement::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ // Find used vars
+  set<string> usedVars;
+  for (vector<MpsExp*>::const_iterator exp=myExpParts.begin(); exp!=myExpParts.end(); ++exp)
+  { set<string> fv = (*exp)->FV();
+    usedVars.insert(fv.begin(),fv.end());
+  }
+  // Split receives using the used vars
+  MpsTerm *pre;
+  MpsTerm *post;
+  receives.Split(usedVars,pre,post);
+  bool opt1=dynamic_cast<const MpsEnd*>(post)!=NULL;
+  // Parallelize succ with post receives
+  MpsTerm *seqSucc;
+  MpsTerm *parSucc;
+  bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
+  delete post;
+  // Make parallelized term
+  MpsTerm *parTmp = new MpsHostStatement(myHostParts, myExpParts, *parSucc, myTypes);
+  delete parSucc;
+  parTerm = pre->Append(*parTmp);
+  delete pre;
+  delete parTmp;
+  // Make sequential term
+  seqTerm = new MpsHostStatement(myHostParts, myExpParts, *seqSucc, myTypes);
+  delete seqSucc;
+  return opt1 || opt2;
+} // }}}
+MpsTerm *MpsHostStatement::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  delete newSucc;
   return result;
 } // }}}
 MpsHostStatement *MpsHostStatement::CloseDefinitions() const // {{{

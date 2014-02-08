@@ -266,7 +266,7 @@ MpsTerm *MpsSnd::RenameAll() const // {{{
   delete newType;
   return result;
 } // }}}
-void MpsSnd::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+bool MpsSnd::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 {
   // Find used vars
   set<string> usedVars = myExp->FV();
@@ -275,25 +275,22 @@ void MpsSnd::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &
   MpsTerm *pre;
   MpsTerm *post;
   receivers.Split(usedVars,pre,post);
+  bool opt1=dynamic_cast<const MpsEnd*>(post)!=NULL;
   // Parallelize succ with post receives
   MpsTerm *seqSucc;
   MpsTerm *parSucc;
-  mySucc->Parallelize(*post,seqSucc,parSucc);
+  bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
+  delete post;
   // Make parallelized term
   MpsTerm *parTmp = new MpsSnd(myChannel, *myExp, *parSucc, GetMsgType(), GetFinal());
   delete parSucc;
   parTerm = pre->Append(*parTmp);
   delete pre;
   delete parTmp;
-  if (seqSucc!=NULL)
-  { seqTerm = new MpsSnd(myChannel, *myExp, *seqSucc, GetMsgType(), GetFinal());
-    delete seqSucc;
-  }
-  else if (dynamic_cast<MpsEnd*>(post)!=NULL) // some optimization can be done
-    seqTerm=Copy();
-  else
-    seqTerm=NULL;
-  delete post;
+  // Make sequential term
+  seqTerm = new MpsSnd(myChannel, *myExp, *seqSucc, GetMsgType(), GetFinal());
+  delete seqSucc;
+  return opt1 || opt2;
 } // }}}
 MpsTerm *MpsSnd::Append(const MpsTerm &term) const // {{{
 {

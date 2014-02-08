@@ -375,7 +375,7 @@ MpsTerm *MpsRcv::RenameAll() const // {{{
   delete newType;
   return result;
 } // }}}
-void MpsRcv::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+bool MpsRcv::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 {
   // Create updated receivers
   MpsTerm *rcvTerm = new MpsRcv(myChannel, myDest, myPid, myMaxPid, MpsEnd(), GetMsgType(), GetFinal());
@@ -383,14 +383,12 @@ void MpsRcv::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &
   delete rcvTerm;
   // Perform parallelization of succ
   MpsTerm *seqSucc;
-  mySucc->Parallelize(*newReceivers,seqSucc,parTerm);
+  bool opt = mySucc->Parallelize(*newReceivers,seqSucc,parTerm);
   delete newReceivers;
-  if (seqSucc!=NULL)
-  { seqTerm = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *seqSucc, GetMsgType(), GetFinal());
-    delete seqSucc;
-  }
-  else
-    seqTerm=NULL;
+  // Create seqTerm as rcv;seqSucc
+  seqTerm = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *seqSucc, GetMsgType(), GetFinal());
+  delete seqSucc;
+  return opt;
 } // }}}
 MpsTerm *MpsRcv::Append(const MpsTerm &term) const // {{{
 {
@@ -399,6 +397,41 @@ MpsTerm *MpsRcv::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
+void MpsRcv::Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &post) const // {{{
+{ if (fv.find(myChannel.GetName())!=fv.end() ||
+      fv.find(myDest)!=fv.end()) // Cannot postpone
+  { MpsTerm *succPre;
+    mySucc->Split(fv,succPre,post);
+    pre = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *succPre, GetMsgType(), GetFinal());
+    delete succPre;
+  }
+  else
+  { // First split succ
+    MpsTerm *succPre, *succPost;
+    mySucc->Split(fv,succPre,succPost);
+    // Then split pre on the vars used int this receive
+    set<string> preFV;
+    preFV.insert(myChannel.GetName());
+    preFV.insert(myDest);
+    MpsTerm *prePre, *prePost;
+    succPre->Split(preFV,prePre,prePost);
+    delete prePost;
+    if (dynamic_cast<const MpsEnd*>(prePre)!=NULL)
+    { // This op cannot be moved to post
+      delete prePre;
+      pre = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *succPre, GetMsgType(), GetFinal());
+      delete succPre;
+      post=succPost;
+    }
+    else
+    { // Move this op to post
+      delete prePre;
+      post = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *succPost, GetMsgType(), GetFinal());
+      delete succPost;
+      pre = succPre;
+    }
+  }
+} //}}}
 MpsTerm *MpsRcv::CloseDefinitions() const // {{{
 {
   MpsTerm *newSucc = mySucc->CloseDefinitions();

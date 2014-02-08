@@ -118,6 +118,9 @@ namespace apims
 class MpsTerm // {{{
 {
   public:
+    /************************************************
+     ****************** Creation ********************
+     ************************************************/
     virtual ~MpsTerm() {};
     // DOCUMENTATION: MpsTerm::Create {{{
     /*!
@@ -135,7 +138,12 @@ class MpsTerm // {{{
      */
     // }}}
     static MpsTerm *Create(const dpl::parsed_tree *exp);
+    //! Make a deep copy of the object
+    virtual MpsTerm *Copy() const = 0; // Make a deep copy
 
+    /************************************************
+     *************** Type Checking ******************
+     ************************************************/
     // DOCUMENTATION: MpsTerm::TypeCheck {{{
     /*!
      * Static verification of communication safety using explicit types
@@ -161,6 +169,9 @@ class MpsTerm // {{{
                            const MpsMsgEnv &Gamma,
                            const MpsProcEnv &Omega) = 0;
 
+    /************************************************
+     ***************** Interpreter ******************
+     ************************************************/
     // DOCUMENTATION: MpsTerm::Step {{{
     /*! 
      * Selects one of the possible steps, and return the reached process.
@@ -213,7 +224,14 @@ class MpsTerm // {{{
     virtual MpsTerm *ApplyCall(const std::string &path, const std::vector<MpsFunction> &funs) const; // Call function from funs at path
     //! Apply another type of step.
     virtual MpsTerm *ApplyOther(const std::string &path) const; // Call function from funs at path
+    //! Returns true if the process is congruent to the terminated (end) process.
+    virtual bool Terminated() const = 0;
+    //! Simplify removes redundant (unused) parts of the process. This can be considered as garbage collection.
+    virtual MpsTerm *Simplify() const = 0; // Simplify using congruence rules
 
+    /************************************************
+     ********* Renaming and Substitution ************
+     ************************************************/
     //! Reindex session, so each sender/receiver combination has its own channel
     //! This way session[i] << e becomes session[i*maxpid+pid], and
     //! session[i] >> e becomes session[i+maxpid*pid].
@@ -241,12 +259,10 @@ class MpsTerm // {{{
     virtual std::set<std::string> FPV() const = 0;
     //! Free expression variables
     virtual std::set<std::string> FEV() const = 0;
-    //! Make a deep copy of the object
-    virtual MpsTerm *Copy() const = 0; // Make a deep copy
-    //! Returns true if the process is congruent to the terminated (end) process.
-    virtual bool Terminated() const = 0;
-    //! Simplify removes redundant (unused) parts of the process. This can be considered as garbage collection.
-    virtual MpsTerm *Simplify() const = 0; // Simplify using congruence rules
+
+    /************************************************
+     **************** Compilation *******************
+     ************************************************/
     //! Make syntactic correct (parsable) string representation of the process
     virtual std::string ToString(std::string indent="") const = 0;
     //! Make string representation of the process with latex markup
@@ -315,7 +331,9 @@ class MpsTerm // {{{
     static std::string NewName(std::string base="X");
     static MpsTerm *Error(const std::string &msg);
 
-    /************ Optimization methods **************/
+    /************************************************
+     ************ Optimization methods **************
+     ************************************************/
     // DOCUMENTATION: MpsTerm::Parallelize {{{
     /*!
      * Parallelize rewrites terms, to enable more parallelism (dynamically
@@ -334,21 +352,22 @@ class MpsTerm // {{{
      * Parallelize generates two terms from the called term and returns them in the pointer references @parTerm and @seqTerm.
      * @parTerm holds the term optimized for parallelization - thus
      * postponing receives when possible.
-     * 4seqTerm holds the term without the parallelization optimization,
+     * @seqTerm holds the term without the parallelization optimization,
      * but where subterms (as in @parTerm) dynamically selects a
      * sequential or parallelized version depending on the number of
      * active processes and target.
-     * If no optimizations have been performed, parTerm will be NULL.
+     * The returned boolean value reports if any (unguarded) optimizations have
+     * been performed.
      */
     // }}}
-    virtual void Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const=0;
+    virtual bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const=0;
     // DOCUMENTATION: MpsTerm::Split {{{
     /*!
      * Splits the term in the part that can must go before (@pre) and after
      * (@post) the free variables provided (@fv).
      */
     // }}}
-    virtual void Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &post) const=0;
+    virtual void Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &post) const;
     // DOCUMENTATION: MpsTerm::Append {{{
     /*!
      * Appends the argument @term to the current term and returns the
@@ -356,6 +375,7 @@ class MpsTerm // {{{
      */
     // }}}
     virtual MpsTerm *Append(const MpsTerm &term) const=0;
+
   protected:
     static int ourNextId;
     std::vector<std::string> myFreeLinks;

@@ -178,7 +178,6 @@ set<string> MpsNu::FEV() const // {{{
 } // }}}
 MpsTerm *MpsNu::Copy() const // {{{
 {
-  // assert mySucc != NULL
   return new MpsNu(myChannel, *mySucc, *myType);
 } // }}}
 bool MpsNu::Terminated() const // {{{
@@ -234,6 +233,19 @@ MpsTerm *MpsNu::RenameAll() const // {{{
   delete newSucc;
   delete newType;
 
+  return result;
+} // }}}
+bool MpsNu::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ MpsTerm *seqSucc = mySucc->Parallelize();
+  seqTerm=new MpsNu(myChannel, *seqSucc, *myType);
+  delete seqSucc;
+  parTerm=receives.Append(*seqTerm);
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsNu::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsNu(myChannel, *newSucc, *myType);
+  delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsNu::CloseDefinitions() const // {{{

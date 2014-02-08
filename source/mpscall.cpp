@@ -381,6 +381,14 @@ string MpsCall::ToCHeader() const // {{{
 MpsTerm *MpsCall::RenameAll() const // {{{
 { return Copy();
 } // }}}
+bool MpsCall::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ seqTerm=Copy();
+  parTerm=receives.Append(*seqTerm);
+  return false; // No optimizations
+} // }}}
+MpsTerm *MpsCall::Append(const MpsTerm &term) const // {{{
+{ throw (string)"Append applied to call term - not implemented";
+} // }}}
 MpsTerm *MpsCall::CloseDefinitions() const // {{{
 { return Copy();
 } // }}}

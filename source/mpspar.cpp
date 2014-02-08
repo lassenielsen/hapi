@@ -433,6 +433,18 @@ MpsTerm *MpsPar::RenameAll() const // {{{
   delete newRight;
   return result;
 } // }}}
+bool MpsPar::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ MpsTerm *seqLeft = myLeft->Parallelize();
+  MpsTerm *seqRight = myRight->Parallelize();
+  seqTerm=new MpsPar(*seqLeft, *seqRight, GetLeftFinal(), GetRightFinal());
+  delete seqLeft;
+  delete seqRight;
+  parTerm=receives.Append(*seqTerm);
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsPar::Append(const MpsTerm &term) const // {{{
+{ throw (string)"Error: Appending to parallell terms not implemented";
+} // }}}
 MpsTerm *MpsPar::CloseDefinitions() const // {{{
 {
   MpsTerm *newLeft = myLeft->CloseDefinitions();

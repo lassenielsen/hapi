@@ -345,8 +345,14 @@ MpsTerm *MpsBranch::RenameAll() const // {{{
   DeleteMap(newBranches);
   return result;
 } // }}}
-void MpsBranch::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
-{
+bool MpsBranch::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+    newBranches[branch->first]=branch->second->Parallelize();
+  seqTerm = new MpsBranch(myChannel,newBranches, GetFinalBranches());
+  parTerm = new MpsBranch(myChannel,newBranches, GetFinalBranches());
+  DeleteMap(newBranches);
+  return false; // All optimizations are guarded
 } // }}}
 MpsTerm *MpsBranch::Append(const MpsTerm &term) const // {{{
 { map<string,MpsTerm*> newBranches;
