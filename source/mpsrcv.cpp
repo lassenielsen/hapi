@@ -416,7 +416,7 @@ void MpsRcv::Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &pos
     MpsTerm *prePre, *prePost;
     succPre->Split(preFV,prePre,prePost);
     delete prePost;
-    if (dynamic_cast<const MpsEnd*>(prePre)!=NULL)
+    if (dynamic_cast<const MpsEnd*>(prePre)==NULL)
     { // This op cannot be moved to post
       delete prePre;
       pre = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *succPre, GetMsgType(), GetFinal());

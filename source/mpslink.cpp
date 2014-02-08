@@ -266,7 +266,7 @@ bool MpsLink::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &
   { pre=receives.Copy();
     post=new MpsEnd();
   }
-  bool opt1 = dynamic_cast<const MpsEnd*>(post)!=NULL;
+  bool opt1 = dynamic_cast<const MpsEnd*>(post)==NULL;
   // Parallelize succ
   MpsTerm *seqSucc;
   MpsTerm *parSucc;

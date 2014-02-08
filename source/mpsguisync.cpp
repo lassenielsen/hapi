@@ -824,6 +824,52 @@ MpsTerm *MpsGuiSync::RenameAll() const // {{{
 
   return result;
 } // }}}
+bool MpsGuiSync::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ map<string,inputbranch> newBranches;
+  for (map<string,inputbranch>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+  {
+    newBranches[branch->first].term=branch->second.term->Parallelize();
+    newBranches[branch->first].assertion=branch->second.assertion->Copy();
+    newBranches[branch->first].names=branch->second.names;
+    newBranches[branch->first].args=branch->second.args;
+    newBranches[branch->first].types=CopyVector(branch->second.types);
+    newBranches[branch->first].values=CopyVector(branch->second.values);
+  }
+  seqTerm = new MpsGuiSync(myMaxpid, mySession, myPid, newBranches);
+  parTerm = receives.Append(*seqTerm);
+  // Clean up
+  while (newBranches.size()>0)
+  { delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    DeleteVector(newBranches.begin()->second.types);
+    DeleteVector(newBranches.begin()->second.values);
+    newBranches.erase(newBranches.begin());
+  }
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsGuiSync::Append(const MpsTerm &term) const // {{{
+{ map<string,inputbranch> newBranches;
+  for (map<string,inputbranch>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+  {
+    newBranches[branch->first].term=branch->second.term->Append(term);
+    newBranches[branch->first].assertion=branch->second.assertion->Copy();
+    newBranches[branch->first].names=branch->second.names;
+    newBranches[branch->first].args=branch->second.args;
+    newBranches[branch->first].types=CopyVector(branch->second.types);
+    newBranches[branch->first].values=CopyVector(branch->second.values);
+  }
+  MpsTerm *result = new MpsGuiSync(myMaxpid, mySession, myPid, newBranches);
+  // Clean up
+  while (newBranches.size()>0)
+  { delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    DeleteVector(newBranches.begin()->second.types);
+    DeleteVector(newBranches.begin()->second.values);
+    newBranches.erase(newBranches.begin());
+  }
+
+  return result;
+} // }}}
 MpsTerm *MpsGuiSync::CloseDefinitions() const // {{{
 {
   // Create new branches

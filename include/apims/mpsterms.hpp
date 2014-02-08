@@ -10,9 +10,9 @@
 #include<apims/mpspar.hpp>            // ok
 #include<apims/mpsdef.hpp>            // ok (-)
 #include<apims/mpscall.hpp>           // ok
-#include<apims/mpssync.hpp>           // -
-#include<apims/mpsguisync.hpp>        // -
-#include<apims/mpsguivalue.hpp>       // -
+#include<apims/mpssync.hpp>           // ok (-)
+#include<apims/mpsguisync.hpp>        // ok (-)
+#include<apims/mpsguivalue.hpp>       // ok
 #include<apims/mpsassign.hpp>         // ok
 #include<apims/mpshoststatement.hpp>  // ok
 #include<apims/mpshostheader.hpp>     // ok

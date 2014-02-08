@@ -124,6 +124,13 @@ inline bool disjoint(const std::set<int> &lhs, const std::set<int> &rhs) // {{{
 } // }}}
 
 template <class T>
+inline std::vector<T*> CopyVector(const std::vector<T*> &container) // {{{
+{ std::vector<T*> result;
+  for (typename std::vector<T*>::const_iterator it=container.begin(); it!=container.end(); ++it)
+    result.push_back((*it)->Copy());
+  return result;
+} // }}}
+template <class T>
 inline void DeleteVector(std::vector<T*> &container) // {{{
 {
   while (container.size() > 0)

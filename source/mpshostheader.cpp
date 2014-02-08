@@ -156,7 +156,7 @@ bool MpsHostHeader::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsT
   MpsTerm *pre;
   MpsTerm *post;
   receives.Split(set<string>(),pre,post);
-  bool opt1=dynamic_cast<const MpsEnd*>(post)!=NULL;
+  bool opt1=dynamic_cast<const MpsEnd*>(post)==NULL;
   // Parallelize succ with post receives
   MpsTerm *seqSucc;
   MpsTerm *parSucc;

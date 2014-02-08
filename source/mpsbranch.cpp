@@ -350,7 +350,7 @@ bool MpsBranch::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm*
   for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
     newBranches[branch->first]=branch->second->Parallelize();
   seqTerm = new MpsBranch(myChannel,newBranches, GetFinalBranches());
-  parTerm = new MpsBranch(myChannel,newBranches, GetFinalBranches());
+  parTerm = receives.Append(*seqTerm);
   DeleteMap(newBranches);
   return false; // All optimizations are guarded
 } // }}}

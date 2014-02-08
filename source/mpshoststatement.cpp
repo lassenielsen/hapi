@@ -235,7 +235,7 @@ bool MpsHostStatement::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, M
   MpsTerm *pre;
   MpsTerm *post;
   receives.Split(usedVars,pre,post);
-  bool opt1=dynamic_cast<const MpsEnd*>(post)!=NULL;
+  bool opt1=dynamic_cast<const MpsEnd*>(post)==NULL;
   // Parallelize succ with post receives
   MpsTerm *seqSucc;
   MpsTerm *parSucc;

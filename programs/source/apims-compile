@@ -29,11 +29,11 @@ fi
 if [ $START -lt 2 ]
 then
   echo "Stage 2: Generating C++ code from $BASE.pip to $BASE.cpp using apims"
-  apims -compile -o $BASE.cpp -f $BASE.pip
+  apims -compile -optimize -o $BASE.cpp -f $BASE.pip
 fi
 if [ $START -lt 3 ]
 then
   echo "Stage 3: Compiling $BASE.cpp to $BASE using g++"
-  g++ -o $BASE $BASE.cpp -lpi
+  g++ -O3 -o $BASE $BASE.cpp -lpi
 fi
 echo Done

@@ -415,6 +415,23 @@ MpsTerm *MpsSync::RenameAll() const // {{{
 
   return result;
 } // }}}
+bool MpsSync::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+    newBranches[branch->first]=branch->second->Parallelize();
+  seqTerm = new MpsSync(myMaxpid, mySession,newBranches, myAssertions);
+  parTerm = receives.Append(*seqTerm);
+  DeleteMap(newBranches);
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsSync::Append(const MpsTerm &term) const // {{{
+{ map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+    newBranches[branch->first]=branch->second->Append(term);
+  MpsTerm *result = new MpsSync(myMaxpid, mySession,newBranches, myAssertions);
+  DeleteMap(newBranches);
+  return result;
+} // }}}
 MpsTerm *MpsSync::CloseDefinitions() const // {{{
 {
   map<string,MpsTerm*> newBranches;

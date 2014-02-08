@@ -30,6 +30,7 @@ int main(int argc, char **argv)
     bool cfgTypecheck=true;
     bool cfgEval=true;
     bool cfgCompile=false;
+    bool cfgOptimizeParallelism=false;
     string term="";
     string dest="";
     int spacewidth=185;
@@ -64,8 +65,10 @@ int main(int argc, char **argv)
         cfgEval=true;
       else if ((string)argv[i]=="-check")
       { cfgEval=false; cfgTypecheck=true; }
-      else if ((string)argv[i]=="-compile")
+      else if ((string)argv[i]=="-compile" || (string)argv[i]=="-c")
       { cfgCompile=true; cfgEval=false; }
+      else if ((string)argv[i]=="-optimize" || (string)argv[i]=="-O")
+      { cfgOptimizeParallelism=true; }
       else if ((string)argv[i]=="-f" && i+1<argc)
       { ++i;
         // Read program from file
@@ -141,8 +144,17 @@ int main(int argc, char **argv)
       }
       (*out) << "************ Type Check Succeeded! ************" << endl;
     }
-//    else
-//      (*out) << "************** NO TYPE CHECKEING **************" << endl;
+    else
+      (*out) << "************** NO TYPE CHECKEING **************" << endl;
+    if (cfgOptimizeParallelism)
+    { // Optimizing parallelism
+      MpsTerm *cOpt = current->Parallelize();
+      delete current;
+      current=cOpt;
+      if (cfgPrint)
+        (*out) << "****** Parallelization Optimized Program ******" << endl
+               << current->ToString() << endl;
+    }
     if (cfgCompile)
       (*out) << "*/" << endl
              << current->MakeC() << endl;
