@@ -1,0 +1,40 @@
+#include <console.pi>
+#define $fibres \
+  2=>1<Int>; \
+  Gend
+#define $fib \
+  1=>2<Int>; \
+  $fibres
+(nu fib: $fib)
+def Fib() =
+  link(2,fib,s,2);
+  ( Fib()
+  | s[1]>>x;
+    if x <=1
+    then s[1]<<1;
+         end
+    else link(2,fib,s1,1);
+         link(2,fib,s2,1);
+         s1[2]<<x-1;
+         s1[2]>>f1;
+         s2[2]<<x-2;
+         s2[2]>>f2;
+         s[1]<<f1+f2;
+         end
+  )
+in Fib() |
+
+link(2,console,c,1);
+c[2]<<^PutString;
+c[2]<<"What is n?";
+c[2]<<^GetInt;
+c[2]>>v;
+link(2,fib,f,1);
+f[2]<<v;
+f[2]>>r;
+c[2]<<^PutString;
+c[2]<<"Fib(n) is";
+c[2]<<^PutInt;
+c[2]<<r;
+c[2]<<^End;
+end

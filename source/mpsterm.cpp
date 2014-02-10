@@ -1111,7 +1111,7 @@ string MpsTerm::MakeC() const // {{{
        + "int * mkGlobalInt() // {{{\n"
        + "{ int mmap_fd = open(tempnam(NULL,\"aprocs\"), O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);\n"
        + "  lseek(mmap_fd, sizeof(int)-1, SEEK_SET);\n"
-       + "  write(mmap_fd, \"\", 1);\n"
+       + "  int _ = write(mmap_fd, \"\", 1);\n"
        + "  int *ptr = (int*)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, mmap_fd, 0);\n"
        + "  close(mmap_fd);\n"
        + "  return ptr;\n"
