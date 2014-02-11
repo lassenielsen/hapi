@@ -10,7 +10,7 @@ namespace apims {
 class MpsNu : public MpsTerm // {{{
 {
   public:
-    MpsNu(const std::string &channel, const MpsTerm &succ, const MpsGlobalType &type);
+    MpsNu(bool pure, const std::string &channel, const MpsTerm &succ, const MpsGlobalType &type);
     virtual ~MpsNu();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -46,10 +46,13 @@ class MpsNu : public MpsTerm // {{{
     std::string ToC() const;
     std::string ToCHeader() const;
 
+    bool isPure() const { return myPure; }
+
   private:
     std::string myChannel;
     MpsTerm *mySucc;
     MpsGlobalType *myType;
+    bool myPure;
 }; // }}}
 }
 #endif

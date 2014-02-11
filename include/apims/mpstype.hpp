@@ -810,7 +810,7 @@ class MpsTupleMsgType : public MpsMsgType // {{{
 class MpsChannelMsgType : public MpsMsgType // {{{
 {
   public:
-    MpsChannelMsgType(const MpsGlobalType &type);
+    MpsChannelMsgType(const MpsGlobalType &type, bool pure);
     virtual ~MpsChannelMsgType();
     MpsChannelMsgType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
@@ -833,9 +833,11 @@ class MpsChannelMsgType : public MpsMsgType // {{{
 
     const MpsGlobalType *GetGlobalType() const {return myType;}
     MpsGlobalType *GetGlobalType() {return myType;}
+    bool IsPure() const {return myPure;}
 
   private:
     MpsGlobalType *myType;
+    bool myPure;
 }; // }}}
 class MpsDelegateMsgType : public MpsMsgType // {{{
 {

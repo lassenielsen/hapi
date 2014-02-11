@@ -158,7 +158,7 @@ MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
   else if (tree->type_name == "Mtype" && tree->case_name == "case2") // < Gtype > {{{
   {
     MpsGlobalType *gtype = MpsGlobalType::Create(tree->content[1]);
-    MpsChannelMsgType *result = new MpsChannelMsgType(*gtype);
+    MpsChannelMsgType *result = new MpsChannelMsgType(*gtype,false); // We must assume channel is impure for safety
     // Clean up
     delete gtype;
 
@@ -4790,7 +4790,8 @@ MpsTupleMsgType::MpsTupleMsgType(const vector<MpsMsgType*> &elements) // {{{
   for (vector<MpsMsgType*>::const_iterator it=elements.begin(); it!=elements.end(); ++it)
     myElements.push_back((*it)->Copy());
 } // }}}
-MpsChannelMsgType::MpsChannelMsgType(const MpsGlobalType &type) // {{{
+MpsChannelMsgType::MpsChannelMsgType(const MpsGlobalType &type, bool pure) // {{{
+: myPure(pure)
 {
   myType = type.Copy();
 } // }}}
@@ -4871,7 +4872,7 @@ MpsTupleMsgType *MpsTupleMsgType::Copy() const // {{{
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::Copy() const // {{{
 {
-  return new MpsChannelMsgType(*myType);
+  return new MpsChannelMsgType(*myType,myPure);
 } // }}}
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::Copy() const // {{{
 {
@@ -5079,7 +5080,7 @@ MpsTupleMsgType *MpsTupleMsgType::GRename(const string &source, const string &de
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::GRename(const string &source, const string &dest) const // {{{
 { MpsGlobalType *newType = myType->GRename(source,dest);
-  MpsChannelMsgType *result = new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myPure);
   delete newType;
   return result;
 } // }}}
@@ -5126,7 +5127,7 @@ MpsTupleMsgType *MpsTupleMsgType::LRename(const string &source, const string &de
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::LRename(const string &source, const string &dest) const // {{{
 { MpsGlobalType *newType = myType->LRename(source,dest);
-  MpsChannelMsgType *result = new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myPure);
   delete newType;
   return result;
 } // }}}
@@ -5173,7 +5174,7 @@ MpsTupleMsgType *MpsTupleMsgType::ERename(const string &source, const string &de
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::ERename(const string &source, const string &dest) const // {{{
 { MpsGlobalType *newType = myType->ERename(source,dest);
-  MpsChannelMsgType *result = new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myPure);
   delete newType;
   return result;
 } // }}}
@@ -5225,7 +5226,7 @@ MpsTupleMsgType *MpsTupleMsgType::GSubst(const string &source, const MpsGlobalTy
 MpsChannelMsgType *MpsChannelMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType=myType->GSubst(source,dest,args);
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myPure);
 
   // Clean Up
   delete newType;
@@ -5286,7 +5287,7 @@ MpsTupleMsgType *MpsTupleMsgType::LSubst(const string &source, const MpsLocalTyp
 MpsChannelMsgType *MpsChannelMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType=myType->LSubst(source,dest,args);
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myPure);
 
   // Clean Up
   delete newType;
@@ -5347,7 +5348,7 @@ MpsTupleMsgType *MpsTupleMsgType::ESubst(const string &source, const MpsExp &des
 MpsChannelMsgType *MpsChannelMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   MpsGlobalType *newType=myType->ESubst(source,dest);
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myPure);
 
   // Clean Up
   delete newType;
@@ -5408,7 +5409,7 @@ MpsTupleMsgType *MpsTupleMsgType::RenameAll() const // {{{
 MpsChannelMsgType *MpsChannelMsgType::RenameAll() const // {{{
 {
   MpsGlobalType *newType=myType->RenameAll();
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myPure);
 
   // Clean Up
   delete newType;

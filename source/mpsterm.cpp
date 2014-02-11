@@ -151,8 +151,11 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefType("dargs ::= < args > |");                       // Optional dependant args
   MpsParser.DefType("dexps ::= < exps > |");                       // Optional dependant args
   MpsParser.DefType("ids ::= | id  ids");                          // Name list
+  MpsParser.DefKeywordToken("pure",2);                             // Used for mode declaration
+  MpsParser.DefKeywordToken("impure",2);                           // Used for mode declaration
+  MpsParser.DefType("mode ::= | pure | impure");                   // Mode declaration used for channels and defs
                                                                    // Processes
-  MpsParser.DefType("pi ::= ( nu id : Gtype ) pi \
+  MpsParser.DefType("pi ::= ( nu id : mode Gtype ) pi \
                           | pi2 par pi \
                           | pi2");
   MpsParser.DefType("pi2 ::= ( pi ) \
@@ -160,7 +163,7 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
                            | ch >> id ; pi2 \
                            | ch << bid ; pi2 \
                            | ch >> { branches } \
-                           | def pvar dargs ( args ) = pi in pi2 \
+                           | mode def pvar dargs ( args ) = pi in pi2 \
                            | pvar dexps ( exps ) \
                            | link ( exps ) ; pi2\
                            | sync ( exps ) { branches } \
@@ -422,13 +425,28 @@ void HostStmt(vector<string> &hostParts, vector<MpsExp*> &expParts, const parsed
 #endif
   return;
 } // }}}
+bool IsPure(const parsed_tree *exp) // {{{
+{ if (exp->type_name == "mode" && exp->case_name == "case1") // 
+    return false;
+  else if (exp->type_name == "mode" && exp->case_name == "case2") // pure
+    return true;
+  else if (exp->type_name == "mode" && exp->case_name == "case3") // impure
+    return false;
+
+#if APIMS_DEBUG_LEVEL>1
+  cerr << "Unknown mode parsetree: " << exp->type_name << "." << exp->case_name << endl;
+#endif
+
+  return false;
+} // }}}
 MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
 {
-  if (exp->type_name == "pi" && exp->case_name == "case1") // ( nu id : Gtype ) pi {{{
+  if (exp->type_name == "pi" && exp->case_name == "case1") // ( nu id : mode Gtype ) pi {{{
   {
-    MpsTerm *succ = MpsTerm::Create(exp->content[6]);
-    MpsGlobalType *type = MpsGlobalType::Create(exp->content[4]);
-    MpsTerm *result = new MpsNu(exp->content[2]->root.content, *succ, *type);
+    MpsTerm *succ = MpsTerm::Create(exp->content[7]);
+    MpsGlobalType *type = MpsGlobalType::Create(exp->content[5]);
+    bool pure=IsPure(exp->content[4]);
+    MpsTerm *result = new MpsNu(pure,exp->content[2]->root.content, *succ, *type);
     delete succ;
     delete type;
     return result;
@@ -501,23 +519,24 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     }
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case6") // def pvar dargs ( args ) = pi in pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case6") // mode def pvar dargs ( args ) = pi in pi2 {{{
   {
-    MpsTerm *body = MpsTerm::Create(exp->content[7]);
-    MpsTerm *succ = MpsTerm::Create(exp->content[9]);
+    // FIXME: Handle mode
+    MpsTerm *body = MpsTerm::Create(exp->content[8]);
+    MpsTerm *succ = MpsTerm::Create(exp->content[10]);
     // Parse args
     vector<string> args;
     args.clear();
     vector<MpsMsgType*> types;
     types.clear();
-    FindArgs(exp->content[4],args,types);
+    FindArgs(exp->content[5],args,types);
     // Parse state
     vector<string> stateargs;
     stateargs.clear();
     vector<MpsMsgType*> statetypes;
     statetypes.clear();
-    FindArgs(exp->content[2],stateargs,statetypes);
-    MpsTerm *result = new MpsDef(exp->content[1]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv());
+    FindArgs(exp->content[3],stateargs,statetypes);
+    MpsTerm *result = new MpsDef(exp->content[2]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv());
     // Clean up
     delete succ;
     delete body;

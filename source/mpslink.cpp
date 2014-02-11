@@ -31,6 +31,8 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   const MpsChannelMsgType *channel=dynamic_cast<const MpsChannelMsgType*>(var->second);
   if (channel==NULL)
     return PrintTypeError((string)"Linking on non-channel:" + myChannel,*this,Theta,Gamma,Omega);
+  // Store purity of channel
+  myPure=channel->IsPure() && myMaxpid==myPid;
   // Check correct maxpid
   if (myMaxpid != channel->GetGlobalType()->GetMaxPid())
     return PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega);
