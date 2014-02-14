@@ -7,17 +7,17 @@ def X(i : Int) =
        t[2]<<10;
        t[2]>>ready;
        t[2]<<^End;
-       link(2,console,c,1);
-       c[2]<<^PutInt;
-       c[2]<<SYSTEM&"aprocs";
-       c[2]<<^End;
+       link(2,console,c,2);
+       c[1]<<^PutInt;
+       c[1]<<SYSTEM&"aprocs";
+       c[1]<<^End;
        end
   else ( end
        | X(i-1)
        )
 in
-link(2,console,c,1);
-c[2]<<^PutInt;
-c[2]<<SYSTEM&"aprocs";
-c[2]<<^End;
+link(2,console,c,2);
+c[1]<<^PutInt;
+c[1]<<SYSTEM&"aprocs";
+c[1]<<^End;
 X(100)

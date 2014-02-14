@@ -24,17 +24,17 @@ def Fib() =
   )
 in Fib() |
 
-link(2,console,c,1);
-c[2]<<^PutString;
-c[2]<<"What is n?";
-c[2]<<^GetInt;
-c[2]>>v;
+link(2,console,c,2);
+c[1]<<^PutString;
+c[1]<<"What is n?";
+c[1]<<^GetInt;
+c[1]>>v;
 link(2,fib,f,1);
 f[2]<<v;
 f[2]>>r;
-c[2]<<^PutString;
-c[2]<<"Fib(n) is";
-c[2]<<^PutInt;
-c[2]<<r;
-c[2]<<^End;
+c[1]<<^PutString;
+c[1]<<"Fib(n) is";
+c[1]<<^PutInt;
+c[1]<<r;
+c[1]<<^End;
 end

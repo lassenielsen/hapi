@@ -1,17 +1,17 @@
 #include<console.pi>
 def X(i:Int) =
   if i<=0
-  then link(2,console,c,1);
-       c[2]<<^PutString;
-       c[2]<<"Process Complete";
-       c[2]<<^End;
+  then link(2,console,c,2);
+       c[1]<<^PutString;
+       c[1]<<"Process Complete";
+       c[1]<<^End;
        end
   else X(i-1)
 in
-link(2,console,c,1);
-c[2]<<^PutString;
-c[2]<<"Starting 2 processes";
-c[2]<<^End;
+link(2,console,c,2);
+c[1]<<^PutString;
+c[1]<<"Starting 2 processes";
+c[1]<<^End;
 ( X(100000)
 | X(100000)
 )

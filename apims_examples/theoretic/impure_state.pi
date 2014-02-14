@@ -1,0 +1,32 @@
+#include <console.pi>
+(nu count: pure 1=>2<Int>;Gend)
+pure def Count(c:Int) =
+  link(2,count,s,1);
+  ( s[2]<<c;
+    end
+  | Count(c+1)
+  )
+in Count(1) |
+(nu a: pure 1=>2<Int>;Gend)
+pure def A() =
+  link(2,a,s,1);
+  ( link(2,count,c,2);
+    s[2]<<0;
+    c[1]>>x;
+    end
+  | A()
+  )
+in A() |
+link(2,a,s,2);
+s[1]>>x;
+link(2,count,c,2);
+c[1]>>y;
+link(2,console,c,1);
+c[2]<<^PutString;
+if y<=1
+then c[2]<<"ERROR";
+     c[2]<<^End;
+     end
+else c[2]<<"OK";
+     c[2]<<^End;
+     end

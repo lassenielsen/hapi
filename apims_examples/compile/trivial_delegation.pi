@@ -5,31 +5,31 @@
 (nu b: $msg)
 link(2,a,s,1);
 ( link(2,b,t,1);
-  link(2,console,c,1);
-  c[2]<<^PutString;
-  c[2]<<"Sending Channel";
-  c[2]<<^End;
+  link(2,console,c,2);
+  c[1]<<^PutString;
+  c[1]<<"Sending Channel";
+  c[1]<<^End;
   s[2]<<t;
   end
 | link(2,b,t,2);
   t[1]>>val;
-  link(2,console,c,1);
-  c[2]<<^PutString;
-  c[2]<<"Received Value";
-  c[2]<<^PutInt;
-  c[2]<<val;
-  c[2]<<^End;
+  link(2,console,c,2);
+  c[1]<<^PutString;
+  c[1]<<"Received Value";
+  c[1]<<^PutInt;
+  c[1]<<val;
+  c[1]<<^End;
   end
 )
 |
 link(2,a,s,2);
 s[1]>>t@(1 of 2);
 v:Int=5;
-link(2,console,c,1);
-c[2]<<^PutString;
-c[2]<<"Received Channel, Sending Value";
-c[2]<<^PutInt;
-c[2]<<v;
-c[2]<<^End;
+link(2,console,c,2);
+c[1]<<^PutString;
+c[1]<<"Received Channel, Sending Value";
+c[1]<<^PutInt;
+c[1]<<v;
+c[1]<<^End;
 t[2]<<v;
 end
