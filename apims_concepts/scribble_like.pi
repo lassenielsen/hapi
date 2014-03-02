@@ -1,0 +1,22 @@
+channel a:
+  alice,
+  pure bob
+where
+  alice -> bob <String[(a+b)*]>;
+  bob -> alice <String[a*]>;
+  Gend
+in
+( def As() =
+    s = new a@(bob of 2);
+    s[alice]>>str;
+    def A(abs : String[(a+b)*], s: alice, pure bob where bob->alice<String[a*]>;Gend@(bob of 2) ) =
+      match abs
+      { r"b*" => s[alice]<<nil;end,
+        r"(b*a)(a+b)*" as ((bs,a),abs2) => s[alice]<<cons; CollectAs(abs2,s)
+      }
+    in CollectAs(str,s)
+  in CollectAsService()
+| s = new a@(alice of 2);
+  s[bob]<< String[(a+b)*]("abba"); // Sends cons inl cons inr cons inr cons inl nil
+  s[bob]>> x; // Receives String[a*]("aa") = cons cons nil;
+)

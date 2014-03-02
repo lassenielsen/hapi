@@ -1,0 +1,20 @@
+#define $a 1 -> 2 <String[r"(a+b)*"]>; $a2
+#define $a2 2 -> 1 <String[r"a*"]>; Gend
+channel a: {1,pure 2}@$a;
+( def As() =
+    s = new (2 of 2)@a;
+    s[1]>>str;
+    def A(abs : String[r"(a+b)*"],
+          s: (2 of {1, pure 2})@$a2 ) =
+      match abs
+      { r"b*" => s[1]<<nil;end,
+        r"(b*a)(a+b)*" as ((bs,a),abs2) => s[1]<<cons; A(abs2,s)
+      }
+    in A(str,s)
+  in As()
+) | // Start server in new process
+// Main program
+s = new (1 of 2)@a;               // Create session
+s[2]<< String[r"(a+b)*"]("abba"); // Sends cons inl cons inr cons inr cons inl nil
+s[2]>> x;                         // Receives String[a*]("aa") = cons cons nil;
+end
