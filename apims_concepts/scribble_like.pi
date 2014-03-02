@@ -1,22 +1,23 @@
 channel a:
-  alice,
-  pure bob
-where
-  alice -> bob <String[(a+b)*]>;
-  bob -> alice <String[a*]>;
-  Gend
+participants client, pure server
 in
+  client -> server <String[r"(a+b)*"]>;
+  server -> client <String[r"a*"]>;
+  Gend;
 ( def As() =
-    s = new a@(bob of 2);
-    s[alice]>>str;
-    def A(abs : String[(a+b)*], s: alice, pure bob where bob->alice<String[a*]>;Gend@(bob of 2) ) =
+    s = new (server of 2)@a;
+    s[client]>>str;
+    def A(abs : String[r"(a+b)*"],
+          s: (2 of {1, pure 2})@1->2<String[r"a*"]>;Gend) =
       match abs
-      { r"b*" => s[alice]<<nil;end,
-        r"(b*a)(a+b)*" as ((bs,a),abs2) => s[alice]<<cons; CollectAs(abs2,s)
+      { r"b*" => s[client]<<nil;end,
+        r"(b*a)(a+b)*" as ((bs,a),abs2) => s[client]<<cons; A(abs2,s)
       }
-    in CollectAs(str,s)
-  in CollectAsService()
-| s = new a@(alice of 2);
-  s[bob]<< String[(a+b)*]("abba"); // Sends cons inl cons inr cons inr cons inl nil
-  s[bob]>> x; // Receives String[a*]("aa") = cons cons nil;
-)
+    in A(str,s)
+  in As()
+) | // Start server in new process
+// Main program
+s = new (client of 2)@a;               // Create session
+s[server]<< String[r"(a+b)*"]("abba"); // Sends cons inl cons inr cons inr cons inl nil
+s[server]>> x;                         // Receives String[a*]("aa") = cons cons nil;
+end

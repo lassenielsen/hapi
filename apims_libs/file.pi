@@ -1,57 +1,57 @@
 // The interface for reading files
 #define $infile rec $infile. \
-  1=>2 \
+  2=>1 \
   {^Chunk: \
-    2=>1 \
+    1=>2 \
     {^Some: \
-      2=>1<String>; \
+      1=>2<String>; \
       $infile, \
      ^None: \
       Gend \
     }, \
    ^Line: \
-    2=>1 \
+    1=>2 \
     {^Some: \
-      2=>1<String>; \
+      1=>2<String>; \
       $infile, \
      ^None: \
       Gend \
     }, \
    ^All: \
-    2=>1<String>; \
+    1=>2<String>; \
     Gend, \
    ^Close: \
     Gend \
   }
 // The interface for writing files
 #define $outfile rec $outfile. \
-  1=>2 \
+  2=>1 \
   {^Write: \
-    1=>2<String>; \
+    2=>1<String>; \
     $outfile, \
    ^Close: \
     Gend \
   }
 // The interface for working with files
 #define $file \
-  1=>2 \
+  2=>1 \
   {^Read: \
-    1=>2<String>; \
-    2=>1 \
+    2=>1<String>; \
+    1=>2 \
     {^OK: $infile, \
-     ^Error: 2=>1<String>; Gend \
+     ^Error: 1=>2<String>; Gend \
     }, \
    ^Create: \
-    1=>2<String>; \
-    2=>1 \
+    2=>1<String>; \
+    1=>2 \
     {^OK: $outfile, \
-     ^Error: 2=>1<String>; Gend \
+     ^Error: 1=>2<String>; Gend \
     }, \
    ^Remove: \
-    1=>2<String>; \
-    2=>1 \
+    2=>1<String>; \
+    1=>2 \
     {^OK: Gend, \
-     ^Error: 2=>1<String>; Gend \
+     ^Error: 1=>2<String>; Gend \
     } \
   }
 // Macros for file operations
@@ -65,121 +65,122 @@ HOSTHEADER("#include <fstream>");
 HOSTHEADER("#include <errno.h>");
 HOSTHEADER("#include <string.h>");
 HOSTHEADER("#include <streambuf>");
-def FileServer() =
-  link(2,file,f,2);
-  ( FileServer()
-  | f[1]>>
-    {^Read:
-      def InFileSession(f: $infile@(2 of 2), fptr: Int, chunksize: Int) =
-        f[1]>>
-        {^Chunk:
+( def FileServer() =
+    link(2,file,f,1);
+    ( FileServer()
+    | f[2]>>
+      {^Read:
+        def InFileSession(f: $infile@(1 of 2), fptr: Int, chunksize: Int) =
+          f[2]>>
+          {^Chunk:
+            t:Bool=true;
+            HOST( EOF(t, fptr) );
+            if t
+            then f[2]<<^None;
+                 HOST( CloseIFP(fptr) );
+                 HOST( DelIFP(fptr) );
+                 end
+            else f[2]<<^Some;
+                 chunk:String="";
+                 HOST("{ char *buf = new char[ mpz_get_ui((", chunksize, ").GetValue()) +1 ];");
+                 HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->read(buf, mpz_get_ui((", chunksize, ").GetValue()));");
+                 HOST("  buf[ mpz_get_ui((", chunksize, ").GetValue()) ] = 0;");
+                 HOST("  ", chunk, " = StringValue(std::string(buf));");
+                 HOST("  delete [] buf;");
+                 HOST("}");
+                 f[2]<<chunk;
+                 InFileSession(f,fptr,chunksize)
+          ,^Line:
+            t:Bool=true;
+            HOST( EOF(t, fptr) );
+            if t
+            then f[2]<<^None;
+                 HOST( CloseIFP(fptr) );
+                 HOST( DelIFP(fptr) );
+                 end
+            else f[2]<<^Some;
+                 chunk:String="";
+                 HOST("{ std::string line;");
+                 HOST("  std::getline(*((ifstream*)mpz_get_ui((", fptr, ").GetValue())), line);");
+                 HOST("  ", chunk, " = StringValue(line);");
+                 HOST("}");
+                 f[2]<<chunk;
+                 InFileSession(f,fptr,chunksize)
+          ,^All:
+            t:Bool=true;
+            HOST( EOF(t, fptr) );
+            if t
+            then f[2]<<"";
+                 HOST( CloseIFP(fptr) );
+                 HOST( DelIFP(fptr) );
+                 end
+            else chunk:String="";
+                 HOST("{ std::string str;");
+                 HOST("  int pos=((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->tellg();");
+                 HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->seekg(0,std::ios::end);");
+                 HOST("  int size=((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->tellg();");
+                 HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->seekg(pos);");
+                 HOST("  str.reserve(size-pos+1);");
+                 HOST("  str.assign((std::istreambuf_iterator<char>(*((ifstream*)mpz_get_ui((", fptr, ").GetValue())))),std::istreambuf_iterator<char>());");
+                 HOST("  ", chunk, " = StringValue(str);");
+                 HOST("}");
+                 f[2]<<chunk;
+                 HOST( CloseIFP(fptr) );
+                 HOST( DelIFP(fptr) );
+                 end
+          ,^Close:
+            HOST( CloseIFP(fptr) );
+            HOST( DelIFP(fptr) );
+            end
+          }
+        in
+          f[2]>>path;
+          fptr:Int=0;
+          HOST("", fptr, " = IntValue( (unsigned int)(new ifstream( (", path, ").ToString().c_str() ) ) );");
           t:Bool=true;
-          HOST( EOF(t, fptr) );
+          HOST("", t, " = BoolValue(((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->is_open());");
           if t
-          then f[1]<<^None;
-               HOST( CloseIFP(fptr) );
-               HOST( DelIFP(fptr) );
+          then f[2]<<^OK;
+               InFileSession(f, fptr, 1024*4)
+          else HOST( DelIFP(fptr) );
+               err:String="";
+               HOST( GetError(err) );
+               f[2]<<^Error;
+               f[2]<<err;
                end
-          else f[1]<<^Some;
-               chunk:String="";
-               HOST("{ char *buf = new char[ mpz_get_ui((", chunksize, ").GetValue()) +1 ];");
-               HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->read(buf, mpz_get_ui((", chunksize, ").GetValue()));");
-               HOST("  buf[ mpz_get_ui((", chunksize, ").GetValue()) ] = 0;");
-               HOST("  ", chunk, " = StringValue(std::string(buf));");
-               HOST("  delete [] buf;");
-               HOST("}");
-               f[1]<<chunk;
-               InFileSession(f,fptr,chunksize)
-        ,^Line:
+      ,^Create:
+        def OutFileSession(f: $outfile@(1 of 2), fptr : Int ) =
+          f[2]>>
+          {^Close:
+            HOST("((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->close();");
+            HOST( DelOFP(fptr) );
+            end
+          ,^Write:
+            f[2]>>str;
+            HOST("((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->write( (", str , ").ToString().c_str(), (", str , ").ToString().size() );");
+            OutFileSession(f,fptr)
+          }
+        in
+          f[2]>>path;
+          fptr:Int=0;
+          HOST("", fptr, " = IntValue( (unsigned int)(new ofstream( (", path, ").ToString().c_str() ) ) );");
           t:Bool=true;
-          HOST( EOF(t, fptr) );
+          HOST("", t, " = BoolValue(((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->is_open());");
           if t
-          then f[1]<<^None;
-               HOST( CloseIFP(fptr) );
-               HOST( DelIFP(fptr) );
-               end
-          else f[1]<<^Some;
-               chunk:String="";
-               HOST("{ std::string line;");
-               HOST("  std::getline(*((ifstream*)mpz_get_ui((", fptr, ").GetValue())), line);");
-               HOST("  ", chunk, " = StringValue(line);");
-               HOST("}");
-               f[1]<<chunk;
-               InFileSession(f,fptr,chunksize)
-        ,^All:
-          t:Bool=true;
-          HOST( EOF(t, fptr) );
-          if t
-          then f[1]<<"";
-               HOST( CloseIFP(fptr) );
-               HOST( DelIFP(fptr) );
-               end
-          else chunk:String="";
-               HOST("{ std::string str;");
-               HOST("  int pos=((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->tellg();");
-               HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->seekg(0,std::ios::end);");
-               HOST("  int size=((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->tellg();");
-               HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->seekg(pos);");
-               HOST("  str.reserve(size-pos+1);");
-               HOST("  str.assign((std::istreambuf_iterator<char>(*((ifstream*)mpz_get_ui((", fptr, ").GetValue())))),std::istreambuf_iterator<char>());");
-               HOST("  ", chunk, " = StringValue(str);");
-               HOST("}");
-               f[1]<<chunk;
-               HOST( CloseIFP(fptr) );
-               HOST( DelIFP(fptr) );
-               end
-        ,^Close:
-          HOST( CloseIFP(fptr) );
-          HOST( DelIFP(fptr) );
-          end
-        }
-      in
-        f[1]>>path;
-        fptr:Int=0;
-        HOST("", fptr, " = IntValue( (unsigned int)(new ifstream( (", path, ").ToString().c_str() ) ) );");
-        t:Bool=true;
-        HOST("", t, " = BoolValue(((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->is_open());");
-        if t
-        then f[1]<<^OK;
-             InFileSession(f, fptr, 1024*4)
-        else HOST( DelIFP(fptr) );
-             err:String="";
-             HOST( GetError(err) );
-             f[1]<<^Error;
-             f[1]<<err;
-             end
-    ,^Create:
-      def OutFileSession(f: $outfile@(2 of 2), fptr : Int ) =
-        f[1]>>
-        {^Close:
-          HOST("((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->close();");
-          HOST( DelOFP(fptr) );
-          end
-        ,^Write:
-          f[1]>>str;
-          HOST("((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->write( (", str , ").ToString().c_str(), (", str , ").ToString().size() );");
-          OutFileSession(f,fptr)
-        }
-      in
-        f[1]>>path;
-        fptr:Int=0;
-        HOST("", fptr, " = IntValue( (unsigned int)(new ofstream( (", path, ").ToString().c_str() ) ) );");
-        t:Bool=true;
-        HOST("", t, " = BoolValue(((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->is_open());");
-        if t
-        then f[1]<<^OK;
-             OutFileSession(f, fptr)
-        else HOST( DelOFP(fptr) );
-             err:String="";
-             HOST( GetError(err) );
-             f[1]<<^Error;
-             f[1]<<err;
-             end,
-     ^Remove:
-      f[1]>>path;
-      f[1]<<^Error;
-      f[1]<<"Not implemented";
-      end
-    }
-  )
-in FileServer() |
+          then f[2]<<^OK;
+               OutFileSession(f, fptr)
+          else HOST( DelOFP(fptr) );
+               err:String="";
+               HOST( GetError(err) );
+               f[2]<<^Error;
+               f[2]<<err;
+               end,
+       ^Remove:
+        f[2]>>path;
+        f[2]<<^Error;
+        f[2]<<"Not implemented";
+        end
+      }
+    )
+  in FileServer()
+) |
