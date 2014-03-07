@@ -29,6 +29,30 @@ class TypeArg // {{{
     MpsExp *myValue;
 }; // }}}
 
+// DOCUMENTATION: MpsParticipant {{{
+//! \brief MpsParticipantt represents a participant in a multiparty session type.
+/*!
+ * MpsParticipantGlobalType represents a participant global or local multiparty
+ * session type, and holds all information on that participant such as id, name
+ * and parameters.
+ */
+// }}}
+class MpsParticipant // {{{
+{
+  public:
+    MpsParticipant(int id, const std::string &name, bool pure) : myId(id), myName(name), myPure(pure) {}
+    virtual ~MpsParticipant() {}
+
+    int GetId() {return myId;}
+    const std::string &GetName() {return myName;}
+    bool IsPure() {return myPure;}
+
+  private:
+    int myId;
+    std::string myName;
+    bool myPure;
+}; // }}}
+
 // DOCUMENTATION: MpsGlobalType {{{
 /*!
  * MpsGlobalType represents a multiparty session type describing the
@@ -810,7 +834,7 @@ class MpsTupleMsgType : public MpsMsgType // {{{
 class MpsChannelMsgType : public MpsMsgType // {{{
 {
   public:
-    MpsChannelMsgType(const MpsGlobalType &type, bool pure);
+    MpsChannelMsgType(const MpsGlobalType &type, const std::vector<MpsParticipant> &participants);
     virtual ~MpsChannelMsgType();
     MpsChannelMsgType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
@@ -834,15 +858,16 @@ class MpsChannelMsgType : public MpsMsgType // {{{
     const MpsGlobalType *GetGlobalType() const {return myType;}
     MpsGlobalType *GetGlobalType() {return myType;}
     bool IsPure() const {return myPure;}
+    const std::vector<MpsParticipant> GetParticipants() {return myParticipants;}
 
   private:
     MpsGlobalType *myType;
-    bool myPure;
+    std::vector<MpsParticipant> myParticipants;
 }; // }}}
 class MpsDelegateMsgType : public MpsMsgType // {{{
 {
   public:
-    MpsDelegateMsgType(int pid, int maxpid);
+    MpsDelegateMsgType(int pid, const std::vector<MpsParticipant> &participants);
     virtual ~MpsDelegateMsgType();
     virtual MpsDelegateMsgType *Copy() const=0;
     bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
@@ -866,16 +891,17 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
     virtual const MpsLocalType *GetLocalType() const=0;
     virtual MpsLocalType *GetLocalType()=0;
     int GetPid() const {return myPid;}
-    int GetMaxpid() const {return myMaxpid;}
+    int GetMaxpid() const {return myParticipants.size();}
+    const std::vector<MpsParticipant> GetParticipants() {return myParticipants;}
 
   private:
     int myPid;
-    int myMaxpid;
+    std::vector<MpsParticipant> myParticipants;
 }; // }}}
 class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
 {
   public:
-    MpsDelegateLocalMsgType(const MpsLocalType &myType, int pid, int maxpid);
+    MpsDelegateLocalMsgType(const MpsLocalType &myType, int pid, const std::vector<MpsParticipant> &participants);
     virtual ~MpsDelegateLocalMsgType();
 
     MpsDelegateLocalMsgType *Copy() const;
@@ -902,7 +928,7 @@ class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
 class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegation with local type given as global type projectoon {{{
 {
   public:
-    MpsDelegateGlobalMsgType(const MpsGlobalType &type, int pid, int maxpid);
+    MpsDelegateGlobalMsgType(const MpsGlobalType &type, int pid, const std::vector<MpsParticipant> &participants);
     virtual ~MpsDelegateGlobalMsgType();
 
     MpsDelegateGlobalMsgType *Copy() const;
