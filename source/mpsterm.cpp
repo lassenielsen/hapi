@@ -425,28 +425,16 @@ void HostStmt(vector<string> &hostParts, vector<MpsExp*> &expParts, const parsed
 #endif
   return;
 } // }}}
-bool IsPure(const parsed_tree *exp) // {{{
-{ if (exp->type_name == "mode" && exp->case_name == "case1") // 
-    return false;
-  else if (exp->type_name == "mode" && exp->case_name == "case2") // pure
-    return true;
-  else if (exp->type_name == "mode" && exp->case_name == "case3") // impure
-    return false;
-
-#if APIMS_DEBUG_LEVEL>1
-  cerr << "Unknown mode parsetree: " << exp->type_name << "." << exp->case_name << endl;
-#endif
-
-  return false;
-} // }}}
 MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
 {
   if (exp->type_name == "pi" && exp->case_name == "case1") // ( nu id : mode Gtype ) pi {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[7]);
     MpsGlobalType *type = MpsGlobalType::Create(exp->content[5]);
-    bool pure=IsPure(exp->content[4]);
-    MpsTerm *result = new MpsNu(pure,exp->content[2]->root.content, *succ, *type);
+    vector<MpsParticipant> participants;
+    for (int i=0; i<type->GetMaxPid(); ++i) // FIXME: ADD SYNTAX AND PARSER
+      participants.push_back(MpsParticipant(i+1,int2string(i+1), false));
+    MpsTerm *result = new MpsNu(participants,exp->content[2]->root.content, *succ, *type);
     delete succ;
     delete type;
     return result;

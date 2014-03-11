@@ -30,7 +30,7 @@ class TypeArg // {{{
 }; // }}}
 
 // DOCUMENTATION: MpsParticipant {{{
-//! \brief MpsParticipantt represents a participant in a multiparty session type.
+//! \brief MpsParticipant represents a participant in a multiparty session type.
 /*!
  * MpsParticipantGlobalType represents a participant global or local multiparty
  * session type, and holds all information on that participant such as id, name
@@ -43,9 +43,11 @@ class MpsParticipant // {{{
     MpsParticipant(int id, const std::string &name, bool pure) : myId(id), myName(name), myPure(pure) {}
     virtual ~MpsParticipant() {}
 
-    int GetId() {return myId;}
-    const std::string &GetName() {return myName;}
-    bool IsPure() {return myPure;}
+    int GetId() const {return myId;}
+    const std::string &GetName() const {return myName;}
+    bool IsPure() const {return myPure;}
+    bool operator==(const MpsParticipant &rhs) const {return GetId()==rhs.GetId() && GetName()==rhs.GetName() && IsPure()==rhs.IsPure();}
+    bool operator!=(const MpsParticipant &rhs) const {return !((*this)==rhs);}
 
   private:
     int myId;
@@ -857,8 +859,8 @@ class MpsChannelMsgType : public MpsMsgType // {{{
 
     const MpsGlobalType *GetGlobalType() const {return myType;}
     MpsGlobalType *GetGlobalType() {return myType;}
-    bool IsPure() const {return myPure;}
-    const std::vector<MpsParticipant> GetParticipants() {return myParticipants;}
+    const std::vector<MpsParticipant> GetParticipants() const {return myParticipants;}
+    int GetMaxPid() const {return myParticipants.size();}
 
   private:
     MpsGlobalType *myType;
@@ -892,7 +894,7 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
     virtual MpsLocalType *GetLocalType()=0;
     int GetPid() const {return myPid;}
     int GetMaxpid() const {return myParticipants.size();}
-    const std::vector<MpsParticipant> GetParticipants() {return myParticipants;}
+    const std::vector<MpsParticipant> GetParticipants() const {return myParticipants;}
 
   private:
     int myPid;

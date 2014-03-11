@@ -66,6 +66,7 @@ const string MpsMsgType::BNF_MTYPE=
          | Ltype @ ( int of int ) \
          | Gtype @ ( int of int )";
 // }}}
+
 string MpsLocalType::NewLVar(string basename) // {{{
 {
   string result = (string)"~%"+basename;
@@ -158,7 +159,10 @@ MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
   else if (tree->type_name == "Mtype" && tree->case_name == "case2") // < Gtype > {{{
   {
     MpsGlobalType *gtype = MpsGlobalType::Create(tree->content[1]);
-    MpsChannelMsgType *result = new MpsChannelMsgType(*gtype,false); // We must assume channel is impure for safety
+    vector<MpsParticipant> participants;
+    for (int i=0; i<gtype->GetMaxPid(); ++i) // FISME: Adde syntax and parser
+      participants.push_back(MpsParticipant(i+1,int2string(i+1),false));
+    MpsChannelMsgType *result = new MpsChannelMsgType(*gtype,participants); // We must assume channel is impure for safety
     // Clean up
     delete gtype;
 
@@ -169,7 +173,10 @@ MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
     MpsLocalType *ltype = MpsLocalType::Create(tree->content[0]);
     int pid = string2int(tree->content[3]->root.content);
     int maxpid = string2int(tree->content[5]->root.content);
-    MpsDelegateMsgType *result = new MpsDelegateLocalMsgType(*ltype,pid,maxpid);
+    vector<MpsParticipant> participants;
+    for (int i=0; i<maxpid; ++i) // FISME: Adde syntax and parser
+      participants.push_back(MpsParticipant(i+1,int2string(i+1),false));
+    MpsDelegateMsgType *result = new MpsDelegateLocalMsgType(*ltype,pid,participants);
     // Clean up
     delete ltype;
 
@@ -180,7 +187,10 @@ MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
     MpsGlobalType *gtype = MpsGlobalType::Create(tree->content[0]);
     int pid = string2int(tree->content[3]->root.content);
     int maxpid = string2int(tree->content[5]->root.content);
-    MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*gtype,pid,maxpid);
+    vector<MpsParticipant> participants;
+    for (int i=0; i<maxpid; ++i) // FISME: Adde syntax and parser
+      participants.push_back(MpsParticipant(i+1,int2string(i+1),false));
+    MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*gtype,pid,participants);
 
     // Clean up
     delete gtype;
@@ -4790,23 +4800,23 @@ MpsTupleMsgType::MpsTupleMsgType(const vector<MpsMsgType*> &elements) // {{{
   for (vector<MpsMsgType*>::const_iterator it=elements.begin(); it!=elements.end(); ++it)
     myElements.push_back((*it)->Copy());
 } // }}}
-MpsChannelMsgType::MpsChannelMsgType(const MpsGlobalType &type, bool pure) // {{{
-: myPure(pure)
+MpsChannelMsgType::MpsChannelMsgType(const MpsGlobalType &type, const vector<MpsParticipant> &participants) // {{{
+: myParticipants(participants)
 {
   myType = type.Copy();
 } // }}}
-MpsDelegateMsgType::MpsDelegateMsgType(int pid, int maxpid) // {{{
+MpsDelegateMsgType::MpsDelegateMsgType(int pid, const vector<MpsParticipant> &participants) // {{{
+: myParticipants(participants)
+, myPid(pid)
 {
-  myPid = pid;
-  myMaxpid = maxpid;
 } // }}}
-MpsDelegateLocalMsgType::MpsDelegateLocalMsgType(const MpsLocalType &type, int pid, int maxpid) // {{{
-: MpsDelegateMsgType(pid,maxpid)
+MpsDelegateLocalMsgType::MpsDelegateLocalMsgType(const MpsLocalType &type, int pid, const vector<MpsParticipant> &participants) // {{{
+: MpsDelegateMsgType(pid,participants)
 {
   myType=type.Copy();
 } // }}}
-MpsDelegateGlobalMsgType::MpsDelegateGlobalMsgType(const MpsGlobalType &type, int pid, int maxpid) // {{{
-: MpsDelegateMsgType(pid,maxpid)
+MpsDelegateGlobalMsgType::MpsDelegateGlobalMsgType(const MpsGlobalType &type, int pid, const vector<MpsParticipant> &participants) // {{{
+: MpsDelegateMsgType(pid,participants)
 {
   myGlobalType=type.Copy();
   myLocalType=myGlobalType->Project(GetPid());
@@ -4872,15 +4882,15 @@ MpsTupleMsgType *MpsTupleMsgType::Copy() const // {{{
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::Copy() const // {{{
 {
-  return new MpsChannelMsgType(*myType,myPure);
+  return new MpsChannelMsgType(*myType,myParticipants);
 } // }}}
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::Copy() const // {{{
 {
-  return new MpsDelegateLocalMsgType(*myType,GetPid(),GetMaxpid());
+  return new MpsDelegateLocalMsgType(*myType,GetPid(),GetParticipants());
 } // }}}
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::Copy() const // {{{
 {
-  return new MpsDelegateGlobalMsgType(*myGlobalType,GetPid(),GetMaxpid());
+  return new MpsDelegateGlobalMsgType(*myGlobalType,GetPid(),GetParticipants());
 } // }}}
 
 // Compare
@@ -4919,6 +4929,11 @@ bool MpsChannelMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const 
   const MpsChannelMsgType *rhsptr = dynamic_cast<const MpsChannelMsgType*>(&rhs);
   if (rhsptr==NULL)
     return false;
+  if (GetMaxPid() != rhsptr->GetMaxPid())
+    return false;
+  for (int i=0; i<GetMaxPid(); ++i)
+    if (GetParticipants()[i] != rhsptr->GetParticipants()[i])
+      return false;
   return myType->Equal(Theta,*rhsptr->myType);
 } // }}}
 bool MpsDelegateMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
@@ -4927,9 +4942,15 @@ bool MpsDelegateMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const
   const MpsDelegateMsgType *rhsptr=dynamic_cast<const MpsDelegateMsgType*>(&rhs);
   if (rhsptr==NULL)
     return false;
-  return GetPid() == rhsptr->GetPid() &&
-         GetMaxpid() == rhsptr->GetMaxpid() &&
-         GetLocalType()->Equal(Theta,*rhsptr->GetLocalType());
+  if (GetPid() != rhsptr->GetPid())
+    return false;
+  if (GetMaxpid() != rhsptr->GetMaxpid())
+    return false;
+  for (int i=0; i<GetMaxpid(); ++i)
+    if (GetParticipants()[i] != rhsptr->GetParticipants()[i])
+      return false;
+    
+  return GetLocalType()->Equal(Theta,*rhsptr->GetLocalType());
 } // }}}
 
 // Free Global Type Variables
@@ -5080,21 +5101,21 @@ MpsTupleMsgType *MpsTupleMsgType::GRename(const string &source, const string &de
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::GRename(const string &source, const string &dest) const // {{{
 { MpsGlobalType *newType = myType->GRename(source,dest);
-  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myPure);
+  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myParticipants);
   delete newType;
   return result;
 } // }}}
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::GRename(const string &source, const string &dest) const // {{{
 {
   MpsLocalType *newType = myType->GRename(source,dest);
-  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::GRename(const string &source, const string &dest) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->GRename(source,dest);
-  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
@@ -5127,21 +5148,21 @@ MpsTupleMsgType *MpsTupleMsgType::LRename(const string &source, const string &de
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::LRename(const string &source, const string &dest) const // {{{
 { MpsGlobalType *newType = myType->LRename(source,dest);
-  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myPure);
+  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myParticipants);
   delete newType;
   return result;
 } // }}}
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::LRename(const string &source, const string &dest) const // {{{
 {
   MpsLocalType *newType = myType->LRename(source,dest);
-  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::LRename(const string &source, const string &dest) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->LRename(source,dest);
-  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
@@ -5174,21 +5195,21 @@ MpsTupleMsgType *MpsTupleMsgType::ERename(const string &source, const string &de
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::ERename(const string &source, const string &dest) const // {{{
 { MpsGlobalType *newType = myType->ERename(source,dest);
-  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myPure);
+  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myParticipants);
   delete newType;
   return result;
 } // }}}
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::ERename(const string &source, const string &dest) const // {{{
 {
   MpsLocalType *newType = myType->ERename(source,dest);
-  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::ERename(const string &source, const string &dest) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->ERename(source,dest);
-  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
@@ -5226,7 +5247,7 @@ MpsTupleMsgType *MpsTupleMsgType::GSubst(const string &source, const MpsGlobalTy
 MpsChannelMsgType *MpsChannelMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType=myType->GSubst(source,dest,args);
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myPure);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myParticipants);
 
   // Clean Up
   delete newType;
@@ -5236,7 +5257,7 @@ MpsChannelMsgType *MpsChannelMsgType::GSubst(const string &source, const MpsGlob
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsLocalType *newType = myType->GSubst(source,dest,args);
-  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5246,7 +5267,7 @@ MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::GSubst(const string &source, c
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->GSubst(source,dest,args);
-  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5287,7 +5308,7 @@ MpsTupleMsgType *MpsTupleMsgType::LSubst(const string &source, const MpsLocalTyp
 MpsChannelMsgType *MpsChannelMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType=myType->LSubst(source,dest,args);
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myPure);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myParticipants);
 
   // Clean Up
   delete newType;
@@ -5297,7 +5318,7 @@ MpsChannelMsgType *MpsChannelMsgType::LSubst(const string &source, const MpsLoca
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsLocalType *newType = myType->LSubst(source,dest,args);
-  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5307,7 +5328,7 @@ MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::LSubst(const string &source, c
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->LSubst(source,dest,args);
-  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5348,7 +5369,7 @@ MpsTupleMsgType *MpsTupleMsgType::ESubst(const string &source, const MpsExp &des
 MpsChannelMsgType *MpsChannelMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   MpsGlobalType *newType=myType->ESubst(source,dest);
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myPure);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myParticipants);
 
   // Clean Up
   delete newType;
@@ -5358,7 +5379,7 @@ MpsChannelMsgType *MpsChannelMsgType::ESubst(const string &source, const MpsExp 
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   MpsLocalType *newType = myType->ESubst(source,dest);
-  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5368,7 +5389,7 @@ MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::ESubst(const string &source, c
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->ESubst(source,dest);
-  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5409,7 +5430,7 @@ MpsTupleMsgType *MpsTupleMsgType::RenameAll() const // {{{
 MpsChannelMsgType *MpsChannelMsgType::RenameAll() const // {{{
 {
   MpsGlobalType *newType=myType->RenameAll();
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myPure);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myParticipants);
 
   // Clean Up
   delete newType;
@@ -5419,7 +5440,7 @@ MpsChannelMsgType *MpsChannelMsgType::RenameAll() const // {{{
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::RenameAll() const // {{{
 {
   MpsLocalType *newType = myType->RenameAll();
-  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5429,7 +5450,7 @@ MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::RenameAll() const // {{{
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::RenameAll() const // {{{
 {
   MpsGlobalType *newType = myGlobalType->RenameAll();
-  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;

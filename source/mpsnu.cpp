@@ -4,8 +4,8 @@
 using namespace std;
 using namespace apims;
 
-MpsNu::MpsNu(bool pure, const string &channel, const MpsTerm &succ, const MpsGlobalType &type) // {{{
-: myPure(pure)
+MpsNu::MpsNu(const vector<MpsParticipant> &participants, const string &channel, const MpsTerm &succ, const MpsGlobalType &type) // {{{
+: myParticipants(participants)
 , myChannel(channel)
 {
   mySucc = succ.Copy();
@@ -31,7 +31,7 @@ bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProc
     newGamma.erase(var);
   }
   // FIXME: Check that myType is coherent
-  newGamma[myChannel] = new MpsChannelMsgType(*myType,myPure);
+  newGamma[myChannel] = new MpsChannelMsgType(*myType,myParticipants);
   int result=mySucc->TypeCheck(Theta,newGamma,Omega);
   delete newGamma[myChannel];
   return result;
@@ -55,7 +55,7 @@ bool MpsNu::SubSteps(vector<MpsStep> &dest) // {{{
 MpsTerm *MpsNu::PRename(const string &src, const string &dst) const // {{{
 {
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsNu(myPure,myChannel,*newSucc,*myType);
+  MpsTerm *result = new MpsNu(myParticipants,myChannel,*newSucc,*myType);
   delete newSucc;
   return result;
 } // }}}
@@ -76,7 +76,7 @@ MpsTerm *MpsNu::ERename(const string &src, const string &dst) const // {{{
   }
   else
     newSucc = mySucc->ERename(src,dst);
-  MpsTerm *result = new MpsNu(myPure, newChannel, *newSucc, *myType);
+  MpsTerm *result = new MpsNu(myParticipants, newChannel, *newSucc, *myType);
   delete newSucc;
   return result;
 } // }}}
@@ -87,7 +87,7 @@ MpsTerm *MpsNu::ReIndex(const string &session, int pid, int maxpid) const // {{{
     return Copy();
 
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
-  MpsTerm *result = new MpsNu(myPure, myChannel, *newSucc, *myType);
+  MpsTerm *result = new MpsNu(myParticipants, myChannel, *newSucc, *myType);
   delete newSucc;
   return result;
 } // }}}
@@ -109,7 +109,7 @@ MpsTerm *MpsNu::PSubst(const string &var, const MpsTerm &exp, const vector<strin
   }
   else
     newSucc = mySucc->PSubst(var,exp,args,argpids,stateargs);
-  MpsTerm *result = new MpsNu(myPure, newChannel, *newSucc, *myType);
+  MpsTerm *result = new MpsNu(myParticipants, newChannel, *newSucc, *myType);
   delete newSucc;
   return result;
 } // }}}
@@ -118,7 +118,7 @@ MpsTerm *MpsNu::ESubst(const string &source, const MpsExp &dest) const // {{{
   MpsGlobalType *newType=myType->ESubst(source,dest);
   // assert mySucc != NULL
   if (myChannel==source) // No substitution necessary
-  { MpsTerm *result=new MpsNu(myPure, myChannel, *mySucc, *newType);
+  { MpsTerm *result=new MpsNu(myParticipants, myChannel, *mySucc, *newType);
     delete newType;
     return result;
   }
@@ -137,7 +137,7 @@ MpsTerm *MpsNu::ESubst(const string &source, const MpsExp &dest) const // {{{
   }
   else
     newSucc = mySucc->ESubst(source,dest);
-  MpsTerm *result = new MpsNu(myPure, newChannel, *newSucc, *newType);
+  MpsTerm *result = new MpsNu(myParticipants, newChannel, *newSucc, *newType);
   delete newType;
   delete newSucc;
   return result;
@@ -146,7 +146,7 @@ MpsTerm *MpsNu::GSubst(const string &source, const MpsGlobalType &dest, const ve
 {
   MpsGlobalType *newType = myType->GSubst(source,dest,args);
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
-  MpsTerm *result =  new MpsNu(myPure, myChannel, *newSucc, *newType);
+  MpsTerm *result =  new MpsNu(myParticipants, myChannel, *newSucc, *newType);
 
   // Clean Up
   delete newType;
@@ -158,7 +158,7 @@ MpsTerm *MpsNu::LSubst(const string &source, const MpsLocalType &dest, const vec
 {
   MpsGlobalType *newType = myType->LSubst(source,dest,args);
   MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
-  MpsTerm *result =  new MpsNu(myPure, myChannel, *newSucc, *newType);
+  MpsTerm *result =  new MpsNu(myParticipants, myChannel, *newSucc, *newType);
 
   // Clean Up
   delete newType;
@@ -179,7 +179,7 @@ set<string> MpsNu::FEV() const // {{{
 } // }}}
 MpsTerm *MpsNu::Copy() const // {{{
 {
-  return new MpsNu(myPure, myChannel, *mySucc, *myType);
+  return new MpsNu(myParticipants, myChannel, *mySucc, *myType);
 } // }}}
 bool MpsNu::Terminated() const // {{{
 {
@@ -189,7 +189,7 @@ MpsTerm *MpsNu::Simplify() const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->Simplify();
-  MpsTerm *result = new MpsNu(myPure, myChannel, *newSucc, *myType);
+  MpsTerm *result = new MpsNu(myParticipants, myChannel, *newSucc, *myType);
   delete newSucc;
   return result;
 } // }}}
@@ -199,7 +199,7 @@ string MpsNu::ToString(string indent) const // {{{
   for (int i=0; i<myChannel.size();++i)
     typeIndent+=" ";
   string newIndent = indent + "  ";
-  return (string)"(nu " + myChannel + ":" + (myPure?string(" pure "):string()) + myType->ToString(typeIndent) + ")\n" + newIndent + mySucc->ToString(newIndent);
+  return (string)"(nu " + myChannel + ":" + myType->ToString(typeIndent) + ")\n" + newIndent + mySucc->ToString(newIndent);
 } // }}}
 string MpsNu::ToTex(int indent, int sw) const // {{{
 {
@@ -229,7 +229,7 @@ MpsTerm *MpsNu::RenameAll() const // {{{
   delete tmpSucc;
   MpsGlobalType *newType=myType->RenameAll();
 
-  MpsTerm *result=new MpsNu(myPure, newChannel,*newSucc,*newType);
+  MpsTerm *result=new MpsNu(myParticipants, newChannel,*newSucc,*newType);
 
   delete newSucc;
   delete newType;
@@ -238,28 +238,28 @@ MpsTerm *MpsNu::RenameAll() const // {{{
 } // }}}
 bool MpsNu::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 { MpsTerm *seqSucc = mySucc->Parallelize();
-  seqTerm=new MpsNu(myPure, myChannel, *seqSucc, *myType);
+  seqTerm=new MpsNu(myParticipants, myChannel, *seqSucc, *myType);
   delete seqSucc;
   parTerm=receives.Append(*seqTerm);
   return false; // All optimizations are guarded
 } // }}}
 MpsTerm *MpsNu::Append(const MpsTerm &term) const // {{{
 { MpsTerm *newSucc=mySucc->Append(term);
-  MpsTerm *result=new MpsNu(myPure, myChannel, *newSucc, *myType);
+  MpsTerm *result=new MpsNu(myParticipants, myChannel, *newSucc, *myType);
   delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsNu::CloseDefinitions() const // {{{
 {
   MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsTerm *result= new MpsNu(myPure, myChannel, *newSucc, *myType);
+  MpsTerm *result= new MpsNu(myParticipants, myChannel, *newSucc, *myType);
   delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsNu::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
 
-  MpsTerm *result=new MpsNu(myPure, myChannel,*newSucc,*myType);
+  MpsTerm *result=new MpsNu(myParticipants, myChannel,*newSucc,*myType);
 
   delete newSucc;
 

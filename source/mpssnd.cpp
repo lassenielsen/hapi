@@ -49,7 +49,7 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
     newType = sndType->GetSucc()->ESubst(sndType->GetAssertionName(),*myExp);
   else
     newType = sndType->GetSucc()->Copy();
-  MpsDelegateLocalMsgType *newMsgType=new MpsDelegateLocalMsgType(*newType,msgType->GetPid(),msgType->GetMaxpid());
+  MpsDelegateLocalMsgType *newMsgType=new MpsDelegateLocalMsgType(*newType,msgType->GetPid(),msgType->GetParticipants());
   delete newType;
   MpsMsgEnv newGamma = Gamma;
   newGamma[myChannel.GetName()]=newMsgType;

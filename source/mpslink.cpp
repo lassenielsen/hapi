@@ -32,7 +32,10 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   if (channel==NULL)
     return PrintTypeError((string)"Linking on non-channel:" + myChannel,*this,Theta,Gamma,Omega);
   // Store purity of channel
-  myPure=channel->IsPure() && myMaxpid==myPid;
+  myPure=true;
+  for (int i=0; myPure && i<channel->GetMaxPid(); ++i)
+    if (i+1!=myPid && !channel->GetParticipants()[i].IsPure())
+      myPure=false;
   // Check correct maxpid
   if (myMaxpid != channel->GetGlobalType()->GetMaxPid())
     return PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega);
@@ -57,7 +60,7 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     newType=tmpType;
   }
   // Create Gamma with new session
-  newGamma[mySession] = new MpsDelegateLocalMsgType(*newType,myPid,myMaxpid);
+  newGamma[mySession] = new MpsDelegateLocalMsgType(*newType,myPid,channel->GetParticipants());
   delete newType;
 
   bool result=mySucc->TypeCheck(Theta,newGamma,Omega);

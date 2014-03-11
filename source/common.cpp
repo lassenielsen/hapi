@@ -280,7 +280,7 @@ inline bool TypeCheckRec(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gam
     delete newType;
     newType=tmpType;
   }
-  apims::MpsDelegateLocalMsgType *newMsgType=new apims::MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetMaxpid());
+  apims::MpsDelegateLocalMsgType *newMsgType=new apims::MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetParticipants());
   newGamma[session] = newMsgType;
   bool result = false;
   if (dynamic_cast<apims::MpsLocalRecType*>(newType)==NULL)
@@ -304,7 +304,7 @@ inline bool TypeCheckForall(const apims::MpsExp &Theta, const apims::MpsMsgEnv &
   std::string newName = apims::MpsExp::NewVar(type->GetName());
   // Create type for substitution
   apims::MpsLocalType *newType = type->GetSucc()->ERename(type->GetName(),newName);
-  apims::MpsDelegateLocalMsgType *newMsgType=new apims::MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetMaxpid());
+  apims::MpsDelegateLocalMsgType *newMsgType=new apims::MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetParticipants());
   delete newType;
   // Create new Theta
   apims::MpsExp *newAssertion = type->GetAssertion().Rename(type->GetName(),newName);

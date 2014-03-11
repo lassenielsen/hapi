@@ -58,7 +58,7 @@ bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   
   // Make new environment
   MpsMsgEnv newGamma = Gamma;
-  newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second,msgType->GetPid(),msgType->GetMaxpid());
+  newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second,msgType->GetPid(),msgType->GetParticipants());
 
   // Store if this is final action in session
   myFinal=branch->second->IsDone();

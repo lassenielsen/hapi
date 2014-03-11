@@ -171,7 +171,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
           delete tmp1;
           tmp1=tmp2;
         }
-        newGamma[gamma->first]=new MpsDelegateLocalMsgType(*tmp1,gammaDel->GetPid(),gammaDel->GetMaxpid());
+        newGamma[gamma->first]=new MpsDelegateLocalMsgType(*tmp1,gammaDel->GetPid(),gammaDel->GetParticipants());
       }
       else
       { newGamma[gamma->first]=gamma->second; // COPY?
