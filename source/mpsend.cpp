@@ -1,5 +1,5 @@
 #include<apims/mpsend.hpp>
-#include "common.cpp"
+#include <apims/common.hpp>
 
 using namespace std;
 using namespace apims;

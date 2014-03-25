@@ -1,6 +1,6 @@
 #include<apims/mpsrcv.hpp>
 #include<apims/mpsend.hpp>
-#include "common.cpp"
+#include <apims/common.hpp>
 
 using namespace std;
 using namespace apims;
@@ -324,7 +324,7 @@ string MpsRcv::ToString(string indent) const // {{{
 } // }}}
 string MpsRcv::ToTex(int indent, int sw) const // {{{
 {
-  string result = ToTex_Channel(myChannel) + "$\\gg$" + myDest;
+  string result = myChannel.ToTex() + "$\\gg$" + myDest;
   if (myMaxPid!=-1)
     result += "\\at (" + ToTex_PP(myPid) + " " + ToTex_KW("def") + " " + ToTex_PP(myMaxPid) + ")";
   result += ";\\newline\n"

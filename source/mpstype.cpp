@@ -1,7 +1,7 @@
 #include <apims/mpstype.hpp>
+#include <apims/mpsterm.hpp>
 
-#include "common.cpp"
-#include <algorithm>
+#include <apims/common.hpp>
 
 using namespace std;
 using namespace apims;
@@ -62,9 +62,9 @@ const string MpsMsgType::BNF_STYPES2=
 "Stypes2 ::= Stype , Stypes2 | Stype";
 const string MpsMsgType::BNF_MTYPE=
 "Mtype ::= Stype \
-         | < Gtype > \
-         | Ltype @ ( int of int ) \
-         | Gtype @ ( int of int )";
+         | { participants } @ Gtype \
+         | ( int of { participants } ) @ Ltype \
+         | ( int of { participants } ) @ Gtype";
 // }}}
 
 string MpsLocalType::NewLVar(string basename) // {{{
@@ -156,19 +156,27 @@ MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
   {
     return MpsMsgType::Create(tree->content[0]);
   } // }}}
-  else if (tree->type_name == "Mtype" && tree->case_name == "case2") // < Gtype > {{{
+  else if (tree->type_name == "Mtype" && tree->case_name == "case2") // { participants } @ Gtype {{{
   {
-    MpsGlobalType *gtype = MpsGlobalType::Create(tree->content[1]);
+    MpsGlobalType *gtype = MpsGlobalType::Create(tree->content[4]);
     vector<MpsParticipant> participants;
-    for (int i=0; i<gtype->GetMaxPid(); ++i) // FISME: Adde syntax and parser
-      participants.push_back(MpsParticipant(i+1,int2string(i+1),false));
+    MpsTerm::FindParticipants(tree->content[1],participants);
+    //for (int i=0; i<gtype->GetMaxPid(); ++i) // FISME: Adde syntax and parser
+    //  participants.push_back(MpsParticipant(i+1,int2string(i+1),false));
+    if (participants.size()!=gtype->GetMaxPid())
+    {
+#if APIMS_DEBUG_LEVEL>1
+      cerr << "Wrong participant count in: " << tree->type_name << "." << tree->case_name << endl;
+#endif
+      return new MpsIntMsgType();
+    }
     MpsChannelMsgType *result = new MpsChannelMsgType(*gtype,participants); // We must assume channel is impure for safety
     // Clean up
     delete gtype;
 
     return result;
   } // }}}
-  else if (tree->type_name == "Mtype" && tree->case_name == "case3") // Ltype @ ( int of int ) {{{
+  else if (tree->type_name == "Mtype" && tree->case_name == "case3") // ( int of { participants } ) @ Ltype {{{
   {
     MpsLocalType *ltype = MpsLocalType::Create(tree->content[0]);
     int pid = string2int(tree->content[3]->root.content);
@@ -182,7 +190,7 @@ MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
 
     return result;
   } // }}}
-  else if (tree->type_name == "Mtype" && tree->case_name == "case4") // Gtype @ ( int of int ) {{{
+  else if (tree->type_name == "Mtype" && tree->case_name == "case4") // ( int of { participants } ) @ Gtype {{{
   {
     MpsGlobalType *gtype = MpsGlobalType::Create(tree->content[0]);
     int pid = string2int(tree->content[3]->root.content);

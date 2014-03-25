@@ -1,6 +1,6 @@
 #include <apims/mpsgui_sdl.hpp>
 #include <algorithm>
-#include "common.cpp"
+#include <apims/common.hpp>
 
 using namespace SdlWidgets;
 using namespace mpsgui;

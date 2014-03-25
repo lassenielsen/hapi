@@ -326,6 +326,22 @@ class MpsSystemExp : public MpsExp // {{{
   private:
     std::string myField;
 }; // }}}
+
+inline std::string stringESubst(const std::string &name, const std::string &source, const apims::MpsExp &dest) // {{{
+{
+  if (name == source) // perform substitution
+  {
+    if (typeid(dest) != typeid(apims::MpsVarExp)) // Error: match with non channel expression
+    {
+      std::cerr << "Error Channel substitution ignoring substitution match with non channel expression: "
+                << dest.ToString()
+                << std::endl;
+      return "_ERROR";
+    }
+    return dest.ToString();
+  }
+  return name;
+} // }}}
 }
 
 #endif

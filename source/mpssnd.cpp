@@ -1,6 +1,6 @@
 #include<apims/mpssnd.hpp>
 #include<apims/mpsend.hpp>
-#include "common.cpp"
+#include <apims/common.hpp>
 
 using namespace std;
 using namespace apims;
@@ -216,7 +216,7 @@ string MpsSnd::ToString(string indent) const // {{{
 } // }}}
 string MpsSnd::ToTex(int indent, int sw) const // {{{
 {
-  return ToTex_Channel(myChannel) + "$\\ll$" + myExp->ToString() + ";\\newline\n"
+  return myChannel.ToTex() + "$\\ll$" + myExp->ToString() + ";\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
 string MpsSnd::ToC() const // {{{

@@ -1,6 +1,6 @@
 #include <apims/mpsgui_http.hpp>
 #include <dpl/parser.hpp>
-#include "common.cpp"
+#include <apims/common.hpp>
 #include "SDL_net.h"
 #include "SDL_thread.h"
 #include <pthread.h>

@@ -1,5 +1,5 @@
 #include<apims/mpsbranch.hpp>
-#include "common.cpp"
+#include <apims/common.hpp>
 
 using namespace std;
 using namespace apims;
@@ -285,7 +285,7 @@ string MpsBranch::ToString(string indent) const // {{{
 } // }}}
 string MpsBranch::ToTex(int indent, int sw) const // {{{
 {
-  string result = ToTex_Channel(myChannel) + "$\\gg$\\newline\n"
+  string result = myChannel.ToTex() + "$\\gg$\\newline\n"
                 + ToTex_Hspace(indent,sw) + "\\{ ";
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {

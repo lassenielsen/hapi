@@ -1,6 +1,6 @@
 #include<apims/mpsselect.hpp>
 #include<apims/mpsend.hpp>
-#include "common.cpp"
+#include <apims/common.hpp>
 
 using namespace std;
 using namespace apims;
@@ -192,7 +192,7 @@ string MpsSelect::ToString(string indent) const // {{{
 } // }}}
 string MpsSelect::ToTex(int indent, int sw) const // {{{
 {
-  return ToTex_Channel(myChannel) + "$\\ll$ "
+  return myChannel.ToTex() + "$\\ll$ "
        + ToTex_Label(myLabel) + ";\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}

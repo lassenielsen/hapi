@@ -1,7 +1,7 @@
 #include<apims/mpsdef.hpp>
 #include<apims/mpscall.hpp>
 #include<apims/mpsend.hpp>
-#include "common.cpp"
+#include <apims/common.hpp>
 
 using namespace std;
 using namespace apims;

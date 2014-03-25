@@ -8,17 +8,6 @@
 
 using namespace std;
 using namespace apims;
-inline int string2int(std::string s) // {{{
-{
-  // Allow the use of '~' as minus
-  std::replace(s.begin(),s.end(),'~','-');
-  std::stringstream ss;
-  ss.clear();
-  ss << s;
-  int result;
-  ss >> result;
-  return result;
-} // }}}
 int main(int argc, char **argv)
 { try
   { // Config Parameters

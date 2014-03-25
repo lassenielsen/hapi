@@ -130,6 +130,7 @@ class MpsTerm // {{{
      */
     // }}}
     static MpsTerm *Create(const std::string &exp);
+    static void FindParticipants(const dpl::parsed_tree *exp, std::vector<MpsParticipant> &dest);
     // DOCUMENTATION: MpsTerm::Create {{{
     /*!
      * Creates a MpsTerm object from a parsetree
@@ -393,6 +394,84 @@ class inputbranch // {{{
     std::vector< MpsExp* > values;
 }; // }}}
 
+inline bool PrintTypeError(const std::string &message, const apims::MpsTerm &term, const apims::MpsExp &Theta,  const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega) // {{{
+{
+#if APIMS_DEBUG_LEVEL>1
+  std::cerr << "!!!!!!!!!!!!!!! Type Error: !!!!!!!!!!!!!!!" << std::endl
+            << "!!!!!!!Term: " << term.ToString("!!!!!        ") << std::endl
+            << "!Assertions: " << Theta.ToString() << std::endl
+            << "!!!Type Env: " << PrintGamma(Gamma,"!!!!         ") << std::endl
+            << "!Method Env: " << PrintOmega(Omega,"!!!!         ") << std::endl
+            << "!!!!Message: " << message << std::endl;
+#endif
+  return false;
+} // }}}
+inline bool TypeCheckRec(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, apims::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
+{
+  apims::MpsMsgEnv::const_iterator it=Gamma.find(session);
+  if (it==Gamma.end())
+    return PrintTypeError((std::string)"Unfolding closed session: " + session,term,Theta,Gamma,Omega);
+  const apims::MpsDelegateMsgType *delType = dynamic_cast<const apims::MpsDelegateMsgType*>(it->second);
+  const apims::MpsLocalRecType *type = dynamic_cast<const apims::MpsLocalRecType*>(delType->GetLocalType());
+  if (type==NULL)
+    return PrintTypeError((std::string)"Unfolding non-rec type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+  apims::MpsMsgEnv newGamma = Gamma;
+  // Create type for substitution
+  std::vector<apims::TypeArg> args;
+  std::vector<std::string> argnames;
+  for (std::vector<apims::TypeArg>::const_iterator arg=type->GetArgs().begin(); arg!=type->GetArgs().end(); ++arg)
+  { apims::MpsExp *newValue = new apims::MpsVarExp(arg->myName, apims::MpsMsgNoType());
+    apims::TypeArg newArg(arg->myName, *arg->myType,  *newValue);
+    delete newValue;
+    args.push_back(newArg);
+    argnames.push_back(newArg.myName);
+  }
+  apims::MpsLocalType *substType=new apims::MpsLocalRecType(type->GetName(), *type->GetSucc(), args);
+  apims::MpsLocalType *newType = type->GetSucc()->LSubst(type->GetName(),*substType,argnames);
+  delete substType;
+  for (std::vector<apims::TypeArg>::const_iterator arg=type->GetArgs().begin(); arg!=type->GetArgs().end(); ++arg)
+  { apims::MpsLocalType *tmpType = newType->ESubst(arg->myName,*arg->myValue);
+    delete newType;
+    newType=tmpType;
+  }
+  apims::MpsDelegateLocalMsgType *newMsgType=new apims::MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetParticipants());
+  newGamma[session] = newMsgType;
+  bool result = false;
+  if (dynamic_cast<apims::MpsLocalRecType*>(newType)==NULL)
+    result = term.TypeCheck(Theta,newGamma,Omega);
+  else
+    result = PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+  delete newType;
+  delete newMsgType;
+  return result;
+} // }}}
+inline bool TypeCheckForall(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, apims::MpsTerm &term, const std::string &session) // Using new rule forall {{{
+{
+  apims::MpsMsgEnv::const_iterator it=Gamma.find(session);
+  if (it==Gamma.end())
+    return PrintTypeError((std::string)"Forall on closed session: " + session,term,Theta,Gamma,Omega);
+  const apims::MpsDelegateMsgType *delType = dynamic_cast<const apims::MpsDelegateMsgType*>(it->second);
+  const apims::MpsLocalForallType *type = dynamic_cast<const apims::MpsLocalForallType*>(delType->GetLocalType());
+  if (type==NULL)
+    return PrintTypeError((std::string)"Forall on non-forall type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+  // Find new name for bound variable
+  std::string newName = apims::MpsExp::NewVar(type->GetName());
+  // Create type for substitution
+  apims::MpsLocalType *newType = type->GetSucc()->ERename(type->GetName(),newName);
+  apims::MpsDelegateLocalMsgType *newMsgType=new apims::MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetParticipants());
+  delete newType;
+  // Create new Theta
+  apims::MpsExp *newAssertion = type->GetAssertion().Rename(type->GetName(),newName);
+  apims::MpsExp *newTheta=new apims::MpsBinOpExp("and",Theta,*newAssertion,apims::MpsBoolMsgType(),apims::MpsBoolMsgType());
+  delete newAssertion;
+  // Create new Gamma
+  apims::MpsMsgEnv newGamma = Gamma;
+  newGamma[session] = newMsgType;
+  bool result = term.TypeCheck(*newTheta,newGamma,Omega);
+  // Clean Up
+  delete newTheta;
+  return result;
+} // }}}
 }
 
 #endif

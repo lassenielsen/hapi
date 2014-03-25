@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <apims/common.hpp>
 
 namespace apims
 {
@@ -48,6 +49,25 @@ class MpsParticipant // {{{
     bool IsPure() const {return myPure;}
     bool operator==(const MpsParticipant &rhs) const {return GetId()==rhs.GetId() && GetName()==rhs.GetName() && IsPure()==rhs.IsPure();}
     bool operator!=(const MpsParticipant &rhs) const {return !((*this)==rhs);}
+
+    static MpsParticipant Create(const dpl::parsed_tree &exp) // {{{
+    { // participant ::= mode int
+      std::string id=exp.content[1]->root.content;
+      return MpsParticipant(string2int(id),id,MpsParticipant::CreateMode(*exp.content[0],false));
+    } // }}}
+    static bool CreateMode(const dpl::parsed_tree &exp, bool d) // {{{
+    { // mode ::= | pure | impure
+      if (exp.type_name == "mode" && exp.case_name == "case1")
+        return d;
+      else if (exp.type_name == "mode" && exp.case_name == "case2") // pure
+        return true;
+      else if (exp.type_name == "mode" && exp.case_name == "case3") // impure
+        return false;
+      else throw std::string("MpsParticipant::CreateMode: Unknown pconstructor: ") + exp.type_name + " case: " + exp.case_name;
+    
+      return d;
+    } // }}}
+    
 
   private:
     int myId;
@@ -970,6 +990,48 @@ struct omega // {{{
 //typedef std::map<std::string,delta> MpsLocalEnv;
 typedef std::map<std::string,MpsMsgType*> MpsMsgEnv;
 typedef std::map<std::string,omega> MpsProcEnv;
+
+inline std::string PrintGamma(const apims::MpsMsgEnv &Gamma, const std::string &indent) // {{{
+{
+  std::string result="";
+  for (apims::MpsMsgEnv::const_iterator it=Gamma.begin();it!=Gamma.end();++it)
+  {
+    if (it!=Gamma.begin())
+      result += ",\n" + indent;
+    std::string newIndent = indent + "  ";
+    for (int i=0; i<it->first.size(); ++i)
+      newIndent += " ";
+    result += it->first + ": " + it->second->ToString(newIndent);
+  }
+  return result;
+} // }}}
+inline std::string PrintOmega(const apims::MpsProcEnv &Omega, const std::string &indent) // {{{
+{
+  std::string result = "";
+  for (apims::MpsProcEnv::const_iterator it=Omega.begin();it!=Omega.end();++it)
+  {
+    if (it!=Omega.begin())
+      result += ",\n" + indent;
+    result += it->first + "< ";
+    std::string newIndent = indent + "  ";
+    for (int i=0;i < it->first.size();++i)
+      newIndent += " ";
+    for (int i=0; i<it->second.stypes.size(); ++i)
+    { if (i>0)
+        result += ",\n" + newIndent;
+      result += it->second.snames[i] + ": " + it->second.stypes[i]->ToString(newIndent);
+    }
+    result += " >\n"+newIndent+"( ";
+    for (std::vector<apims::MpsMsgType*>::const_iterator arg=it->second.types.begin(); arg!=it->second.types.end(); ++arg)
+    {
+      if (arg!=it->second.types.begin())
+        result += ",\n" + newIndent;
+      result += (*arg)->ToString(newIndent);
+    }
+    result += " )";
+  }
+  return result;
+} // }}}
 }
 
 #endif

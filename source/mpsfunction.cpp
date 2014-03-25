@@ -2,7 +2,7 @@
 #include <apims/mpsterm.hpp>
 #include <sstream>
 
-#include "common.cpp"
+#include <apims/common.hpp>
 
 using namespace std;
 

@@ -1,6 +1,6 @@
 #include<apims/mpsguisync.hpp>
 #include <apims/mpsgui.hpp>
-#include "common.cpp"
+#include <apims/common.hpp>
 
 using namespace std;
 using namespace apims;

@@ -9,6 +9,7 @@
 
 #include <apims/mpsexp.hpp>
 #include <string>
+#include <apims/common.hpp>
 
 namespace apims
 {
@@ -45,6 +46,12 @@ class MpsChannel // {{{
     // Perform substitution
     MpsChannel Subst(const std::string &source, const MpsExp &dest) const;
     MpsChannel Rename(const std::string &src, const std::string &dst) const;
+    inline std::string ToTex() const // {{{
+    { if (GetType()=="session")
+        return ToTex_Session(GetName()) + "[" + ToTex_SID(GetIndex()) + "]";
+      else
+        return ToTex_ChName(GetName());
+    } // }}}
 
   private:
     std::string myType; // Either "public" or "session"

@@ -1,11 +1,11 @@
 #include <apims/mpsexp.hpp>
 #include <sys/timeb.h>
+#include <apims/common.hpp>
 
 using namespace std;
 using namespace dpl;
 using namespace apims;
 
-#include "common.cpp"
 int MpsExp::ourNextId = 1;
 
 /* Implementation of MpsExp and subclasses

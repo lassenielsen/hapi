@@ -1,5 +1,5 @@
 #include <apims/mpschannel.hpp>
-#include "common.cpp"
+#include <apims/common.hpp>
 
 using namespace apims;
 using namespace std;
