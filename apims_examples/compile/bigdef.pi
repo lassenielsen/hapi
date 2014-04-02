@@ -3,6 +3,6 @@ def X(i:Int) =
   then end
   else X(i-1)
 in
-( X(10000000)
+  X(10000000)
 | X(10000000)
-)
+

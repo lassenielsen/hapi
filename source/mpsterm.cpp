@@ -161,14 +161,14 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefType("recv ::= >> id | >> id @ ( int of int )");
   MpsParser.DefType("recvs ::= recv | recv recvs");
                                                                    // Processes
-  MpsParser.DefType("pi ::= new id : { participants } @ Gtype in pi \
+  MpsParser.DefType("pi ::= def id : { participants } @ Gtype in pi \
+                          | def pvar dargs ( args ) = pi in pi \
                           | pi2 par pi \
                           | pi2");
   MpsParser.DefType("pi2 ::= ( pi ) \
                            | ch sends ; pi2 \
                            | ch recvs ; pi2 \
                            | ch >> { branches } \
-                           | def pvar dargs ( args ) = pi in pi2 \
                            | pvar dexps ( exps ) \
                            | id = new ( int of int ) @ id ; pi2\
                            | sync ( exps ) { branches } \
@@ -517,7 +517,7 @@ void MpsTerm::FindParticipants(const parsed_tree *exp, vector<MpsParticipant> &d
 } // }}}
 MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
 {
-  if (exp->type_name == "pi" && exp->case_name == "case1") // new id : { participants } @ Gtype ; pi {{{
+  if (exp->type_name == "pi" && exp->case_name == "case1") // def id : { participants } @ Gtype ; pi {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[9]);
     MpsGlobalType *type = MpsGlobalType::Create(exp->content[7]);
@@ -538,7 +538,40 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete type;
     return result;
   } // }}}
-  else if (exp->type_name == "pi" && exp->case_name == "case2") // pi2 par pi {{{
+  else if (exp->type_name == "pi" && exp->case_name == "case2") // def pvar dargs ( args ) = pi in pi2 {{{
+  {
+    // FIXME: Handle mode
+    MpsTerm *body = MpsTerm::Create(exp->content[7]);
+    MpsTerm *succ = MpsTerm::Create(exp->content[9]);
+    // Parse args
+    vector<string> args;
+    args.clear();
+    vector<MpsMsgType*> types;
+    types.clear();
+    FindArgs(exp->content[4],args,types);
+    // Parse state
+    vector<string> stateargs;
+    stateargs.clear();
+    vector<MpsMsgType*> statetypes;
+    statetypes.clear();
+    FindArgs(exp->content[2],stateargs,statetypes);
+    MpsTerm *result = new MpsDef(exp->content[1]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv());
+    // Clean up
+    delete succ;
+    delete body;
+    while (types.size() > 0)
+    {
+      delete *types.begin();
+      types.erase(types.begin());
+    }
+    while (statetypes.size() > 0)
+    {
+      delete *statetypes.begin();
+      statetypes.erase(statetypes.begin());
+    }
+    return result;
+  } // }}}
+  else if (exp->type_name == "pi" && exp->case_name == "case3") // pi2 par pi {{{
   {
     MpsTerm *left = MpsTerm::Create(exp->content[0]);
     MpsTerm *right = MpsTerm::Create(exp->content[2]);
@@ -547,7 +580,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete right;
     return result;
   } // }}}
-  else if (exp->type_name == "pi" && exp->case_name == "case3") // pi2 {{{
+  else if (exp->type_name == "pi" && exp->case_name == "case4") // pi2 {{{
   {
     return MpsTerm::Create(exp->content[0]);
   } // }}}
@@ -591,40 +624,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     }
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case5") // mode def pvar dargs ( args ) = pi in pi2 {{{
-  {
-    // FIXME: Handle mode
-    MpsTerm *body = MpsTerm::Create(exp->content[8]);
-    MpsTerm *succ = MpsTerm::Create(exp->content[10]);
-    // Parse args
-    vector<string> args;
-    args.clear();
-    vector<MpsMsgType*> types;
-    types.clear();
-    FindArgs(exp->content[5],args,types);
-    // Parse state
-    vector<string> stateargs;
-    stateargs.clear();
-    vector<MpsMsgType*> statetypes;
-    statetypes.clear();
-    FindArgs(exp->content[3],stateargs,statetypes);
-    MpsTerm *result = new MpsDef(exp->content[2]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv());
-    // Clean up
-    delete succ;
-    delete body;
-    while (types.size() > 0)
-    {
-      delete *types.begin();
-      types.erase(types.begin());
-    }
-    while (statetypes.size() > 0)
-    {
-      delete *statetypes.begin();
-      statetypes.erase(statetypes.begin());
-    }
-    return result;
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case6") // pvar dexps ( exps ) {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case5") // pvar dexps ( exps ) {{{
   {
     vector<MpsExp*> args;
     args.clear();
@@ -637,7 +637,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     DeleteVector(state);
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case7") // id = new ( int of int ) @ id ; pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case6") // id = new ( int of int ) @ id ; pi2 {{{
   { MpsTerm *succ = MpsTerm::Create(exp->content[11]);
     MpsTerm *result = new MpsLink(exp->content[9]->root.content,
                                   exp->content[0]->root.content,
@@ -648,7 +648,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case8") // sync ( exps ) { branches } {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case7") // sync ( exps ) { branches } {{{
   { 
     vector<MpsExp*> args;
     args.clear();
@@ -700,11 +700,11 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
       return new MpsEnd();
     }
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case9") // end {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case8") // end {{{
   {
     return new MpsEnd();
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case10") // if exp then pi2 else pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case9") // if exp then pi2 else pi2 {{{
   {
     MpsExp *cond = MpsExp::Create(exp->content[1]);
     MpsTerm *truebranch = MpsTerm::Create(exp->content[3]);
@@ -715,7 +715,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete falsebranch;
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case11") // guisync ( exps ) { inputbranches } {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case10") // guisync ( exps ) { inputbranches } {{{
   { 
     vector<MpsExp*> args;
     args.clear();
@@ -772,7 +772,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
       return new MpsEnd();
     }
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case12") // guivalue ( exps ) ; pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case11") // guivalue ( exps ) ; pi2 {{{
   { 
     vector<MpsExp*> args;
     args.clear();
@@ -813,7 +813,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
       return new MpsEnd();
     }
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case13") // Mtype id = exp ; pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case12") // Mtype id = exp ; pi2 {{{
   { 
     MpsMsgType *type = MpsMsgType::Create(exp->content[0]);
     MpsExp *value = MpsExp::Create(exp->content[3]);
@@ -824,7 +824,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case14") // host ( exps ) ; pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case13") // host ( exps ) ; pi2 {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[5]);
     vector<MpsExp*> args;
@@ -858,7 +858,7 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     DeleteVector(args);
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case15") // hostheader ( exps ) ; pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case14") // hostheader ( exps ) ; pi2 {{{
   {
     MpsTerm *succ = MpsTerm::Create(exp->content[5]);
     vector<MpsExp*> args;

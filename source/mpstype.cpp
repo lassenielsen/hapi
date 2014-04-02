@@ -51,7 +51,7 @@ const string MpsLocalType::BNF_LTYPE=
          | { Lbranches }";
 const string MpsLocalType::BNF_LBRANCHES=
 "Lbranches ::= Label : Ltype \
-                                 | Label : Ltype , Lbranches";
+             | Label : Ltype , Lbranches";
 // }}}
 // Message Type BNFs {{{
 const string MpsMsgType::BNF_STYPE=
@@ -178,12 +178,10 @@ MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
   } // }}}
   else if (tree->type_name == "Mtype" && tree->case_name == "case3") // ( int of { participants } ) @ Ltype {{{
   {
-    MpsLocalType *ltype = MpsLocalType::Create(tree->content[0]);
-    int pid = string2int(tree->content[3]->root.content);
-    int maxpid = string2int(tree->content[5]->root.content);
+    MpsLocalType *ltype = MpsLocalType::Create(tree->content[8]);
+    int pid = string2int(tree->content[1]->root.content);
     vector<MpsParticipant> participants;
-    for (int i=0; i<maxpid; ++i) // FISME: Adde syntax and parser
-      participants.push_back(MpsParticipant(i+1,int2string(i+1),false));
+    MpsTerm::FindParticipants(tree->content[4],participants);
     MpsDelegateMsgType *result = new MpsDelegateLocalMsgType(*ltype,pid,participants);
     // Clean up
     delete ltype;
@@ -192,12 +190,10 @@ MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
   } // }}}
   else if (tree->type_name == "Mtype" && tree->case_name == "case4") // ( int of { participants } ) @ Gtype {{{
   {
-    MpsGlobalType *gtype = MpsGlobalType::Create(tree->content[0]);
-    int pid = string2int(tree->content[3]->root.content);
-    int maxpid = string2int(tree->content[5]->root.content);
+    MpsGlobalType *gtype = MpsGlobalType::Create(tree->content[8]);
+    int pid = string2int(tree->content[1]->root.content);
     vector<MpsParticipant> participants;
-    for (int i=0; i<maxpid; ++i) // FISME: Adde syntax and parser
-      participants.push_back(MpsParticipant(i+1,int2string(i+1),false));
+    MpsTerm::FindParticipants(tree->content[4],participants);
     MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*gtype,pid,participants);
 
     // Clean up
