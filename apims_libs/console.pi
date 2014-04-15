@@ -1,3 +1,4 @@
+HOSTHEADER("#include <iostream>");
 #define $console rec $console. \
   2=>1 \
   {^PutString: 2=>1<String>; $console, \
@@ -6,8 +7,7 @@
    ^GetInt:    1=>2<Int>; $console, \
    ^End: Gend \
   }
-(nu console: $console)
-HOSTHEADER("#include <iostream>");
+channel console = new {1,2}@$console in
 ( def Console() =
     link(2,console,s,1);
     def ConsoleSession(s: $console@(1 of 2) ) =

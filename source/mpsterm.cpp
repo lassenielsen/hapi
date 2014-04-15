@@ -88,7 +88,6 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   // Term keywords
   MpsParser.DefKeywordToken(";",1);    // Command separator
   MpsParser.DefKeywordToken("new",0);  // Used to create channels and sessions
-  MpsParser.DefKeywordToken("def",1);  // Recursive def
   MpsParser.DefKeywordToken("in",1);   // Recursive def
   MpsParser.DefKeywordToken(":=",0);   // Value assignment
   MpsParser.DefKeywordToken("=",1);    // Used in def
@@ -116,6 +115,9 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefToken("host", "HOST",2); // Indicate host statement
   MpsParser.DefToken("hostheader", "HOSTHEADER",2); // Indicate host header
   MpsParser.DefToken("system", "SYSTEM",2); // Indicate host header
+  MpsParser.DefToken("process", "def", 1); // Init Link
+  MpsParser.DefToken("session", "ses+session", 1); // Init Link
+  MpsParser.DefToken("channel", "ch+channel", 1); // Init Link
   /*** Define grammars ***/
   // Expression Grammar
   MpsParser.DefType(MpsExp::BNF_EXP);
@@ -153,7 +155,7 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefType("ids ::= | id  ids");                          // Name list
   MpsParser.DefKeywordToken("pure",2);                             // Used for mode declaration
   MpsParser.DefKeywordToken("impure",2);                           // Used for mode declaration
-  MpsParser.DefType("mode ::= | pure | impure");                   // Mode declaration used for channels and defs
+  MpsParser.DefType("mode ::= | pure | impure");                   // Mode declaration used for channel participants
   MpsParser.DefType("participant ::= mode int");                   // Participant def
   MpsParser.DefType("participants ::= participant | participant , participants"); // Mode declaration used for channels and defs
   MpsParser.DefType("send ::= << exp | << bid");
@@ -161,24 +163,28 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefType("recv ::= >> id | >> id @ ( int of int )");
   MpsParser.DefType("recvs ::= recv | recv recvs");
                                                                    // Processes
-  MpsParser.DefType("pi ::= new id : { participants } @ Gtype in pi \
-                          | pi2 par pi \
+  MpsParser.DefType("pi ::= pi par pi2 \
                           | pi2");
   MpsParser.DefType("pi2 ::= ( pi ) \
+                           | end \
+                           | pvar dexps ( exps ) \
                            | ch sends ; pi2 \
                            | ch recvs ; pi2 \
-                           | ch >> { branches } \
-                           | def pvar dargs ( args ) = pi in pi2 \
-                           | pvar dexps ( exps ) \
-                           | id = new ( int of int ) @ id ; pi2\
-                           | sync ( exps ) { branches } \
-                           | end \
-                           | if exp then pi2 else pi2 \
-                           | guisync ( exps ) { inputbranches } \
-                           | guivalue ( exps ) ; pi2 \
+                           | session id = new ( int of int ) @ id ; pi2\
+                           | session id = new ( int of int ) @ id in pi\
+                           | channel id = new { participants } @ Gtype ; pi2 \
+                           | channel id = new { participants } @ Gtype in pi \
+                           | process pvar dargs ( args ) = pi ; pi2 \
+                           | process pvar dargs ( args ) = pi in pi \
                            | Mtype id = exp ; pi2 \
+                           | guivalue ( exps ) ; pi2 \
                            | host ( exps ) ; pi2 \
-                           | hostheader ( exps ) ; pi2");         // More processes
+                           | hostheader ( exps ) ; pi2 \
+                           | if exp then pi2 else pi2 \
+                           | ch >> { branches } \
+                           | sync ( exps ) { branches } \
+                           | guisync ( exps ) { inputbranches } \
+                    ");                                            // More processes
 
   parsed_tree *tree = MpsParser.Parse(exp);
   MpsTerm *result=MpsTerm::Create(tree);
@@ -517,12 +523,69 @@ void MpsTerm::FindParticipants(const parsed_tree *exp, vector<MpsParticipant> &d
 } // }}}
 MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
 {
-  if (exp->type_name == "pi" && exp->case_name == "case1") // new id : { participants } @ Gtype ; pi {{{
+  if (exp->type_name == "pi" && exp->case_name == "case1") // pi2 par pi {{{
   {
-    MpsTerm *succ = MpsTerm::Create(exp->content[9]);
-    MpsGlobalType *type = MpsGlobalType::Create(exp->content[7]);
+    MpsTerm *left = MpsTerm::Create(exp->content[0]);
+    MpsTerm *right = MpsTerm::Create(exp->content[2]);
+    MpsTerm *result = new MpsPar(*left, *right,vector<string>(),vector<string>());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
+  else if (exp->type_name == "pi" && exp->case_name == "case2") // pi2 {{{
+  {
+    return MpsTerm::Create(exp->content[0]);
+  } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case1") // ( pi ) {{{
+  {
+    return MpsTerm::Create(exp->content[1]);
+  } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case2") // end {{{
+  {
+    return new MpsEnd();
+  } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case3") // pvar dexps ( exps ) {{{
+  {
+    vector<MpsExp*> args;
+    args.clear();
+    FindExps(exp->content[3],args);
+    vector<MpsExp*> state;
+    state.clear();
+    FindExps(exp->content[1],state);
+    MpsTerm *result = new MpsCall(exp->content[0]->root.content, args, state, vector<MpsMsgType*>(), vector<MpsMsgType*>());
+    DeleteVector(args);
+    DeleteVector(state);
+    return result;
+  } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case4") // ch sends ; pi2 {{{
+  {
+    MpsTerm *succ = MpsTerm::Create(exp->content[3]);
+    MpsChannel dest = ParseChannel(exp->content[0]);
+    return CreateSends(exp->content[1],dest,succ);
+  } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case5") // ch recvs ; pi2 {{{
+  {
+    MpsTerm *succ = MpsTerm::Create(exp->content[3]);
+    MpsChannel source=ParseChannel(exp->content[0]);
+    return CreateRecvs(exp->content[1],source,succ);
+  } // }}}
+  else if (exp->type_name == "pi2" && (exp->case_name == "case6" || exp->case_name == "case7")) // session id = new ( int of int ) @ id ; pi2 || in pi {{{
+  { MpsTerm *succ = MpsTerm::Create(exp->content[12]);
+    MpsTerm *result = new MpsLink(exp->content[10]->root.content,
+                                  exp->content[1]->root.content,
+                                  string2int(exp->content[5]->root.content),
+                                  string2int(exp->content[7]->root.content),
+                                  *succ,
+                                  false);
+    delete succ;
+    return result;
+  } // }}}
+  else if (exp->type_name == "pi2" && (exp->case_name == "case8" || exp->case_name == "case8")) // channel id = new { participants } @ Gtype ; pi2 || in pi {{{
+  {
+    MpsTerm *succ = MpsTerm::Create(exp->content[10]);
+    MpsGlobalType *type = MpsGlobalType::Create(exp->content[8]);
     vector<MpsParticipant> participants;
-    FindParticipants(exp->content[4],participants);
+    FindParticipants(exp->content[5],participants);
     //for (int i=0; i<type->GetMaxPid(); ++i) // FIXME: ADD SYNTAX AND PARSER
     //  participants.push_back(MpsParticipant(i+1,int2string(i+1), false));
     if (participants.size()!=type->GetMaxPid())
@@ -538,241 +601,44 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete type;
     return result;
   } // }}}
-  else if (exp->type_name == "pi" && exp->case_name == "case2") // pi2 par pi {{{
-  {
-    MpsTerm *left = MpsTerm::Create(exp->content[0]);
-    MpsTerm *right = MpsTerm::Create(exp->content[2]);
-    MpsTerm *result = new MpsPar(*left, *right,vector<string>(),vector<string>());
-    delete left;
-    delete right;
-    return result;
-  } // }}}
-  else if (exp->type_name == "pi" && exp->case_name == "case3") // pi2 {{{
-  {
-    return MpsTerm::Create(exp->content[0]);
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case1") // ( pi ) {{{
-  {
-    return MpsTerm::Create(exp->content[1]);
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case2") // ch sends ; pi2 {{{
-  {
-    MpsTerm *succ = MpsTerm::Create(exp->content[3]);
-    MpsChannel dest = ParseChannel(exp->content[0]);
-    return CreateSends(exp->content[1],dest,succ);
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case3") // ch recvs ; pi2 {{{
-  {
-    MpsTerm *succ = MpsTerm::Create(exp->content[3]);
-    MpsChannel source=ParseChannel(exp->content[0]);
-    return CreateRecvs(exp->content[1],source,succ);
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case4") // ch >> { branches } {{{
-  {
-    map<string, MpsTerm*> branches;
-    branches.clear();
-    map<string, MpsExp*> assertions;
-    assertions.clear();
-    FindBranches(exp->content[3], branches, assertions);
-    MpsChannel source=ParseChannel(exp->content[0]);
-    // BRANCHE TERMS DOES NOT USE ASSERTIONS
-    MpsTerm *result = new MpsBranch(source, branches, vector<string>());
-
-    // Clean up
-    while (branches.size() > 0)
-    {
-      delete branches.begin()->second;
-      branches.erase(branches.begin());
-    }
-    while (assertions.size() > 0)
-    {
-      delete assertions.begin()->second;
-      assertions.erase(assertions.begin());
-    }
-    return result;
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case5") // mode def pvar dargs ( args ) = pi in pi2 {{{
+  else if (exp->type_name == "pi2" && (exp->case_name == "case10" || exp->case_name == "case11")) // process pvar dargs ( args ) = pi ; pi2 || in pi {{{
   {
     // FIXME: Handle mode
-    MpsTerm *body = MpsTerm::Create(exp->content[8]);
-    MpsTerm *succ = MpsTerm::Create(exp->content[10]);
+    MpsTerm *body = MpsTerm::Create(exp->content[7]);
+    MpsTerm *succ = MpsTerm::Create(exp->content[9]);
     // Parse args
     vector<string> args;
     args.clear();
     vector<MpsMsgType*> types;
     types.clear();
-    FindArgs(exp->content[5],args,types);
+    FindArgs(exp->content[4],args,types);
     // Parse state
     vector<string> stateargs;
     stateargs.clear();
     vector<MpsMsgType*> statetypes;
     statetypes.clear();
-    FindArgs(exp->content[3],stateargs,statetypes);
-    MpsTerm *result = new MpsDef(exp->content[2]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv());
+    FindArgs(exp->content[2],stateargs,statetypes);
+    MpsTerm *result = new MpsDef(exp->content[1]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv());
     // Clean up
     delete succ;
     delete body;
-    while (types.size() > 0)
-    {
-      delete *types.begin();
-      types.erase(types.begin());
-    }
-    while (statetypes.size() > 0)
-    {
-      delete *statetypes.begin();
-      statetypes.erase(statetypes.begin());
-    }
+    DeleteVector(types);
+    DeleteVector(statetypes);
+
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case6") // pvar dexps ( exps ) {{{
-  {
-    vector<MpsExp*> args;
-    args.clear();
-    FindExps(exp->content[3],args);
-    vector<MpsExp*> state;
-    state.clear();
-    FindExps(exp->content[1],state);
-    MpsTerm *result = new MpsCall(exp->content[0]->root.content, args, state, vector<MpsMsgType*>(), vector<MpsMsgType*>());
-    DeleteVector(args);
-    DeleteVector(state);
-    return result;
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case7") // id = new ( int of int ) @ id ; pi2 {{{
-  { MpsTerm *succ = MpsTerm::Create(exp->content[11]);
-    MpsTerm *result = new MpsLink(exp->content[9]->root.content,
-                                  exp->content[0]->root.content,
-                                  string2int(exp->content[4]->root.content),
-                                  string2int(exp->content[6]->root.content),
-                                  *succ,
-                                  false);
+  else if (exp->type_name == "pi2" && exp->case_name == "case12") // Mtype id = exp ; pi2 {{{
+  { 
+    MpsMsgType *type = MpsMsgType::Create(exp->content[0]);
+    MpsExp *value = MpsExp::Create(exp->content[3]);
+    MpsTerm *succ = MpsTerm::Create(exp->content[5]);
+    MpsTerm *result = new MpsAssign(exp->content[1]->root.content, *value, *type, *succ);
+    delete type;
+    delete value;
     delete succ;
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case8") // sync ( exps ) { branches } {{{
-  { 
-    vector<MpsExp*> args;
-    args.clear();
-    FindExps(exp->content[2],args);
-    // exps must be int , id
-    if (args.size()==2 &&
-        typeid(*args[0]) == typeid(MpsIntVal) &&
-        typeid(*args[1]) == typeid(MpsVarExp))
-    {
-      // Init branches
-      map<string, MpsTerm*> branches;
-      branches.clear();
-      map<string, MpsExp*> assertions;
-      assertions.clear();
-      FindBranches(exp->content[5], branches, assertions);
-
-      MpsTerm *result = new MpsSync(mpz_get_si(((MpsIntVal*)args[0])->GetValue()),
-                                    ((MpsVarExp*)args[1])->ToString(),
-                                    branches,
-                                    assertions);
-      // Clean up
-      while (args.size()>0)
-      {
-        delete *args.begin();
-        args.erase(args.begin());
-      }
-      while (branches.size() > 0)
-      {
-        delete branches.begin()->second;
-        branches.erase(branches.begin());
-      }
-      while (assertions.size() > 0)
-      {
-        delete assertions.begin()->second;
-        assertions.erase(assertions.begin());
-      }
-      return result;
-    }
-    else
-    {
-      while (args.size()>0)
-      {
-        delete *args.begin();
-        args.erase(args.begin());
-      }
-#if APIMS_DEBUG_LEVEL>1
-      cerr << "Parsing error: Arguments for sync must be: int, id" << endl;
-#endif
-      return new MpsEnd();
-    }
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case9") // end {{{
-  {
-    return new MpsEnd();
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case10") // if exp then pi2 else pi2 {{{
-  {
-    MpsExp *cond = MpsExp::Create(exp->content[1]);
-    MpsTerm *truebranch = MpsTerm::Create(exp->content[3]);
-    MpsTerm *falsebranch = MpsTerm::Create(exp->content[5]);
-    MpsTerm *result = new MpsCond(*cond,*truebranch,*falsebranch);
-    delete cond;
-    delete truebranch;
-    delete falsebranch;
-    return result;
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case11") // guisync ( exps ) { inputbranches } {{{
-  { 
-    vector<MpsExp*> args;
-    args.clear();
-    FindExps(exp->content[2],args);
-    // exps must be int , id, int
-    if (args.size()==3 &&
-        typeid(*args[0]) == typeid(MpsIntVal) &&
-        typeid(*args[1]) == typeid(MpsVarExp) &&
-        typeid(*args[2]) == typeid(MpsIntVal))
-    {
-      // Init branches
-      map<string, inputbranch> branches;
-      branches.clear();
-      FindInputBranches(exp->content[5], branches);
-
-      MpsTerm *result = new MpsGuiSync(mpz_get_si(((MpsIntVal*)args[0])->GetValue()),
-                                       ((MpsVarExp*)args[1])->ToString(),
-                                       mpz_get_si(((MpsIntVal*)args[2])->GetValue()),
-                                       branches);
-      // Clean up
-      while (args.size()>0)
-      {
-        delete *args.begin();
-        args.erase(args.begin());
-      }
-      while (branches.size() > 0)
-      {
-        delete branches.begin()->second.term;
-        delete branches.begin()->second.assertion;
-        while (branches.begin()->second.types.size()>0)
-        {
-          delete *branches.begin()->second.types.begin();
-          branches.begin()->second.types.erase(branches.begin()->second.types.begin());
-        }
-        while (branches.begin()->second.values.size()>0)
-        {
-          delete *branches.begin()->second.values.begin();
-          branches.begin()->second.values.erase(branches.begin()->second.values.begin());
-        }
-        branches.erase(branches.begin());
-      }
-      return result;
-    }
-    else
-    {
-      while (args.size()>0)
-      {
-        delete *args.begin();
-        args.erase(args.begin());
-      }
-#if APIMS_DEBUG_LEVEL>1
-      cerr << "Parsing error: Arguments for sync must be: int, id" << endl;
-#endif
-      return new MpsEnd();
-    }
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case12") // guivalue ( exps ) ; pi2 {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case13") // guivalue ( exps ) ; pi2 {{{
   { 
     vector<MpsExp*> args;
     args.clear();
@@ -812,17 +678,6 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
 #endif
       return new MpsEnd();
     }
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case13") // Mtype id = exp ; pi2 {{{
-  { 
-    MpsMsgType *type = MpsMsgType::Create(exp->content[0]);
-    MpsExp *value = MpsExp::Create(exp->content[3]);
-    MpsTerm *succ = MpsTerm::Create(exp->content[5]);
-    MpsTerm *result = new MpsAssign(exp->content[1]->root.content, *value, *type, *succ);
-    delete type;
-    delete value;
-    delete succ;
-    return result;
   } // }}}
   else if (exp->type_name == "pi2" && exp->case_name == "case14") // host ( exps ) ; pi2 {{{
   {
@@ -889,6 +744,150 @@ MpsTerm *MpsTerm::Create(const parsed_tree *exp) // {{{
     delete succ;
     DeleteVector(args);
     return result;
+  } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case16") // if exp then pi2 else pi2 {{{
+  {
+    MpsExp *cond = MpsExp::Create(exp->content[1]);
+    MpsTerm *truebranch = MpsTerm::Create(exp->content[3]);
+    MpsTerm *falsebranch = MpsTerm::Create(exp->content[5]);
+    MpsTerm *result = new MpsCond(*cond,*truebranch,*falsebranch);
+    delete cond;
+    delete truebranch;
+    delete falsebranch;
+    return result;
+  } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case17") // ch >> { branches } {{{
+  {
+    map<string, MpsTerm*> branches;
+    branches.clear();
+    map<string, MpsExp*> assertions;
+    assertions.clear();
+    FindBranches(exp->content[3], branches, assertions);
+    MpsChannel source=ParseChannel(exp->content[0]);
+    // BRANCHE TERMS DOES NOT USE ASSERTIONS
+    MpsTerm *result = new MpsBranch(source, branches, vector<string>());
+
+    // Clean up
+    while (branches.size() > 0)
+    {
+      delete branches.begin()->second;
+      branches.erase(branches.begin());
+    }
+    while (assertions.size() > 0)
+    {
+      delete assertions.begin()->second;
+      assertions.erase(assertions.begin());
+    }
+    return result;
+  } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case18") // sync ( exps ) { branches } {{{
+  { 
+    vector<MpsExp*> args;
+    args.clear();
+    FindExps(exp->content[2],args);
+    // exps must be int , id
+    if (args.size()==2 &&
+        typeid(*args[0]) == typeid(MpsIntVal) &&
+        typeid(*args[1]) == typeid(MpsVarExp))
+    {
+      // Init branches
+      map<string, MpsTerm*> branches;
+      branches.clear();
+      map<string, MpsExp*> assertions;
+      assertions.clear();
+      FindBranches(exp->content[5], branches, assertions);
+
+      MpsTerm *result = new MpsSync(mpz_get_si(((MpsIntVal*)args[0])->GetValue()),
+                                    ((MpsVarExp*)args[1])->ToString(),
+                                    branches,
+                                    assertions);
+      // Clean up
+      while (args.size()>0)
+      {
+        delete *args.begin();
+        args.erase(args.begin());
+      }
+      while (branches.size() > 0)
+      {
+        delete branches.begin()->second;
+        branches.erase(branches.begin());
+      }
+      while (assertions.size() > 0)
+      {
+        delete assertions.begin()->second;
+        assertions.erase(assertions.begin());
+      }
+      return result;
+    }
+    else
+    {
+      while (args.size()>0)
+      {
+        delete *args.begin();
+        args.erase(args.begin());
+      }
+#if APIMS_DEBUG_LEVEL>1
+      cerr << "Parsing error: Arguments for sync must be: int, id" << endl;
+#endif
+      return new MpsEnd();
+    }
+  } // }}}
+  else if (exp->type_name == "pi2" && exp->case_name == "case19") // guisync ( exps ) { inputbranches } {{{
+  { 
+    vector<MpsExp*> args;
+    args.clear();
+    FindExps(exp->content[2],args);
+    // exps must be int , id, int
+    if (args.size()==3 &&
+        typeid(*args[0]) == typeid(MpsIntVal) &&
+        typeid(*args[1]) == typeid(MpsVarExp) &&
+        typeid(*args[2]) == typeid(MpsIntVal))
+    {
+      // Init branches
+      map<string, inputbranch> branches;
+      branches.clear();
+      FindInputBranches(exp->content[5], branches);
+
+      MpsTerm *result = new MpsGuiSync(mpz_get_si(((MpsIntVal*)args[0])->GetValue()),
+                                       ((MpsVarExp*)args[1])->ToString(),
+                                       mpz_get_si(((MpsIntVal*)args[2])->GetValue()),
+                                       branches);
+      // Clean up
+      while (args.size()>0)
+      {
+        delete *args.begin();
+        args.erase(args.begin());
+      }
+      while (branches.size() > 0)
+      {
+        delete branches.begin()->second.term;
+        delete branches.begin()->second.assertion;
+        while (branches.begin()->second.types.size()>0)
+        {
+          delete *branches.begin()->second.types.begin();
+          branches.begin()->second.types.erase(branches.begin()->second.types.begin());
+        }
+        while (branches.begin()->second.values.size()>0)
+        {
+          delete *branches.begin()->second.values.begin();
+          branches.begin()->second.values.erase(branches.begin()->second.values.begin());
+        }
+        branches.erase(branches.begin());
+      }
+      return result;
+    }
+    else
+    {
+      while (args.size()>0)
+      {
+        delete *args.begin();
+        args.erase(args.begin());
+      }
+#if APIMS_DEBUG_LEVEL>1
+      cerr << "Parsing error: Arguments for sync must be: int, id" << endl;
+#endif
+      return new MpsEnd();
+    }
   } // }}}
 
 #if APIMS_DEBUG_LEVEL>1
