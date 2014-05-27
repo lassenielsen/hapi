@@ -14,7 +14,7 @@ int MpsGlobalType::ourNextId = 1;
 const string MpsGlobalType::BNF_TVALS=
 "Tvals ::= < exps > |";
 const string MpsGlobalType::BNF_TARG=
-"Targ ::= id : Mtype = exp";
+"Targ ::= id COLON Mtype = exp";
 const string MpsGlobalType::BNF_TARGS=
 "Targs ::= < Targs2 > |";
 const string MpsGlobalType::BNF_TARGS2=
@@ -35,8 +35,8 @@ const string MpsGlobalType::BNF_GTYPE=
          | Gend \
          | { Gbranches }";
 const string MpsGlobalType::BNF_GBRANCHES=
-"Gbranches ::= Label : Gtype \
-             | Label : Gtype , Gbranches";
+"Gbranches ::= Label COLON Gtype \
+             | Label COLON Gtype , Gbranches";
 // }}}
 // Local Type BNFs {{{
 const string MpsLocalType::BNF_LTYPE=
@@ -50,8 +50,8 @@ const string MpsLocalType::BNF_LTYPE=
          | Lend \
          | { Lbranches }";
 const string MpsLocalType::BNF_LBRANCHES=
-"Lbranches ::= Label : Ltype \
-             | Label : Ltype , Lbranches";
+"Lbranches ::= Label COLON Ltype \
+             | Label COLON Ltype , Lbranches";
 // }}}
 // Message Type BNFs {{{
 const string MpsMsgType::BNF_STYPE=
@@ -83,9 +83,9 @@ string MpsGlobalType::NewGVar(string orig) // {{{
 /* Parser and helper functions
  *
  */
-extern void SetAssertion(const parsed_tree *tree,  map<string,MpsExp*> &assertions); // From mpsterm.cpp
-extern void FindExps(const parsed_tree *tree, vector<MpsExp*> &dest);                // From mpsterm.cpp
-void FindGlobalBranches(const parsed_tree *tree, map<string,MpsGlobalType*> &dest, map<string,MpsExp*> &assertions) // {{{
+extern void SetAssertion(const parsetree *tree,  map<string,MpsExp*> &assertions); // From mpsterm.cpp
+extern void FindExps(const parsetree *tree, vector<MpsExp*> &dest);                // From mpsterm.cpp
+void FindGlobalBranches(const parsetree *tree, map<string,MpsGlobalType*> &dest, map<string,MpsExp*> &assertions) // {{{
 {
   if (tree->type_name == "Gbranches" && tree->case_name == "case1") // Label : Gtype {{{
   {
@@ -105,7 +105,7 @@ void FindGlobalBranches(const parsed_tree *tree, map<string,MpsGlobalType*> &des
 #endif
   } // }}}
 } // }}}
-void FindLocalBranches(const parsed_tree *tree, map<string,MpsLocalType*> &dest, map<string,MpsExp*> &assertions) // {{{
+void FindLocalBranches(const parsetree *tree, map<string,MpsLocalType*> &dest, map<string,MpsExp*> &assertions) // {{{
 {
   if (tree->type_name == "Lbranches" && tree->case_name == "case1") // Label : Ltype {{{
   {
@@ -125,7 +125,7 @@ void FindLocalBranches(const parsed_tree *tree, map<string,MpsLocalType*> &dest,
 #endif
   } // }}}
 } // }}}
-void FindMsgTypes(const parsed_tree *tree, vector<MpsMsgType*> &dest) // {{{
+void FindMsgTypes(const parsetree *tree, vector<MpsMsgType*> &dest) // {{{
 {
   if (tree->type_name == "Stypes" && tree->case_name == "case1") // Stypes2 {{{
   {
@@ -150,7 +150,7 @@ void FindMsgTypes(const parsed_tree *tree, vector<MpsMsgType*> &dest) // {{{
 #endif
   } // }}}
 } // }}}
-MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
+MpsMsgType *MpsMsgType::Create(const parsetree *tree) // {{{
 {
   if (tree->type_name == "Mtype" && tree->case_name == "case1") // Stype {{{
   {
@@ -236,7 +236,7 @@ MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
 #endif
   return new MpsIntMsgType();
 } // }}}
-void CreateStateArgs(const parsed_tree *tree, vector<TypeArg> &dest) // {{{
+void CreateStateArgs(const parsetree *tree, vector<TypeArg> &dest) // {{{
 {
   if (tree->type_name == "Targs" && tree->case_name == "case1") // < Targs2 > {{{
     return CreateStateArgs(tree->content[1], dest); // }}}
@@ -268,7 +268,7 @@ void CreateStateArgs(const parsed_tree *tree, vector<TypeArg> &dest) // {{{
 #endif
   return;
 } // }}}
-void CreateStateValues(const parsed_tree *tree, vector<MpsExp*> &dest) // {{{
+void CreateStateValues(const parsetree *tree, vector<MpsExp*> &dest) // {{{
 {
   if (tree->type_name == "Tvals" && tree->case_name == "case1") // < exps > {{{
     return FindExps(tree->content[1], dest); // }}}
@@ -280,7 +280,7 @@ void CreateStateValues(const parsed_tree *tree, vector<MpsExp*> &dest) // {{{
 #endif
   return;
 } // }}}
-MpsExp *CreateNamedAssertion(const parsed_tree *tree) // {{{
+MpsExp *CreateNamedAssertion(const parsetree *tree) // {{{
 { 
   if (tree->type_name == "Assertion" && tree->case_name == "case1") // [[ exp ]] {{{
   {
@@ -296,7 +296,7 @@ MpsExp *CreateNamedAssertion(const parsed_tree *tree) // {{{
 #endif
   return new MpsBoolVal(false);
 } // }}}
-MpsExp *CreateNamedAssertion(const parsed_tree *tree, bool &used, std::string &name) // {{{
+MpsExp *CreateNamedAssertion(const parsetree *tree, bool &used, std::string &name) // {{{
 {
   if (tree->type_name == "NamedAssertion" && tree->case_name == "case1") // as id Assertion {{{
   {
@@ -314,7 +314,7 @@ MpsExp *CreateNamedAssertion(const parsed_tree *tree, bool &used, std::string &n
 #endif
   return new MpsBoolVal(false);
 } // }}}
-MpsGlobalType *MpsGlobalType::Create(const parsed_tree *tree) // {{{
+MpsGlobalType *MpsGlobalType::Create(const parsetree *tree) // {{{
 {
   if (tree->type_name == "Gtype" && tree->case_name == "case1") // int => int < Mtype > NamedAssertion ; Gtype {{{
   {
@@ -398,7 +398,7 @@ MpsGlobalType *MpsGlobalType::Create(const parsed_tree *tree) // {{{
 #endif
   return new MpsGlobalEndType();
 } // }}}
-MpsLocalType *MpsLocalType::Create(const parsed_tree *tree) // {{{
+MpsLocalType *MpsLocalType::Create(const parsetree *tree) // {{{
 {
   if (tree->type_name == "Ltype" && tree->case_name == "case1") //  int << < Mtype > NamedAssertion ; Ltype {{{
   {

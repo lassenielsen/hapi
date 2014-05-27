@@ -25,7 +25,7 @@
 #ifndef MPSEXP_HPP
 #define MPSEXP_HPP
 
-#include <dpl/parser.hpp>
+#include <dpl/symparser.hpp>
 #include <apims/mpstype.hpp>
 #include <gmp.h>
 #include <set>
@@ -57,7 +57,7 @@ class MpsExp // {{{
 
     virtual std::string ToString() const= 0; // Make string representation
     virtual std::string ToC(std::stringstream &dest, const std::string &typeName) const= 0; // Add C++ code that evaluates expression to dest, and return the variable name that holds the result
-    static MpsExp *Create(const dpl::parsed_tree *exp); // Create from parsing
+    static MpsExp *Create(const dpl::parsetree *exp); // Create from parsing
     static MpsExp *Create(const std::string &exp); // Create from string
     static std::string NewVar(std::string base="x");
 

@@ -1,5 +1,5 @@
 #include <apims/mpsgui_http.hpp>
-#include <dpl/parser.hpp>
+#include <dpl/symparser.hpp>
 #include <apims/common.hpp>
 #include "SDL_net.h"
 #include "SDL_thread.h"
@@ -154,7 +154,7 @@ string url_decode(string msg) // {{{
   }
   return result;
 } // }}}
-string extract_possibleid(parsed_tree *pid) // {{{
+string extract_possibleid(parsetree *pid) // {{{
 { if (pid->type_name=="PID" && pid->case_name=="case1") // id
     return pid->content[0]->root.content;
   else if (pid->type_name=="PID" && pid->case_name=="case2") // empty
@@ -164,7 +164,7 @@ string extract_possibleid(parsed_tree *pid) // {{{
     return "";
   }
 } // }}}
-void GetData(parsed_tree *request, map<string,string> &dest) // {{{
+void GetData(parsetree *request, map<string,string> &dest) // {{{
 {
   if (request->type_name == "req" && request->case_name=="case1") // GET path
     ;
@@ -190,14 +190,14 @@ void GetData(parsed_tree *request, map<string,string> &dest) // {{{
   }
   return;
 } // }}}
-map<string,string> GetData(parsed_tree *request) // {{{
+map<string,string> GetData(parsetree *request) // {{{
 {
   map<string,string> result;
   result.clear();
   GetData(request,result);
   return result;
 } // }}}
-void GetPath(parsed_tree *request, vector<string> &dest) // {{{
+void GetPath(parsetree *request, vector<string> &dest) // {{{
 {
   if (request->type_name == "req") // GET path
     return GetPath(request->content[1],dest);
@@ -215,7 +215,7 @@ void GetPath(parsed_tree *request, vector<string> &dest) // {{{
   }
   return;
 } // }}}
-vector<string> GetPath(parsed_tree *request) // {{{
+vector<string> GetPath(parsetree *request) // {{{
 {
   vector<string> result;
   result.clear();
@@ -318,7 +318,7 @@ void net_sendfile(const string &filename, TCPsocket &dest) // {{{
 int server(void *arg) // HTTP Server thread {{{
 {
   // Initialise Parser {{{
-  Parser parser;
+  SymParser parser;
   parser.DefToken("","[ \t\r][ \t\r]*",9); // Ignore whitespace, except linebreak
   parser.DefToken("","[a-zA-Z0-9-][a-zA-Z0-9-]*: [^\n]*\n",9); // Ignore Browser-options
   parser.DefToken("AMP","&",9); // Value Seperator
@@ -365,7 +365,7 @@ int server(void *arg) // HTTP Server thread {{{
         // Parse Request and get path and post data
         string request = buffer;
         //cout << "HTTP REQUEST:" << endl << request << endl;
-        parsed_tree *request_tree=parser.Parse(request + "\n");
+        parsetree *request_tree=parser.Parse(request + "\n");
         vector<string> path = GetPath(request_tree);
         map<string,string> data = GetData(request_tree);
         if (path.size()==1 && path[0]=="abc") // ABC MAIN MENU {{{

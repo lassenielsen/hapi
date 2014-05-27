@@ -13,7 +13,7 @@ int MpsExp::ourNextId = 1;
 
 /* Parsing of MpsExp from a string
  */
-extern void FindExps(const parsed_tree *exp, vector<MpsExp*> &dest);
+extern void FindExps(const parsetree *exp, vector<MpsExp*> &dest);
 
 // BNFs {{{
 const string MpsExp::BNF_EXP  =
@@ -38,7 +38,7 @@ const string MpsExp::BNF_EXP  =
 const string MpsExp::BNF_EXPS ="exps ::= exps2 |";
 const string MpsExp::BNF_EXPS2="exps2 ::= exp | exp , exps2";
 // }}}
-MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
+MpsExp *MpsExp::Create(const parsetree *exp) // {{{
 {
   if (exp->type_name == "exps" && exp->case_name == "case1") // id {{{
   {
@@ -204,7 +204,7 @@ MpsExp *MpsExp::Create(const parsed_tree *exp) // {{{
 MpsExp *MpsExp::Create(const std::string &exp) // {{{
 {
   // Create parser
-  Parser MpsParser;
+  SymParser MpsParser;
   
   /*** Define Tokens ***/
   MpsParser.DefToken("","[ \n\r\t][ \n\r\t]*",9);      // Whitespace is ignored
@@ -232,7 +232,7 @@ MpsExp *MpsExp::Create(const std::string &exp) // {{{
   MpsParser.DefType(BNF_EXPS);
   MpsParser.DefType(BNF_EXPS2);
 
-  parsed_tree *tree = MpsParser.Parse(exp);
+  parsetree *tree = MpsParser.Parse(exp);
   MpsExp *result = MpsExp::Create(tree);
   delete tree;
   return result;

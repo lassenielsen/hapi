@@ -50,12 +50,12 @@ class MpsParticipant // {{{
     bool operator==(const MpsParticipant &rhs) const {return GetId()==rhs.GetId() && GetName()==rhs.GetName() && IsPure()==rhs.IsPure();}
     bool operator!=(const MpsParticipant &rhs) const {return !((*this)==rhs);}
 
-    static MpsParticipant Create(const dpl::parsed_tree &exp) // {{{
+    static MpsParticipant Create(const dpl::parsetree &exp) // {{{
     { // participant ::= mode int
       std::string id=exp.content[1]->root.content;
       return MpsParticipant(string2int(id),id,MpsParticipant::CreateMode(*exp.content[0],false));
     } // }}}
-    static bool CreateMode(const dpl::parsed_tree &exp, bool d) // {{{
+    static bool CreateMode(const dpl::parsetree &exp, bool d) // {{{
     { // mode ::= | pure | impure
       if (exp.type_name == "mode" && exp.case_name == "case1")
         return d;
@@ -88,7 +88,7 @@ class MpsGlobalType // {{{
 {
   public:
     // Parser
-    static MpsGlobalType *Create(const dpl::parsed_tree *tree);
+    static MpsGlobalType *Create(const dpl::parsetree *tree);
 
     // Constructor, Copy and operator methods
     virtual ~MpsGlobalType();
@@ -330,7 +330,7 @@ class MpsLocalType // {{{
 {
   public:
     // Parser
-    static MpsLocalType *Create(const dpl::parsed_tree *tree);
+    static MpsLocalType *Create(const dpl::parsetree *tree);
 
     // Constructor, Copy and operator methods
     virtual ~MpsLocalType();
@@ -694,7 +694,7 @@ class MpsMsgType // {{{
 {
   public:
     // Parser
-    static MpsMsgType *Create(const dpl::parsed_tree *tree);
+    static MpsMsgType *Create(const dpl::parsetree *tree);
 
     // Constructor, Copy and operator methods
     virtual ~MpsMsgType();
