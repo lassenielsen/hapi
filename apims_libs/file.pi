@@ -60,20 +60,20 @@
 #define DelIFP(p) "delete ((ifstream*)mpz_get_ui((", p, ").GetValue()));"
 #define EOF(b,p) "", b, " = BoolValue( ((ifstream*)mpz_get_ui((", p, ").GetValue()))->eof() );"
 #define GetError(s) "", s, " = StringValue(strerror(errno));"
-(nu file: $file)
+ch file = new {1,2}@$file in
 HOSTHEADER("#include <fstream>");
 HOSTHEADER("#include <errno.h>");
 HOSTHEADER("#include <string.h>");
 HOSTHEADER("#include <streambuf>");
 ( def FileServer() =
-    link(2,file,f,1);
+    ses f = new (1 of 2)@file;
     ( FileServer()
     | f[2]>>
       {^Read:
         def InFileSession(f: $infile@(1 of 2), fptr: Int, chunksize: Int) =
           f[2]>>
           {^Chunk:
-            t:Bool=true;
+            Bool t=true;
             HOST( EOF(t, fptr) );
             if t
             then f[2]<<^None;
@@ -81,7 +81,7 @@ HOSTHEADER("#include <streambuf>");
                  HOST( DelIFP(fptr) );
                  end
             else f[2]<<^Some;
-                 chunk:String="";
+                 String chunk="";
                  HOST("{ char *buf = new char[ mpz_get_ui((", chunksize, ").GetValue()) +1 ];");
                  HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->read(buf, mpz_get_ui((", chunksize, ").GetValue()));");
                  HOST("  buf[ mpz_get_ui((", chunksize, ").GetValue()) ] = 0;");
@@ -91,7 +91,7 @@ HOSTHEADER("#include <streambuf>");
                  f[2]<<chunk;
                  InFileSession(f,fptr,chunksize)
           ,^Line:
-            t:Bool=true;
+            Bool t=true;
             HOST( EOF(t, fptr) );
             if t
             then f[2]<<^None;
@@ -99,7 +99,7 @@ HOSTHEADER("#include <streambuf>");
                  HOST( DelIFP(fptr) );
                  end
             else f[2]<<^Some;
-                 chunk:String="";
+                 String chunk="";
                  HOST("{ std::string line;");
                  HOST("  std::getline(*((ifstream*)mpz_get_ui((", fptr, ").GetValue())), line);");
                  HOST("  ", chunk, " = StringValue(line);");
@@ -107,14 +107,14 @@ HOSTHEADER("#include <streambuf>");
                  f[2]<<chunk;
                  InFileSession(f,fptr,chunksize)
           ,^All:
-            t:Bool=true;
+            Bool t=true;
             HOST( EOF(t, fptr) );
             if t
             then f[2]<<"";
                  HOST( CloseIFP(fptr) );
                  HOST( DelIFP(fptr) );
                  end
-            else chunk:String="";
+            else String chunk="";
                  HOST("{ std::string str;");
                  HOST("  int pos=((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->tellg();");
                  HOST("  ((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->seekg(0,std::ios::end);");
@@ -135,15 +135,15 @@ HOSTHEADER("#include <streambuf>");
           }
         in
           f[2]>>path;
-          fptr:Int=0;
+          Int fptr=0;
           HOST("", fptr, " = IntValue( (unsigned int)(new ifstream( (", path, ").ToString().c_str() ) ) );");
-          t:Bool=true;
+          Bool t=true;
           HOST("", t, " = BoolValue(((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->is_open());");
           if t
           then f[2]<<^OK;
                InFileSession(f, fptr, 1024*4)
           else HOST( DelIFP(fptr) );
-               err:String="";
+               String err="";
                HOST( GetError(err) );
                f[2]<<^Error;
                f[2]<<err;
@@ -162,15 +162,15 @@ HOSTHEADER("#include <streambuf>");
           }
         in
           f[2]>>path;
-          fptr:Int=0;
+          Int fptr=0;
           HOST("", fptr, " = IntValue( (unsigned int)(new ofstream( (", path, ").ToString().c_str() ) ) );");
-          t:Bool=true;
+          Bool t=true;
           HOST("", t, " = BoolValue(((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->is_open());");
           if t
           then f[2]<<^OK;
                OutFileSession(f, fptr)
           else HOST( DelOFP(fptr) );
-               err:String="";
+               String err="";
                HOST( GetError(err) );
                f[2]<<^Error;
                f[2]<<err;

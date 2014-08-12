@@ -6,20 +6,20 @@
   }
 #define __ARGC(x) HOST("  ", x, "=libpi::IntValue(__system_args.size());")
 #define __ARGV(x,i) HOST("  ", x, "=libpi::StringValue(__system_args[ mpz_get_ui(", i, ".GetValue())]);")
-(nu sys: pure $sys)
-( argc:Int=0;
+ch sys = new {pure 1, 2}@$sys in
+( Int argc=0;
   __ARGC(argc);
-  pure def Sys() =
-    link(2,sys,s,1);
+  def Sys() =
+    ses s = new (1 od 2)@sys;
     ( Sys()
-    | pure def SysSession(s: $sys@(1 of 2) ) =
+    | def SysSession(s: $sys@(1 of 2) ) =
         s[2]>>
         {^CountArgs: s[2]<<argc;
                      SysSession(s)
         ,^GetArg:    s[2]>>idx;
                      if (0<=idx) and (idx+1<=argc)
                      then s[2]<<^Some;
-                          arg:String="";
+                          String arg="";
                           __ARGV(arg,idx);
                           s[2]<<arg;
                           SysSession(s)

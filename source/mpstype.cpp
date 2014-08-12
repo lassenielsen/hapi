@@ -316,7 +316,7 @@ MpsExp *CreateNamedAssertion(const parsetree *tree, bool &used, std::string &nam
 } // }}}
 MpsGlobalType *MpsGlobalType::Create(const parsetree *tree) // {{{
 {
-  if (tree->type_name == "Gtype" && tree->case_name == "case1") // int => int < Mtype > NamedAssertion ; Gtype {{{
+  if (tree->type_name == "Gtype" && tree->case_name == "case1") // int -> int < Mtype > NamedAssertion ; Gtype {{{
   {
     MpsGlobalType *succ = MpsGlobalType::Create(tree->content[8]);
     MpsMsgType *msgtype = MpsMsgType::Create(tree->content[4]);
@@ -335,7 +335,7 @@ MpsGlobalType *MpsGlobalType::Create(const parsetree *tree) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (tree->type_name == "Gtype" && tree->case_name == "case2") // int => int { Gbranches } {{{
+  else if (tree->type_name == "Gtype" && tree->case_name == "case2") // int -> int { Gbranches } {{{
   {
     int from = string2int(tree->content[0]->root.content);
     int to = string2int(tree->content[2]->root.content);
@@ -1728,7 +1728,7 @@ MpsGlobalSyncType *MpsGlobalSyncType::RenameAll() const // {{{
 // Make parsable string representation
 string MpsGlobalMsgType::ToString(const string &indent) const// {{{
 {
-  string result = int2string(mySender) + "=>" + int2string(myReceiver) + "<";
+  string result = int2string(mySender) + "->" + int2string(myReceiver) + "<";
   string newIndent = indent;
   for (int i=0; i<result.size(); ++i)
     newIndent += " ";
@@ -1742,7 +1742,7 @@ string MpsGlobalMsgType::ToString(const string &indent) const// {{{
 string MpsGlobalBranchType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "    ";
-  string result = int2string(mySender) + "=>" + int2string(myReceiver) + "\n"
+  string result = int2string(mySender) + "->" + int2string(myReceiver) + "\n"
                 + indent + "{ ";
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
   {

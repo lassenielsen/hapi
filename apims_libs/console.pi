@@ -7,29 +7,29 @@ HOSTHEADER("#include <iostream>");
    ^GetInt:    1=>2<Int>; $console, \
    ^End: Gend \
   }
-channel console = new {1,2}@$console in
-( def Console() =
-    HOSTHEADER("");
-    s = new (1 of 2)@console;
-    ( def ConsoleSession(s: (1 of {1,2})@$console) =
-        s[2]>>
-        {^PutString: s[2]>>str;
-                     HOST("std::cout << (", str, ").ToString() << std::endl;");
-                     ConsoleSession(s),
-         ^PutInt:    s[2]>>i;
-                     HOST("std::cout << (", i, ").ToString() << std::endl;");
-                     ConsoleSession(s),
-         ^GetString: String val="";
-                     HOST("{ std::string _s; std::cin >> _s; ", val, "=libpi::StringValue(_s); }");
-                     s[2]<<val;
-                     ConsoleSession(s),
-         ^GetInt:    Int val=0;
-                     HOST("{ long _l; std::cin >> _l; ", val, "=libpi::IntValue(_l); }");
-                     s[2]<<val;
-                     ConsoleSession(s),
-         ^End:       Console()
-        }
-      in ConsoleSession(s)
-    )
-  in Console()
-) |
+ch console = new {1,2}@$console in
+def Console() =
+  HOSTHEADER("");
+  ses s = new (1 of 2)@console;
+  ( def ConsoleSession(s: (1 of {1,2})@$console) =
+      s[2]>>
+      {^PutString: s[2]>>str;
+                   HOST("std::cout << (", str, ").ToString() << std::endl;");
+                   ConsoleSession(s),
+       ^PutInt:    s[2]>>i;
+                   HOST("std::cout << (", i, ").ToString() << std::endl;");
+                   ConsoleSession(s),
+       ^GetString: String val="";
+                   HOST("{ std::string _s; std::cin >> _s; ", val, "=libpi::StringValue(_s); }");
+                   s[2]<<val;
+                   ConsoleSession(s),
+       ^GetInt:    Int val=0;
+                   HOST("{ long _l; std::cin >> _l; ", val, "=libpi::IntValue(_l); }");
+                   s[2]<<val;
+                   ConsoleSession(s),
+       ^End:       Console()
+      }
+    in ConsoleSession(s)
+  )
+in Console()
+|

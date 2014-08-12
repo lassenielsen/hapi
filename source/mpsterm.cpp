@@ -1,5 +1,5 @@
 #include <apims/mpstype.hpp>
-#include <dpl/symparser.hpp>
+#include <dpl/slrparser.hpp>
 #include <apims/mpsterms.hpp>
 #include <apims/mpsgui.hpp>
 
@@ -40,7 +40,8 @@ const vector<string> &MpsTerm::GetFreeLinks() const // {{{
 MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
 {
   // Create parser
-  SymParser MpsParser;
+  SlrParser MpsParser("pi");
+  MpsParser.AddSRRule("pi2",false);
   
   /*** Define Tokens ***/
   // Parenthesis
@@ -181,8 +182,6 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
                            | hostheader ( exps ) ; pi2 \
                            | if exp then pi2 else pi2 \
                            | ch >> { branches } \
-                           | pvar dexps ( exps ) \
-                           | id = new ( int of int ) @ id ; pi2\
                            | sync ( exps ) { branches } \
                            | guisync ( exps ) { inputbranches } \
                     ");                                            // More processes
@@ -788,53 +787,7 @@ MpsTerm *MpsTerm::Create(const parsetree *exp) // {{{
     }
     return result;
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case18") // pvar dexps ( exps ) {{{
-  {
-    MpsTerm *succ = MpsTerm::Create(exp->content[5]);
-    vector<MpsExp*> args;
-    args.clear();
-    FindExps(exp->content[2],args);
-    vector<string> hostParts;
-    vector<MpsExp*> expParts;
-    // exps must be alternately string and var
-    for (int i=0; i<args.size(); ++i)
-    { if (i%2==0) // expect string
-      { MpsStringVal *val=dynamic_cast<MpsStringVal*>(args[i]);
-        if (val==NULL) // Not string value
-        {
-#if APIMS_DEBUG_LEVEL>1
-          cerr << "Parsing error: Arguments for HOST must be string and variable alternately" << endl;
-#endif
-          break;
-        }
-        else
-        { hostParts.push_back(val->GetValue());
-        }
-      }
-      else
-        expParts.push_back(args[i]->Copy());
-    }
-
-    MpsHostStatement *result = new MpsHostStatement(hostParts,expParts,*succ,vector<MpsMsgType*>());
-    // Clean up
-    delete succ;
-    DeleteVector(expParts);
-    DeleteVector(args);
-    return result;
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case19") // id = new ( int of int ) @ id ; pi2 {{{
-  { MpsTerm *succ = MpsTerm::Create(exp->content[11]);
-    MpsTerm *result = new MpsLink(exp->content[9]->root.content,
-                                  exp->content[0]->root.content,
-                                  string2int(exp->content[4]->root.content),
-                                  string2int(exp->content[6]->root.content),
-                                  *succ,
-                                  false);
-    delete succ;
-    //DeleteVector(args);
-    return result;
-  } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case20") // sync ( exps ) { branches } {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case18") // sync ( exps ) { branches } {{{
   { 
     vector<MpsExp*> args;
     args.clear();
@@ -886,7 +839,7 @@ MpsTerm *MpsTerm::Create(const parsetree *exp) // {{{
       return new MpsEnd();
     }
   } // }}}
-  else if (exp->type_name == "pi2" && exp->case_name == "case21") // guisync ( exps ) { inputbranches } {{{
+  else if (exp->type_name == "pi2" && exp->case_name == "case19") // guisync ( exps ) { inputbranches } {{{
   { 
     vector<MpsExp*> args;
     args.clear();
