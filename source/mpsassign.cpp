@@ -18,8 +18,11 @@ MpsAssign::~MpsAssign() // {{{
   delete myType;
   delete mySucc;
 } // }}}
-bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Check exp has correct type, and check succ in updated sigma {{{
+bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, const string &reqPure) // * Check exp has correct type, and check succ in updated sigma {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
   if (dynamic_cast<MpsDelegateMsgType*>(myType)!=NULL)
     return PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega);
   MpsMsgType *exptype=myExp->TypeCheck(Gamma);
@@ -35,7 +38,7 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   MpsMsgEnv newGamma=Gamma;
   newGamma[myId]=myType;
   // Check new Successor
-  bool result = mySucc->TypeCheck(Theta,newGamma,Omega);
+  bool result = mySucc->TypeCheck(Theta,newGamma,Omega,pureStack, reqPure);
 
   return result;
 } // }}}

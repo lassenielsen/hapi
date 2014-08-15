@@ -25,8 +25,11 @@ MpsBranch::~MpsBranch() // {{{
     myBranches.erase(myBranches.begin());
   }
 } // }}}
-bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Branch {{{
+bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, const string &reqPure) // Use rule Branch {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
   if (session==Gamma.end())
@@ -40,10 +43,10 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, reqPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, *this, session->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, reqPure, *this, session->first);
   // Check session has select type
   const MpsLocalBranchType *branchType = dynamic_cast<const MpsLocalBranchType*>(msgType->GetLocalType());
   if (branchType==NULL)
@@ -70,7 +73,7 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
       return PrintTypeError((string)"Branch has no assertion: " + branch->first,*this,Theta,Gamma,Omega);
     MpsExp *newTheta = new MpsBinOpExp("and",Theta,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Typecheck Branch
-    bool brcheck=succ->second->TypeCheck(*newTheta,newGamma,Omega);
+    bool brcheck=succ->second->TypeCheck(*newTheta,newGamma,Omega, pureStack, reqPure);
 
     // Clean up
     delete newTheta;

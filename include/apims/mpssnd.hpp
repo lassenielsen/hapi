@@ -16,7 +16,9 @@ class MpsSnd : public MpsTerm // {{{
 
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
-                   const MpsProcEnv &Omega);
+                   const MpsProcEnv &Omega,
+                   const std::vector<std::string> &pureStack,
+                   bool reqPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySnd(const std::string &path, MpsExp **val, MpsChannel &ch) const;
     MpsTerm *ReIndex(const std::string &session,

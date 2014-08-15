@@ -15,7 +15,9 @@ class MpsCall : public MpsTerm // {{{
 
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
-                   const MpsProcEnv &Omega);
+                   const MpsProcEnv &Omega,
+                   const std::vector<std::pairstd::string,int> > &pureStack,
+                   const std::string &reqPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyCall(const std::string &path, const std::vector<MpsFunction> &funs) const;
     MpsTerm *ReIndex(const std::string &session,

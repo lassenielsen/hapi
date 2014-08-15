@@ -16,8 +16,12 @@ MpsCond::~MpsCond() // {{{
   delete myTrueBranch;
   delete myFalseBranch;
 } // }}}
-bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Cond {{{
+bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, const string &reqPure) // Use rule Cond {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
   MpsBoolMsgType booltype;
   MpsMsgType *condtype = myCond->TypeCheck(Gamma);
   bool condtypematch = booltype.Equal(Theta,*condtype);

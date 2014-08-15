@@ -15,7 +15,9 @@ class MpsPar : public MpsTerm // {{{
 
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
-                   const MpsProcEnv &Omega);
+                   const MpsProcEnv &Omega,
+                   const std::vector<std::string> &pureStack,
+                   bool reqPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyRcv(const std::string &path, const MpsExp *val) const;
     MpsTerm *ApplySnd(const std::string &path, MpsExp **val, MpsChannel &ch) const;
