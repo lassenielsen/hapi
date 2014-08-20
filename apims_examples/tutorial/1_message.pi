@@ -1,8 +1,9 @@
-(nu a: 1=>2<Int>;Gend)
-( link(2,a,s,1);
-  s[2]<<5;
-  end
-| link(2,a,s,2);
-  s[1]>>x;
-  end
-)
+#define $intmsg 1=>2<Int>;Gend
+ch a = new {1,2}@$intmsg in
+ses s = new (1 of 2)@a;
+s[2]<<5;
+end
+|
+ses s = new (2 of 2)@a;
+s[1]>>x;
+end

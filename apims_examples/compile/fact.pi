@@ -1,50 +1,48 @@
 #include <console.pi>
-#define $prodseqres \
-  2=>1<Int>; \
-  Gend
+
 #define $prodseq \
   1=>2<Int>; \
   1=>2<Int>; \
-  $prodseqres
-def prodseq: {1,2}@$prodseq in
+  2=>1<Int>; \
+  Gend
+
+ch prodseq = new {1,2}@$prodseq in
+
 def Prodseq() =
   HOSTHEADER("");
-  s = new (2 of 2)@prodseq;
-  ( Prodseq()
-  | s[1]>>x1;
-    s[1]>>x2;
-    if x2+1 <= x1
-    then s[1]<<1;
-         end
-    else if x2 <= x1
-    then s[1]<<x1;
-         end
-    else HOSTHEADER("");
-         s1 = new (1 of 2)@prodseq;
-         Int mid=(x1+x2)/2;
-         s1[2]<<x1;
-         s1[2]<<mid;
-         s2 = new (1 of 2)@prodseq;
-         s2[2]<<mid+1;
-         s2[2]<<x2;
-         s1[2]>>r1;
-         s2[2]>>r2;
-         s[1]<<r1*r2;
-         end
-  )
+  ses s = new (2 of 2)@prodseq in
+  Prodseq() |
+  s[1]>>x1;
+  s[1]>>x2;
+  if x2+1 <= x1
+  then s[1]<<1;
+       end
+  else if x2 <= x1
+  then s[1]<<x1;
+       end
+  else HOSTHEADER("");
+       ses s1 = new (1 of 2)@prodseq;
+       Int mid=(x1+x2)/2;
+       s1[2]<<x1;
+       s1[2]<<mid;
+       ses s2 = new (1 of 2)@prodseq;
+       s2[2]<<mid+1;
+       s2[2]<<x2;
+       s1[2]>>r1;
+       s2[2]>>r2;
+       s[1]<<r1*r2;
+       end
 in Prodseq() |
-c = new (2 of 2)@console;
-c[1]<<^PutString;
-c[1]<<"What is n?";
-c[1]<<^GetInt;
-c[1]>>v;
-s = new (1 of 2)@prodseq;
-s[2]<<1;
-s[2]<<v;
-s[2]>>r;
-c[1]<<^PutString;
-c[1]<<"Fact of n is";
-c[1]<<^PutInt;
-c[1]<<r;
-c[1]<<^End;
+
+ses c = new (2 of 2)@console;
+c[1] << ^PutString << "What is n?"
+     << ^GetInt;
+c[1] >> v;
+ses s = new (1 of 2)@prodseq;
+s[2] << 1 << v;
+s[2] >> r;
+c[1] << ^PutString << "Fact of n is"
+     << ^PutInt;
+c[1] << r;
+c[1] << ^End;
 end

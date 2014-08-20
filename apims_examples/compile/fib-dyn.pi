@@ -1,47 +1,43 @@
 #include <console.pi>
 
 #define $fib \
-  1=>2<Int>;\
   2=>1<Int>;\
+  1=>2<Int>;\
   Gend
-(nu fib: pure $fib)
+
+ch fib = new {1, 2}@$fib in
 def Fib() =
-  link(2,fib,s,2);
-  ( Fib()
-  | s[1]>>x;
-    if x <=1
-    then s[1]<<1;
-         end
-    else link(2,fib,s1,1);
-         s1[2]<<x-1;
-         if (SYSTEM&"tprocs")<=(SYSTEM&"aprocs")
-         then s1[2]>>f1;
-              link(2,fib,s2,1);
-              s2[2]<<x-2;
-              s2[2]>>f2;
-              s[1]<<f1+f2;
-              end
-         else link(2,fib,s2,1);
-              s2[2]<<x-2;
-              s1[2]>>f1;
-              s2[2]>>f2;
-              s[1]<<f1+f2;
-              end
-  )
+  ses s = new (1 of 2)@fib in
+  Fib() |
+  s[2]>>x;
+  if x <=1
+  then s[2]<<1;
+       end
+  else ses s1 = new (2 of 2)@fib;
+       s1[1]<<x-1;
+       if (SYSTEM&"tprocs")<=(SYSTEM&"aprocs")
+       then s1[1]>>f1;
+            ses s2=new (2 of 2)@fib;
+            s2[1]<<x-2;
+            s2[1]>>f2;
+            s[2]<<f1+f2;
+            end
+       else ses s2=new (2 of 2)@fib;
+            s2[1]<<x-2;
+            s1[1]>>f1;
+            s2[1]>>f2;
+            s[2]<<f1+f2;
+            end
 in Fib() |
 
-link(2,console,c,2);
-c[1]<<^PutString;
-c[1]<<"What is n?";
-c[1]<<^GetInt;
-c[1]>>v;
-link(2,fib,f,1);
-f[2]<<v;
-f[2]>>r;
-c[1]<<^PutString;
-c[1]<<"Fib(n) is";
-c[1]<<^PutInt;
-c[1]<<r;
-c[1]<<^End;
+ses c = new (2 of 2)@console;
+c[1] << ^PutString << "What is n?"
+     << ^GetInt;
+c[1] >> v;
+ses f = new (2 of 2)@fib;
+f[1] << v;
+f[1] >> r;
+c[1] << ^PutString << "Fib(n) is"
+     << ^PutInt << r;
+c[1] << ^End;
 end
-
