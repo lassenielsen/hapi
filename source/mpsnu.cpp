@@ -16,8 +16,13 @@ MpsNu::~MpsNu() // {{{
   delete mySucc;
   delete myType;
 } // }}}
-bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Nres {{{
+bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rule Nres {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+  // Verify new channel
   // Check that only completed sessions are hidden
   MpsMsgEnv newGamma = Gamma;
   MpsMsgEnv::iterator var=newGamma.find(myChannel);
@@ -30,9 +35,14 @@ bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProc
     // Remove hidden variable
     newGamma.erase(var);
   }
-  // FIXME: Check that myType is coherent
+  // Add channel to type env
   newGamma[myChannel] = new MpsChannelMsgType(*myType,myParticipants);
-  int result=mySucc->TypeCheck(Theta,newGamma,Omega);
+  // Find and add pure participants to pureStack
+  vector<pair<string,int> > newPureStack=pureStack;
+  for (vector<MpsParticipant>::const_iterator p=myParticipants.begin(); p!=myParticipants.end(); ++p)
+    if (p->IsPure())
+      newPureStack.push_back(pair<string,int>(myChannel,p->GetId()));
+  int result=mySucc->TypeCheck(Theta,newGamma,Omega,newPureStack,reqPure);
   delete newGamma[myChannel];
   return result;
 } // }}}

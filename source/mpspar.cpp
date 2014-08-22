@@ -1,4 +1,7 @@
 #include<apims/mpspar.hpp>
+#include<apims/mpsdef.hpp>
+#include<apims/mpslink.hpp>
+#include<apims/mpscall.hpp>
 #include <apims/common.hpp>
 
 using namespace std;
@@ -19,8 +22,45 @@ MpsPar::~MpsPar() // {{{
   delete myLeft;
   delete myRight;
 } // }}}
-bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Par {{{
+bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rule Par {{{
 {
+  // Check purity constraionts
+  if (pureStack.size()>0)
+  { const MpsDef *pureDef=dynamic_cast<const MpsDef*>(myLeft);
+    if (pureDef->myArgs.size()>0)
+      return PrintTypeError("Implementation of pure participant " + pureDef->myName + " must have no state (arguments)",*this,Theta,Gamma,Omega);
+    const MpsPar *succPar=dynamic_cast<const MpsPar*>(leftDef->mySucc);
+    if (succPar==NULL)
+      return PrintTypeError("Implementation of pure participant " + leftDef->myName + " must be immediately followed by a fork and invocation (def X() = ... in X() | ...)",*this,Theta,Gamma,Omega);
+    const MpsCall *succCall=dynamic_cast<const MpsCall*>(succPar->myLeft);
+    if (succCall==NULL || succCall->myName!=myName)
+      return PrintTypeError("Implementation of pure participant " + leftDef->myName + " must be immediately followed by a fork and invocation of implementation process (def X() = ... in X() | ...)",*this,Theta,Gamma,Omega);
+    const MpsLink *bodyLink=dynamic_cast<const MpsLink*>(myBody);
+    if (bodyLink==NULL)
+      return PrintTypeError("Implementation of pure participant " + leftDef->myName + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega);
+    vector<pair<string,int> > newPureStack=pureStack;
+    vector<pair<string,int> >::iterator impl=newPureStack.find(pair<string,int>(bodyLink->myChannel,bodyLink->myPid));
+    if (impl==newPureStack.end())
+      return PrintTypeError("Expected implementation of pure participant but linking as " int2string(bodyLink->myPid) + "@" + bodyLink->myChannel,*this,Theta,Gamma,Omega);
+    newPureStack.erase(impl);
+    const MpsPar *bodyPar=dynamic_cast<const MpsPar*>(bodyLink->mySucc);
+    if (bodyPar==NULL)
+      return PrintTypeError("Implementation of pure participant " + leftDef->myName + " must start by linking and forking (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);
+    const MpsCall *bodyCall=dynamic_cast<const MpsCall*>(bodyPar->myLeft);
+    if (bodyCall==NULL || bodyCall->myName!=myName)
+      return PrintTypeError("Implementation of pure participant " + leftDef->myName + " must start by linking and forking and invocation of implementation process (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);
+
+    // Structure alright, now invoke typechecking of body and succ
+    MpsMsgEnv pureGamma;
+    for (MpsMsgEnv::const_iterator var = Gamma.begin(); var!=Gamma.end(); ++var)
+      if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Not session type
+        pureGamma[var->first]=var->second;
+    MpsProcEnv pureOmega;
+    return bodyPar->myRight->TypeCheck(Theta, pureGamma, pureOmega, vector<pair<string,int> >(), true) &&
+           myRight->TypeCheck(Theta, Gamma, Omega, newPureStack, reqPure);
+  }
+
+  // Normal fork
   // Split Gammma
   MpsMsgEnv leftGamma;
   MpsMsgEnv rightGamma;
@@ -49,8 +89,8 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   }
 
   // Check each sub-process with the split Gamma
-  return myLeft->TypeCheck(Theta,leftGamma,Omega) &&
-         myRight->TypeCheck(Theta,rightGamma,Omega);
+  return myLeft->TypeCheck(Theta,leftGamma,Omega,pureStack,reqPure) &&
+         myRight->TypeCheck(Theta,rightGamma,Omega,pureStack,reqPure);
 } // }}}
 MpsTerm *MpsPar::ApplyRcv(const std::string &path, const MpsExp *val) const // {{{
 { if (path.size()==0)

@@ -20,8 +20,13 @@ MpsSync::~MpsSync() // {{{
   DeleteMap(myBranches);
   DeleteMap(myAssertions);
 } // }}}
-bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Sync {{{
+bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rule Sync {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+  // Verify sync
   MpsMsgEnv::const_iterator var=Gamma.find(mySession);
   // Check that session exists
   if (var==Gamma.end())
@@ -34,10 +39,10 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   // Check if unfolding is necessary
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, *this, var->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, reqPure, *this, var->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, *this, var->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, reqPure, *this, var->first);
 
   // Check session has sync type
   const MpsLocalSyncType *syncType = dynamic_cast<const MpsLocalSyncType*>(msgType->GetLocalType());
@@ -125,7 +130,7 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     // Make new Theta
     MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Check Branch
-    bool checkBranch=branch->second->TypeCheck(*newTheta,newGamma,Omega);
+    bool checkBranch=branch->second->TypeCheck(*newTheta,newGamma,Omega,pureStack,reqPure);
     delete newTheta;
     if (not checkBranch)
       return false;

@@ -10,8 +10,13 @@ MpsEnd::MpsEnd() // {{{
 MpsEnd::~MpsEnd() // {{{
 {
 } // }}}
-bool MpsEnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Inact {{{
+bool MpsEnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rule Inact {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+  // Verify termination
   // Check that all sessions have been completed
   for (MpsMsgEnv::const_iterator var=Gamma.begin();var!=Gamma.end();++var)
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);

@@ -25,11 +25,13 @@ MpsBranch::~MpsBranch() // {{{
     myBranches.erase(myBranches.begin());
   }
 } // }}}
-bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, const string &reqPure) // Use rule Branch {{{
+bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rule Branch {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
     return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+  // Verify branch
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
   if (session==Gamma.end())

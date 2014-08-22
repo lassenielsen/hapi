@@ -20,8 +20,13 @@ MpsRcv::~MpsRcv() // {{{
   delete myType;
   delete mySucc;
 } // }}}
-bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rules Rcv and Srec {{{
+bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rules Rcv and Srec {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+  // Verify rcv
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
   if (session==Gamma.end())
@@ -33,10 +38,10 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, reqPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, *this, session->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, reqPure, *this, session->first);
   // Check session has receive type
   const MpsLocalRcvType *rcvType = dynamic_cast<const MpsLocalRcvType*>(msgType->GetLocalType());
   if (rcvType==NULL)
@@ -126,7 +131,7 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   else
     newTheta=Theta.Copy();
   // Check rest of program
-  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega);
+  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega,pureStack,reqPure);
   // Store if this is final action in session
   myFinal=newType->GetLocalType()->IsDone();
   // Clean Up

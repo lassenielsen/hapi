@@ -16,7 +16,7 @@ class MpsGuiSync : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
-                   const std::vector<std::string> &pureStack,
+                   const std::vector<std::pair<std::string,int> > &pureStack,
                    bool reqPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplySync(const std::vector<std::string> &paths, const std::string &label) const;

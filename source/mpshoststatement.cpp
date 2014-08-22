@@ -21,8 +21,15 @@ MpsHostStatement::~MpsHostStatement() // {{{
   DeleteVector(myExpParts);
   DeleteVector(myTypes);
 } // }}}
-bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Nres {{{
+bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rule Nres {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+  if (reqPure)
+    return PrintTypeError("HOST statements not allowed in pure context",*this,Theta,Gamma,Omega);
+
+  // Verify hoststatement
   // Clear infered typing info
   DeleteVector(myTypes);
 
@@ -36,7 +43,7 @@ bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, co
       return PrintTypeError("Host Language Statement uses session variable in expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega);
   }
 
-  return mySucc->TypeCheck(Theta,Gamma,Omega);
+  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,reqPure);
 } // }}}
 MpsTerm *MpsHostStatement::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)

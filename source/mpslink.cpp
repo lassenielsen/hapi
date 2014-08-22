@@ -21,8 +21,13 @@ MpsLink::~MpsLink() // {{{
   // assert mySucc != NULL
   delete mySucc;
 } // }}}
-bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Use rules Mcast and Macc {{{
+bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // * Use rules Mcast and Macc {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+  // Verify link
   MpsMsgEnv newGamma = Gamma;
   // Check linking on available channel
   MpsMsgEnv::iterator var=newGamma.find(myChannel);
@@ -36,6 +41,10 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   for (int i=0; myPure && i<channel->GetMaxPid(); ++i)
     if (i+1!=myPid && !channel->GetParticipants()[i].IsPure())
       myPure=false;
+  // Check purity constraint
+  if (reqPure && !myPure)
+    return PrintTypeError((string)"Unpure link in pure context is not allowed",*this,Theta,Gamma,Omega);
+
   // Check correct maxpid
   if (myMaxpid != channel->GetGlobalType()->GetMaxPid())
     return PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega);
@@ -63,7 +72,7 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   newGamma[mySession] = new MpsDelegateLocalMsgType(*newType,myPid,channel->GetParticipants());
   delete newType;
 
-  bool result=mySucc->TypeCheck(Theta,newGamma,Omega);
+  bool result=mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,reqPure);
 
   // Clean up
   delete newGamma[mySession];

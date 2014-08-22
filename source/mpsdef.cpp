@@ -34,27 +34,13 @@ MpsDef::~MpsDef() // {{{
   delete mySucc;
   delete myBody;
 } // }}}
-bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, const string &reqPure) // * Use rule Def {{{
+bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // * Use rule Def {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
-  { if (myArgs.size()>0)
-      return PrintTypeError("Implementation of pure participant " + myName + " must have no state (arguments)",*this,Theta,Gamma,Omega);
-    const MpsPar *succPar=dynamic_cast<const MpsPar*>(mySucc);
-    if (succPar==NULL)
-      return PrintTypeError("Implementation of pure participant " + myName + " must be immediately followed by a fork and invocation (def X() = ... in X() | ...)",*this,Theta,Gamma,Omega);
-    const MpsCall *succCall=dynamic_cast<const MpsCall*>(succPar->myLeft);
-    if (succCall==NULL)
-      return PrintTypeError("Implementation of pure participant " + myName + " must be immediately followed by a fork and invocation (def X() = ... in X() | ...)",*this,Theta,Gamma,Omega);
-    if (succCall->myName!=myName)
-      return PrintTypeError("Implementation of pure participant " + myName + " must be immediately followed by a fork and invocation of implementation process (def X() = ... in X() | ...)",*this,Theta,Gamma,Omega);
-    const MpsLink *bodyLink=dynamic_cast<const MpsLink*>(myBody);
-    if (bodyLink==NULL)
-      return PrintTypeError("Implementation of pure participant " + myName + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega);
-    vector<pair<string,int> >::iterator impl=pureStack.find(pair<string,int>(bodyLink->myChannel,bodyLink->myPid));
-    if (impl==pureStack.end())
-      return PrintTypeError("Expected implementation of pure participant but linking as " int2string(bodyLink->myPid) + "@" + bodyLink->myChannel,*this,Theta,Gamma,Omega);
-  }
+      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be inside a fork (ch x = new {...,pure n,...}@... in (def X() = ses s = new (n of m)@x in X() | ... in X()) | ... )",*this,Theta,Gamma,Omega);
+
+  // Verify def
   // Check if def is sound
   if (myArgs.size() != myTypes.size())
     return PrintTypeError((string)"Bad def: difference in number of arguments and number of types",*this,Theta,Gamma,Omega);
@@ -71,7 +57,7 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   // Make new environments for body
   MpsMsgEnv newGamma;
   for (MpsMsgEnv::const_iterator var = Gamma.begin(); var!=Gamma.end(); ++var)
-    if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Npt session type
+    if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Not session type
       newGamma[var->first]=var->second;
   // Update environments from state-arguments
   set<string> usedArgs;
@@ -93,7 +79,8 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
     myEnv[it->first]=it->second->Copy();
   // Make subcalls
-  return mySucc->TypeCheck(Theta,Gamma,newOmega) && myBody->TypeCheck(Theta,newGamma,newOmega);
+  return mySucc->TypeCheck(Theta,Gamma,newOmega,pureStack,reqPure) &&
+         myBody->TypeCheck(Theta,newGamma,newOmega,pureStack,reqPure);
 } // }}}
 MpsTerm *MpsDef::ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const // {{{
 { if (path.size()>0)
