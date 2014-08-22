@@ -34,8 +34,27 @@ MpsDef::~MpsDef() // {{{
   delete mySucc;
   delete myBody;
 } // }}}
-bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Use rule Def {{{
+bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, const string &reqPure) // * Use rule Def {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+  { if (myArgs.size()>0)
+      return PrintTypeError("Implementation of pure participant " + myName + " must have no state (arguments)",*this,Theta,Gamma,Omega);
+    const MpsPar *succPar=dynamic_cast<const MpsPar*>(mySucc);
+    if (succPar==NULL)
+      return PrintTypeError("Implementation of pure participant " + myName + " must be immediately followed by a fork and invocation (def X() = ... in X() | ...)",*this,Theta,Gamma,Omega);
+    const MpsCall *succCall=dynamic_cast<const MpsCall*>(succPar->myLeft);
+    if (succCall==NULL)
+      return PrintTypeError("Implementation of pure participant " + myName + " must be immediately followed by a fork and invocation (def X() = ... in X() | ...)",*this,Theta,Gamma,Omega);
+    if (succCall->myName!=myName)
+      return PrintTypeError("Implementation of pure participant " + myName + " must be immediately followed by a fork and invocation of implementation process (def X() = ... in X() | ...)",*this,Theta,Gamma,Omega);
+    const MpsLink *bodyLink=dynamic_cast<const MpsLink*>(myBody);
+    if (bodyLink==NULL)
+      return PrintTypeError("Implementation of pure participant " + myName + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega);
+    vector<pair<string,int> >::iterator impl=pureStack.find(pair<string,int>(bodyLink->myChannel,bodyLink->myPid));
+    if (impl==pureStack.end())
+      return PrintTypeError("Expected implementation of pure participant but linking as " int2string(bodyLink->myPid) + "@" + bodyLink->myChannel,*this,Theta,Gamma,Omega);
+  }
   // Check if def is sound
   if (myArgs.size() != myTypes.size())
     return PrintTypeError((string)"Bad def: difference in number of arguments and number of types",*this,Theta,Gamma,Omega);
