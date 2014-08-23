@@ -170,7 +170,7 @@ class MpsTerm // {{{
     virtual bool TypeCheck(const MpsExp &Theta,
                            const MpsMsgEnv &Gamma,
                            const MpsProcEnv &Omega,
-                           const std::vector<std::pair<std::string,int> > &pureStack,
+                           const std::set<std::pair<std::string,int> > &pureStack,
                            bool reqPure) = 0;
 
     /************************************************
@@ -409,7 +409,7 @@ inline bool PrintTypeError(const std::string &message, const apims::MpsTerm &ter
 #endif
   return false;
 } // }}}
-inline bool TypeCheckRec(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, const std::vector<std::pair<std::string,int> > &pureStack, bool reqPure, apims::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
+inline bool TypeCheckRec(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, bool reqPure, apims::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
 {
   apims::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
@@ -448,7 +448,7 @@ inline bool TypeCheckRec(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gam
   delete newMsgType;
   return result;
 } // }}}
-inline bool TypeCheckForall(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, const std::vector<std::pair<std::string,int> > &pureStack, bool reqPure, apims::MpsTerm &term, const std::string &session) // Using new rule forall {{{
+inline bool TypeCheckForall(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, bool reqPure, apims::MpsTerm &term, const std::string &session) // Using new rule forall {{{
 {
   apims::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())

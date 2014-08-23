@@ -21,7 +21,7 @@ MpsGuiValue::~MpsGuiValue() // {{{
   delete myValue;
   delete mySucc;
 } // }}}
-bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Type check name, value and session {{{
+bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Type check name, value and session {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)

@@ -16,7 +16,7 @@ class MpsDef : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
-                   const std::vector<std::pair<std::string,int> > &pureStack,
+                   const std::set<std::pair<std::string,int> > &pureStack,
                    bool reqPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const;
@@ -48,6 +48,12 @@ class MpsDef : public MpsTerm // {{{
     std::string ToCHeader() const;
 
     std::vector<std::pair<int,int> > GetArgPids() const;
+    const std::vector<std::string> &GetArgs() const { return myArgs; }
+    const std::vector<std::string> &GetStateArgs() const { return myStateArgs; }
+    const std::string &GetName() const { return myName; }
+    const MpsTerm *GetBody() const { return myBody; }
+    const MpsTerm *GetSucc() const { return mySucc; }
+    MpsMsgEnv &GetEnv() { return myEnv; }
 
   private:
     static std::vector<std::pair<int,int> > GetArgPids(const std::vector<MpsMsgType*> &argTypes);

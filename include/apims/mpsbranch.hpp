@@ -16,7 +16,7 @@ class MpsBranch : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
-                   const std::vector<std::pair<std::string,int> > &pureStack,
+                   const std::set<std::pair<std::string,int> > &pureStack,
                    bool reqPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyBRcv(const std::string &path, const std::string &label) const;

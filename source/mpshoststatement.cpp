@@ -1,6 +1,6 @@
 #include<apims/mpshoststatement.hpp>
 #include<apims/mpsend.hpp>
-#include <apims/common.hpp>
+#include<apims/common.hpp>
 
 using namespace std;
 using namespace apims;
@@ -21,7 +21,7 @@ MpsHostStatement::~MpsHostStatement() // {{{
   DeleteVector(myExpParts);
   DeleteVector(myTypes);
 } // }}}
-bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rule Nres {{{
+bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Use rule Nres {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)

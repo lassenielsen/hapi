@@ -16,7 +16,7 @@ class MpsSelect : public MpsTerm // {{{
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
-                   const std::vector<std::pair<std::string,int> > &pureStack,
+                   const std::set<std::pair<std::string,int> > &pureStack,
                    bool reqPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyBSnd(const std::string &path, std::string &label, MpsChannel &ch) const;

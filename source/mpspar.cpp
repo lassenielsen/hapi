@@ -2,7 +2,7 @@
 #include<apims/mpsdef.hpp>
 #include<apims/mpslink.hpp>
 #include<apims/mpscall.hpp>
-#include <apims/common.hpp>
+#include<apims/common.hpp>
 
 using namespace std;
 using namespace apims;
@@ -22,42 +22,74 @@ MpsPar::~MpsPar() // {{{
   delete myLeft;
   delete myRight;
 } // }}}
-bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rule Par {{{
+bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Use rule Par {{{
 {
   // Check purity constraionts
   if (pureStack.size()>0)
-  { const MpsDef *pureDef=dynamic_cast<const MpsDef*>(myLeft);
-    if (pureDef->myArgs.size()>0)
-      return PrintTypeError("Implementation of pure participant " + pureDef->myName + " must have no state (arguments)",*this,Theta,Gamma,Omega);
-    const MpsPar *succPar=dynamic_cast<const MpsPar*>(leftDef->mySucc);
-    if (succPar==NULL)
-      return PrintTypeError("Implementation of pure participant " + leftDef->myName + " must be immediately followed by a fork and invocation (def X() = ... in X() | ...)",*this,Theta,Gamma,Omega);
-    const MpsCall *succCall=dynamic_cast<const MpsCall*>(succPar->myLeft);
-    if (succCall==NULL || succCall->myName!=myName)
-      return PrintTypeError("Implementation of pure participant " + leftDef->myName + " must be immediately followed by a fork and invocation of implementation process (def X() = ... in X() | ...)",*this,Theta,Gamma,Omega);
-    const MpsLink *bodyLink=dynamic_cast<const MpsLink*>(myBody);
+  { MpsDef *pureDef=dynamic_cast<MpsDef*>(myLeft);
+    if (pureDef==NULL)
+      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+    if (pureDef->GetArgs().size()>0 || pureDef->GetStateArgs().size()>0)
+      return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must have no arguments and state",*this,Theta,Gamma,Omega);
+    const MpsCall *succCall=dynamic_cast<const MpsCall*>(pureDef->GetSucc());
+    if (succCall==NULL || succCall->GetName()!=pureDef->GetName() || succCall->GetArgs().size()>0 || succCall->GetState().size()>0)
+      return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must be immediately followed by a direct invocation of implementation process (def X() = ... in X())",*this,Theta,Gamma,Omega);
+    const MpsLink *bodyLink=dynamic_cast<const MpsLink*>(pureDef->GetBody());
     if (bodyLink==NULL)
-      return PrintTypeError("Implementation of pure participant " + leftDef->myName + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega);
-    vector<pair<string,int> > newPureStack=pureStack;
-    vector<pair<string,int> >::iterator impl=newPureStack.find(pair<string,int>(bodyLink->myChannel,bodyLink->myPid));
+      return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega);
+    set<pair<string,int> > newPureStack=pureStack;
+    set<pair<string,int> >::iterator impl=newPureStack.find(pair<string,int>(bodyLink->GetChannel(),bodyLink->GetPid()));
     if (impl==newPureStack.end())
-      return PrintTypeError("Expected implementation of pure participant but linking as " int2string(bodyLink->myPid) + "@" + bodyLink->myChannel,*this,Theta,Gamma,Omega);
+      return PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
     newPureStack.erase(impl);
-    const MpsPar *bodyPar=dynamic_cast<const MpsPar*>(bodyLink->mySucc);
+    const MpsPar *bodyPar=dynamic_cast<const MpsPar*>(bodyLink->GetSucc());
     if (bodyPar==NULL)
-      return PrintTypeError("Implementation of pure participant " + leftDef->myName + " must start by linking and forking (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);
+      return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking and forking (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);
     const MpsCall *bodyCall=dynamic_cast<const MpsCall*>(bodyPar->myLeft);
-    if (bodyCall==NULL || bodyCall->myName!=myName)
-      return PrintTypeError("Implementation of pure participant " + leftDef->myName + " must start by linking and forking and invocation of implementation process (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);
+    if (bodyCall==NULL || bodyCall->GetName()!=pureDef->GetName())
+      return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking and forking and invocation of implementation process (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);
 
     // Structure alright, now invoke typechecking of body and succ
     MpsMsgEnv pureGamma;
     for (MpsMsgEnv::const_iterator var = Gamma.begin(); var!=Gamma.end(); ++var)
       if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Not session type
         pureGamma[var->first]=var->second;
+
+    // Store env (for pureDef) for later (compilation)
+    DeleteMap(pureDef->GetEnv());
+    for (MpsMsgEnv::const_iterator it=pureGamma.begin(); it!=pureGamma.end(); ++it)
+      pureDef->GetEnv()[it->first]=it->second->Copy();
+
+    // Check linking on available channel
+    MpsMsgEnv::iterator var=pureGamma.find(bodyLink->GetChannel());
+    if (var==pureGamma.end())
+      return PrintTypeError((string)"Linking on unknown channel:" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
+    const MpsChannelMsgType *channel=dynamic_cast<const MpsChannelMsgType*>(var->second);
+    if (channel==NULL)
+      return PrintTypeError((string)"Linking on non-channel:" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
+    // Check correct maxpid
+    if (bodyLink->GetMaxpid() != channel->GetGlobalType()->GetMaxPid())
+      return PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega);
+    // Create local type
+    MpsLocalType *newType=channel->GetGlobalType()->Project(bodyLink->GetPid());
+    set<string> fv = newType->FEV();
+    // Rename all free variables
+    for (set<string>::const_iterator it=fv.begin(); it!=fv.end(); ++it)
+    { MpsLocalType *tmpType=newType->ERename(*it,MpsExp::NewVar(*it));
+      delete newType;
+      newType=tmpType;
+    }
+    // Create Gamma with new session
+    pureGamma[bodyLink->GetSession()] = new MpsDelegateLocalMsgType(*newType,bodyLink->GetPid(),channel->GetParticipants());
+
     MpsProcEnv pureOmega;
-    return bodyPar->myRight->TypeCheck(Theta, pureGamma, pureOmega, vector<pair<string,int> >(), true) &&
+    bool result = bodyPar->myRight->TypeCheck(Theta, pureGamma, pureOmega, set<pair<string,int> >(), true) &&
            myRight->TypeCheck(Theta, Gamma, Omega, newPureStack, reqPure);
+
+    // Clean up
+    delete pureGamma[bodyLink->GetSession()];
+
+    return result;
   }
 
   // Normal fork

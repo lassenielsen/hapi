@@ -19,7 +19,7 @@ MpsSnd::~MpsSnd() // {{{
   delete mySucc;
   delete myExp;
 } // }}}
-bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rules Send and Deleg (and new rule for delegaing the session itself) {{{
+bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Use rules Send and Deleg (and new rule for delegaing the session itself) {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)

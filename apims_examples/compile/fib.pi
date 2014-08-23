@@ -8,19 +8,20 @@
 ch fib = new {pure 1, 2}@$fib in
 ( def Fib() =
     ses s = new (1 of 2)@fib in
-    Fib() |
-    s[2]>>x;
-    if x <=1
-    then s[2]<<1;
-         end
-    else ses s1 = new (2 of 2)@fib;
-         s1[1]<<x-1;
-         s1[1]>>f1;
-         ses s2 = new (2 of 2)@fib;
-         s2[1]<<x-2;
-         s2[1]>>f2;
-         s[2]<<f1+f2;
-         end
+    ( Fib() |
+      s[2]>>x;
+      if x <=1
+      then s[2]<<1;
+           end
+      else ses s1 = new (2 of 2)@fib;
+           s1[1]<<x-1;
+           s1[1]>>f1;
+           ses s2 = new (2 of 2)@fib;
+           s2[1]<<x-2;
+           s2[1]>>f2;
+           s[2]<<f1+f2;
+           end
+    )
   in Fib()
 ) |
 

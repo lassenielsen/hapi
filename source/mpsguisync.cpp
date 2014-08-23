@@ -46,7 +46,7 @@ MpsGuiSync::~MpsGuiSync() // {{{
     myBranches.erase(myBranches.begin());
   }
 } // }}}
-bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // * Use rule Sync (extended) {{{
+bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // * Use rule Sync (extended) {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
@@ -198,7 +198,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
       newTheta=tmpTheta;
     }
     // Check Branch
-    bool checkBranch=myBranch->second.term->TypeCheck(*newTheta,newGamma,Omega);
+    bool checkBranch=myBranch->second.term->TypeCheck(*newTheta,newGamma,Omega,pureStack,reqPure);
     delete newTheta;
     while (newGamma.size()>0)
     { const MpsDelegateMsgType *gammaDel=dynamic_cast<const MpsDelegateMsgType*>(newGamma.begin()->second);

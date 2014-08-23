@@ -21,7 +21,7 @@ MpsLink::~MpsLink() // {{{
   // assert mySucc != NULL
   delete mySucc;
 } // }}}
-bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // * Use rules Mcast and Macc {{{
+bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // * Use rules Mcast and Macc {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
@@ -31,7 +31,7 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   MpsMsgEnv newGamma = Gamma;
   // Check linking on available channel
   MpsMsgEnv::iterator var=newGamma.find(myChannel);
-  if (var==Gamma.end())
+  if (var==newGamma.end())
     return PrintTypeError((string)"Linking on unknown channel:" + myChannel,*this,Theta,Gamma,Omega);
   const MpsChannelMsgType *channel=dynamic_cast<const MpsChannelMsgType*>(var->second);
   if (channel==NULL)

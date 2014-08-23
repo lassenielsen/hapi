@@ -10,7 +10,7 @@ MpsEnd::MpsEnd() // {{{
 MpsEnd::~MpsEnd() // {{{
 {
 } // }}}
-bool MpsEnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rule Inact {{{
+bool MpsEnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Use rule Inact {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)

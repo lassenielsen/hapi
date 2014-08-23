@@ -14,7 +14,7 @@ MpsHostHeader::~MpsHostHeader() // {{{
 {
   delete mySucc;
 } // }}}
-bool MpsHostHeader::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const vector<pair<string,int> > &pureStack, bool reqPure) // Use rule Nres {{{
+bool MpsHostHeader::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Use rule Nres {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
