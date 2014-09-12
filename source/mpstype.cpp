@@ -10,34 +10,6 @@ using namespace dpl;
 int MpsLocalType::ourNextId = 1;
 int MpsGlobalType::ourNextId = 1;
 
-// Global Type BNFs {{{
-const string MpsGlobalType::BNF_TVALS=
-"Tvals ::= < exps > |";
-const string MpsGlobalType::BNF_TARG=
-"Targ ::= id COLON Mtype = exp";
-const string MpsGlobalType::BNF_TARGS=
-"Targs ::= < Targs2 > |";
-const string MpsGlobalType::BNF_TARGS2=
-"Targs2 ::= Targs3 |";
-const string MpsGlobalType::BNF_TARGS3=
-"Targs3 ::= Targ | Targ , Targs3";
-const string MpsGlobalType::BNF_ASSERTION=
-"Assertion ::= [[ exp ]] |";
-const string MpsGlobalType::BNF_NAMEDASSERTION=
-"NamedAssertion ::= as id Assertion |";
-const string MpsGlobalType::BNF_LABEL=
-"Label ::= bid Assertion";
-const string MpsGlobalType::BNF_GTYPE=
-"Gtype ::= int => int < Mtype > NamedAssertion ; Gtype \
-         | int => int { Gbranches } \
-         | rec gvar Targs . Gtype \
-         | gvar Tvals \
-         | Gend \
-         | { Gbranches }";
-const string MpsGlobalType::BNF_GBRANCHES=
-"Gbranches ::= Label COLON Gtype \
-             | Label COLON Gtype , Gbranches";
-// }}}
 // Local Type BNFs {{{
 const string MpsLocalType::BNF_LTYPE=
 "Ltype ::= int << < Mtype > NamedAssertion ; Ltype \
@@ -313,6 +285,158 @@ MpsExp *CreateNamedAssertion(const parsetree *tree, bool &used, std::string &nam
   cerr << "Unknown NamedAssertion parsetree: " << tree->type_name << "." << tree->case_name << endl;
 #endif
   return new MpsBoolVal(false);
+} // }}}
+void MpsGlobalType::AddParserDef(const Parser &parser) // {{{
+{ 
+  if (parser.IsType("Gtype"))
+    return;
+
+  MpsParser.DefKeywordToken("Gend",1);
+  MpsParser.DefKeywordToken(";",1);
+  MpsParser.DefToken("int", "(~)?[0-9][0-9]*",10);
+  MpsParser.DefKeywordToken("->",0);
+  MpsParser.DefKeywordToken("<",2);
+  MpsParser.DefKeywordToken(">",2);
+  MpsParser.DefKeywordToken("rec",1);
+  MpsParser.DefToken("gvar", "$[a-zA-Z0-9_][a-zA-Z0-9_]*",10);
+  MpsParser.DefToken("COLON",":",1);
+  MpsParser.DefKeywordToken("as",1);
+  MpsParser.DefToken("id", "[a-z][a-zA-Z0-9_]*",10);
+  MpsParser.DefKeywordToken("req",1);
+  MpsParser.DefKeywordToken("=",1);
+  MpsParser.DefKeywordToken(",",2);
+  MpsParser.DefToken("bid", "[#^][a-zA-Z0-9_]*",10);
+  MpsParser.DefKeywordToken("{",2);
+  MpsParser.DefKeywordToken("}",2);
+
+  MpsExp::AddParserDef(parser);
+  MpsMsgType::AddParserDef(parser);
+
+  parser.DefType("Tvals ::= ::tvals_some < exps > \
+                          | ::tvals_none\
+                 ");
+  parser.DefType("Targ ::= id COLON Mtype = exp");
+  parser.DefType("Targs ::= ::targs_some < Targs2 > \
+                          | ::targs_none \
+                 ");
+  parser.DefType("Targs2 ::= ::targs2_some Targs3 \
+                           | ::targs2_none \
+                 ");
+  parser.DefType("Targs3 ::= ::targs3_end Targ \
+                           | ::targs3_cont Targ , Targs3 \
+                 ");
+  parser.DefType("Assertion ::= ::ass_some req exp \
+                              | ::ass_none \
+                 ");
+  parser.DefType("NamedAssertion ::= ::name as id Assertion \
+                                   | ::noname \
+                 ");
+  parser.DefType("Label ::= bid Assertion");
+  parser.DefType("Gact ::= int -> int < Mtype > NamedAssertion \
+                         | rec gvar Targs \
+                 ");
+  parser.DefType("Gterm ::= Gend ; \
+                          | gvar Tvals ; \
+                          | int -> int { Gbranches } \
+                          | { Gbranches } \
+                 ");
+  parser.DefType("Gtype ::= Gterm \
+                          | Gact ; Gtype
+                 ");
+  parser.DefType("Gbranches ::= ::gbranches_end  Label COLON Gtype \
+                              | ::gbranches_cont Label COLON Gtype Gbranches \
+                 ");
+} // }}}
+MpsGlobalType *MpsGlobalType::Create(const string &str) // {{{
+{
+  SlrParser parser("Gtype");
+  AddParserDef(parser);
+  parsetree *tree = parser.Parse(str);
+  MpsGlobalType *result=Create(tree);
+  delete tree;
+  return result;
+
+  if (tree->type_name == "Gtype" && tree->case_name == "case1") // int -> int < Mtype > NamedAssertion ; Gtype {{{
+  {
+    MpsGlobalType *succ = MpsGlobalType::Create(tree->content[8]);
+    MpsMsgType *msgtype = MpsMsgType::Create(tree->content[4]);
+    int from = string2int(tree->content[0]->root.content);
+    int to = string2int(tree->content[2]->root.content);
+    bool a_used=false;
+    string a_name;
+    MpsExp *assertion = CreateNamedAssertion(tree->content[6],a_used, a_name);
+    MpsGlobalType *result = NULL;
+    if (a_used)
+      result = new MpsGlobalMsgType(from,to,*msgtype,*succ,*assertion,a_name);
+    else
+      result = new MpsGlobalMsgType(from,to,*msgtype,*succ);
+    delete assertion;
+    delete msgtype;
+    delete succ;
+    return result;
+  } // }}}
+  else if (tree->type_name == "Gtype" && tree->case_name == "case2") // int -> int { Gbranches } {{{
+  {
+    int from = string2int(tree->content[0]->root.content);
+    int to = string2int(tree->content[2]->root.content);
+    map<string,MpsGlobalType*> branches;
+    branches.clear();
+    map<string,MpsExp*> assertions;
+    assertions.clear();
+    FindGlobalBranches(tree->content[4],branches,assertions);
+    MpsGlobalType *result = new MpsGlobalBranchType(from,to,branches,assertions);
+    // Clean up
+    DeleteMap(branches);
+    DeleteMap(assertions);
+    return result;
+  } // }}}
+  else if (tree->type_name == "Gtype" && tree->case_name == "case3") // rec gvar Targs . Gtype {{{
+  {
+    MpsGlobalType *succ = MpsGlobalType::Create(tree->content[4]);
+    string name = tree->content[1]->root.content;
+    vector<TypeArg> args;
+    args.clear();
+    CreateStateArgs(tree->content[2],args);
+    MpsGlobalRecType *result = new MpsGlobalRecType(name,*succ, args);
+    delete succ;
+    return result;
+  } // }}}
+  else if (tree->type_name == "Gtype" && tree->case_name == "case4") // gvar Tvals {{{
+  {
+    vector<MpsExp*> args;
+    args.clear();
+    CreateStateValues(tree->content[1],args);
+    MpsGlobalVarType *result = new MpsGlobalVarType(tree->content[0]->root.content, args);
+    // Clean Up
+    while (args.size()>0)
+    { delete args.back();
+      args.pop_back();
+    }
+    return result;
+  } // }}}
+  else if (tree->type_name == "Gtype" && tree->case_name == "case5") // Gend {{{
+  {
+    MpsGlobalEndType *result = new MpsGlobalEndType();
+    return result;
+  } // }}}
+  else if (tree->type_name == "Gtype" && tree->case_name == "case6") // { Gbranches } {{{
+  {
+    map<string,MpsGlobalType*> branches;
+    branches.clear();
+    map<string,MpsExp*> assertions;
+    assertions.clear();
+    FindGlobalBranches(tree->content[1],branches,assertions);
+    MpsGlobalSyncType *result = new MpsGlobalSyncType(branches,assertions);
+    // Clean up
+    DeleteMap(branches);
+    DeleteMap(assertions);
+    return result;
+  } // }}}
+  
+#if APIMS_DEBUG_LEVEL>1
+  cerr << "Unknown global-type parsetree: " << tree->type_name << "." << tree->case_name << endl;
+#endif
+  return new MpsGlobalEndType();
 } // }}}
 MpsGlobalType *MpsGlobalType::Create(const parsetree *tree) // {{{
 {

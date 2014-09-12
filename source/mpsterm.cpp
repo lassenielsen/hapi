@@ -41,7 +41,7 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
 {
   // Create parser
   SlrParser MpsParser("pi");
-  MpsParser.AddSRRule("pi2",false);
+  //MpsParser.AddSRRule("pi2",false);
   
   /*** Define Tokens ***/
   // Parenthesis
@@ -68,7 +68,7 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefKeywordToken("Int",1);         // Simple type keyword
   MpsParser.DefKeywordToken("String",1);      // Simple type keyword
   MpsParser.DefKeywordToken("Bool",1);        // Simple type keyword
-  MpsParser.DefKeywordToken("=>",0);          // Communication type
+  MpsParser.DefKeywordToken("->",0);          // Communication type
   MpsParser.DefKeywordToken("@",1);           // Used for T @ ( p of n )
   MpsParser.DefKeywordToken("of",1);          // Usex in T @ ( p of n )
   MpsParser.DefKeywordToken("as",1);          // Usex in 1=>2:1<Bool> as x
@@ -116,6 +116,8 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefToken("hostheader", "HOSTHEADER",2); // Indicate host header
   MpsParser.DefToken("system", "SYSTEM",2); // Indicate host header
   MpsParser.DefToken("process", "def", 1); // Init Link
+  MpsParser.DefToken("global", "public+global", 1); // Init Link
+  MpsParser.DefToken("local", "private+local", 1); // Init Link
   MpsParser.DefToken("session", "ses+session", 1); // Init Link
   MpsParser.DefToken("channel", "ch+channel", 1); // Init Link
   /*** Define grammars ***/
@@ -123,9 +125,8 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefType(MpsExp::BNF_EXP);
   MpsParser.DefType(MpsExp::BNF_EXPS);                             // Expression Tuple
   MpsParser.DefType(MpsExp::BNF_EXPS2);                            // Nonempty Expression Tuple
-  MpsParser.DefType(MpsGlobalType::BNF_ASSERTION);                 // Assertion
+  MpsGlobalType::AddParserDef(MpsParser);                          // Global Types
   MpsParser.DefType(MpsGlobalType::BNF_NAMEDASSERTION);            // Name and Assertion
-  MpsParser.DefType(MpsGlobalType::BNF_LABEL);                     // Branch Label
   // Type grammars
   MpsParser.DefType(MpsMsgType::BNF_STYPE);
   MpsParser.DefType(MpsMsgType::BNF_STYPES);
@@ -133,25 +134,17 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefType(MpsMsgType::BNF_MTYPE);
   MpsParser.DefType(MpsLocalType::BNF_LTYPE);
   MpsParser.DefType(MpsLocalType::BNF_LBRANCHES);
-  // Typed Args (with initial value)
-  MpsParser.DefType(MpsGlobalType::BNF_TARGS);
-  MpsParser.DefType(MpsGlobalType::BNF_TARGS2);                    // Targ list
-  MpsParser.DefType(MpsGlobalType::BNF_TARGS3);                    // Nonempty Targ list
-  MpsParser.DefType(MpsGlobalType::BNF_TARG);                      // Typed argument with default value
-  MpsParser.DefType(MpsGlobalType::BNF_TVALS);
-  MpsParser.DefType(MpsGlobalType::BNF_GTYPE);                     // Global Types
-  MpsParser.DefType(MpsGlobalType::BNF_GBRANCHES);
   // Term grammar
-  MpsParser.DefType("ch ::= id | id [ int ]");                     // Channels
-  MpsParser.DefType("branches ::= branch | branch , branches");    // Nonempty Branches list
-  MpsParser.DefType("branch ::= Label COLON pi");                      // Branch
-  MpsParser.DefType("inputbranches ::= inputbranch \
-                                     | inputbranch , inputbranches"); // Nonempty GUIBranch list
+  MpsParser.DefType("ch ::= id [ int ]");                          // Session channels
+  MpsParser.DefType("branch ::= Label COLON pi");                  // Branch
+  MpsParser.DefType("branches ::= branch | branch branches");      // Nonempty Branches list
   MpsParser.DefType("inputbranch ::= Label ( Targs2 ) COLON pi");      // GUIBranch
-  MpsParser.DefType("args ::= args2 |");                           // Argument list
-  MpsParser.DefType("args2 ::= id COLON Mtype | id COLON Mtype , args2");  // Argument list
-  MpsParser.DefType("dargs ::= < args > |");                       // Optional dependant args
-  MpsParser.DefType("dexps ::= < exps > |");                       // Optional dependant args
+  MpsParser.DefType("inputbranches ::= inputbranch \
+                                     | inputbranch inputbranches"); // Nonempty GUIBranch list
+  MpsParser.DefType("args ::= ::args_some args2 | ::args_none");                           // Argument list
+  MpsParser.DefType("args2 ::= ::args_last Mtype id | ::args_cons Mtype id , args2");  // Non-empty argument list
+  MpsParser.DefType("dargs ::= ::dargs_some < args2 > | ::dargs_none");                       // Optional dependant args
+  MpsParser.DefType("dexps ::= ::dexps_some < exps > | ::dexps_none");                       // Optional dependant args
   MpsParser.DefType("ids ::= | id  ids");                          // Name list
   MpsParser.DefKeywordToken("pure",2);                             // Used for mode declaration
   MpsParser.DefKeywordToken("impure",2);                           // Used for mode declaration
@@ -162,29 +155,46 @@ MpsTerm *MpsTerm::Create(const std::string &exp) // {{{
   MpsParser.DefType("sends ::= send | send sends");
   MpsParser.DefType("recv ::= >> id | >> id @ ( int of int )");
   MpsParser.DefType("recvs ::= recv | recv recvs");
-                                                                   // Processes
-  MpsParser.DefType("pi ::= pi par pi2 \
-                          | pi2");
-  MpsParser.DefType("pi2 ::= ( pi ) \
-                           | end \
-                           | pvar dexps ( exps ) \
-                           | ch sends ; pi2 \
-                           | ch recvs ; pi2 \
-                           | session id = new ( int of int ) @ id ; pi2\
-                           | session id = new ( int of int ) @ id in pi\
-                           | channel id = new { participants } @ Gtype ; pi2 \
-                           | channel id = new { participants } @ Gtype in pi \
-                           | process pvar dargs ( args ) = pi ; pi2 \
-                           | process pvar dargs ( args ) = pi in pi \
-                           | Mtype id = exp ; pi2 \
-                           | guivalue ( exps ) ; pi2 \
-                           | host ( exps ) ; pi2 \
-                           | hostheader ( exps ) ; pi2 \
-                           | if exp then pi2 else pi2 \
-                           | ch >> { branches } \
-                           | sync ( exps ) { branches } \
-                           | guisync ( exps ) { inputbranches } \
-                    ");                                            // More processes
+  MpsParser.DefType("dlocal ::= ::dlocal_d \
+                              | ::dlocal_l local ");
+  MpsParser.DefType("dglobal ::= ::dglobal_d \
+                               | ::dglobal_l global ");
+  // Processes
+  MpsParser.DefType("pi ::= ::pi_par    stmts par pi \
+                          | ::pi_stmts  stmts \
+                          | ::pi_estmts estmts \
+                    ");
+  // Statements
+  MpsParser.DefType("stmt ::= ::stmt_sends ch sends \
+                            | ::stmt_recvs ch recvs \
+                            | ::stmt_link  dlocal id = new id ( int of int ) \
+                            | ::stmt_ch    dlocal Gtype id ( participants ) \
+                            | ::stmt_ass   dlocal Mtype id = exp \
+                            | ::stmt_a_ass dlocal id = exp \
+                            | ::stmt_gval  guivalue ( exps ) \
+                            | ::stmt_hosts host ( exps ) \
+                            | ::stmt_hosth hostheader ( exps ) \
+                    ");
+  // Terminating statements
+  MpsParser.DefType("tstmt ::= ::tstmt_pi   ( pi ) \
+                             | ::tstmt_end  ; \
+                             | ::tstmt_def  local pvar dargs ( args ) = stmts stmts \
+                             | ::tstmt_call pvar dexps ( exps ) ; \
+                             | ::tstmt_if   if exp then pi else stmts \
+                             | ::tstmt_br   ch >> { branches } \
+                             | ::tstmt_syn  sync ( exps ) { branches } \
+                             | ::tstmt_gsyn guisync ( exps ) { inputbranches } \
+                    ");
+  // Statement sequence
+  MpsParser.DefType("stmts ::= ::stmts_n tstmt | ::stmts_c stmt ; stmts");
+  // Extended statements (for associativity)
+  MpsParser.DefType("estmt ::= ::estmt_link  global id = new id ( int of int ) ; pi \
+                             | ::estmt_ch    global Gtype id ( participants ) ; pi \
+                             | ::estmt_def   global pvar dargs ( args ) = stmts pi \
+                             | ::estmt_ass   global Mtype id = exp ; pi \
+                             | ::estmt_a_ass global id = exp ; pi \
+                    ");
+  MpsParser.DefType("estmts ::= estmt | stmt ; estmts");
 
   parsetree *tree = MpsParser.Parse(exp);
   MpsTerm *result=MpsTerm::Create(tree);

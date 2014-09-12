@@ -88,6 +88,8 @@ class MpsGlobalType // {{{
 {
   public:
     // Parser
+    static void AddParserDef(dpl::Parser &parser);
+    static MpsGlobalType *Create(const std::string &str);
     static MpsGlobalType *Create(const dpl::parsetree *tree);
 
     // Constructor, Copy and operator methods
@@ -121,18 +123,6 @@ class MpsGlobalType // {{{
     //! Generate (totally) new global variable name
     static std::string NewGVar(std::string orig="$X");
     
-    // Grammar
-    const static std::string BNF_TVALS;
-    const static std::string BNF_TARG;
-    const static std::string BNF_TARGS;
-    const static std::string BNF_TARGS2;
-    const static std::string BNF_TARGS3;
-    const static std::string BNF_ASSERTION;
-    const static std::string BNF_NAMEDASSERTION;
-    const static std::string BNF_LABEL;
-    const static std::string BNF_GTYPE;
-    const static std::string BNF_GBRANCHES;
-
   private:
     static int ourNextId;
 }; // }}}
