@@ -81,7 +81,6 @@
 
 #define MPSUSEGUI
 
-#include <dpl/symparser.hpp>
 #include <vector>
 #include <string>
 #include <map>
@@ -125,21 +124,12 @@ class MpsTerm // {{{
     virtual ~MpsTerm() {};
     // DOCUMENTATION: MpsTerm::Create {{{
     /*!
-     * Creates a MpsTerm object frem a sourcecode string
+     * Creates a MpsTerm object from a sourcecode string
      * @param exp The sourcecode string describing a process.
      * @result A MpsTerm object representing the described process.
      */
     // }}}
-    static MpsTerm *Create(const std::string &exp);
-    static void FindParticipants(const dpl::parsetree *exp, std::vector<MpsParticipant> &dest);
-    // DOCUMENTATION: MpsTerm::Create {{{
-    /*!
-     * Creates a MpsTerm object from a parsetree
-     * @param exp The parsetree describing a process.
-     * @result A MpsTerm object representing the described process.
-     */
-    // }}}
-    static MpsTerm *Create(const dpl::parsetree *exp);
+    static MpsTerm *Create(const std::string &str);
     //! Make a deep copy of the object
     virtual MpsTerm *Copy() const = 0; // Make a deep copy
 

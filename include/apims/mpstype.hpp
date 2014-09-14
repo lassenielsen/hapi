@@ -88,9 +88,7 @@ class MpsGlobalType // {{{
 {
   public:
     // Parser
-    static void AddParserDef(dpl::Parser &parser);
     static MpsGlobalType *Create(const std::string &str);
-    static MpsGlobalType *Create(const dpl::parsetree *tree);
 
     // Constructor, Copy and operator methods
     virtual ~MpsGlobalType();
@@ -320,7 +318,7 @@ class MpsLocalType // {{{
 {
   public:
     // Parser
-    static MpsLocalType *Create(const dpl::parsetree *tree);
+    static MpsLocalType *Create(const std::string &str);
 
     // Constructor, Copy and operator methods
     virtual ~MpsLocalType();
@@ -684,7 +682,7 @@ class MpsMsgType // {{{
 {
   public:
     // Parser
-    static MpsMsgType *Create(const dpl::parsetree *tree);
+    static MpsMsgType *Create(const std::string &str);
 
     // Constructor, Copy and operator methods
     virtual ~MpsMsgType();
