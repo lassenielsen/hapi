@@ -533,24 +533,24 @@ void MpsParser::DefExp(Parser &parser) // {{{
   MpsParser.DefToken("string", "\"[^\"]*\"",10);
   MpsParser.DefToken("id", "[a-z][a-zA-Z0-9_]*",10);
   // Expression Grammar
-  parser.DefType(" Exp ::= ::exp_id    id \
-                         | ::exp_int   int \
-                         | ::exp_str   string \
-                         | ::exp_true  true \
-                         | ::exp_false false \
-                         | ::exp_not   not Exp \
-                         | ::exp_if    if Exp then Exp else Exp \
-                         | ::exp_plus  Exp + Exp \
-                         | ::exp_minus Exp - Exp \
-                         | ::exp_mult  Exp * Exp \
-                         | ::exp_div   Exp / Exp \
-                         | ::exp_and   Exp and Exp \
-                         | ::exp_or    Exp or Exp \
-                         | ::exp_eq    Exp = Exp \
-                         | ::exp_leq   Exp <= Exp \
-                         | ::exp_tuple ( Exps ) \
-                         | ::exp_amp   Exp & int \
-                         | ::exp_sys   system & string \
+  parser.DefType("Exp  ::= ::exp_if    if Exp then Exp else Exp | Exp2");
+  parser.DefType("Exp2 ::= ::exp_eq    Exp3 = Exp2 | Exp3");
+  parser.DefType("Exp3 ::= ::exp_leq   Exp4 <= Exp3 | Exp4");
+  parser.DefType("Exp4 ::= ::exp_plus  Exp5 + Exp4 | Exp5");
+  parser.DefType("Exp5 ::= ::exp_minus Exp6 - Exp5 | Exp6");
+  parser.DefType("Exp6 ::= ::exp_mult  Exp7 * Exp6 | Exp7");
+  parser.DefType("Exp7 ::= ::exp_div   Exp8 / Exp7 | Exp8");
+  parser.DefType("Exp8 ::= ::exp_and   Exp9 and Exp8 | Exp9");
+  parser.DefType("Exp9 ::= ::exp_or    Exp10 or Exp9 | Exp10");
+  parser.DefType("Exp10 ::= ::exp_amp   Exp10 & int | Exp11");
+  parser.DefType("Exp11 ::= ::exp_sys   system & string | Exp12");
+  parser.DefType("Exp12 ::= ::exp_not   not Exp12 | Exp13");
+  parser.DefType("Exp13 ::= ::exp_id    id \
+                          | ::exp_int   int \
+                          | ::exp_str   string \
+                          | ::exp_true  true \
+                          | ::exp_false false \
+                          | ::exp_tuple ( Exps ) \
                  ");
   parser.DefType("Exps ::= ::tuple_some Exps2 | ::tuple_none ");
   parser.DefType("Exps2 ::= ::tuple_end Exp | ::tuple_cons Exp , Exps2");
