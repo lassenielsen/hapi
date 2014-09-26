@@ -366,6 +366,91 @@ MpsLocalType *MpsParser::Ltype(const string &str) // {{{
   return result;
 } // }}}
 
+MpsMsgType *MpsParser::Stype(const parsetree *tree) // {{{
+{
+  if (tree->case_name == "type_int") // Int {{{
+  {
+    MpsIntMsgType *result = new MpsIntMsgType();
+    return result;
+  } // }}}
+  else if (tree->case_name == "type_string") // String {{{
+  {
+    MpsStringMsgType *result = new MpsStringMsgType();
+    return result;
+  } // }}}
+  else if (tree->case_name == "type_bool") // Bool {{{
+  {
+    MpsBoolMsgType *result = new MpsBoolMsgType();
+    return result;
+  } // }}}
+  else if (tree->case_name == "type_tuple") // ( Stypes ) {{{
+  {
+    vector<MpsMsgType*> elements;
+    elements.clear();
+    Stypes(tree->content[1],elements);
+    if (elements.size()==1) // Single type
+      return elements[0];
+    else
+    {
+      MpsTupleMsgType *result = new MpsTupleMsgType(elements);
+      DeleteVector(elements);
+      return result;
+    }
+  } // }}}
+
+  throw string("Unknown Stype parsetree: " + tree->type_name + "." + tree->case_name);
+} // }}}
+void MpsParser::Stypes(const parsetree *tree, vector<MpsMsgType*> &dest) // {{{
+{
+  if (tree->case_name == "tuple_none") // {{{
+  { return;
+  } // }}}
+  else if (tree->case_name == "tuple_end") // {{{
+  { dest.push_back(Stype(tree->content[0]));
+    return;
+  } // }}}
+  else if (tree->case_name == "tuple_some") // {{{
+  { return Stypes(tree->content[0],dest);
+  } // }}}
+  else if (tree->case_name == "tuple_cont") // {{{
+  { dest.push_back(Stype(tree->content[0]));
+    return Stypes(tree->content[2],dest);
+  } // }}}
+
+  throw string("Unknown Stypes parsetree: " + tree->type_name + "." + tree->case_name);
+} // }}}
+
+    static MpsParticipant Create(const dpl::parsetree &exp) // {{{
+    { // participant ::= mode int
+      std::string id=exp.content[1]->root.content;
+      return MpsParticipant(string2int(id),id,MpsParticipant::CreateMode(*exp.content[0],false));
+    } // }}}
+    static bool CreateMode(const dpl::parsetree &exp, bool d) // {{{
+    { // mode ::= | pure | impure
+      if (exp.type_name == "mode" && exp.case_name == "case1")
+        return d;
+      else if (exp.type_name == "mode" && exp.case_name == "case2") // pure
+        return true;
+      else if (exp.type_name == "mode" && exp.case_name == "case3") // impure
+        return false;
+      else throw std::string("MpsParticipant::CreateMode: Unknown pconstructor: ") + exp.type_name + " case: " + exp.case_name;
+    
+      return d;
+    } // }}}
+
+void MpsParser::Participants(const parsetree *exp, vector<MpsParticipant> &dest) // {{{
+{
+  if (exp->case_name == "participants_end") // participant {{{
+  { dest.push_back(MpsParticipant::Create(*exp->content[0]));
+    return;
+  } // }}}
+  if (exp->type_name == "participants" && exp->case_name == "case2") // participant , participants {{{
+  {
+    dest.push_back(MpsParticipant::Create(*exp->content[0]));
+    return FindParticipants(exp->content[2], dest);
+  } // }}}
+  throw string("FindParticipants: Unknown participants parsetree: ") + exp->type_name + "." + exp->case_name;
+} // }}}
 void MpsParser::DefMtype(Parser &parser) // {{{
 { 
   if (parser.IsType("Mtype"))
@@ -414,48 +499,43 @@ void MpsParser::DefMtype(Parser &parser) // {{{
 } // }}}
 MpsMsgType *MpsParser::Mtype(const parsetree *tree) // {{{
 {
-  if (tree->type_name == "Mtype" && tree->case_name == "case1") // Stype {{{
+  if (tree->case_name == "mtype_stype") // Stype {{{
   {
-    return PT2Mtype(tree->content[0]);
+    return Stype(tree->content[0]);
   } // }}}
-  else if (tree->type_name == "Mtype" && tree->case_name == "case2") // { participants } @ Gtype {{{
+  else if (tree->case_name == "mtype_gtype") // { participants } @ Gtype {{{
   {
-    MpsGlobalType *gtype = PT2Gtype(tree->content[4]);
+    MpsGlobalType *gtype = Gtype(tree->content[4]);
     vector<MpsParticipant> participants;
-    MpsTerm::FindParticipants(tree->content[1],participants);
-    //for (int i=0; i<gtype->GetMaxPid(); ++i) // FISME: Adde syntax and parser
-    //  participants.push_back(MpsParticipant(i+1,int2string(i+1),false));
+    Participants(tree->content[1],participants);
     if (participants.size()!=gtype->GetMaxPid())
-    {
-#if APIMS_DEBUG_LEVEL>1
-      cerr << "Wrong participant count in: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-      return new MpsIntMsgType();
-    }
-    MpsChannelMsgType *result = new MpsChannelMsgType(*gtype,participants); // We must assume channel is impure for safety
+      throw string("Wrong participant count in ") + tree->type_name << "." tree->case_name;
+    MpsChannelMsgType *result = new MpsChannelMsgType(*gtype,participants);
     // Clean up
     delete gtype;
 
     return result;
   } // }}}
-  else if (tree->type_name == "Mtype" && tree->case_name == "case3") // ( int of { participants } ) @ Ltype {{{
+  else if (tree->case_name == "mtype_ltype") // ( int of { participants } ) @ Ltype {{{
   {
-    MpsLocalType *ltype = PT2Ltype(tree->content[8]);
+    MpsLocalType *ltype = Ltype(tree->content[8]);
     int pid = string2int(tree->content[1]->root.content);
     vector<MpsParticipant> participants;
-    MpsTerm::FindParticipants(tree->content[4],participants);
+    Participants(tree->content[4],participants);
     MpsDelegateMsgType *result = new MpsDelegateLocalMsgType(*ltype,pid,participants);
     // Clean up
     delete ltype;
 
     return result;
   } // }}}
-  else if (tree->type_name == "Mtype" && tree->case_name == "case4") // ( int of { participants } ) @ Gtype {{{
+  else if (tree->case_name == "mtype_projtype") // ( int of { participants } ) @ Gtype {{{
   {
-    MpsGlobalType *gtype = PT2Gtype(tree->content[8]);
+    MpsGlobalType *gtype = Gtype(tree->content[8]);
     int pid = string2int(tree->content[1]->root.content);
     vector<MpsParticipant> participants;
-    MpsTerm::FindParticipants(tree->content[4],participants);
+    Participants(tree->content[4],participants);
+    if (participants.size()!=gtype->GetMaxPid())
+      throw string("Wrong participant count in ") + tree->type_name << "." tree->case_name;
     MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*gtype,pid,participants);
 
     // Clean up
@@ -463,40 +543,8 @@ MpsMsgType *MpsParser::Mtype(const parsetree *tree) // {{{
 
     return result;
   } // }}}
-  else if (tree->type_name == "Stype" && tree->case_name == "case1") // Int {{{
-  {
-    MpsIntMsgType *result = new MpsIntMsgType();
-    return result;
-  } // }}}
-  else if (tree->type_name == "Stype" && tree->case_name == "case2") // String {{{
-  {
-    MpsStringMsgType *result = new MpsStringMsgType();
-    return result;
-  } // }}}
-  else if (tree->type_name == "Stype" && tree->case_name == "case3") // Bool {{{
-  {
-    MpsBoolMsgType *result = new MpsBoolMsgType();
-    return result;
-  } // }}}
-  else if (tree->type_name == "Stype" && tree->case_name == "case4") // ( Stypes ) {{{
-  {
-    vector<MpsMsgType*> elements;
-    elements.clear();
-    FindMsgTypes(tree->content[1],elements);
-    if (elements.size()==1) // Single type
-      return elements[0];
-    else
-    {
-      MpsTupleMsgType *result = new MpsTupleMsgType(elements);
-      DeleteVector(elements);
-      return result;
-    }
-  } // }}}
-  
-#if APIMS_DEBUG_LEVEL>1
-  cerr << "Unknown msg-type parsetree: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  return new MpsIntMsgType();
+
+  throw string("Unknown Mtype parsetree: " + tree->type_name + "." + tree->case_name);
 } // }}}
 MpsMsgType *MpsParser::Mtype(const string &str) // {{{
 {
@@ -508,6 +556,27 @@ MpsMsgType *MpsParser::Mtype(const string &str) // {{{
   return result;
 } // }}}
 
+void MpaParser::Exps(const parsetree *exp, vector<MpsExp*> &dest) // {{{
+{
+  if (exp->case_name == "tuple_some") // Exps2
+    return Exps(exp->content[0],dest);
+  else if (exp->case_name == "tuple_none") //
+    return;
+  else if (exp->case_name == "tuple_end") // Exp
+  { dest.push_back(Exp(exp->content[0]));
+    return;
+  }
+  else if (exp->case_name == "tuple_cons") // Exp , Exps2
+  { dest.push_back(Exp(exp->content[0]));
+    Exps(exp->content[2],dest);
+    return;
+  }
+
+#if APIMS_DEBUG_LEVEL>1
+    cerr << "Unknown Exps constructor: " << exp->type_name << " . " << exp->case_name << endl;
+#endif
+  return;
+} // }}}
 void MpsParser::DefExp(Parser &parser) // {{{
 { 
   if (parser.IsType("Exp"))
@@ -533,70 +602,35 @@ void MpsParser::DefExp(Parser &parser) // {{{
   MpsParser.DefToken("string", "\"[^\"]*\"",10);
   MpsParser.DefToken("id", "[a-z][a-zA-Z0-9_]*",10);
   // Expression Grammar
-  parser.DefType("Exp  ::= ::exp_if    if Exp then Exp else Exp | Exp2");
-  parser.DefType("Exp2 ::= ::exp_eq    Exp3 = Exp2 | Exp3");
-  parser.DefType("Exp3 ::= ::exp_leq   Exp4 <= Exp3 | Exp4");
-  parser.DefType("Exp4 ::= ::exp_plus  Exp5 + Exp4 | Exp5");
-  parser.DefType("Exp5 ::= ::exp_minus Exp6 - Exp5 | Exp6");
-  parser.DefType("Exp6 ::= ::exp_mult  Exp7 * Exp6 | Exp7");
-  parser.DefType("Exp7 ::= ::exp_div   Exp8 / Exp7 | Exp8");
-  parser.DefType("Exp8 ::= ::exp_and   Exp9 and Exp8 | Exp9");
-  parser.DefType("Exp9 ::= ::exp_or    Exp10 or Exp9 | Exp10");
-  parser.DefType("Exp10 ::= ::exp_amp   Exp10 & int | Exp11");
-  parser.DefType("Exp11 ::= ::exp_sys   system & string | Exp12");
-  parser.DefType("Exp12 ::= ::exp_not   not Exp12 | Exp13");
+  parser.DefType("Exp  ::= ::exp_if    if Exp then Exp else Exp | ::exp_lvl Exp2");
+  parser.DefType("Exp2 ::= ::exp_eq    Exp3 = Exp2 | ::exp_lvl Exp3");
+  parser.DefType("Exp3 ::= ::exp_leq   Exp4 <= Exp3 | ::exp_lvl Exp4");
+  parser.DefType("Exp4 ::= ::exp_plus  Exp5 + Exp4 | ::exp_lvl Exp5");
+  parser.DefType("Exp5 ::= ::exp_minus Exp6 - Exp5 | ::exp_lvl Exp6");
+  parser.DefType("Exp6 ::= ::exp_mult  Exp7 * Exp6 | ::exp_lvl Exp7");
+  parser.DefType("Exp7 ::= ::exp_div   Exp8 / Exp7 | ::exp_lvl Exp8");
+  parser.DefType("Exp8 ::= ::exp_and   Exp9 and Exp8 | ::exp_lvl Exp9");
+  parser.DefType("Exp9 ::= ::exp_or    Exp10 or Exp9 | ::exp_lvl Exp10");
+  parser.DefType("Exp10 ::= ::exp_amp   Exp10 & int | ::exp_lvl Exp11");
+  parser.DefType("Exp12 ::= ::exp_not   not Exp12 | ::exp_lvl Exp13");
   parser.DefType("Exp13 ::= ::exp_id    id \
                           | ::exp_int   int \
                           | ::exp_str   string \
                           | ::exp_true  true \
                           | ::exp_false false \
                           | ::exp_tuple ( Exps ) \
+                          | ::exp_sys   system & string | ::exp_lvl Exp12");
                  ");
   parser.DefType("Exps ::= ::tuple_some Exps2 | ::tuple_none ");
   parser.DefType("Exps2 ::= ::tuple_end Exp | ::tuple_cons Exp , Exps2");
 } // }}}
 MpsExp *MpsParser::Exp(const parsetree *exp) // {{{
 {
-  if (exp->type_name == "Exps" && exp->case_name == "case1") // id {{{
+  if (exp->case_name == "exp_lvl") // Exp<number> {{{
   {
-    return Create(exp->content[0]);
+    return Exp(exp->content[0]);
   } // }}}
-  if (exp->type_name == "Exps2" && exp->case_name == "case1") // id {{{
-  {
-    return Create(exp->content[0]);
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case1") // id {{{
-  {
-    return new MpsVarExp(exp->content[0]->root.content,MpsMsgNoType());
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case2") // int {{{
-  {
-    mpz_t val;
-    mpz_init_set_str(val,exp->content[0]->root.content.c_str(),10);
-    MpsExp *exp=new MpsIntVal(val);
-    mpz_clear(val);
-    return exp;
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case3") // string {{{
-  {
-    return new MpsStringVal(unwrap_string(exp->content[0]->root.content));
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case4") // true {{{
-  {
-    return new MpsBoolVal(true);
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case5") // false {{{
-  {
-    return new MpsBoolVal(false);
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case6") // not exp {{{
-  {
-    MpsExp *sub = MpsExp::Create(exp->content[1]);
-    MpsExp *result = new MpsUnOpExp("not",*sub);
-    delete sub;
-    return result;
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case7") // if exp then exp else exp {{{
+  if (exp->case_name == "exp_if") // if Exp then Exp else Exp {{{
   {
     MpsExp *cond = MpsExp::Create(exp->content[1]);
     MpsExp *truebranch = MpsExp::Create(exp->content[3]);
@@ -607,100 +641,81 @@ MpsExp *MpsParser::Exp(const parsetree *exp) // {{{
     delete falsebranch;
     return result;
   } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case8") // exp + exp {{{
+  if (exp->case_name == "exp_eq") // Exp3 = Exp2 {{{
   {
-    MpsExp *left = MpsExp::Create(exp->content[0]);
-    MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("+",*left, *right, MpsMsgNoType(), MpsMsgNoType());
-    delete left;
-    delete right;
-    return result;
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case9") // exp - exp {{{
-  {
-    MpsExp *left = MpsExp::Create(exp->content[0]);
-    MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("-",*left, *right, MpsMsgNoType(), MpsMsgNoType());
-    delete left;
-    delete right;
-    return result;
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case10") // exp * exp {{{
-  {
-    MpsExp *left = MpsExp::Create(exp->content[0]);
-    MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("*",*left, *right, MpsMsgNoType(), MpsMsgNoType());
-    delete left;
-    delete right;
-    return result;
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case11") // exp / exp {{{
-  {
-    MpsExp *left = MpsExp::Create(exp->content[0]);
-    MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("/",*left, *right, MpsMsgNoType(), MpsMsgNoType());
-    delete left;
-    delete right;
-    return result;
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case12") // exp and exp {{{
-  {
-    MpsExp *left = MpsExp::Create(exp->content[0]);
-    MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("and", *left, *right, MpsMsgNoType(), MpsMsgNoType());
-    delete left;
-    delete right;
-    return result;
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case13") // exp or exp {{{
-  {
-    MpsExp *left = MpsExp::Create(exp->content[0]);
-    MpsExp *right = MpsExp::Create(exp->content[2]);
-    MpsExp *result = new MpsBinOpExp("or",*left, *right, MpsMsgNoType(), MpsMsgNoType());
-    delete left;
-    delete right;
-    return result;
-  } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case14") // exp = exp {{{
-  {
-    MpsExp *left = MpsExp::Create(exp->content[0]);
-    MpsExp *right = MpsExp::Create(exp->content[2]);
+    MpsExp *left = Exp(exp->content[0]);
+    MpsExp *right = Exp(exp->content[2]);
     MpsExp *result = new MpsBinOpExp("=", *left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
   } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case15") // exp <= exp {{{
+  if (exp->case_name == "exp_leq") // Exp4 <= Exp3 {{{
   {
-    MpsExp *left = MpsExp::Create(exp->content[0]);
-    MpsExp *right = MpsExp::Create(exp->content[2]);
+    MpsExp *left = Exp(exp->content[0]);
+    MpsExp *right = Exp(exp->content[2]);
     MpsExp *result = new MpsBinOpExp("<=", *left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
     return result;
   } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case16") // ( exps ) {{{
+  if (exp->case_name == "exp_plus") // Exp5 + Exp4 {{{
   {
-    vector<MpsExp*> elements;
-    elements.clear();
-    FindExps(exp->content[1],elements);
-    if (elements.size() == 1) // Single expression
-      return elements[0]; // No Clean-up
-    else
-    {
-      MpsTupleExp *result = new MpsTupleExp(elements);
-      // Clean up
-      while (elements.size()>0)
-      {
-        delete *elements.begin();
-        elements.erase(elements.begin());
-      }
-      return result;
-    }
+    MpsExp *left = Exp(exp->content[0]);
+    MpsExp *right = Exp(exp->content[2]);
+    MpsExp *result = new MpsBinOpExp("+",*left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
   } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case17") // exp & int {{{
+  if (exp->case_name == "exp_minus") // Exp6 - Exp5 {{{
   {
-    MpsExp *left=MpsExp::Create(exp->content[0]);
+    MpsExp *left = Exp(exp->content[0]);
+    MpsExp *right = Exp(exp->content[2]);
+    MpsExp *result = new MpsBinOpExp("-",*left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
+  if (exp->case_name == "exp_mult") // Exp7 * Exp6 {{{
+  {
+    MpsExp *left = Exp(exp->content[0]);
+    MpsExp *right = Exp(exp->content[2]);
+    MpsExp *result = new MpsBinOpExp("*",*left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
+  if (exp->case_name == "exp_div") // Exp8 / Exp7 {{{
+  {
+    MpsExp *left = Exp(exp->content[0]);
+    MpsExp *right = Exp(exp->content[2]);
+    MpsExp *result = new MpsBinOpExp("/",*left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
+  if (exp->case_name == "exp_and") // Exp9 and Exp8 {{{
+  {
+    MpsExp *left = Exp(exp->content[0]);
+    MpsExp *right = Exp(exp->content[2]);
+    MpsExp *result = new MpsBinOpExp("and", *left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
+  if (exp->case_name == "exp_or") // Exp10 or Exp9 {{{
+  {
+    MpsExp *left = Exp(exp->content[0]);
+    MpsExp *right = Exp(exp->content[2]);
+    MpsExp *result = new MpsBinOpExp("or",*left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
+  if (exp->case_name == "exp_amp") // Exp10 & int {{{
+  {
+    MpsExp *left=Exp(exp->content[0]);
     mpz_t val;
     mpz_init_set_str(val,exp->content[2]->root.content.c_str(),10);
     MpsExp *right=new MpsIntVal(val);
@@ -710,13 +725,58 @@ MpsExp *MpsParser::Exp(const parsetree *exp) // {{{
     delete right;
     return result;
   } // }}}
-  if (exp->type_name == "Exp" && exp->case_name == "case18") // system & int {{{
+  if (exp->case_name == "exp_not") // not Exp12 {{{
+  {
+    MpsExp *sub = Exp(exp->content[1]);
+    MpsExp *result = new MpsUnOpExp("not",*sub);
+    delete sub;
+    return result;
+  } // }}}
+  if (exp->case_name == "exp_id") // id {{{
+  {
+    return new MpsVarExp(exp->content[0]->root.content,MpsMsgNoType());
+  } // }}}
+  if (exp->case_name == "exp_int") // int {{{
+  {
+    mpz_t val;
+    mpz_init_set_str(val,exp->content[0]->root.content.c_str(),10);
+    MpsExp *exp=new MpsIntVal(val);
+    mpz_clear(val);
+    return exp;
+  } // }}}
+  if (exp->case_name == "exp_str") // string {{{
+  {
+    return new MpsStringVal(unwrap_string(exp->content[0]->root.content));
+  } // }}}
+  if (exp->case_name == "exp_true") // true {{{
+  {
+    return new MpsBoolVal(true);
+  } // }}}
+  if (exp->case_name == "exp_false") // false {{{
+  {
+    return new MpsBoolVal(false);
+  } // }}}
+  if (exp->case_name == "exp_tuple") // ( Exps ) {{{
+  {
+    vector<MpsExp*> elements;
+    elements.clear();
+    Exps(exp->content[1],elements);
+    if (elements.size() == 1) // Single expression
+      return elements[0]; // No Clean-up
+    else
+    {
+      MpsTupleExp *result = new MpsTupleExp(elements);
+      // Clean up
+      DeleteVector(elements);
+      return result;
+    }
+  } // }}}
+  if (exp->case_name == "exp_sys") // system & string {{{
   {
     return new MpsSystemExp(unwrap_string(exp->content[2]->root.content));
   } // }}}
 
-  cerr << "Unknown exp-parsetree: " << exp->type_name << "." << exp->case_name << endl;
-  return new MpsVarExp("_ERROR",MpsMsgNoType());
+  throw string("Unknown Exp-parsetree: " + exp->type_name + "." + exp->case_name;
 } // }}}
 MpsExp *MpsParser::Exp(const std::string &exp) // {{{
 {
@@ -1289,40 +1349,15 @@ MpsTerm *MpsTerm::Pi(const std::string &str) // {{{
 } // }}}
 
 // Helper functions
-void Exps(const parsetree *exp, vector<MpsExp*> &dest) // {{{
-{
-  if (exp->type_name == "exps" && exp->case_name == "case1") // exps2
-    Exps(exp->content[0],dest);
-  else if (exp->type_name == "exps" && exp->case_name == "case2") //
-    ;
-  else if (exp->type_name == "exps2" && exp->case_name == "case1") // exp
-    dest.push_back(Exp(exp->content[0]));
-  else if (exp->type_name == "exps2" && exp->case_name == "case2") // exp , exps
-  {
-    dest.push_back(MpsExp::Create(exp->content[0]));
-    Exps(exp->content[2],dest);
-  }
-  else if (exp->type_name == "dexps" && exp->case_name == "case1") // < exps >
-    Exps(exp->content[1],dest);
-  else if (exp->type_name == "dexps" && exp->case_name == "case2") //
-    ;
-  else
-  {
-#if APIMS_DEBUG_LEVEL>1
-    cerr << "Unknown Exps constructor: " << exp->type_name << " . " << exp->case_name << endl;
-#endif
-  }
-  return;
-} // }}}
 void Tvals(const parsetree *tree, vector<MpsExp*> &dest) // {{{
 {
-  if (tree->type_name == "Tvals" && tree->case_name == "case1") // < exps > {{{
+  if (tree->case_name == "tvals_some") // < Exps > {{{
     return Exps(tree->content[1], dest); // }}}
-  if (tree->type_name == "Tvals" && tree->case_name == "case2") // epsilon {{{
+  if (tree->case_name == "tvals_none") // epsilon {{{
     return; // }}}
 
 #if APIMS_DEBUG_LEVEL>1
-  cerr << "Unknown Tvals Value: " << tree->type_name << "." << tree->case_name << endl;
+  cerr << "Unknown Tvals: " << tree->type_name << "." << tree->case_name << endl;
 #endif
   return;
 } // }}}
@@ -1643,21 +1678,6 @@ MpsTerm *CreateRecvs(const parsetree *exp, MpsChannel dest, MpsTerm *succ) // {{
   cerr << "Unknown recvs parsetree: " << exp->type_name << "." << exp->case_name << endl;
 #endif
   return new MpsEnd();
-} // }}}
-void MpsTerm::FindParticipants(const parsetree *exp, vector<MpsParticipant> &dest) // {{{
-{
-  // participants ::= participant | participant , participants
-  if (exp->type_name == "participants" && exp->case_name == "case1") // participant {{{
-  {
-    dest.push_back(MpsParticipant::Create(*exp->content[0]));
-    return;
-  } // }}}
-  if (exp->type_name == "participants" && exp->case_name == "case2") // participant , participants {{{
-  {
-    dest.push_back(MpsParticipant::Create(*exp->content[0]));
-    return FindParticipants(exp->content[2], dest);
-  } // }}}
-  throw string("FindParticipants: Unknown participants parsetree: ") + exp->type_name + "." + exp->case_name;
 } // }}}
 
 

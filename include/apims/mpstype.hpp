@@ -1,7 +1,7 @@
 #ifndef MPSTYPE_HPP
 #define MPSTYPE_HPP
 
-#include <dpl/parser.hpp>
+#include <dpl/mpsparser.hpp>
 #include <string>
 #include <map>
 #include <vector>
@@ -49,25 +49,6 @@ class MpsParticipant // {{{
     bool IsPure() const {return myPure;}
     bool operator==(const MpsParticipant &rhs) const {return GetId()==rhs.GetId() && GetName()==rhs.GetName() && IsPure()==rhs.IsPure();}
     bool operator!=(const MpsParticipant &rhs) const {return !((*this)==rhs);}
-
-    static MpsParticipant Create(const dpl::parsetree &exp) // {{{
-    { // participant ::= mode int
-      std::string id=exp.content[1]->root.content;
-      return MpsParticipant(string2int(id),id,MpsParticipant::CreateMode(*exp.content[0],false));
-    } // }}}
-    static bool CreateMode(const dpl::parsetree &exp, bool d) // {{{
-    { // mode ::= | pure | impure
-      if (exp.type_name == "mode" && exp.case_name == "case1")
-        return d;
-      else if (exp.type_name == "mode" && exp.case_name == "case2") // pure
-        return true;
-      else if (exp.type_name == "mode" && exp.case_name == "case3") // impure
-        return false;
-      else throw std::string("MpsParticipant::CreateMode: Unknown pconstructor: ") + exp.type_name + " case: " + exp.case_name;
-    
-      return d;
-    } // }}}
-    
 
   private:
     int myId;
