@@ -25,7 +25,7 @@
 #ifndef MPSEXP_HPP
 #define MPSEXP_HPP
 
-#include <dpl/symparser.hpp>
+#include <typeinfo>
 #include <apims/mpstype.hpp>
 #include <gmp.h>
 #include <set>
@@ -34,6 +34,7 @@
 
 namespace apims
 {
+
 // DOCUMENTATION: MpsExp {{{
 /*!
  * MpsExp represents an expression in APIMS.
@@ -56,12 +57,12 @@ class MpsExp // {{{
     virtual MpsExp *Subst(const std::string &source, const MpsExp &dest) const = 0; // Substitute exp for var
 
     virtual std::string ToString() const= 0; // Make string representation
-    virtual std::string ToC(std::stringstream &dest, const std::string &typeName) const= 0; // Add C++ code that evaluates expression to dest, and return the variable name that holds the result
-    static MpsExp *Create(const dpl::parsetree *exp); // Create from parsing
-    static MpsExp *Create(const std::string &exp); // Create from string
+    //! Add C++ code that evaluates expression to dest.
+    //! Returns the variable name that holds the result
+    virtual std::string ToC(std::stringstream &dest, const std::string &typeName) const= 0;
     static std::string NewVar(std::string base="x");
 
-    // Used for dependent types
+    //! Used for dependent types
     bool ValidExp(std::vector<const MpsExp*> hyps) const;
 
     bool ValidExp_CFLKF(std::vector<const MpsExp*> hyps) const;

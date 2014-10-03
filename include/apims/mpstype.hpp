@@ -1,7 +1,6 @@
 #ifndef MPSTYPE_HPP
 #define MPSTYPE_HPP
 
-#include <dpl/mpsparser.hpp>
 #include <string>
 #include <map>
 #include <vector>
@@ -68,9 +67,6 @@ class MpsParticipant // {{{
 class MpsGlobalType // {{{
 {
   public:
-    // Parser
-    static MpsGlobalType *Create(const std::string &str);
-
     // Constructor, Copy and operator methods
     virtual ~MpsGlobalType();
     virtual MpsGlobalType *Copy() const = 0;
@@ -298,9 +294,6 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
 class MpsLocalType // {{{
 {
   public:
-    // Parser
-    static MpsLocalType *Create(const std::string &str);
-
     // Constructor, Copy and operator methods
     virtual ~MpsLocalType();
     virtual MpsLocalType *Copy() const=0;
@@ -662,9 +655,6 @@ class MpsLocalSyncType : public MpsLocalType // {{{
 class MpsMsgType // {{{
 {
   public:
-    // Parser
-    static MpsMsgType *Create(const std::string &str);
-
     // Constructor, Copy and operator methods
     virtual ~MpsMsgType();
     virtual MpsMsgType *Copy() const=0;

@@ -32,10 +32,6 @@ const vector<string> &MpsTerm::GetFreeLinks() const // {{{
 { return myFreeLinks;
 } // }}}
 
-MpsTerm *MpsTerm::Create(const std::string &str) // {{{
-{ return Parser::Pi(str);
-} // }}}
-
 /* Static type-checking of deadlock and communication safety
  */
 bool MpsTerm::TypeCheck() // {{{

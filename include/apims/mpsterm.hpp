@@ -118,18 +118,6 @@ namespace apims
 class MpsTerm // {{{
 {
   public:
-    /************************************************
-     ****************** Creation ********************
-     ************************************************/
-    virtual ~MpsTerm() {};
-    // DOCUMENTATION: MpsTerm::Create {{{
-    /*!
-     * Creates a MpsTerm object from a sourcecode string
-     * @param exp The sourcecode string describing a process.
-     * @result A MpsTerm object representing the described process.
-     */
-    // }}}
-    static MpsTerm *Create(const std::string &str);
     //! Make a deep copy of the object
     virtual MpsTerm *Copy() const = 0; // Make a deep copy
 

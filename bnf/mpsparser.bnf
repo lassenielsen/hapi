@@ -32,9 +32,9 @@
 >= := "<="
 @ := "@"
 Bool := "Bool"
-Gend := "Gend"
+$end := "$end"
 Int := "Int"
-Lend := "Lend"
+%end := "%end"
 String := "String"
 [ :=_1 "\["
 ] :=_1 "]"
@@ -68,8 +68,8 @@ string := "\"[^\"]*\""
 
 # Names
 id   :=_1 "[a-z][a-zA-Z0-9_]*"
-lvar :=   "%[a-zA-Z0-9_][a-zA-Z0-9_]*"
-gvar :=   "$[a-zA-Z0-9_][a-zA-Z0-9_]*"
+lvar :=_1   "%[a-zA-Z0-9_][a-zA-Z0-9_]*"
+gvar :=_1   "$[a-zA-Z0-9_][a-zA-Z0-9_]*"
 bid  :=   "[#^][a-zA-Z0-9_]*"
 pvar :=_1 "[A-Z][a-zA-Z0-9_]*"
 
@@ -105,9 +105,9 @@ PiAct ::= ::piact_sends Ch Sends ;
 # Extended statements (for associativity)
 PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi
          | ::pieact_ch    global Gtype id ( Participants ) ; Pi
-         | ::pieact_def   global pvar Dargs ( Args ) ( Pi ) Pi
          | ::pieact_ass   global Mtype id = Exp ; Pi
          | ::pieact_a_ass global id = Exp ; Pi
+         | ::pieact_def   global pvar Dargs ( Args ) ( Pi ) Pi
 # Non-sequential process constructions (branching termination etc.
 PiTerm ::= ::piterm_pi   ( Pi )
          | ::piterm_end
@@ -119,10 +119,10 @@ PiTerm ::= ::piterm_pi   ( Pi )
 
 # Global Types
 Gtype ::= ::gtype_term Gterm
-        | ::gtype_act  Gact ; Gtype
-Gact ::= ::gact_msg int -> int < Mtype > NamedAssertion
-       | ::gact_rec rec gvar Targs
-Gterm ::= ::gterm_end    Gend ;
+        | ::gtype_act  Gact Gtype
+Gact ::= ::gact_msg int -> int : Mtype NamedAssertion ;
+       | ::gact_rec rec gvar Targs ;
+Gterm ::= ::gterm_end    $end ;
         | ::gterm_call   gvar Tvals ;
         | ::gterm_branch int -> int { Gbranches }
         | ::gterm_synch  { Gbranches }
@@ -131,15 +131,15 @@ Gbranches ::= ::gbranches_end  bid Assertion COLON Gtype
 
 # Local Types
 Ltype ::= ::ltype_term Lterm 
-        | ::ltype_act Lact ; Ltype
-Lact ::= ::lact_snd    int << < Mtype > NamedAssertion 
-       | ::lact_rcv    int >> < Mtype > NamedAssertion 
-       | ::lact_forall forall id where Exp 
-       | ::lact_rec    rec lvar Targs 
+        | ::ltype_act Lact Ltype
+Lact ::= ::lact_snd    int << Mtype NamedAssertion ;
+       | ::lact_rcv    int >> Mtype NamedAssertion ;
+       | ::lact_forall forall id where Exp ;
+       | ::lact_rec    rec lvar Targs ;
 Lterm ::= ::lterm_bsnd int << { Lbranches } 
         | ::lterm_brcv int >> { Lbranches } 
         | ::lterm_call lvar Tvals ; 
-        | ::lterm_end  Lend ; 
+        | ::lterm_end  %end ; 
         | ::lterm_sync { Lbranches } 
 Lbranches ::= ::lbranches_end  bid Assertion COLON Ltype 
             | ::lbranches_cont bid Assertion COLON Ltype , Lbranches 
@@ -195,15 +195,22 @@ Exps2 ::= ::tuple_end  Exp
 
 # Leftovers / details
 Ch ::= ::ch id [ int ]
-Branch ::= bid Assertion COLON Pi
-Branches ::= Branch
-           | Branch Branches
-Inputbranch ::= bid Assertion ( Targs2 ) COLON Pi
-Inputbranches ::= Inputbranch
-                | Inputbranch Inputbranches
+Participant ::= Mode int
+Participants ::= Participant
+               | Participant , Participants
+Assertion ::= ::ass_some where Exp
+            | ::ass_none
+NamedAssertion ::= ::name as id Assertion
+                 | ::noname
+Branch ::= ::branch bid Assertion COLON Pi
+Branches ::= ::branches_end  Branch
+           | ::branches_cont Branch Branches
+Inputbranch ::= ::inputbranch bid Assertion ( Targs2 ) COLON Pi
+Inputbranches ::= ::inputbranches_end  Inputbranch
+                | ::inputbranches_cont Inputbranch Inputbranches
 Args ::= ::args_some Args2
        | ::args_none
-Args2 ::= ::args_last Mtype id
+Args2 ::= ::args_end  Mtype id
         | ::args_cons Mtype id , Args2
 Dargs ::= ::dargs_some < Args2 >
         | ::dargs_none
@@ -212,9 +219,6 @@ Dexps ::= ::dexps_some < Exps >
 Mode ::= ::mode_default
        | ::mode_pure pure
        | ::mode_impure impure
-Participant ::= Mode int
-Participants ::= Participant
-               | Participant , Participants
 Send ::= ::send_val << Exp
        | ::send_lbl << bid
 Sends ::= ::sends_end Send
@@ -227,19 +231,8 @@ Dlocal ::= ::dlocal_d
          | ::dlocal_l local
 Tvals ::= ::tvals_some < Exps >
         | ::tvals_none
-Targ ::= id COLON Mtype = Exp
+Targ ::= ::targ_def Mtype id = Exp
 Targs ::= ::targs_some < Targs2 >
         | ::targs_none
-                 
-Targs2 ::= ::targs2_some Targs3
-         | ::targs2_none
-                 
-Targs3 ::= ::targs3_end Targ
-         | ::targs3_cont Targ , Targs3
-                 
-Assertion ::= ::ass_some where Exp
-            | ::ass_none
-                 
-NamedAssertion ::= ::name as id Assertion
-                 | ::noname
-                 
+Targs2 ::= ::targs_end Targ
+         | ::targs_cont Targ , Targs2

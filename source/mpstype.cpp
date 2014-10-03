@@ -5,7 +5,6 @@
 
 using namespace std;
 using namespace apims;
-using namespace dpl;
 
 int MpsLocalType::ourNextId = 1;
 int MpsGlobalType::ourNextId = 1;
@@ -21,13 +20,6 @@ string MpsGlobalType::NewGVar(string orig) // {{{
   string result = "~$x";
   result += int2string(ourNextId);
   return result;
-} // }}}
-
-/* MpsGlobalType implementation
- *
- */
-MpsGlobalType *MpsGlobalType::Create(const string &str) // {{{
-{ return Parser::Gtype(str);
 } // }}}
 
 // Constructors
@@ -1581,13 +1573,6 @@ int MpsGlobalSyncType::GetMaxPid() const // {{{
       maxpid = succmax;
   }
   return maxpid;
-} // }}}
-
-/* MpsLocalType implementation
- *
- */
-MpsLocalType *MpsLocalType::Create(const string &str) // {{{
-{ return Parser::Ltype(str);
 } // }}}
 
 // Constructors
@@ -4282,13 +4267,6 @@ const MpsMsgType *MpsLocalRcvType::GetMsgType() const // {{{
 const vector<TypeArg> &MpsLocalRecType::GetArgs() const // {{{
 {
   return myArgs;
-} // }}}
-
-/* MpsMsgType implementation
- *
- */
-MpsMsgType *MpsMsgType::Create(const string &str) // {{{
-{ return Parser::Mtype(str);
 } // }}}
 
 // Constructors

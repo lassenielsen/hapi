@@ -1,5 +1,6 @@
 #include <apims/mpsgui_http.hpp>
 #include <dpl/symparser.hpp>
+#include <apims/mpsparser.hpp>
 #include <apims/common.hpp>
 #include "SDL_net.h"
 #include "SDL_thread.h"
@@ -757,7 +758,7 @@ void MpsGuiParticipant::SetChoices(const vector<Choice> &choices) // {{{
       if (val != myValues.end())
       {
         delete myChoices[choice].args[arg].value;
-        myChoices[choice].args[arg].value = apims::MpsExp::Create(val->second);
+        myChoices[choice].args[arg].value = apims::MpsParser::Exp(val->second);
       }
     }
 } // }}}
@@ -789,7 +790,7 @@ bool MpsGuiParticipant::SetChoiceValue(const string &choice, const string &arg, 
           if (typeid(*it2->type)==typeid(MpsStringMsgType)) // Create string value
             exp=new MpsStringVal(stuff_string(value));
           else
-            exp=apims::MpsExp::Create(value);
+            exp=apims::MpsParser::Exp(value);
           apims::MpsMsgEnv Gamma;
           Gamma.clear();
           MpsMsgType *inputtype=exp->TypeCheck(Gamma);

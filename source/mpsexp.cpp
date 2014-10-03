@@ -3,7 +3,6 @@
 #include <apims/common.hpp>
 
 using namespace std;
-using namespace dpl;
 using namespace apims;
 
 int MpsExp::ourNextId = 1;
@@ -11,9 +10,6 @@ int MpsExp::ourNextId = 1;
 /* Implementation of MpsExp and subclasses
  */
 
-MpsExp *MpsExp::Create(const std::string &exp) // {{{
-{ returm Parser::Exp(exp);
-} // }}}
 string MpsExp::NewVar(string base) // {{{
 {
   string result = (string)"~"+base;
