@@ -10,7 +10,7 @@ using namespace apims;
  */
 MpsTerm *MpsParser::Pi(const parsetree *tree) // {{{
 {
-  if (tree->case_name == "pi_par") // PiActs par Pi {{{
+ if (tree->case_name == "pi_par") // PiActs par Pi {{{
   {
     MpsTerm *left = PiActs(tree->content[0]);
     MpsTerm *right = Pi(tree->content[2]);
@@ -68,47 +68,47 @@ MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
   {
     return Recvs(tree->content[1],Channel(tree->content[0]),succ);
   } // }}}
-  else if (tree->case_name == "piact_link") // Dlocal id = new id ( int of int ) ; {{{
-  { MpsTerm *result = new MpsLink(tree->content[4]->root.content,
-                                  tree->content[1]->root.content,
-                                  stoi(tree->content[6]->root.content),
-                                  stoi(tree->content[8]->root.content),
+  else if (tree->case_name == "piact_link") // id = new id ( int of int ) ; {{{
+  { MpsTerm *result = new MpsLink(tree->content[3]->root.content,
+                                  tree->content[0]->root.content,
+                                  stoi(tree->content[5]->root.content),
+                                  stoi(tree->content[7]->root.content),
                                   *succ,
                                   false);
     delete succ;
     return result;
   } // }}}
-  else if (tree->case_name == "piact_ch") // Dlocal Gtype id ( Participants ) ; {{{
+  else if (tree->case_name == "piact_ch") // Gtype id ( Participants ) ; {{{
   { vector<MpsParticipant> participants;
-    Participants(tree->content[4],participants);
-    MpsGlobalType *type = Gtype(tree->content[1]);
+    Participants(tree->content[3],participants);
+    MpsGlobalType *type = Gtype(tree->content[0]);
     if (participants.size()!=type->GetMaxPid())
     { delete succ;
       delete type;
       throw string("Participant count does not match type: ") + tree->type_name + "." + tree->case_name;
     }
-    MpsTerm *result = new MpsNu(participants,tree->content[2]->root.content, *succ, *type);
+    MpsTerm *result = new MpsNu(participants,tree->content[1]->root.content, *succ, *type);
     delete succ;
     delete type;
     return result;
   } // }}}
-  else if (tree->case_name == "piact_ass") // Dlocal Mtype id = Exp ; {{{
-  { MpsMsgType *type = Mtype(tree->content[1]);
-    MpsExp *value = Exp(tree->content[4]);
-    MpsTerm *result = new MpsAssign(tree->content[2]->root.content, *value, *type, *succ);
+  else if (tree->case_name == "piact_ass") // Mtype id = Exp ; {{{
+  { MpsMsgType *type = Mtype(tree->content[0]);
+    MpsExp *value = Exp(tree->content[3]);
+    MpsTerm *result = new MpsAssign(tree->content[1]->root.content, *value, *type, *succ);
     delete type;
     delete value;
     delete succ;
     return result;
   } // }}}
-  else if (tree->case_name == "piact_a_ass") // Dlocal id = Exp ; {{{
-  { MpsExp *value = Exp(tree->content[3]);
-    MpsTerm *result = new MpsAssign(tree->content[1]->root.content, *value, MpsMsgNoType(), *succ);
+  else if (tree->case_name == "piact_a_ass") // id = Exp ; {{{
+  { MpsExp *value = Exp(tree->content[2]);
+    MpsTerm *result = new MpsAssign(tree->content[0]->root.content, *value, MpsMsgNoType(), *succ);
     delete value;
     delete succ;
     return result;
   } // }}}
-  else if (tree->case_name == "piact_def") // Dlocal pvar Dargs ( Args ) ( Pi ) {{{
+  else if (tree->case_name == "piact_def") // local pvar Dargs ( Args ) ( Pi ) {{{
   { MpsTerm *body = Pi(tree->content[7]);
     // Parse args
     vector<string> args;
@@ -241,7 +241,7 @@ MpsTerm *MpsParser::PiEAct(const parsetree *tree) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (tree->case_name == "piact_a_ass") // global id = Exp ; Pi {{{
+  else if (tree->case_name == "pieact_a_ass") // global id = Exp ; Pi {{{
   { MpsTerm *succ = Pi(tree->content[5]);
     MpsExp *value = Exp(tree->content[3]);
     MpsTerm *result = new MpsAssign(tree->content[1]->root.content, *value, MpsMsgNoType(), *succ);
@@ -249,7 +249,7 @@ MpsTerm *MpsParser::PiEAct(const parsetree *tree) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (tree->case_name == "piact_def") // global pvar Dargs ( Args ) ( Pi ) Pi {{{
+  else if (tree->case_name == "pieact_def") // global pvar Dargs ( Args ) ( Pi ) Pi {{{
   { MpsTerm *succ = Pi(tree->content[9]);
     MpsTerm *body = Pi(tree->content[7]);
     // Parse args
@@ -281,12 +281,12 @@ MpsTerm *MpsParser::PiTerm(const parsetree *tree) // {{{
   {
     return new MpsEnd();
   } // }}}
-  else if (tree->case_name == "piterm_call") // pvar dexps ( exps ) {{{
+  else if (tree->case_name == "piterm_call") // pvar DExps ( Exps ) {{{
   {
     vector<MpsExp*> args;
     Exps(tree->content[3],args);
     vector<MpsExp*> state;
-    Exps(tree->content[1],state);
+    DExps(tree->content[1],state);
     MpsTerm *result = new MpsCall(tree->content[0]->root.content, args, state, vector<MpsMsgType*>(), vector<MpsMsgType*>());
     DeleteVector(args);
     DeleteVector(state);
@@ -909,11 +909,11 @@ MpsParticipant MpsParser::Participant(const dpl::parsetree *tree) // {{{
  } // }}}
 void MpsParser::Participants(const parsetree *tree, vector<MpsParticipant> &dest) // {{{
 {
-  if (tree->case_name == "participants_end") // participant {{{
+  if (tree->case_name == "participants_end") // Participant {{{
   { dest.push_back(Participant(tree->content[0]));
     return;
   } // }}}
-  if (tree->type_name == "participants" && tree->case_name == "case2") // participant , participants {{{
+  if (tree->case_name == "participants_cont") // Participant , Participants {{{
   {
     dest.push_back(Participant(tree->content[0]));
     return Participants(tree->content[2], dest);
@@ -1185,7 +1185,7 @@ void MpsParser::Targs(const parsetree *tree, vector<string> &names, vector<MpsMs
 
 MpsTerm *MpsParser::Pi(const std::string &str) // {{{
 {
-  SlrParser parser("pi");
+  SlrParser parser("Pi");
   parser.LoadFile("/opt/apims/bnf/syntax.bnf");
   parsetree *tree = parser.Parse(str);
   MpsTerm *result=Pi(tree);

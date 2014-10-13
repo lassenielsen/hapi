@@ -1,5 +1,5 @@
 #include <apims/mpsgui_http.hpp>
-#include <dpl/symparser.hpp>
+#include <dpl/slrparser.hpp>
 #include <apims/mpsparser.hpp>
 #include <apims/common.hpp>
 #include "SDL_net.h"
@@ -319,9 +319,8 @@ void net_sendfile(const string &filename, TCPsocket &dest) // {{{
 int server(void *arg) // HTTP Server thread {{{
 {
   // Initialise Parser {{{
-  SymParser parser;
-  parser.DefToken("","[ \t\r][ \t\r]*",9); // Ignore whitespace, except linebreak
-  parser.DefToken("","[a-zA-Z0-9-][a-zA-Z0-9-]*: [^\n]*\n",9); // Ignore Browser-options
+  SlrParser parser("req");
+  parser.DefToken("","[ \t\r][ \t\r]*+[a-zA-Z0-9-][a-zA-Z0-9-]*: [^\n]*\n+HTTP/[1].[1]+.ico HTTP/[1].[1]",9); // Ignore whitespace, except linebreak and browser options
   parser.DefToken("AMP","&",9); // Value Seperator
   parser.DefToken("BR","\n",9); // Linebreak
   parser.DefKeywordToken("POST",1);
@@ -329,8 +328,6 @@ int server(void *arg) // HTTP Server thread {{{
   parser.DefKeywordToken("/",1);
   parser.DefKeywordToken("=",1);
   parser.DefToken("id","[^ \t\r\n/:=&][^ \t\r\n/:=&]*",10);
-  parser.DefToken("","HTTP/[1].[1]",9);
-  parser.DefToken("",".ico HTTP/[1].[1]",9);
   parser.DefType("req ::= GET path | POST path datas");
   parser.DefType("path ::= / id path | brs | / brs ");
   parser.DefType("PID ::= id | "); // Possible id

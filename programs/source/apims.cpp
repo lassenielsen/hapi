@@ -1,4 +1,4 @@
-#include <apims/mpsterm.hpp>
+#include <apims/mpsparser.hpp>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
     if (cfgCompile)
       (*out) << "/* Pre compilation output:" << endl;
     // Parse program
-    MpsTerm *current = MpsTerm::Create(term);
+    MpsTerm *current = MpsParser::Pi(term);
     if (cfgPrint)
       (*out) << "******************* Program *******************" << endl
              << current->ToString() << endl;

@@ -29,7 +29,7 @@
 = := "="
 > :=_1 ">"
 >> := ">>"
->= := "<="
+>= := ">="
 @ := "@"
 Bool := "Bool"
 $end := "$end"
@@ -68,8 +68,8 @@ string := "\"[^\"]*\""
 
 # Names
 id   :=_1 "[a-z][a-zA-Z0-9_]*"
-lvar :=_1   "%[a-zA-Z0-9_][a-zA-Z0-9_]*"
-gvar :=_1   "$[a-zA-Z0-9_][a-zA-Z0-9_]*"
+lvar :=_1 "%[a-zA-Z0-9_][a-zA-Z0-9_]*"
+gvar :=_1 "$[a-zA-Z0-9_][a-zA-Z0-9_]*"
 bid  :=   "[#^][a-zA-Z0-9_]*"
 pvar :=_1 "[A-Z][a-zA-Z0-9_]*"
 
@@ -94,11 +94,11 @@ PiEActs ::= ::pieacts_end PiEAct
 # Process Statements
 PiAct ::= ::piact_sends Ch Sends ;
         | ::piact_recvs Ch Recvs ;
-        | ::piact_link  Dlocal id = new id ( int of int ) ;
-        | ::piact_ch    Dlocal Gtype id ( Participants ) ;
-        | ::piact_ass   Dlocal Mtype id = Exp ;
-        | ::piact_a_ass Dlocal id = Exp ;
-        | ::piact_def   Dlocal pvar Dargs ( Args ) ( Pi )
+        | ::piact_link  id = new id ( int of int ) ;
+        | ::piact_ch    Gtype id ( Participants ) ;
+        | ::piact_ass   Mtype id = Exp ;
+        | ::piact_a_ass id = Exp ;
+        | ::piact_def   local pvar Dargs ( Args ) ( Pi )
         | ::piact_gval  guivalue ( Exps ) ;
         | ::piact_hosts host ( Exps ) ;
         | ::piact_hosth hostheader ( Exps ) ;
@@ -120,7 +120,7 @@ PiTerm ::= ::piterm_pi   ( Pi )
 # Global Types
 Gtype ::= ::gtype_term Gterm
         | ::gtype_act  Gact Gtype
-Gact ::= ::gact_msg int -> int : Mtype NamedAssertion ;
+Gact ::= ::gact_msg int -> int COLON Mtype NamedAssertion ;
        | ::gact_rec rec gvar Targs ;
 Gterm ::= ::gterm_end    $end ;
         | ::gterm_call   gvar Tvals ;
@@ -196,8 +196,8 @@ Exps2 ::= ::tuple_end  Exp
 # Leftovers / details
 Ch ::= ::ch id [ int ]
 Participant ::= Mode int
-Participants ::= Participant
-               | Participant , Participants
+Participants ::= ::participants_end  Participant
+               | ::participants_cont Participant , Participants
 Assertion ::= ::ass_some where Exp
             | ::ass_none
 NamedAssertion ::= ::name as id Assertion
@@ -227,8 +227,6 @@ Recv ::= ::recv_val >> id
        | ::recv_ses >> id @ ( int of int )
 Recvs ::= ::recvs_end Recv
         | ::recvs_cont Recv Recvs
-Dlocal ::= ::dlocal_d
-         | ::dlocal_l local
 Tvals ::= ::tvals_some < Exps >
         | ::tvals_none
 Targ ::= ::targ_def Mtype id = Exp
