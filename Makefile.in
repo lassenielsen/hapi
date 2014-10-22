@@ -61,7 +61,7 @@ default:
 
 all: config build install clean
 
-phony: default doc config build install uninstall clean tags package deb
+phony: default doc config build install install_bnf install_stdlib install_gfx uninstall clean tags package deb
 
 doc: doc/html
 
@@ -103,7 +103,25 @@ include/$(name)/config.hpp:
 #OS_LINUX	@echo "#define OS_LINUX" >> include/$(name)/config.hpp
 	@echo "#endif" >> include/$(name)/config.hpp
 
-install: $(libname)$(libversion)
+install_gfx:
+	@echo "Copying gallery"
+	mkdir -p /opt/apims
+	mkdir -p /opt/apims/gfx
+	cp gfx/*.jpg /opt/apims/gfx/
+
+install_bnf:
+	@echo "Copying grammar"
+	mkdir -p /opt/apims
+	mkdir -p /opt/apims/bnf
+	cp bnf/mpsparser.bnf /opt/apims/bnf/syntax.bnf
+
+install_stdlib:
+	@echo "Copying std-lib"
+	mkdir -p /opt/apims
+	mkdir -p /opt/apims/include
+	cp apims_libs/*.pi /opt/apims/include/
+
+install: $(libname)$(libversion) install_gfx install_bnf install_stdlib
 	@echo "Copying library"
 	cp $(libname)$(libversion) /usr/lib/
 #OS_LINUX	ln -f -s /usr/lib/$(libname)$(libversion) /usr/lib/$(libname)
@@ -111,11 +129,6 @@ install: $(libname)$(libversion)
 	mkdir -p /usr/include/$(name)
 	cp include/$(name)/*.hpp /usr/include/$(name)/
 	chmod -R a+rx /usr/include/$(name)
-	mkdir -p /opt/apims
-	mkdir -p /opt/apims/gfx
-	cp gfx/*.jpg /opt/apims/gfx/
-	mkdir -p /opt/apims/include
-	cp apims_libs/*.pi /opt/apims/include/
 #OS_LINUX	@echo "Reindexing libraries"
 #OS_LINUX	ldconfig -n /usr/lib
 

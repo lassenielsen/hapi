@@ -22,7 +22,7 @@ MpsPar::~MpsPar() // {{{
   delete myLeft;
   delete myRight;
 } // }}}
-bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Use rule Par {{{
+bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Par {{{
 {
   // Check purity constraionts
   if (pureStack.size()>0)
@@ -83,9 +83,34 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
     pureGamma[bodyLink->GetSession()] = new MpsDelegateLocalMsgType(*newType,bodyLink->GetPid(),channel->GetParticipants());
 
     MpsProcEnv pureOmega;
-    bool result = bodyPar->myRight->TypeCheck(Theta, pureGamma, pureOmega, set<pair<string,int> >(), true) &&
-           myRight->TypeCheck(Theta, Gamma, Omega, newPureStack, reqPure);
-
+    bool result;
+    MpsDef *subDef=dynamic_cast<MpsDef*>(bodyPar->myRight);
+    if (subDef==NULL)
+    {
+      result = bodyPar->myRight->TypeCheck(Theta, pureGamma, pureOmega, set<pair<string,int> >(), "$") &&
+               myRight->TypeCheck(Theta, Gamma, Omega, newPureStack, curPure);
+    }
+    else
+    { // FIXME: Check only one arg with correct type
+      if (subDef->GetArgs().size()!=1 || pureDef->GetStateArgs().size()>0)
+        return PrintTypeError("Recursive implementation of pure participant " + subDef->GetName() + " must have exactly one argument and no state",*this,Theta,Gamma,Omega);
+      // FIXME: Check body is direct call with pure session as only arg
+      const MpsCall *subCall=dynamic_cast<const MpsCall*>(subDef->GetSucc());
+      if (subCall==NULL || subCall->GetName()!=subDef->GetName() || subCall->GetArgs().size()!=1 || subCall->GetState().size()>0 || subCall->GetArgs()[0]->ToString()!=bodyLink->GetSession())
+        return PrintTypeError("Recursive implementation of pure participant " + subDef->GetName() + " must be immediately followed by a direct invocation of implementation process (def X(G s) = ... in X(s))",*this,Theta,Gamma,Omega);
+      // FIXME: Store def environment
+      // Store env (for pureDef) for later (compilation)
+      DeleteMap(pureDef->GetEnv());
+      for (MpsMsgEnv::const_iterator it=pureGamma.begin(); it!=pureGamma.end(); ++it)
+        subDef->GetEnv()[it->first]=it->second->Copy();
+      // Add def to Omega
+      pureOmega[subDef->GetName()].types = subDef->GetTypes();
+      pureOmega[subDef->GetName()].snames = subDef->GetStateArgs();
+      pureOmega[subDef->GetName()].stypes = subDef->GetStateTypes();
+      result = subDef->GetBody()->TypeCheck(Theta, pureGamma, pureOmega, set<pair<string,int> >(), subDef->GetName()) &&
+               myRight->TypeCheck(Theta, Gamma, Omega, newPureStack, curPure);
+    }
+    
     // Clean up
     delete pureGamma[bodyLink->GetSession()];
 
@@ -121,8 +146,8 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   }
 
   // Check each sub-process with the split Gamma
-  return myLeft->TypeCheck(Theta,leftGamma,Omega,pureStack,reqPure) &&
-         myRight->TypeCheck(Theta,rightGamma,Omega,pureStack,reqPure);
+  return myLeft->TypeCheck(Theta,leftGamma,Omega,pureStack,curPure) &&
+         myRight->TypeCheck(Theta,rightGamma,Omega,pureStack,curPure);
 } // }}}
 MpsTerm *MpsPar::ApplyRcv(const std::string &path, const MpsExp *val) const // {{{
 { if (path.size()==0)

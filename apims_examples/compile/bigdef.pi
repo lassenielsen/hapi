@@ -1,9 +1,9 @@
-//global X(Int i)
-//( if i<=0
-//  then
-//  else X(i-1)
-//)
+global X(Int i)
+( if i<=0
+  then
+  else X(i-1);
+)
 
-//X(10000000) |
-//X(10000000)
+X(10000000); |
+X(10000000);
 

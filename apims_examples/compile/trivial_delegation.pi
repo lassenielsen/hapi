@@ -1,35 +1,26 @@
 #include<console.pi>
-#define $msg 1=>2<Int>;Gend
+#define $msg 1->2:Int; \
+             $end;
+#define $delmsg 1->2:$msg(1 of 1,2); \
+                $end;
 
-(nu a: 1=>2<$msg@(1 of 2)>;Gend)
-(nu b: $msg)
-link(2,a,s,1);
-( link(2,b,t,1);
-  link(2,console,c,2);
-  c[1]<<^PutString;
-  c[1]<<"Sending Channel";
-  c[1]<<^End;
-  s[2]<<t;
-  end
-| link(2,b,t,2);
-  t[1]>>val;
-  link(2,console,c,2);
-  c[1]<<^PutString;
-  c[1]<<"Received Value";
-  c[1]<<^PutInt;
-  c[1]<<val;
-  c[1]<<^End;
-  end
-)
+global $delmsg a(1,2);
+global $msg b(1,2);
+s=new a(1 of 2);
+t=new b(1 of 2);
+c=new console(2 of 2);
+c[1]<<^PutString<<"Sending Channel"<<^End;
+s[2]<<t;
 |
-link(2,a,s,2);
-s[1]>>t@(1 of 2);
-v:Int=5;
-link(2,console,c,2);
-c[1]<<^PutString;
-c[1]<<"Received Channel, Sending Value";
-c[1]<<^PutInt;
-c[1]<<v;
-c[1]<<^End;
+t=new b(2 of 2);
+t[1]>>val;
+c=new console(2 of 2);
+c[1]<<^PutString<<"Received Value"<<^PutInt<<val<<^End;
+|
+s=new a(2 of 2);
+s[1]>>t(1 of 2);
+Int v=5;
+c=new console(2 of 2);
+c[1]<<^PutString<<"Received Channel, Sending Value"
+    <<^PutInt<<v<<^End;
 t[2]<<v;
-end

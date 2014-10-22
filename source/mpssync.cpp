@@ -20,7 +20,7 @@ MpsSync::~MpsSync() // {{{
   DeleteMap(myBranches);
   DeleteMap(myAssertions);
 } // }}}
-bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Use rule Sync {{{
+bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Sync {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
@@ -39,10 +39,10 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   // Check if unfolding is necessary
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, pureStack, reqPure, *this, var->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, *this, var->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, pureStack, reqPure, *this, var->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, *this, var->first);
 
   // Check session has sync type
   const MpsLocalSyncType *syncType = dynamic_cast<const MpsLocalSyncType*>(msgType->GetLocalType());
@@ -130,7 +130,7 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     // Make new Theta
     MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Check Branch
-    bool checkBranch=branch->second->TypeCheck(*newTheta,newGamma,Omega,pureStack,reqPure);
+    bool checkBranch=branch->second->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure);
     delete newTheta;
     if (not checkBranch)
       return false;

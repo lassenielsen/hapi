@@ -1,20 +1,18 @@
-# define $tr \
-  1=>2<Int>; \
-  2=>1<Int>; \
-  Gend
+#define $tr \
+  1->2:Int; \
+  2->1:Int; \
+  $end;
 
-(nu tr: $tr)
-( def A() =
-    link(2,tr,s,2);
-    s[1]>>x;
-    s[1]<<x*2;
-    end
-  in A()
-| def B(s: $tr@(1 of 2) ) =
-    s[2] << 5;
-    s[2] >> y;
-    end
-  in
-    link(2,tr,s,1);
-    B(s)
+global $tr tr(1,2);
+local A()
+( s=new tr(2 of 2);
+  s[1]>>x;
+  s[1]<<x*2;
 )
+A(); |
+local B($tr(1 of 1,2) s)
+( s[2] << 5;
+  s[2] >> y;
+)
+s=new tr(1 of 2);
+B(s);

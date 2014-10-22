@@ -30,7 +30,6 @@
 > :=_1 ">"
 >> := ">>"
 >= := ">="
-@ := "@"
 Bool := "Bool"
 $end := "$end"
 Int := "Int"
@@ -146,9 +145,9 @@ Lbranches ::= ::lbranches_end  bid Assertion COLON Ltype
 
 # Message (value) Types
 Mtype ::= ::mtype_stype Stype 
-        | ::mtype_gtype { Participants } @ Gtype 
-        | ::mtype_ltype ( int of { Participants } ) @ Ltype 
-        | ::mtype_ptype ( int of { Participants } ) @ Gtype 
+        | ::mtype_gtype Gtype ( Participants )
+        | ::mtype_ltype Ltype ( int of Participants )
+        | ::mtype_ptype Gtype ( int of Participants )
 Stype ::= ::type_int    Int 
         | ::type_string String 
         | ::type_bool   Bool 
@@ -195,7 +194,7 @@ Exps2 ::= ::tuple_end  Exp
 
 # Leftovers / details
 Ch ::= ::ch id [ int ]
-Participant ::= Mode int
+Participant ::= int Mode
 Participants ::= ::participants_end  Participant
                | ::participants_cont Participant , Participants
 Assertion ::= ::ass_some where Exp
@@ -224,7 +223,7 @@ Send ::= ::send_val << Exp
 Sends ::= ::sends_end Send
         | ::sends_cont Send Sends
 Recv ::= ::recv_val >> id
-       | ::recv_ses >> id @ ( int of int )
+       | ::recv_ses >> id ( int of int )
 Recvs ::= ::recvs_end Recv
         | ::recvs_cont Recv Recvs
 Tvals ::= ::tvals_some < Exps >

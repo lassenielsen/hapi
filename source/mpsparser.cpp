@@ -464,14 +464,16 @@ void MpsParser::Gbranches(const parsetree *tree, map<string,MpsGlobalType*> &des
 {
   if (tree->case_name == "gbranches_end") // bid Assertion : Gtype {{{
   {
-    dest[tree->content[0]->content[0]->root.content] = Gtype(tree->content[3]);
-    assertions[tree->content[0]->content[0]->root.content] = Assertion(tree->content[1]);
+    dest[tree->content[0]->root.content] = Gtype(tree->content[3]);
+    assertions[tree->content[0]->root.content] = Assertion(tree->content[1]);
+    return;
   } // }}}
-  else if (tree->type_name == "Gbranches" && tree->case_name == "gbranches_cont") // bid Assertion COLON Gtype , Gbranches {{{
+  else if (tree->type_name == "Gbranches" && tree->case_name == "gbranches_cont") // bid Assertion COLON Gtype Gbranches {{{
   {
-    dest[tree->content[0]->content[0]->root.content] = Gtype(tree->content[3]);
-    assertions[tree->content[0]->content[0]->root.content] = Assertion(tree->content[1]);
-    Gbranches(tree->content[5],dest,assertions);
+    dest[tree->content[0]->root.content] = Gtype(tree->content[3]);
+    assertions[tree->content[0]->root.content] = Assertion(tree->content[1]);
+    Gbranches(tree->content[4],dest,assertions);
+    return;
   } // }}}
 
   throw string("Unknown Gbranches parsetree: ") + tree->type_name + "." + tree->case_name;
@@ -627,11 +629,11 @@ MpsMsgType *MpsParser::Mtype(const parsetree *tree) // {{{
   {
     return Stype(tree->content[0]);
   } // }}}
-  else if (tree->case_name == "mtype_gtype") // { participants } @ Gtype {{{
+  else if (tree->case_name == "mtype_gtype") // Gtype ( Participants ) {{{
   {
-    MpsGlobalType *gtype = Gtype(tree->content[4]);
+    MpsGlobalType *gtype = Gtype(tree->content[0]);
     vector<MpsParticipant> participants;
-    Participants(tree->content[1],participants);
+    Participants(tree->content[2],participants);
     if (participants.size()!=gtype->GetMaxPid())
       throw string("Wrong participant count in ") + tree->type_name + "." + tree->case_name;
     MpsChannelMsgType *result = new MpsChannelMsgType(*gtype,participants);
@@ -640,10 +642,10 @@ MpsMsgType *MpsParser::Mtype(const parsetree *tree) // {{{
 
     return result;
   } // }}}
-  else if (tree->case_name == "mtype_ltype") // ( int of { participants } ) @ Ltype {{{
+  else if (tree->case_name == "mtype_ltype") // Ltype ( int of Participants ) {{{
   {
-    MpsLocalType *ltype = Ltype(tree->content[8]);
-    int pid = string2int(tree->content[1]->root.content);
+    MpsLocalType *ltype = Ltype(tree->content[0]);
+    int pid = string2int(tree->content[2]->root.content);
     vector<MpsParticipant> participants;
     Participants(tree->content[4],participants);
     MpsDelegateMsgType *result = new MpsDelegateLocalMsgType(*ltype,pid,participants);
@@ -652,10 +654,10 @@ MpsMsgType *MpsParser::Mtype(const parsetree *tree) // {{{
 
     return result;
   } // }}}
-  else if (tree->case_name == "mtype_ptype") // ( int of { participants } ) @ Gtype {{{
+  else if (tree->case_name == "mtype_ptype") // Gtype ( int of Participants ) {{{
   {
-    MpsGlobalType *gtype = Gtype(tree->content[8]);
-    int pid = string2int(tree->content[1]->root.content);
+    MpsGlobalType *gtype = Gtype(tree->content[0]);
+    int pid = string2int(tree->content[2]->root.content);
     vector<MpsParticipant> participants;
     Participants(tree->content[4],participants);
     if (participants.size()!=gtype->GetMaxPid())
@@ -903,9 +905,9 @@ MpsChannel MpsParser::Channel(const parsetree *tree) // {{{
   throw string("Unknown Ch parsetree: ") + tree->type_name + "." + tree->case_name;
 } // }}}
 MpsParticipant MpsParser::Participant(const dpl::parsetree *tree) // {{{
-{ // participant ::= mode int
-  std::string id=tree->content[1]->root.content;
-  return MpsParticipant(string2int(id),id,Mode(tree->content[0],false));
+{ // participant ::= int Mode
+  std::string id=tree->content[0]->root.content;
+  return MpsParticipant(string2int(id),id,Mode(tree->content[1],false));
  } // }}}
 void MpsParser::Participants(const parsetree *tree, vector<MpsParticipant> &dest) // {{{
 {
@@ -956,6 +958,7 @@ void MpsParser::Branch(const parsetree *tree, map<string,MpsTerm*> &terms,  map<
   {
     terms[tree->content[0]->root.content] = Pi(tree->content[3]);
     assertions[tree->content[0]->root.content] = Assertion(tree->content[1]);
+    return;
   }
 
   throw string("Unknown branch constructor: ") + tree->type_name + "." + tree->case_name;
@@ -963,10 +966,10 @@ void MpsParser::Branch(const parsetree *tree, map<string,MpsTerm*> &terms,  map<
 void MpsParser::Branches(const parsetree *tree, map<string,MpsTerm*> &terms, map<string,MpsExp*> &assertions) // {{{
 {
   if (tree->case_name == "branches_end") // Branch
-    Branch(tree->content[0], terms, assertions);
+    return Branch(tree->content[0], terms, assertions);
   else if (tree->case_name == "branches_cont") // Branch Branches
   { Branch(tree->content[0], terms, assertions);
-    Branches(tree->content[1], terms, assertions);
+    return Branches(tree->content[1], terms, assertions);
   }
 
   throw string("Unknown branches constructor: ") + tree->type_name + "." + tree->case_name;
@@ -1089,11 +1092,11 @@ MpsTerm *MpsParser::Recv(const parsetree *tree, MpsChannel dest, MpsTerm *succ) 
     delete succ;
     return result;
   } // }}}
-  else if (tree->case_name == "recv_ses") // >> id @ ( int of int ) {{{
+  else if (tree->case_name == "recv_ses") // >> id ( int of int ) {{{
   { MpsTerm *result = new MpsRcv(dest,
                                  tree->content[1]->root.content,
-                                 string2int(tree->content[4]->root.content),
-                                 string2int(tree->content[6]->root.content),
+                                 string2int(tree->content[3]->root.content),
+                                 string2int(tree->content[5]->root.content),
                                  *succ,
                                  MpsMsgNoType(),
                                  false);

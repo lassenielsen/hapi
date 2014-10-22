@@ -1,24 +1,22 @@
 #include <sys.pi>
 #include <console.pi>
-link(2,console,c,2);
-link(2,sys,s,1);
+c = new console(2 of 2);
+s = new sys(2 of 2);
 
-s[2]<<^CountArgs;
-s[2]>>argc;
+s[1]<<^CountArgs;
+s[1]>>argc;
 c[1]<<^PutString;
 c[1]<<"Number of args";
 c[1]<<^PutInt;
 c[1]<<argc;
-def PrintArgs( i:Int, c:$console@(2 of 2), s:$sys@(1 of 2) ) =
-  s[2]<<^GetArg;
-  s[2]<<i;
+local PrintArgs(Int i, $console(2 of 1 pure,2) c, $sys(1 of 1 pure,2) s)
+( s[2]<<^GetArg<<i;
   s[2]>>
   {^Some: s[2]>>a;
-          c[1]<<^PutString;
-          c[1]<<a;
-          PrintArgs(i+1,c,s)
-  ,^None: s[2]<<^End;
+          c[1]<<^PutString<<a;
+          PrintArgs(i+1,c,s);
+   ^None: s[2]<<^End;
           c[1]<<^End;
-          end
   }
-in PrintArgs(0,c,s)
+)
+PrintArgs(0,c,s);

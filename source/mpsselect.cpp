@@ -17,7 +17,7 @@ MpsSelect::~MpsSelect() // {{{
 {
   delete mySucc;
 } // }}}
-bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Use rule Sel {{{
+bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Sel {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
@@ -37,10 +37,10 @@ bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, pureStack, reqPure, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, pureStack, reqPure, *this, session->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, *this, session->first);
   // Check session has select type
   const MpsLocalSelectType *selType = dynamic_cast<const MpsLocalSelectType*>(msgType->GetLocalType());
   if (selType==NULL)
@@ -69,7 +69,7 @@ bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   myFinal=branch->second->IsDone();
   
   // Check rest of program
-  bool result = mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,reqPure);
+  bool result = mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure);
 
   // Clean up
   delete newGamma[myChannel.GetName()];

@@ -17,7 +17,7 @@ class MpsSelect : public MpsTerm // {{{
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
                    const std::set<std::pair<std::string,int> > &pureStack,
-                   bool reqPure);
+                   const std::string &curPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyBSnd(const std::string &path, std::string &label, MpsChannel &ch) const;
     MpsTerm *ReIndex(const std::string &session,

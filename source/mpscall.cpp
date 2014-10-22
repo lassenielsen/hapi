@@ -28,12 +28,12 @@ MpsCall::~MpsCall() // {{{
   DeleteVector(myTypes);
   DeleteVector(myStateTypes);
 } // }}}
-bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // * Use rule Var {{{
+bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // * Use rule Var {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
     return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
-  if (reqPure)
+  if (curPure.size()>0 && curPure!=myName)
     return PrintTypeError("Calls not allowed in pure context",*this,Theta,Gamma,Omega);
 
   // Verify call

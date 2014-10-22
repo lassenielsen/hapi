@@ -149,7 +149,7 @@ class MpsTerm // {{{
                            const MpsMsgEnv &Gamma,
                            const MpsProcEnv &Omega,
                            const std::set<std::pair<std::string,int> > &pureStack,
-                           bool reqPure) = 0;
+                           const std::string &curPure) = 0;
 
     /************************************************
      ***************** Interpreter ******************
@@ -387,7 +387,7 @@ inline bool PrintTypeError(const std::string &message, const apims::MpsTerm &ter
 #endif
   return false;
 } // }}}
-inline bool TypeCheckRec(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, bool reqPure, apims::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
+inline bool TypeCheckRec(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, apims::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
 {
   apims::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
@@ -419,14 +419,14 @@ inline bool TypeCheckRec(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gam
   newGamma[session] = newMsgType;
   bool result = false;
   if (dynamic_cast<apims::MpsLocalRecType*>(newType)==NULL)
-    result = term.TypeCheck(Theta,newGamma,Omega,pureStack,reqPure);
+    result = term.TypeCheck(Theta,newGamma,Omega,pureStack,curPure);
   else
     result = PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega);
   delete newType;
   delete newMsgType;
   return result;
 } // }}}
-inline bool TypeCheckForall(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, bool reqPure, apims::MpsTerm &term, const std::string &session) // Using new rule forall {{{
+inline bool TypeCheckForall(const apims::MpsExp &Theta, const apims::MpsMsgEnv &Gamma, const apims::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, apims::MpsTerm &term, const std::string &session) // Using new rule forall {{{
 {
   apims::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
@@ -448,7 +448,7 @@ inline bool TypeCheckForall(const apims::MpsExp &Theta, const apims::MpsMsgEnv &
   // Create new Gamma
   apims::MpsMsgEnv newGamma = Gamma;
   newGamma[session] = newMsgType;
-  bool result = term.TypeCheck(*newTheta,newGamma,Omega,pureStack,reqPure);
+  bool result = term.TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure);
   // Clean Up
   delete newTheta;
   return result;

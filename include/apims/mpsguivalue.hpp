@@ -17,7 +17,7 @@ class MpsGuiValue : public MpsTerm // {{{
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
                    const std::set<std::pair<std::string,int> > &pureStack,
-                   bool reqPure);
+                   const std::string &curPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsTerm *ReIndex(const std::string &session,

@@ -1,17 +1,14 @@
 #include<console.pi>
-def X(i:Int) =
-  if i<=0
-  then link(2,console,c,2);
+global X(Int i)
+( if i<=0
+  then c=new console(2 of 2);
        c[1]<<^PutString;
        c[1]<<"Process Complete";
        c[1]<<^End;
-       end
-  else X(i-1)
-in
-link(2,console,c,2);
-c[1]<<^PutString;
-c[1]<<"Starting 2 processes";
-c[1]<<^End;
-( X(100000)
-| X(100000)
+  else X(i-1);
+)
+c=new console(2 of 2);
+c[1]<<^PutString<<"Starting 2 processes"<<^End;
+( X(100000);
+| X(100000);
 )

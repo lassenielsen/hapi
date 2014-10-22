@@ -18,7 +18,7 @@ MpsAssign::~MpsAssign() // {{{
   delete myType;
   delete mySucc;
 } // }}}
-bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // * Check exp has correct type, and check succ in updated sigma {{{
+bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // * Check exp has correct type, and check succ in updated sigma {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
@@ -39,7 +39,7 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   MpsMsgEnv newGamma=Gamma;
   newGamma[myId]=myType;
   // Check new Successor
-  bool result = mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,reqPure);
+  bool result = mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure);
 
   return result;
 } // }}}

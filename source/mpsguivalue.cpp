@@ -21,7 +21,7 @@ MpsGuiValue::~MpsGuiValue() // {{{
   delete myValue;
   delete mySucc;
 } // }}}
-bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Type check name, value and session {{{
+bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Type check name, value and session {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
@@ -57,7 +57,7 @@ bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const M
   if (untyped)
     return PrintTypeError((string)"guivalue uses untyped expression: " + myValue->ToString(),*this,Theta,Gamma,Omega);
 
-  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,reqPure);
+  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,curPure);
 } // }}}
 MpsTerm *MpsGuiValue::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)

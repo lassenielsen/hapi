@@ -17,7 +17,7 @@ class MpsDef : public MpsTerm // {{{
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
                    const std::set<std::pair<std::string,int> > &pureStack,
-                   bool reqPure);
+                   const std::string &curPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const;
     MpsTerm *ReIndex(const std::string &session,
@@ -50,8 +50,11 @@ class MpsDef : public MpsTerm // {{{
     std::vector<std::pair<int,int> > GetArgPids() const;
     const std::vector<std::string> &GetArgs() const { return myArgs; }
     const std::vector<std::string> &GetStateArgs() const { return myStateArgs; }
+    const std::vector<MpsMsgType*> &GetTypes() const { return myTypes; }
+    const std::vector<MpsMsgType*> &GetStateTypes() const { return myStateTypes; }
     const std::string &GetName() const { return myName; }
     const MpsTerm *GetBody() const { return myBody; }
+    MpsTerm *GetBody() { return myBody; }
     const MpsTerm *GetSucc() const { return mySucc; }
     MpsMsgEnv &GetEnv() { return myEnv; }
 

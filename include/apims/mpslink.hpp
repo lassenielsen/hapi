@@ -17,7 +17,7 @@ class MpsLink : public MpsTerm // {{{
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
                    const std::set<std::pair<std::string,int> > &pureStack,
-                   bool reqPure);
+                   const std::string &curPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyLink(const std::vector<std::string> &paths, const std::string &session) const;
     MpsTerm *ReIndex(const std::string &session,

@@ -16,7 +16,7 @@ MpsNu::~MpsNu() // {{{
   delete mySucc;
   delete myType;
 } // }}}
-bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Use rule Nres {{{
+bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Nres {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
@@ -42,7 +42,7 @@ bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProc
   for (vector<MpsParticipant>::const_iterator p=myParticipants.begin(); p!=myParticipants.end(); ++p)
     if (p->IsPure())
       newPureStack.insert(pair<string,int>(myChannel,p->GetId()));
-  int result=mySucc->TypeCheck(Theta,newGamma,Omega,newPureStack,reqPure);
+  int result=mySucc->TypeCheck(Theta,newGamma,Omega,newPureStack,curPure);
   delete newGamma[myChannel];
   return result;
 } // }}}

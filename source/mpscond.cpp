@@ -16,7 +16,7 @@ MpsCond::~MpsCond() // {{{
   delete myTrueBranch;
   delete myFalseBranch;
 } // }}}
-bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // Use rule Cond {{{
+bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Cond {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
@@ -34,8 +34,8 @@ bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   MpsExp *falseTheta = new MpsBinOpExp("and",Theta,*notCond,MpsBoolMsgType(),MpsBoolMsgType());
   delete notCond;
   
-  bool result = myTrueBranch->TypeCheck(*trueTheta,Gamma,Omega,pureStack,reqPure)
-             && myFalseBranch->TypeCheck(*falseTheta,Gamma,Omega,pureStack,reqPure);
+  bool result = myTrueBranch->TypeCheck(*trueTheta,Gamma,Omega,pureStack,curPure)
+             && myFalseBranch->TypeCheck(*falseTheta,Gamma,Omega,pureStack,curPure);
   // Clean Up
   delete trueTheta;
   delete falseTheta;

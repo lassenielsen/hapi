@@ -21,7 +21,7 @@ MpsLink::~MpsLink() // {{{
   // assert mySucc != NULL
   delete mySucc;
 } // }}}
-bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // * Use rules Mcast and Macc {{{
+bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // * Use rules Mcast and Macc {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
@@ -42,7 +42,7 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     if (i+1!=myPid && !channel->GetParticipants()[i].IsPure())
       myPure=false;
   // Check purity constraint
-  if (reqPure && !myPure)
+  if (curPure.size()>0 && !myPure)
     return PrintTypeError((string)"Unpure link in pure context is not allowed",*this,Theta,Gamma,Omega);
 
   // Check correct maxpid
@@ -72,7 +72,7 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   newGamma[mySession] = new MpsDelegateLocalMsgType(*newType,myPid,channel->GetParticipants());
   delete newType;
 
-  bool result=mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,reqPure);
+  bool result=mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure);
 
   // Clean up
   delete newGamma[mySession];

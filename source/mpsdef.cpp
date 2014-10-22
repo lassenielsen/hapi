@@ -34,7 +34,7 @@ MpsDef::~MpsDef() // {{{
   delete mySucc;
   delete myBody;
 } // }}}
-bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, bool reqPure) // * Use rule Def {{{
+bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // * Use rule Def {{{
 {
   // Check purity constraints
   if (pureStack.size()>0)
@@ -79,8 +79,8 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
     myEnv[it->first]=it->second->Copy();
   // Make subcalls
-  return mySucc->TypeCheck(Theta,Gamma,newOmega,pureStack,reqPure) &&
-         myBody->TypeCheck(Theta,newGamma,newOmega,pureStack,reqPure);
+  return mySucc->TypeCheck(Theta,Gamma,newOmega,pureStack,curPure) &&
+         myBody->TypeCheck(Theta,newGamma,newOmega,pureStack,curPure);
 } // }}}
 MpsTerm *MpsDef::ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const // {{{
 { if (path.size()>0)

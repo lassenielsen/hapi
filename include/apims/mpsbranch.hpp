@@ -17,7 +17,7 @@ class MpsBranch : public MpsTerm // {{{
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
                    const std::set<std::pair<std::string,int> > &pureStack,
-                   bool reqPure);
+                   const std::string &curPure);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyBRcv(const std::string &path, const std::string &label) const;
     MpsTerm *ReIndex(const std::string &session,
