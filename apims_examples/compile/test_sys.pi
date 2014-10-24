@@ -9,13 +9,13 @@ c[1]<<^PutString;
 c[1]<<"Number of args";
 c[1]<<^PutInt;
 c[1]<<argc;
-local PrintArgs(Int i, $console(2 of 1 pure,2) c, $sys(1 of 1 pure,2) s)
-( s[2]<<^GetArg<<i;
-  s[2]>>
-  {^Some: s[2]>>a;
+local PrintArgs(Int i, $console(2 of 1,2) c, $sys(2 of 1 pure,2) s)
+( s[1]<<^GetArg<<i;
+  s[1]>>
+  {^Some: s[1]>>a;
           c[1]<<^PutString<<a;
           PrintArgs(i+1,c,s);
-   ^None: s[2]<<^End;
+   ^None: s[1]<<^End;
           c[1]<<^End;
   }
 )

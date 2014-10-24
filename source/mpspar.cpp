@@ -98,12 +98,11 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
       const MpsCall *subCall=dynamic_cast<const MpsCall*>(subDef->GetSucc());
       if (subCall==NULL || subCall->GetName()!=subDef->GetName() || subCall->GetArgs().size()!=1 || subCall->GetState().size()>0 || subCall->GetArgs()[0]->ToString()!=bodyLink->GetSession())
         return PrintTypeError("Recursive implementation of pure participant " + subDef->GetName() + " must be immediately followed by a direct invocation of implementation process (def X(G s) = ... in X(s))",*this,Theta,Gamma,Omega);
-      // FIXME: Store def environment
       // Store env (for pureDef) for later (compilation)
-      DeleteMap(pureDef->GetEnv());
+      DeleteMap(subDef->GetEnv());
       for (MpsMsgEnv::const_iterator it=pureGamma.begin(); it!=pureGamma.end(); ++it)
         subDef->GetEnv()[it->first]=it->second->Copy();
-      // Add def to Omega
+      // Add subDef to pureOmega
       pureOmega[subDef->GetName()].types = subDef->GetTypes();
       pureOmega[subDef->GetName()].snames = subDef->GetStateArgs();
       pureOmega[subDef->GetName()].stypes = subDef->GetStateTypes();

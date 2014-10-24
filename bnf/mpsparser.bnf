@@ -99,7 +99,7 @@ PiAct ::= ::piact_sends Ch Sends ;
         | ::piact_a_ass id = Exp ;
         | ::piact_def   local pvar Dargs ( Args ) ( Pi )
         | ::piact_gval  guivalue ( Exps ) ;
-        | ::piact_hosts host ( Exps ) ;
+        | ::piact_hosts host ( Exps ) Mode ;
         | ::piact_hosth hostheader ( Exps ) ;
 # Extended statements (for associativity)
 PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi

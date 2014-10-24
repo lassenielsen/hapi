@@ -151,8 +151,9 @@ MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (tree->case_name == "piact_hosts") // host ( Exps ) ; {{{
+  else if (tree->case_name == "piact_hosts") // host ( Exps ) Mode ; {{{
   { vector<MpsExp*> args;
+    bool pure=Mode(tree->content[4],false);
     Exps(tree->content[2],args);
     vector<string> hostParts;
     vector<MpsExp*> expParts;
@@ -172,7 +173,7 @@ MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
         expParts.push_back(args[i]->Copy());
     }
 
-    MpsHostStatement *result = new MpsHostStatement(hostParts,expParts,*succ,vector<MpsMsgType*>());
+    MpsHostStatement *result = new MpsHostStatement(hostParts,expParts,*succ,vector<MpsMsgType*>(),pure);
     // Clean up
     delete succ;
     DeleteVector(expParts);

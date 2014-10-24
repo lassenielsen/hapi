@@ -1,32 +1,30 @@
 #include <console.pi>
+
 #define PRINT(x) HOST("std::cout << (", x, ").ToString() << std::endl;")
-(nu a: 1=>2<Int>;2=>3<Int>;3=>1<Int>;Gend)
-link(3,a,s,1);
+
+#define $a 1->2:Int;2->3:Int;3->1:Int;$end;
+global $a a(1,2,3);
+s = new a(1 of 3);
 PRINT("P1: LINK COMPLETE");
 s[2]<<5;
 PRINT("P1: SEND COMPLETE");
 s[3]>>x;
 PRINT("P1: RECEIVE COMPLETE");
-link(2,console,c,2);
-c[1]<<^PutString;
-c[1]<<"P1 received:";
-c[1]<<^PutInt;
-c[1]<<x;
-c[1]<<^End;
-end
+c = new console(2 of 2);
+c[1]<<^PutString<<"P1 received:"
+    <<^PutInt<<x
+    <<^End;
 |
-link(3,a,s,2);
+s=new a(2 of 3);
 PRINT("P2: LINK COMPLETE");
 s[1]>>x;
 PRINT("P2: RECEIVE COMPLETE");
 s[3]<<x;
 PRINT("P2: SEND COMPLETE");
-end
 |
-link(3,a,s,3);
+s = new a(3 of 3);
 PRINT("P3: LINK COMPLETE");
 s[2]>>x;
 PRINT("P3: RECEIVE COMPLETE");
 s[1]<<x;
 PRINT("P3: SEND COMPLETE");
-end

@@ -15,7 +15,7 @@ namespace apims {
 class MpsHostStatement : public MpsTerm // {{{
 {
   public:
-    MpsHostStatement(const std::vector<std::string> &hostParts, const std::vector<MpsExp*> &expParts, const MpsTerm &succ, const std::vector<MpsMsgType*> expTypes); //
+    MpsHostStatement(const std::vector<std::string> &hostParts, const std::vector<MpsExp*> &expParts, const MpsTerm &succ, const std::vector<MpsMsgType*> expTypes, bool pure);
     virtual ~MpsHostStatement();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -57,6 +57,7 @@ class MpsHostStatement : public MpsTerm // {{{
     std::vector<MpsExp*> myExpParts;
     std::vector<MpsMsgType*> myTypes;
     MpsTerm *mySucc;
+    bool myPure;
 }; // }}}
 }
 #endif
