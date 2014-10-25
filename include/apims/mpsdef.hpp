@@ -56,6 +56,7 @@ class MpsDef : public MpsTerm // {{{
     const MpsTerm *GetBody() const { return myBody; }
     MpsTerm *GetBody() { return myBody; }
     const MpsTerm *GetSucc() const { return mySucc; }
+    MpsTerm *GetSucc() { return mySucc; }
     MpsMsgEnv &GetEnv() { return myEnv; }
 
   private:

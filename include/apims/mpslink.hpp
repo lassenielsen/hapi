@@ -48,6 +48,7 @@ class MpsLink : public MpsTerm // {{{
     std::string ToCHeader() const;
 
     const MpsTerm *GetSucc() const { return mySucc; }
+    MpsTerm *GetSucc() { return mySucc; }
     const std::string &GetChannel() const {return myChannel; }
     const std::string &GetSession() const {return mySession; }
     int GetPid() const { return myPid; }
