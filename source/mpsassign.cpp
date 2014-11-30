@@ -36,11 +36,38 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   if (var!=Gamma.end() && dynamic_cast<const MpsDelegateMsgType*>(var->second)!=NULL)
     return PrintTypeError((string)"Session eclipsed by assignment: " + myId,*this,Theta,Gamma,Omega);
   // Make new environment
-  MpsMsgEnv newGamma=Gamma;
-  newGamma[myId]=myType;
+  string newId = MpsExp::NewVar(myId);
+  MpsExp *tmpTheta=Theta.Rename(myId,newId);
+  MpsExp *newTheta;
+  if (myType->ToString()=="Bool")
+  { MpsExp *eq1 = new MpsVarExp(myId,MpsMsgNoType());
+    MpsExp *eq2 = myExp->Rename(myId,newId);
+    MpsExp *neq1=new MpsUnOpExp("not",*eq1);
+    MpsExp *neq2=new MpsUnOpExp("not",*eq2);
+    MpsExp *leftExp=new MpsBinOpExp("or",*eq1,*neq2,MpsMsgNoType(),MpsMsgNoType());
+    MpsExp *rightExp=new MpsBinOpExp("or",*neq1,*eq2,MpsMsgNoType(),MpsMsgNoType());
+    MpsExp *addTheta=new MpsBinOpExp("and",*leftExp,*rightExp,MpsMsgNoType(),MpsMsgNoType());
+    newTheta=new MpsBinOpExp("and",*tmpTheta,*addTheta,MpsMsgNoType(),MpsMsgNoType());
+    delete eq1;
+    delete eq2;
+    delete neq1;
+    delete neq2;
+    delete leftExp;
+    delete rightExp;
+    delete addTheta;
+    delete tmpTheta;
+  }
+  else
+    newTheta=tmpTheta;
+  MpsMsgEnv newGamma;
+  for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
+    if (it->first!=myId)
+      newGamma[it->first]=it->second->ERename(myId,newId);
+  newGamma[myId]=myType->Copy();
   // Check new Successor
-  bool result = mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure);
-
+  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure);
+  delete newTheta;
+  DeleteMap(newGamma);
   return result;
 } // }}}
 MpsTerm *MpsAssign::ApplyOther(const std::string &path) const // {{{
