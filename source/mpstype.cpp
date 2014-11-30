@@ -1220,13 +1220,13 @@ MpsGlobalSyncType *MpsGlobalSyncType::RenameAll() const // {{{
 // Make parsable string representation
 string MpsGlobalMsgType::ToString(const string &indent) const// {{{
 {
-  string result = int2string(mySender) + "->" + int2string(myReceiver) + "<";
+  string result = int2string(mySender) + "->" + int2string(myReceiver) + ":";
   string newIndent = indent;
   for (int i=0; i<result.size(); ++i)
     newIndent += " ";
-  result += myMsgType->ToString(newIndent) + ">";
+  result += myMsgType->ToString(newIndent);
   if (myAssertionType)
-    result += (string)" as " + myId + "[[" + myAssertion->ToString() + "]]";
+    result += (string)" as " + myId + " where " + myAssertion->ToString();
   result += (string)";\n"
          + indent + mySucc->ToString(indent);
   return result;
@@ -1246,7 +1246,7 @@ string MpsGlobalBranchType::ToString(const string &indent) const // {{{
     // Print assertion if any
     map<string,MpsExp*>::const_iterator assertion = myAssertions.find(it->first);
     if (assertion != myAssertions.end())
-      result += + "[[" + assertion->second->ToString() + "]]";
+      result += + " where " + assertion->second->ToString();
     // Print branch
     result += + ":\n"
             + newIndent + it->second->ToString(newIndent);
@@ -1266,13 +1266,13 @@ string MpsGlobalRecType::ToString(const string &indent) const// {{{
       if (i>0)
         result+=", ";
       // Declare NAME:TYPE=VALUE
-      result += myArgs[i].myName + ":"
-              + myArgs[i].myType->ToString() + "="
+      result += myArgs[i].myType->ToString() + " "
+              + myArgs[i].myName + "="
               + myArgs[i].myValue->ToString();
     }
     result += ">";
   }
-  result +=".\n" + indent + mySucc->ToString(indent);
+  result +=";\n" + indent + mySucc->ToString(indent);
   return result;
 } // }}}
 string MpsGlobalVarType::ToString(const string &indent) const// {{{
@@ -1294,7 +1294,7 @@ string MpsGlobalVarType::ToString(const string &indent) const// {{{
 } // }}}
 string MpsGlobalEndType::ToString(const string &indent) const// {{{
 {
-  return "Gend";
+  return "$end";
 } // }}}
 string MpsGlobalSyncType::ToString(const string &indent) const// {{{
 {
@@ -1310,7 +1310,7 @@ string MpsGlobalSyncType::ToString(const string &indent) const// {{{
     // Print assertion if any
     map<string,MpsExp*>::const_iterator assertion = myAssertions.find(it->first);
     if (assertion != myAssertions.end())
-      result += + "[[" + assertion->second->ToString() + "]]";
+      result += + " where " + assertion->second->ToString();
     // Print Branch
     result += ":\n"
             + newIndent + it->second->ToString(newIndent);
@@ -3489,9 +3489,9 @@ MpsLocalSyncType *MpsLocalSyncType::RenameAll() const // {{{
 string MpsLocalSendType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "  ";
-  string result = int2string(myReceiver) + " << <" + myMsgType->ToString(newIndent) + ">";
+  string result = int2string(myReceiver) + " << " + myMsgType->ToString(newIndent) ;
   if (myAssertionType)
-    result += (string)" as " + myId + "[[" + myAssertion->ToString() + "]]";
+    result += (string)" as " + myId + " where " + myAssertion->ToString();
   result += (string)";\n"
           + indent + mySucc->ToString(indent);
   return result;
@@ -3499,16 +3499,16 @@ string MpsLocalSendType::ToString(const string &indent) const // {{{
 string MpsLocalRcvType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "  ";
-  string result = int2string(mySender) + " >> <" + myMsgType->ToString(newIndent) + ">";
+  string result = int2string(mySender) + " >> " + myMsgType->ToString(newIndent);
   if (myAssertionType)
-    result += (string)" as " + myId + "[[" + myAssertion->ToString() + "]]";
-  result += (string)"\n"
+    result += (string)" as " + myId + " where " + myAssertion->ToString();
+  result += (string)";\n"
           + indent + mySucc->ToString(indent);
   return result;
 } // }}}
 string MpsLocalForallType::ToString(const string &indent) const // {{{
 {
-  string result = (string)"forall " + myName + " [[" +myAssertion->ToString() + "]];\n"
+  string result = (string)"forall " + myName + " where " + myAssertion->ToString() + ";\n"
             + indent + mySucc->ToString(indent);
   return result;
 } // }}}
@@ -3526,11 +3526,11 @@ string MpsLocalSelectType::ToString(const string &indent) const // {{{
     // Print Assertion
     map<string,MpsExp*>::const_iterator ass = myAssertions.find(it->first);
     if (ass != myAssertions.end())
-      result += (string)"[[" + ass->second->ToString() + "]]";
+      result += (string)" where " + ass->second->ToString();
     else
     {
 #if APIMS_DEBUG_LEVEL>99
-      cerr << "ERROR: Missing assertion for breanch " << it->first << endl;
+      cerr << "ERROR: Missing assertion for branch " << it->first << endl;
 #endif
     }
     result += (string)":\n" + newIndent + it->second->ToString(newIndent);
@@ -3556,7 +3556,7 @@ string MpsLocalBranchType::ToString(const string &indent) const // {{{
     // Print Assertion
     map<string,MpsExp*>::const_iterator ass = myAssertions.find(it->first);
     if (ass != myAssertions.end())
-      result += (string)"[[" + ass->second->ToString() + "]]";
+      result += (string)" where " + ass->second->ToString();
     else
     {
 #if APIMS_DEBUG_LEVEL>99
@@ -3581,13 +3581,13 @@ string MpsLocalRecType::ToString(const string &indent) const // {{{
       if (i>0)
         result+=", ";
       // Declare NAME:TYPE=VALUE
-      result += myArgs[i].myName + ":"
-              + myArgs[i].myType->ToString() + "="
+      result += myArgs[i].myType->ToString() + " "
+              + myArgs[i].myName + "="
               + myArgs[i].myValue->ToString();
     }
     result += ">";
   }
-  result +=  ".\n" + indent + mySucc->ToString(indent);
+  result +=  ";\n" + indent + mySucc->ToString(indent);
   return result;
 } // }}}
 string MpsLocalVarType::ToString(const string &indent) const // {{{
@@ -3610,7 +3610,7 @@ string MpsLocalVarType::ToString(const string &indent) const // {{{
 } // }}}
 string MpsLocalEndType::ToString(const string &indent) const // {{{
 {
-  string result="Lend";
+  string result="\%end";
   return result;
 } // }}}
 string MpsLocalSyncType::ToString(const string &indent) const // {{{
@@ -3627,7 +3627,7 @@ string MpsLocalSyncType::ToString(const string &indent) const // {{{
     // Print assertion if any
     map<string,MpsExp*>::const_iterator assertion = myAssertions.find(it->first);
     if (assertion != myAssertions.end())
-      result += + "[[" + assertion->second->ToString() + "]]";
+      result += + " where " + assertion->second->ToString();
     // Print branch
     result += ":\n"
             + newIndent + it->second->ToString(newIndent);
@@ -4977,22 +4977,49 @@ string MpsTupleMsgType::ToString(const string &indent) const // {{{
       result += ",\n" + newIndent;
     result += (*it)->ToString(newIndent);
   }
-  result += " )";
+  result += ")";
   return result;
 } // }}}
 string MpsChannelMsgType::ToString(const string &indent) const // {{{
 {
-  string result=(string)"<" + myType->ToString(indent) + ">";
+  string result=myType->ToString(indent) + "(";
+  for (int p=0; p<GetParticipants().size(); ++p)
+  {
+    if (p!=0) // use separator
+      result += ", ";
+    result += int2string(GetParticipants()[p].GetId());
+    if (GetParticipants()[p].IsPure())
+      result += " pure";
+  }
+  result += ")";
   return result;
 } // }}}
 string MpsDelegateLocalMsgType::ToString(const string &indent) const // {{{
 {
-  string result=myType->ToString(indent) + "@(" + int2string(GetPid()) + " of " + int2string(GetMaxpid()) + ")";
+  string result=myType->ToString(indent) + "(" + int2string(GetPid()) + " of ";
+  for (int p=0; p<GetParticipants().size(); ++p)
+  {
+    if (p!=0) // use separator
+      result += ", ";
+    result += int2string(GetParticipants()[p].GetId());
+    if (GetParticipants()[p].IsPure())
+      result += " pure";
+  }
+  result += ")";
   return result;
 } // }}}
 string MpsDelegateGlobalMsgType::ToString(const string &indent) const // {{{
 {
-  string result=myLocalType->ToString(indent) + "@(" + int2string(GetPid()) + " of " + int2string(GetMaxpid()) + ")";
+  string result=myLocalType->ToString(indent) + "(" + int2string(GetPid()) + " of ";
+  for (int p=0; p<GetParticipants().size(); ++p)
+  {
+    if (p!=0) // use separator
+      result += ", ";
+    result += int2string(GetParticipants()[p].GetId());
+    if (GetParticipants()[p].IsPure())
+      result += " pure";
+  }
+  result += ")";
   return result;
 } // }}}
 
@@ -5137,7 +5164,7 @@ TypeArg::~TypeArg() // {{{
 } // }}}
 string TypeArg::ToString(const string &indent) const // {{{
 {
-  string result = myName + ": " + myType->ToString(indent + "    ") + " = " + myValue->ToString();
+  string result = myType->ToString(indent) + myName + "=" + myValue->ToString();
   return result;
 } // }}}
 

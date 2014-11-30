@@ -84,7 +84,7 @@ MpsTerm *MpsEnd::Simplify() const // {{{
 } // }}}
 string MpsEnd::ToString(string indent) const // {{{
 {
-  return "end";
+  return "";
 } // }}}
 string MpsEnd::ToTex(int indent, int sw) const // {{{
 {

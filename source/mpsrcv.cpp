@@ -323,7 +323,7 @@ string MpsRcv::ToString(string indent) const // {{{
 {
   string result = myChannel.ToString() + " >> " + myDest;
   if (myMaxPid!=-1)
-    result += "@(" + int2string(myPid) + " of " + int2string(myMaxPid) + ")";
+    result += "(" + int2string(myPid) + " of " + int2string(myMaxPid) + ")";
   result += ";\n" + indent + mySucc->ToString(indent);
   return result;
 } // }}}

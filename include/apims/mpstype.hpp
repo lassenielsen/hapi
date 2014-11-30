@@ -838,7 +838,7 @@ class MpsChannelMsgType : public MpsMsgType // {{{
 
     const MpsGlobalType *GetGlobalType() const {return myType;}
     MpsGlobalType *GetGlobalType() {return myType;}
-    const std::vector<MpsParticipant> GetParticipants() const {return myParticipants;}
+    const std::vector<MpsParticipant> &GetParticipants() const {return myParticipants;}
     int GetMaxPid() const {return myParticipants.size();}
 
   private:

@@ -332,7 +332,7 @@ string MpsCall::ToString(string indent) const // {{{
       result += ", ";
     result += (*it)->ToString();
   }
-  result += ")";
+  result += ");";
   return result;
 } // }}}
 string MpsCall::ToTex(int indent, int sw) const // {{{

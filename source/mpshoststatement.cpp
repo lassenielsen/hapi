@@ -185,7 +185,7 @@ string MpsHostStatement::ToString(string indent) const // {{{
     if (myExpParts.size()>i)
       result << "\", " << myExpParts[i]->ToString() << "\", \"";
   }
-  result << "\")" << endl
+  result << "\");" << endl
          << indent << mySucc->ToString(indent);
   return result.str();
 } // }}}

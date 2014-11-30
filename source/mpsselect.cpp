@@ -210,12 +210,12 @@ string MpsSelect::ToC() const // {{{
          << "    " << msgName << ".AddData(" << "\"" << myLabel << "\", " << int2string(myLabel.size()+1) << ");" << endl
          << ToC_Name(myChannel.GetName()) << "->Send(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl
          << "  }" << endl; // Send label
-  result << mySucc->ToC();
   if (myFinal)
   {
     result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
            << "  delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
   }
+  result << mySucc->ToC();
   return result.str();
 } // }}}
 string MpsSelect::ToCHeader() const // {{{

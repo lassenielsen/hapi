@@ -775,7 +775,7 @@ string MpsIntVal::ToString() const // {{{
 } // }}}
 string MpsStringVal::ToString() const // {{{
 {
-  return (string)"\"" + myValue + "\"";
+  return (string)"\"" + stuff_string(myValue) + "\"";
 } // }}}
 string MpsBoolVal::ToString() const // {{{
 {

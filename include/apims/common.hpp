@@ -87,7 +87,7 @@ inline std::string stringreplace(const std::string &source, const std::string &f
   }
   return dest;
 } // }}}
-inline std::string stuff_string(std::string input) // {{{
+inline std::string stuff_string(const std::string &input) // {{{
 { return stringreplace(stringreplace(input,"\\","\\\\"),"\"","\\\"");
 } // }}}
 inline std::string wrap_string(std::string input) // {{{

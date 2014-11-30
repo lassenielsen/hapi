@@ -452,11 +452,11 @@ MpsTerm *MpsDef::Simplify() const // {{{
 } // }}}
 string MpsDef::ToString(string indent) const // {{{
 {
-  string newIndent = indent + "   ";
-  string typeIndent = indent + "     ";
+  string newIndent = indent + "  ";
+  string typeIndent = indent + "       ";
   for (int i=0; i<myName.size();++i)
     typeIndent+=" ";
-  string result = (string)"def " + myName;
+  string result = (string)"local " + myName;
   if (myStateArgs.size()>0)
   {
     result += "<";
@@ -464,10 +464,7 @@ string MpsDef::ToString(string indent) const // {{{
     {
       if (i>0)
         result += ",\n" + typeIndent;
-      string newTypeIndent = typeIndent + "  ";
-      for (int j=0; j<myStateArgs[i].size();++j)
-        newTypeIndent+=" ";
-      result += myStateArgs[i] + ": " + myStateTypes[i]->ToString(newTypeIndent);
+      result += myStateTypes[i]->ToString(typeIndent) + " " + myStateArgs[i];
     }
     result += ">\n" + typeIndent.substr(1);
   }
@@ -476,14 +473,12 @@ string MpsDef::ToString(string indent) const // {{{
   {
     if (i>0)
       result += ",\n" + typeIndent;
-    string newTypeIndent = typeIndent + "  ";
-    for (int j=0; j<myArgs[i].size();++j)
-      newTypeIndent+=" ";
-    result += myArgs[i] + ": " + myTypes[i]->ToString(newTypeIndent);
+    result += myTypes[i]->ToString(typeIndent) + " " + myArgs[i];
   }
   result += ")";
-  result += (string)"=\n" + newIndent + myBody->ToString(newIndent);
-  result += (string)"\n" + indent + "in " + mySucc->ToString(newIndent);
+  result += (string)"\n" + indent + "( " + myBody->ToString(newIndent);
+  result += (string)"\n" + indent + ")";
+  result += (string)"\n" + indent + mySucc->ToString(newIndent);
   return result;
 } // }}}
 string MpsDef::ToTex(int indent, int sw) const // {{{

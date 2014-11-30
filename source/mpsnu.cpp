@@ -205,11 +205,16 @@ MpsTerm *MpsNu::Simplify() const // {{{
 } // }}}
 string MpsNu::ToString(string indent) const // {{{
 {
-  string typeIndent = indent + "     ";
-  for (int i=0; i<myChannel.size();++i)
-    typeIndent+=" ";
-  string newIndent = indent + "  ";
-  return (string)"(nu " + myChannel + ":" + myType->ToString(typeIndent) + ")\n" + newIndent + mySucc->ToString(newIndent);
+  string result = myType->ToString(indent) + " " + myChannel + "(";
+  for (int p=0; p<myParticipants.size(); ++p)
+  { if (p!=0) // Add separator
+      result += ", ";
+    result += int2string(myParticipants[p].GetId());
+    if (myParticipants[p].IsPure())
+      result += " pure";
+  }
+  result += ");\n" + indent + mySucc->ToString(indent);
+  return result;
 } // }}}
 string MpsNu::ToTex(int indent, int sw) const // {{{
 {

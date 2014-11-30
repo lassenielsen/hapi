@@ -235,7 +235,7 @@ MpsTerm *MpsLink::Simplify() const // {{{
 } // }}}
 string MpsLink::ToString(string indent) const // {{{
 {
-  return (string)"link(" + int2string(myMaxpid) + "," + myChannel + "," + mySession + "," + int2string(myPid) + ");\n"
+  return mySession + "= new " + myChannel + "(" + int2string(myPid) + " of " + int2string(myMaxpid) + ");\n"
        + indent + mySucc->ToString(indent);
 } // }}}
 string MpsLink::ToTex(int indent, int sw) const // {{{

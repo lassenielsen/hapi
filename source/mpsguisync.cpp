@@ -746,7 +746,7 @@ string MpsGuiSync::ToString(string indent) const // {{{
     {
       if (i>0)
         result += ",";
-      result += it->second.args[i] + "=" + it->second.values[i]->ToString() + ": " +it->second.types[i]->ToString();
+      result += it->second.types[i]->ToString() + " " + it->second.args[i] + "=" + it->second.values[i]->ToString();
     }
     result += "):\n" + newIndent + it->second.term->ToString(newIndent);
   }

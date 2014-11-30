@@ -161,7 +161,7 @@ MpsAssign *MpsAssign::Simplify() const // {{{
 } // }}}
 string MpsAssign::ToString(string indent) const // {{{
 {
-  return myId + ":" + myType->ToString() + "=" + myExp->ToString() + ";\n" + indent + mySucc->ToString();
+  return myType->ToString() + " " + myId + "=" + myExp->ToString() + ";\n" + indent + mySucc->ToString(indent);
 } // }}}
 string MpsAssign::ToTex(int indent, int sw) const // {{{
 {
