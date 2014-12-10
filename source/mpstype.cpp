@@ -4088,7 +4088,7 @@ MpsLocalType *MpsLocalSyncType::Merge(MpsLocalType &rhs) const // {{{
   bool same_mandatory = true;
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();same_mandatory && it!=myBranches.end();++it)
   {
-    if (it->first[0] == '^') // Is the branch mandatory
+    if (it->first[1] == '^') // Is the branch mandatory
     {
       map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.find(it->first); // find branch in rhs
       if (it2 == rhsptr->myBranches.end()) // not common branch
@@ -4097,7 +4097,7 @@ MpsLocalType *MpsLocalSyncType::Merge(MpsLocalType &rhs) const // {{{
   }
   for (map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.begin();same_mandatory && it2!=rhsptr->myBranches.end();++it2)
   {
-    if (it2->first[0] == '^') // Is the branch mandatory
+    if (it2->first[1] == '^') // Is the branch mandatory
     {
       map<string,MpsLocalType*>::const_iterator it=myBranches.find(it2->first); // find branch in lhs
       if (it == rhsptr->myBranches.end()) // not common branch

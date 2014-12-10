@@ -15,34 +15,38 @@ APIMS = apims
 Copt = -O3
 CC = g++
 
-PI_FILES = $(shell ls *.pi)
-PIP_FILES = $(PI_FILES:.pi=.pip)
-CPP_FILES = $(PI_FILES:.pi=.cpp)
-EXE_FILES = $(PI_FILES:.pi=)
+OK_PI_FILES = $(shell ls *.pi)
+OK_PIP_FILES = $(OK_PI_FILES:.pi=.pip)
+OK_CPP_FILES = $(OK_PI_FILES:.pi=.cpp)
+OK_EXE_FILES = $(OK_PI_FILES:.pi=)
 
-build: $(EXE_FILES)
+CERR_PI_CERROR_FILES = $(shell ls *.pi_cerror)
+CERR_PIP_FILES = $(CERR_PI_FILES:.pi_cerror=.pip)
+CERR_CPP_FILES = $(CERR_PI_FILES:.pi_cerror=.cpp)
+
+build: $(OK_EXE_FILES)
 
 default: build
 
 all: build autoclean
 
-phony: build clean all autoclean
+$(OK_PIP_FILES): %.pip : %.pi
+	($(CPP) $(@:.pip=.pi) -I/opt/apims/include | grep -v "^#" > $@) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 1; fi
 
-%.pip: %.pi
-	$(CPP) $(@:.pip=.pi) -I/opt/apims/include | grep -v "^#" > $@
+$(OK_CPP_FILES): %.cpp : %.pip
+	($(APIMS) -compile -f $(@:.cpp=.pip) > $@) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 1; fi
 
-%.cpp: %.pip
-	$(APIMS) -compile -f $(@:.cpp=.pip) > $@
+$(OK_EXE_FILES): % : %.cpp
+	($(CC) $(Copt) $@.cpp -o $@ -lpi) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 1; fi
 
-%: %.cpp
-	$(CC) $(Copt) $@.cpp -o $@ -lpi
+autoclean:
+	touch $(OK_PIP_FILES)
+	rm -f $(OK_PIP_FILES)
+	touch $(OK_CPP_FILES)
+	rm -f $(OK_CPP_FILES)
 
-auto clean:
-	touch $(PIP_FILES)
-	rm -f $(PIP_FILES)
-	touch $(CPP_FILES)
-	rm -f $(CPP_FILES)
+clean: autoclean
+	touch $(OK_EXE_FILES)
+	rm -f $(OK_EXE_FILES)
 
-clean:
-	touch $(EXE_FILES)
-	rm -f $(EXE_FILES)
+phony: clean autoclean build

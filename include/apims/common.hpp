@@ -146,8 +146,8 @@ inline std::string ToTex_KW(std::string name) // {{{
 { return "{\\tt\\color{blue}" + name + "}";
 } // }}}
 inline std::string ToTex_Label(std::string name) // {{{
-{ if (name[0]=='^')
-    return "\\underline{\\tt\\color{orange}" + name.substr(1) + "}";
+{ if (name[1]=='^')
+    return "\\underline{\\tt\\color{orange}" + name.substr(2) + "}";
   else
     return "{\\tt\\color{orange}" + name.substr(1) + "}";
 } // }}}
