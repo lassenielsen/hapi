@@ -1,34 +1,31 @@
-(nu a: 1=>2<Bool> as x;
-       1=>2<Bool> as y;
-       {^A[[x or y]]:
-         {^A[[x]]:
-           2=>1<Bool> as z [[x or z]];
-           Gend,
-          ^B[[y]]:
-           2=>1<Bool> as z [[x or z]];
-           Gend
-         },
-        ^B[[not x or not y]]:
-         Gend,
-        #C[[x or y]]:
-         Gend
-       })
-( link(2,a,s,2);
-  s[1]>>q1;
-  s[1]>>q2;
-  guisync(2,s,2)
-  {^A[[q2 or q1]](v:Bool=not q2):
-    guisync(2,s,2)
-    {^A[[q1]](v:Bool=v):
-      s[1]<<false;
-      end,
-     ^B[[q2]](v:Bool=v):
-      s[1]<<true;
-      end
-    },
-   ^B[[not (q1 and q2)]](comment:String=""):
-    end,
-   #C[[q1]](comment:String=""):
-    end
+#define $type \
+  1->2:Bool as x; \
+  1->2:Bool as y; \
+  {^^A where x or y: \
+    {^^A where x: \
+      2->1:Bool as z  where x or z; \
+      $end; \
+     ^^B where y: \
+      2->1:Bool as z  where x or z; \
+      $end; \
+    } \
+   ^^B where not x or not y: \
+    $end; \
+   ^C where x or y: \
+    $end; \
   }
-)
+$type a(1,2);
+s=new a(2 of 2);
+s[1]>>q1;
+s[1]>>q2;
+guisync(2,s,2)
+{^^A where q2 or q1(Bool v=not q2):
+  guisync(2,s,2)
+  {^^A where q1(Bool v=v):
+    s[1]<<false;
+   ^^B where q2(Bool v=v):
+    s[1]<<true;
+  }
+ ^^B where not (q1 and q2)(String comment=""):
+ ^C where q1(String comment=""):
+}

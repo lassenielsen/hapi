@@ -344,7 +344,7 @@ MpsTerm *MpsParser::PiTerm(const parsetree *tree) // {{{
     DeleteMap(assertions);
     return result;
   } // }}}
-  else if (tree->case_name == "case19") // guisync ( Exps ) { Inputbranches } {{{
+  else if (tree->case_name == "piterm_gsyn") // guisync ( Exps ) { Inputbranches } {{{
   { 
     vector<MpsExp*> args;
     Exps(tree->content[2],args);
@@ -378,7 +378,7 @@ MpsTerm *MpsParser::PiTerm(const parsetree *tree) // {{{
     return result;
   } // }}}
 
-  throw string("Unknown PiTrtm parsetree: ") + tree->type_name + "." + tree->case_name;
+  throw string("Unknown PiTerm parsetree: ") + tree->type_name + "." + tree->case_name;
 } // }}}
 
 MpsGlobalType *MpsParser::Gtype(const parsetree *tree) // {{{

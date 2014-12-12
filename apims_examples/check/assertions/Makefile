@@ -10,6 +10,7 @@
 # Enjoy!                                                              #
 # - Lasse Nielsen.                                                    #
 #=====================================================================#
+SHELL=/bin/bash
 CPP = cpp
 APIMS = apims
 Copt = -O3
@@ -17,36 +18,37 @@ CC = g++
 
 OK_PI_FILES = $(shell ls *.pi)
 OK_PIP_FILES = $(OK_PI_FILES:.pi=.pip)
-OK_CPP_FILES = $(OK_PI_FILES:.pi=.cpp)
-OK_EXE_FILES = $(OK_PI_FILES:.pi=)
+#OK_CPP_FILES = $(OK_PI_FILES:.pi=.cpp)
+OK_TESTS = $(OK_PI_FILES:.pi=)
 
-CERR_PI_CERROR_FILES = $(shell ls *.pi_cerror)
-CERR_PIP_FILES = $(CERR_PI_FILES:.pi_cerror=.pip)
-CERR_CPP_FILES = $(CERR_PI_FILES:.pi_cerror=.cpp)
+ERR_PI_FILES = $(shell ls *.pi_error)
+ERR_PIP_FILES = $(ERR_PI_FILES:.pi_error=.pip_error)
+ERR_TESTS = $(ERR_PI_FILES:.pi_error=_error)
 
-build: $(OK_EXE_FILES)
+test: $(OK_TESTS) $(ERR_TESTS)
 
-default: build
+default: test
 
 all: build autoclean
 
 $(OK_PIP_FILES): %.pip : %.pi
-	($(CPP) $(@:.pip=.pi) -I/opt/apims/include | grep -v "^#" > $@) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 1; fi
+	@echo "Generating $@" ; ($(CPP) $(@:.pip=.pi) -I/opt/apims/include | grep -v "^#" > $@) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
 
-$(OK_CPP_FILES): %.cpp : %.pip
-	($(APIMS) -compile -f $(@:.cpp=.pip) > $@) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 1; fi
+$(OK_TESTS): % : %.pip
+	@echo "TESTING $@" ; ($(APIMS) -check -f $@.pip >> /dev/null) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
 
-$(OK_EXE_FILES): % : %.cpp
-	($(CC) $(Copt) $@.cpp -o $@ -lpi) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 1; fi
+$(ERR_PIP_FILES): %.pip_error : %.pi_error
+	@echo "Generating $@" ; ($(CPP) $(@:.pip_error=.pi_error) -I/opt/apims/include | grep -v "^#" > $@) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
+
+$(ERR_TESTS): %_error : %.pip_error
+	@echo "TESTING $@" ; ($(APIMS) -check -f $(@:_error=.pip_error) 2>&1 | grep '!!!!!!!!!!!!!!! Type Error: !!!!!!!!!!!!!!!' >> /dev/null) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
 
 autoclean:
 	touch $(OK_PIP_FILES)
 	rm -f $(OK_PIP_FILES)
-	touch $(OK_CPP_FILES)
-	rm -f $(OK_CPP_FILES)
+	touch $(ERR_PIP_FILES)
+	rm -f $(ERR_PIP_FILES)
 
 clean: autoclean
-	touch $(OK_EXE_FILES)
-	rm -f $(OK_EXE_FILES)
 
-phony: clean autoclean build
+phony: clean autoclean build $(OK_TESTS) $(ERR_TESTS)

@@ -87,7 +87,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
   MpsExp *mandatoryOr=new MpsBoolVal(false); // FIXME: This is necessary because Global Type Validity Check is Missing
   for (map<string,MpsLocalType*>::const_iterator branch=branches.begin();branch!=branches.end();++branch)
   {
-    if (branch->first[1]!='^') // Mandatory branch
+    if (branch->first[1]=='^') // Mandatory branch
     {
       map<string,inputbranch>::const_iterator myBranch=myBranches.find(branch->first);
       map<string,MpsExp*>::const_iterator assertion=assertions.find(branch->first);

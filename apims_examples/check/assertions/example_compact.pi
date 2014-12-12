@@ -1,13 +1,13 @@
 // Define Sequence protocol {{{
 #define $seq(bit1,bit2,bit3,bit4) \
   rec $state<Bool x1=bit1,Bool x2=bit2,Bool x3=bit3,Bool x4=bit4>; \
-  {^Continue where not x1 or not x2 or not x3 or not x4: \
+  {^^Continue where not x1 or not x2 or not x3 or not x4: \
     1->2:Int; \
     $state<not x1, \
            ((x1) or x2) and (not (x1) or not x2), \
            ((x1 and x2) or x3) and (not (x1 and x2) or not x3), \
            ((x1 and x2 and x3) or x4) and (not (x1 and x2 and x3) or not x4)>; \
-   ^End where x1 and x2 and x3 and x4: \
+   ^^End where x1 and x2 and x3 and x4: \
     $end; \
   }
 // }}}
@@ -34,7 +34,7 @@ XOR(); // }}}
 s=new a(1 of 2); // Sending process {{{
 local SEQ1<Bool bit1,Bool bit2,Bool bit3,Bool bit4>($seq(bit1,bit2,bit3,bit4)(1 of 1,2) s,Int i)
 ( sync(2,s)
-  {^Continue where not (bit1 and bit2 and bit3 and bit4):
+  {^^Continue where not (bit1 and bit2 and bit3 and bit4):
     s[2]<<i;
     t=new xor(1 of 2);
     t[2]<<bit1;
@@ -49,7 +49,7 @@ local SEQ1<Bool bit1,Bool bit2,Bool bit3,Bool bit4>($seq(bit1,bit2,bit3,bit4)(1 
     t[2]<<bit4;
     t[2]>>nBit4;
     SEQ1<not bit1,nBit2,nBit3,nBit4>(s,i+1);
-   ^End where bit1 and bit2 and bit3 and bit4:
+   ^^End where bit1 and bit2 and bit3 and bit4:
   }
 )
 SEQ1<false,false,false,false>(s,1); // }}}
@@ -57,7 +57,7 @@ SEQ1<false,false,false,false>(s,1); // }}}
 s=new a(2 of 2); // Receiving process {{{
 local SEQ2<Bool bit1,Bool bit2,Bool bit3,Bool bit4>($seq(bit1,bit2,bit3,bit4)(2 of 1,2) s)
 ( sync(2,s)
-  {^Continue where not (bit1 and bit2 and bit3 and bit4):
+  {^^Continue where not (bit1 and bit2 and bit3 and bit4):
     s[1]>>i;
     t=new xor(1 of 2);
     t[2]<<bit1;
@@ -72,7 +72,7 @@ local SEQ2<Bool bit1,Bool bit2,Bool bit3,Bool bit4>($seq(bit1,bit2,bit3,bit4)(2 
     t[2]<<bit4;
     t[2]>>nBit4;
     SEQ2<not bit1,nBit2,nBit3,nBit4>(s);
-   ^End where bit1 and bit2 and bit3 and bit4:
+   ^^End where bit1 and bit2 and bit3 and bit4:
   }
 )
 SEQ2<false,false,false,false>(s); // }}}
