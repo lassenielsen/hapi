@@ -1,0 +1,4 @@
+global 1->1:String;$end; a(1);
+s=new a(1 of 1);
+s[1]<<"Hello World";
+s[1]>>x;

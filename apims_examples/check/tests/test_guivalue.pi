@@ -1,0 +1,9 @@
+{^^Start: {^^End: $end;} } a(1);
+s=new a(1 of 1);
+guisync(1,s,1)
+{^^Start(String name="", String value=""):
+  guivalue(1,s,1,name,value);
+  guisync(1,s,1)
+  {^^End(String comment=""):
+  }
+}

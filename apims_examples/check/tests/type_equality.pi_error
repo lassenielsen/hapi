@@ -1,0 +1,19 @@
+#define $stream \
+  rec $z; \
+  1->2:String; \
+  1->2:String; \
+  $z;
+global $stream a(1,2);
+local X($stream(1 of 1,2) x)
+( x[2]<<"ping";
+  X(x);
+)
+s=new a(1 of 2);
+X(s);
+|
+local X($stream(2 of 1,2) x)
+( x[1]>> text;
+  X(x);
+)
+s=new a(2 of 2);
+X(s);
