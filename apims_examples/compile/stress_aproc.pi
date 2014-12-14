@@ -1,23 +1,22 @@
 #include <console.pi>
 #include <timer.pi>
-def X(i : Int) =
-  if i<=0
-  then ses t = new (1 of 2)@timer;
-       t[2]<<^WaitSeconds;
-       t[2]<<10;
-       t[2]>>ready;
-       t[2]<<^End;
-       ses c = new (2 of 2)@console;
+local X(Int i)
+( if i<=0
+  then t=new timer(2 of 2);
+       t[1]<<^WaitSeconds;
+       t[1]<<10;
+       t[1]>>ready;
+       t[1]<<^End;
+       c=new console(2 of 2);
        c[1]<<^PutInt;
        c[1]<<SYSTEM&"aprocs";
        c[1]<<^End;
-       end
-  else ( end
-       | X(i-1)
+  else ( 
+       | X(i-1);
        )
-in
-ses c = new (2 of 2)@console;
+)
+c=new console(2 of 2);
 c[1]<<^PutInt;
 c[1]<<SYSTEM&"aprocs";
 c[1]<<^End;
-X(100)
+X(100);
