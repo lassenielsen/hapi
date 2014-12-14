@@ -470,9 +470,9 @@ MpsTerm *MpsPar::Simplify() const // {{{
   MpsTerm *newLeft = myLeft->Simplify();
   MpsTerm *newRight = myRight->Simplify();
   MpsTerm *result = NULL;
-  if (newLeft->ToString() == "end")
+  if (newLeft->ToString() == "")
     result = newRight->Copy();
-  else if (newRight->ToString() == "end")
+  else if (newRight->ToString() == "")
     result = newLeft->Copy();
   else
     result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal());

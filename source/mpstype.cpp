@@ -1288,13 +1288,13 @@ string MpsGlobalVarType::ToString(const string &indent) const// {{{
       // Add value
       result += myValues[i]->ToString();
     }
-    result += ">";
+    result += ">;";
   }
   return result;
 } // }}}
 string MpsGlobalEndType::ToString(const string &indent) const// {{{
 {
-  return "$end";
+  return "$end;";
 } // }}}
 string MpsGlobalSyncType::ToString(const string &indent) const// {{{
 {
@@ -3603,14 +3603,14 @@ string MpsLocalVarType::ToString(const string &indent) const // {{{
       // Add value
       result += myValues[i]->ToString();
     }
-    result += ">";
+    result += ">;";
   }
 
   return result;
 } // }}}
 string MpsLocalEndType::ToString(const string &indent) const // {{{
 {
-  string result="\%end";
+  string result="\%end;";
   return result;
 } // }}}
 string MpsLocalSyncType::ToString(const string &indent) const // {{{
