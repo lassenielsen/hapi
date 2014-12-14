@@ -131,7 +131,7 @@ local FileServer()
     )
     f[2]>>path;
     Int fptr=0;
-    HOST("", fptr, " = IntValue( (unsigned int)(new ifstream( (", path, ").ToString().c_str() ) ) );");
+    HOST("", fptr, " = IntValue( (unsigned long)(new ifstream( (", path, ").ToString().c_str() ) ) );");
     Bool t=true;
     HOST("", t, " = BoolValue(((ifstream*)mpz_get_ui((", fptr, ").GetValue()))->is_open());");
     if t
@@ -156,7 +156,7 @@ local FileServer()
     )
     f[2]>>path;
     Int fptr=0;
-    HOST("", fptr, " = IntValue( (unsigned int)(new ofstream( (", path, ").ToString().c_str() ) ) );");
+    HOST("", fptr, " = IntValue( (unsigned long)(new ofstream( (", path, ").ToString().c_str() ) ) );");
     Bool t=true;
     HOST("", t, " = BoolValue(((ofstream*)mpz_get_ui((", fptr, ").GetValue()))->is_open());");
     if t
