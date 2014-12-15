@@ -1,9 +1,15 @@
-#define $intmsg 1=>2<Int>;Gend
-ch a = new {1,2}@$intmsg in
-ses s = new (1 of 2)@a;
+// Define session type
+#define $intmsg \
+  1->2:Int; \
+  $end;
+
+// Create channel
+global $intmsg a(1,2);
+
+// First process implementation
+s=new a(1 of 2);
 s[2]<<5;
-end
 |
-ses s = new (2 of 2)@a;
+// Second process implementation
+s=new a(2 of 2);
 s[1]>>x;
-end
