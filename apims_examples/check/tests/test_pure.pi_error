@@ -1,0 +1,32 @@
+#include <console.pi>
+#define $intmsg \
+  1->2:Int;$end;
+global $intmsg count(1 pure,2);
+local Count(Int c)
+( global s=new count(1 of 2);
+  Count(c+1);
+  |
+  s[2]<<c;
+)
+Count(1); |
+global $intmsg a(1 pure,2);
+local A()
+( global s=new a(1 of 2);
+  c=new count(2 of 2);
+  s[2]<<0;
+  c[1]>>x;
+  |
+  A();
+)
+A(); |
+s=new a(2 of 2);
+s[1]>>x;
+c=new count(2 of 2);
+c[1]>>y;
+c=new console(1 of 2);
+c[2]<<^PutString;
+if y<=1
+then c[2]<<"ERROR";
+     c[2]<<^End;
+else c[2]<<"OK";
+     c[2]<<^End;
