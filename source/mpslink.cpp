@@ -270,16 +270,16 @@ MpsTerm *MpsLink::RenameAll() const // {{{
 bool MpsLink::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 { MpsTerm *pre;
   MpsTerm *post;
-  if (myPure) // Only optimize if pure
+  //if (myPure) // Only optimize if pure
   { set<string> fv;
     fv.insert(myChannel);
     fv.insert(mySession);
     receives.Split(fv,pre,post);
   }
-  else
-  { pre=receives.Copy();
-    post=new MpsEnd();
-  }
+  //else
+  //{ pre=receives.Copy();
+  //  post=new MpsEnd();
+  //}
   bool opt1 = dynamic_cast<const MpsEnd*>(post)==NULL;
   // Parallelize succ
   MpsTerm *seqSucc;

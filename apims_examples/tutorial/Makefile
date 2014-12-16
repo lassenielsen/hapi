@@ -31,7 +31,7 @@ $(OK_PIP_FILES): %.pip : %.pi
 	($(CPP) $(@:.pip=.pi) -I/opt/apims/include | grep -v "^#" > $@) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
 
 $(OK_CPP_FILES): %.cpp : %.pip
-	($(APIMS) -compile -f $(@:.cpp=.pip) > $@) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
+	($(APIMS) -compile -optimize -f $(@:.cpp=.pip) > $@) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
 
 $(OK_EXE_FILES): % : %.cpp
 	($(CC) $(Copt) $@.cpp -o $@ -lpi) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi

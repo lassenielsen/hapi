@@ -61,8 +61,9 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   for (map<string,MpsLocalType*>::const_iterator branch=branches.begin();branch!=branches.end();++branch)
   {
     // Add branch to myFinalBranches if type is Done
-    if (branch->second->IsDone())
+    if (branch->second->IsDone()) {
       myFinalBranches.push_back(branch->first);
+    }
     // Create new session environment
     MpsMsgEnv newGamma = Gamma;
     newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second, msgType->GetPid(), msgType->GetParticipants());
@@ -323,7 +324,7 @@ string MpsBranch::ToC() const // {{{
       result << "  else ";
     result << "  if (" << lblName << ".ToString()==\"" << it->first << "\")" << endl
            << "  {" << endl;
-    if (find(myFinalBranches.begin(),myFinalBranches.end(),lblName)!=myFinalBranches.end()) {
+    if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
       result << "    " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
              << "    delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
     }
