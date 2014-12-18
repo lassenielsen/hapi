@@ -321,7 +321,7 @@ string MpsTerm::MakeC() const // {{{
        + "inline void DecAprocs() // {{{\n"
        + "{ --(*__system_aprocs);\n"
        + "} // }}}\n"
-       + "int __system_tprocs=32; // Target number of active processes\n"
+       + "int __system_tprocs=4; // Target number of active processes\n"
        + "std::vector<char*> __system_args;   // Store args for use in processes\n"
        + DefEnvToCHeader(defs)
        + DefEnvToC(defs)

@@ -8,7 +8,7 @@
   $end;
 
 // Declare service
-global $fib fib(1,2);
+global $fib fib(1 pure,2);
 
 // Implement service
 local Fib()
@@ -26,14 +26,14 @@ local Fib()
        f2[1]>>r2;                        // r2 = fib(n-2)
        s[2]<<r1+r2;                      // return r1+r2
 )
-
-// Start services
-local StartFib(Int n)
-( if n<=1
-  then Fib();
-  else (Fib(); | StartFib(n-1);)
-)
-StartFib(SYSTEM & "tprocs");             // Start as many processes as the target number of active processes
+Fib(); // Start service
+// Todo: Enable multiple service instances for pure implementations like below
+//local StartFib(Int n)
+//( if n<=1
+//  then Fib();
+//  else (Fib(); | StartFib(n-1);)
+//)
+//StartFib(SYSTEM & "tprocs");             // Start as many processes as the target number of active processes
 |
 
 // Main program

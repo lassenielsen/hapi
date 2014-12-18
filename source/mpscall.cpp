@@ -61,7 +61,7 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     bool statetypematch = statetype->Equal(Theta,*omega->second.stypes[i]);
     delete statetype;    
     if (!statetypematch)
-      return PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString(),*this,Theta,Gamma,Omega);
+      return PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString("!!!!                                      "),*this,Theta,Gamma,Omega);
     // Store type for compilation
     myStateTypes.push_back(omega->second.stypes[i]->Copy());
   }
@@ -83,7 +83,7 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
          << ">>>>>>>>>>RHS: " << callType->ToString(">>>>>>>>>>>>>>") << endl;
 #endif
     bool argtypematch = argType->Equal(Theta,*callType);
-    string callTypeString = callType->ToString();
+    string callTypeString = callType->ToString("!!!!                                      ");
 
     // Store type for compilation
     myTypes.push_back(callType->Copy());

@@ -36,6 +36,9 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   const MpsChannelMsgType *channel=dynamic_cast<const MpsChannelMsgType*>(var->second);
   if (channel==NULL)
     return PrintTypeError((string)"Linking on non-channel:" + myChannel,*this,Theta,Gamma,Omega);
+  // Check if linking breaks purity
+  if (channel->GetParticipants()[myPid-1].IsPure())
+    return PrintTypeError((string)"Linking as pure participant not allowed here",*this,Theta,Gamma,Omega);
   // Store purity of channel
   myPure=true;
   for (int i=0; myPure && i<channel->GetMaxPid(); ++i)
@@ -270,16 +273,16 @@ MpsTerm *MpsLink::RenameAll() const // {{{
 bool MpsLink::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 { MpsTerm *pre;
   MpsTerm *post;
-  //if (myPure) // Only optimize if pure
+  if (myPure) // Only optimize if pure
   { set<string> fv;
     fv.insert(myChannel);
     fv.insert(mySession);
     receives.Split(fv,pre,post);
   }
-  //else
-  //{ pre=receives.Copy();
-  //  post=new MpsEnd();
-  //}
+  else
+  { pre=receives.Copy();
+    post=new MpsEnd();
+  }
   bool opt1 = dynamic_cast<const MpsEnd*>(post)==NULL;
   // Parallelize succ
   MpsTerm *seqSucc;
