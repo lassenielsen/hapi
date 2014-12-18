@@ -1,20 +1,18 @@
-#define $a client -> server <String[r"(a+b)*"]>; $a2
-#define $a2 server -> client <String[r"a*"]>; Gend
-channel a: {client, pure server}@$a;
-( def As() =
-    s = new (server of 2}@a;
-    s[client]>>str;
-    def A(abs : String[r"(a+b)*"],
-          s: (server of {client, pure server})@$a2 ) =
-      match abs
-      { r"b*" => s[client]<<nil;end,
-        r"(b*a)(a+b)*" as ((bs,a),abs2) => s[client]<<cons; A(abs2,s)
-      }
-    in A(str,s)
-  in As()
-) | // Start server in new process
+#define $a client->server:String[r"(a+b)*"]; $a_res
+#define $a_res server->client:String[r"a*"]; $end
+$a a(client, pure server);
+local As()
+( s = new (server of 2}@a;
+  s[client]>>str;
+  local A(abs : r"(a+b)*", $a_res(server of client, pure server) s)
+    match abs
+    { r"b*" x => s[client]<<nil;
+      r"(b*a)(a+b)*" ((bs,a),abs2) => s[client]<<cons; A(abs2,s);
+    }
+  ) A(str,s);
+) As();
+| // Start server in new process
 // Main program
-s = new (client of 2)@a;               // Create session
-s[server]<< String[r"(a+b)*"]("abba"); // Sends cons inl cons inr cons inr cons inl nil
-s[server]>> x;                         // Receives String[a*]("aa") = cons cons nil;
-end
+s = new a(client of 2);                // Create session
+s[server]<<r"(a+b)*"("abba");          // Sends cons inl cons inr cons inr cons inl nil
+s[server]>>x;                          // Receives String[a*]("aa") = cons cons nil;

@@ -1,0 +1,24 @@
+#define $a_res \
+  2->1:r"a*"; \
+  $end;
+
+#define $a \
+  1->2:r"(a+b)*"; \
+  $a_res
+
+$a a(1,2);
+local As()
+( s=new a(1 of 2);
+  s[2]>>str;
+  local A(r"(a+b)*" abs, $a_res(2 of 2) s)
+  ( match abs
+    { r"b*" x => s[2]<<nil;end,
+      r"(b*a)(a+b)*" ((bs,a),abs2) => s[1]<<cons; A(abs2,s);
+    }
+  ) A(str,s);
+) As();
+|
+s=new a(2 of 2);
+s[1]<< r"(a+b)*"("abba"); // Sends cons inl cons inr cons inr cons inl nil
+s[1]>> x; // Receives r"a*]("aa") = cons cons nil;
+)
