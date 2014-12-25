@@ -1,9 +1,9 @@
-#include<apims/mpshostheader.hpp>
-#include<apims/mpsend.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpshostheader.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsHostHeader::MpsHostHeader(const string header, const MpsTerm &succ) // {{{
 : myHeader(header)

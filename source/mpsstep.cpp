@@ -1,11 +1,11 @@
-#include <apims/mpsstep.hpp>
-#include <apims/mpsterm.hpp>
-#include <apims/mpsgui.hpp>
+#include <hapi/mpsstep.hpp>
+#include <hapi/mpsterm.hpp>
+#include <hapi/mpsgui.hpp>
 
 using namespace std;
-//using namespace apims;
+//using namespace hapi;
 
-namespace apims
+namespace hapi
 {
 MpsStep::MpsStep(const MpsEvent &event, const vector<string> &paths) // {{{
 { myEvent=event;

@@ -1,8 +1,8 @@
-#include<apims/mpsend.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsEnd::MpsEnd() // {{{
 {

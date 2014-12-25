@@ -1,10 +1,10 @@
-#include <apims/mpsparser.hpp>
-#include <apims/common.hpp>
+#include <hapi/mpsparser.hpp>
+#include <hapi/common.hpp>
 #include <dpl/slrparser.hpp>
 
 using namespace std;
 using namespace dpl;
-using namespace apims;
+using namespace hapi;
 
 /* Parsing of MpsTerms from a string
  */
@@ -1190,7 +1190,7 @@ void MpsParser::Targs(const parsetree *tree, vector<string> &names, vector<MpsMs
 MpsTerm *MpsParser::Pi(const std::string &str) // {{{
 {
   SlrParser parser("Pi");
-  parser.LoadFile("/opt/apims/bnf/syntax.bnf");
+  parser.LoadFile("/opt/hapi/bnf/syntax.bnf");
   parsetree *tree = parser.Parse(str);
   MpsTerm *result=Pi(tree);
   delete tree;
@@ -1199,7 +1199,7 @@ MpsTerm *MpsParser::Pi(const std::string &str) // {{{
 MpsGlobalType *MpsParser::Gtype(const string &str) // {{{
 {
   SlrParser parser("Gtype");
-  parser.LoadFile("/opt/apims/bnf/syntax.bnf");
+  parser.LoadFile("/opt/hapi/bnf/syntax.bnf");
   parsetree *tree = parser.Parse(str);
   MpsGlobalType *result=Gtype(tree);
   delete tree;
@@ -1208,7 +1208,7 @@ MpsGlobalType *MpsParser::Gtype(const string &str) // {{{
 MpsLocalType *MpsParser::Ltype(const string &str) // {{{
 {
   SlrParser parser("Ltype");
-  parser.LoadFile("/opt/apims/bnf/syntax.bnf");
+  parser.LoadFile("/opt/hapi/bnf/syntax.bnf");
   parsetree *tree = parser.Parse(str);
   MpsLocalType *result=Ltype(tree);
   delete tree;
@@ -1217,7 +1217,7 @@ MpsLocalType *MpsParser::Ltype(const string &str) // {{{
 MpsMsgType *MpsParser::Mtype(const string &str) // {{{
 {
   SlrParser parser("Mtype");
-  parser.LoadFile("/opt/apims/bnf/syntax.bnf");
+  parser.LoadFile("/opt/hapi/bnf/syntax.bnf");
   parsetree *tree = parser.Parse(str);
   MpsMsgType *result=Mtype(tree);
   delete tree;
@@ -1226,7 +1226,7 @@ MpsMsgType *MpsParser::Mtype(const string &str) // {{{
 MpsExp *MpsParser::Exp(const std::string &str) // {{{
 {
   SlrParser parser("Exp");
-  parser.LoadFile("/opt/apims/bnf/syntax.bnf");
+  parser.LoadFile("/opt/hapi/bnf/syntax.bnf");
   parsetree *tree = parser.Parse(str);
   MpsExp *result=Exp(tree);
   delete tree;

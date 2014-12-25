@@ -1,9 +1,9 @@
-#include<apims/mpsassign.hpp>
-#include<apims/mpsend.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpsassign.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsAssign::MpsAssign(const string &id, const MpsExp &exp, const MpsMsgType &type, const MpsTerm &succ) // {{{
 {

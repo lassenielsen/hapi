@@ -1,7 +1,7 @@
 #=====================================================================#
-#                                APIMS                                #
+#                                HAPI                                #
 # Makefile.in                                                         #
-# This is the Makefile-template for the APIMS library.                #
+# This is the Makefile-template for the HAPI library.                #
 # If the Makefile has been lost, copy this file to Makefile and type  #
 # make config. This will generate a Makefile that is configured for   #
 # your system. You can then use                                       #
@@ -10,7 +10,7 @@
 # make config; make build; sudo make install[; sudo make uninstall].  #
 # - Lasse Nielsen.                                                    #
 #=====================================================================#
-name = apims
+name = hapi
 version = 3.0.0
 libname = lib$(name).so
 #OS_LINUXlibname = lib$(name).so
@@ -65,7 +65,7 @@ phony: default doc config build install install_bnf install_stdlib install_gfx u
 
 doc: doc/html
 
-doc/html: include/apims/*.hpp source/*.cpp
+doc/html: include/hapi/*.hpp source/*.cpp
 	mkdir -p doc/
 	doxygen Doxyfile
 
@@ -96,8 +96,8 @@ build: $(libname)$(libversion)
 
 include/$(name)/config.hpp:
 	@echo "Creating config header"
-	@echo "#ifndef CONFIG_APIMS" > include/$(name)/config.hpp
-	@echo "#define CONFIG_APIMS" >> include/$(name)/config.hpp
+	@echo "#ifndef CONFIG_HAPI" > include/$(name)/config.hpp
+	@echo "#define CONFIG_HAPI" >> include/$(name)/config.hpp
 	@echo "#include <string>" >> include/$(name)/config.hpp
 #OS_MAC	@echo "#define OS_X" >> include/$(name)/config.hpp
 #OS_LINUX	@echo "#define OS_LINUX" >> include/$(name)/config.hpp
@@ -105,21 +105,21 @@ include/$(name)/config.hpp:
 
 install_gfx:
 	@echo "Copying gallery"
-	mkdir -p /opt/apims
-	mkdir -p /opt/apims/gfx
-	cp gfx/*.jpg /opt/apims/gfx/
+	mkdir -p /opt/hapi
+	mkdir -p /opt/hapi/gfx
+	cp gfx/*.jpg /opt/hapi/gfx/
 
 install_bnf:
 	@echo "Copying grammar"
-	mkdir -p /opt/apims
-	mkdir -p /opt/apims/bnf
-	cp bnf/mpsparser.bnf /opt/apims/bnf/syntax.bnf
+	mkdir -p /opt/hapi
+	mkdir -p /opt/hapi/bnf
+	cp bnf/mpsparser.bnf /opt/hapi/bnf/syntax.bnf
 
 install_stdlib:
 	@echo "Copying std-lib"
-	mkdir -p /opt/apims
-	mkdir -p /opt/apims/include
-	cp apims_libs/*.pi /opt/apims/include/
+	mkdir -p /opt/hapi
+	mkdir -p /opt/hapi/include
+	cp hapi_libs/*.pi /opt/hapi/include/
 
 install: $(libname)$(libversion) install_gfx install_bnf install_stdlib
 	@echo "Copying library"
@@ -176,18 +176,18 @@ deb: $(libname)$(libversion)
 	cp -R gfx debs/lib$(name)_$(version)_i386/opt/$(name)/gfx
 	echo "Making control"
 	mkdir -p debs/lib$(name)_$(version)_i386/DEBIAN
-	echo "Package: libapims"                                       > debs/lib$(name)_$(version)_i386/DEBIAN/control
+	echo "Package: libhapi"                                       > debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Version: $(version)"                                    >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Architecture: i386"                                     >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Maintainer: Lasse Nielsen <lasse.nielsen.dk@gmail.com>" >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Installed-Size: 1024"                                   >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Pre-Depends: dpkg (>= 1.14.12ubuntu3)"                  >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Depends: libsdl-net1.2-dev (>= 1.2), libgmp3-dev, libdpl (>= 1.5)"   >> debs/lib$(name)_$(version)_i386/DEBIAN/control
-	echo "Recommends: apims"                                      >> debs/lib$(name)_$(version)_i386/DEBIAN/control
-	echo "Suggests: apims"                                        >> debs/lib$(name)_$(version)_i386/DEBIAN/control
+	echo "Recommends: hapi"                                      >> debs/lib$(name)_$(version)_i386/DEBIAN/control
+	echo "Suggests: hapi"                                        >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Conflicts: "                                            >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Replaces: "                                             >> debs/lib$(name)_$(version)_i386/DEBIAN/control
-	echo "Provides: libapims"                                     >> debs/lib$(name)_$(version)_i386/DEBIAN/control
+	echo "Provides: libhapi"                                     >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Section: library"                                       >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Priority: optional"                                     >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Homepage: http://www.thelas.dk"                         >> debs/lib$(name)_$(version)_i386/DEBIAN/control

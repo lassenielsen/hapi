@@ -1,10 +1,10 @@
-#include <apims/mpstype.hpp>
-#include <apims/mpsterm.hpp>
+#include <hapi/mpstype.hpp>
+#include <hapi/mpsterm.hpp>
 
-#include <apims/common.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 int MpsLocalType::ourNextId = 1;
 int MpsGlobalType::ourNextId = 1;
@@ -144,7 +144,7 @@ MpsGlobalSyncType *MpsGlobalSyncType::Copy() const // {{{
 // Compare
 bool ERROR_GLOBALEQ(const MpsExp &Theta, const MpsGlobalType &lhs, const MpsGlobalType &rhs, string msg) // {{{
 {
-#if APIMS_DEBUG_LEVEL>20
+#if HAPI_DEBUG_LEVEL>20
   cerr << "!!!!Types are not equal:" << endl
        << "!!!!Theta: " << Theta.ToString() << endl
        << "!!!!!!LHS: " << lhs.ToString("!!!!!!!!!! ") << endl
@@ -875,7 +875,7 @@ MpsGlobalType *MpsGlobalVarType::GSubst(const string &source, const MpsGlobalTyp
     return Copy();
   if (myValues.size() != args.size())
   { 
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
     cerr << "GSubst ERROR: argument size mismatch" << endl;
 #endif
     return new MpsGlobalVarType("ERROR",vector<MpsExp*>());
@@ -1758,7 +1758,7 @@ MpsLocalSyncType *MpsLocalSyncType::Copy() const // {{{
 // Helper function, to eliminate exceeding foralls
 bool ERROR_LOCALEQ(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
 {
-#if APIMS_DEBUG_LEVEL>20
+#if HAPI_DEBUG_LEVEL>20
   cerr << "!!!!Types are not equal:" << msg << endl
        << "!!!!Theta: " << Theta.ToString() << endl
        << "!!!!!!LHS: " << lhs.ToString("!!!!!!!!!! ") << endl
@@ -3074,7 +3074,7 @@ MpsLocalType *MpsLocalVarType::LSubst(const string &source, const MpsLocalType &
     return Copy();
   if (args.size()!=myValues.size())
   {
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
     cerr << "LSubst error: argument and value list have different sizes" << endl;
 #endif
     return new MpsLocalVarType("ERROR",vector<MpsExp*>());
@@ -3529,7 +3529,7 @@ string MpsLocalSelectType::ToString(const string &indent) const // {{{
       result += (string)" where " + ass->second->ToString();
     else
     {
-#if APIMS_DEBUG_LEVEL>99
+#if HAPI_DEBUG_LEVEL>99
       cerr << "ERROR: Missing assertion for branch " << it->first << endl;
 #endif
     }
@@ -3559,7 +3559,7 @@ string MpsLocalBranchType::ToString(const string &indent) const // {{{
       result += (string)" where " + ass->second->ToString();
     else
     {
-#if APIMS_DEBUG_LEVEL>99
+#if HAPI_DEBUG_LEVEL>99
       cerr << "ERROR: Missing assertion for breanch " << it->first << endl;
 #endif
     }
@@ -3778,7 +3778,7 @@ string MpsLocalSyncType::ToTex(int indent, int sw) const // {{{
 // Merge two types to find greatest common subtype
 MpsLocalType *MERGE_ERROR(const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
 {
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
   cerr << "!!!!MERGE ERROR: " << msg << endl
        << "!!!!!!!!!!!!LHS: " << lhs.ToString("!!!!!!!!!!!!LHS: ") << endl
        << "!!!!!!!!!!!!RHS: " << rhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
@@ -3790,7 +3790,7 @@ MpsLocalType *MERGE_ERROR(const MpsLocalType &lhs, const MpsLocalType &rhs, stri
 } // }}}
 MpsExp *MERGE_ERROR_EXP(const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
 {
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
   cerr << "!!!!MERGE ERROR: " << msg << endl
        << "!!!!!!!!!!!!LHS: " << lhs.ToString("!!!!!!!!!!!!LHS: ") << endl
        << "!!!!!!!!!!!!RHS: " << rhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
@@ -5113,7 +5113,7 @@ const MpsMsgType *MpsTupleMsgType::GetElement(int index) const // {{{
 {
   if (index<0 || index >=GetSize())
   {
-#if APIMS_DEBUG_LEVEL>1
+#if HAPI_DEBUG_LEVEL>1
     cerr << "ERROR: Tuple Exp Type index out of bounds!" << endl;
 #endif
     return new MpsMsgNoType(); 

@@ -1,9 +1,9 @@
-#include<apims/mpscall.hpp>
-#include<apims/mpsend.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpscall.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsCall::MpsCall(const string &name, const vector<MpsExp*> &args, const vector<MpsExp*> &state, const vector<MpsMsgType*> &types, const vector<MpsMsgType*> &statetypes) // {{{
 : myName(name)
@@ -52,7 +52,7 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   for (int i=0;i<myState.size();++i)
   {
     MpsMsgType *statetype = myState[i]->TypeCheck(Gamma);
-#if APIMS_DEBUG_LEVEL>99
+#if HAPI_DEBUG_LEVEL>99
     cerr << ">>>>Comparing: " << endl
          << ">>>>>>>>Theta: " << Theta.ToString() << endl
          << ">>>>>>>>>>LHS: " << statetype->ToString(">>>>>>>>>>>>>>") << endl
@@ -76,7 +76,7 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
       delete callType;
       callType=tmpType;
     }
-#if APIMS_DEBUG_LEVEL>99
+#if HAPI_DEBUG_LEVEL>99
     cerr << ">>>>Comparing: " << endl
          << ">>>>>>>>Theta: " << Theta.ToString() << endl
          << ">>>>>>>>>>LHS: " << argType->ToString(">>>>>>>>>>>>>>") << endl
@@ -177,14 +177,14 @@ MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<str
   {
     if (myState.size() != stateargs.size())
     {
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
       cerr << "MpsCall::PSubst wrong number of state arguments in match" << endl;
 #endif
       return new MpsEnd();
     }
     if (myArgs.size() != args.size())
     {
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
       cerr << "MpsCall::PSubst wrong number of arguments in match" << endl;
 #endif
       return new MpsEnd();

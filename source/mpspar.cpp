@@ -1,11 +1,11 @@
-#include<apims/mpspar.hpp>
-#include<apims/mpsdef.hpp>
-#include<apims/mpslink.hpp>
-#include<apims/mpscall.hpp>
-#include<apims/common.hpp>
+#include<hapi/mpspar.hpp>
+#include<hapi/mpsdef.hpp>
+#include<hapi/mpslink.hpp>
+#include<hapi/mpscall.hpp>
+#include<hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsPar::MpsPar(const MpsTerm &left, const MpsTerm &right, const vector<string> &leftFinal, const vector<string> &rightFinal) // {{{
 : myLeftFinal(leftFinal)

@@ -1,8 +1,8 @@
-#include<apims/mpssync.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpssync.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsSync::MpsSync(int maxpid, const std::string &session, const std::map<std::string, MpsTerm*> &branches, const std::map<std::string, MpsExp*> &assertions) // {{{
 : mySession(session),

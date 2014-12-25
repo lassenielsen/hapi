@@ -1,9 +1,9 @@
-#include<apims/mpsselect.hpp>
-#include<apims/mpsend.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpsselect.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsSelect::MpsSelect(const MpsChannel &channel, const string &label, const MpsTerm &succ, bool final) // {{{
 : myChannel(channel)

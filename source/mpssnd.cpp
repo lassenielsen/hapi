@@ -1,9 +1,9 @@
-#include<apims/mpssnd.hpp>
-#include<apims/mpsend.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpssnd.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsSnd::MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ, const MpsMsgType &type, bool final) // {{{
 : myChannel(channel)

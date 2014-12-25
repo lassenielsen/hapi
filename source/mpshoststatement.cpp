@@ -1,9 +1,9 @@
-#include<apims/mpshoststatement.hpp>
-#include<apims/mpsend.hpp>
-#include<apims/common.hpp>
+#include<hapi/mpshoststatement.hpp>
+#include<hapi/mpsend.hpp>
+#include<hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsHostStatement::MpsHostStatement(const vector<string> &hostParts, const vector<MpsExp*> &expParts, const MpsTerm &succ, vector<MpsMsgType*> types, bool pure) // {{{
 : myHostParts(hostParts)

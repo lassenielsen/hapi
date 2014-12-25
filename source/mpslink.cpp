@@ -1,10 +1,10 @@
-#include<apims/mpslink.hpp>
-#include <apims/mpsend.hpp>
-#include <apims/mpsgui.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpslink.hpp>
+#include <hapi/mpsend.hpp>
+#include <hapi/mpsgui.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsLink::MpsLink(const string &channel, const std::string &session, int pid, int maxpid, const MpsTerm &succ, bool pure) // {{{
 : myChannel(channel),

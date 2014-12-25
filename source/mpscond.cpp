@@ -1,8 +1,8 @@
-#include<apims/mpscond.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpscond.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsCond::MpsCond(const MpsExp &cond, const MpsTerm &truebranch, const MpsTerm &falsebranch) // {{{
 {

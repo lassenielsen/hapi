@@ -1,9 +1,9 @@
-#include <apims/mpsexp.hpp>
+#include <hapi/mpsexp.hpp>
 #include <sys/timeb.h>
-#include <apims/common.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 int MpsExp::ourNextId = 1;
 

@@ -1,7 +1,7 @@
-#include <apims/mpschannel.hpp>
-#include <apims/common.hpp>
+#include <hapi/mpschannel.hpp>
+#include <hapi/common.hpp>
 
-using namespace apims;
+using namespace hapi;
 using namespace std;
 
 /* MpsChannel implementation

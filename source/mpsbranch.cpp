@@ -1,8 +1,8 @@
-#include<apims/mpsbranch.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpsbranch.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsBranch::MpsBranch(const MpsChannel &channel, const map<string,MpsTerm*> &branches, const vector<string> &finalBranches) // {{{
 : myChannel(channel)

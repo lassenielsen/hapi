@@ -1,7 +1,7 @@
-#include <apims/mpsgui_http.hpp>
+#include <hapi/mpsgui_http.hpp>
 #include <dpl/slrparser.hpp>
-#include <apims/mpsparser.hpp>
-#include <apims/common.hpp>
+#include <hapi/mpsparser.hpp>
+#include <hapi/common.hpp>
 #include "SDL_net.h"
 #include "SDL_thread.h"
 #include <pthread.h>
@@ -14,7 +14,7 @@
 
 using namespace std;
 using namespace dpl;
-using namespace apims;
+using namespace hapi;
 
 namespace mpsgui
 {
@@ -280,7 +280,7 @@ void net_send(const string &msg, TCPsocket &dest) // {{{
   message.clear();
   message << "HTTP/1.1 200 OK\r\n"
 //          << "Date: Thu, 09 Sep 2010 14:00:00 GMT\r\n"
-          << "Server: APIMS/2.0\r\n"
+          << "Server: HAPI/2.0\r\n"
 //          << "Last-Modified: Thu, 09 Sep 2010 14:00:00 GMT\r\n"
 //          << "Accept-Ranges: bytes\r\n"
 //          << "Cache-Control: max-age=300, must-revalidate\r\n"
@@ -382,7 +382,7 @@ int server(void *arg) // HTTP Server thread {{{
         } // }}}
         else if (path.size()==2 && path[0] == "data" && path[1]=="logo.jpg") // {{{
         {
-          net_sendfile("/opt/apims/gfx/logo.jpg",csd);
+          net_sendfile("/opt/hapi/gfx/logo.jpg",csd);
         } // }}}
         else if (path.size()==1 && path[0] == "exit") // {{{
         {
@@ -755,7 +755,7 @@ void MpsGuiParticipant::SetChoices(const vector<Choice> &choices) // {{{
       if (val != myValues.end())
       {
         delete myChoices[choice].args[arg].value;
-        myChoices[choice].args[arg].value = apims::MpsParser::Exp(val->second);
+        myChoices[choice].args[arg].value = hapi::MpsParser::Exp(val->second);
       }
     }
 } // }}}
@@ -783,12 +783,12 @@ bool MpsGuiParticipant::SetChoiceValue(const string &choice, const string &arg, 
     if (it->name == choice)
       for (vector<ChoiceArg>::iterator it2=it->args.begin(); cont && it2!=it->args.end(); ++it2)
         if (it2->name == arg)
-        { apims::MpsExp *exp=NULL;
+        { hapi::MpsExp *exp=NULL;
           if (typeid(*it2->type)==typeid(MpsStringMsgType)) // Create string value
             exp=new MpsStringVal(stuff_string(value));
           else
-            exp=apims::MpsParser::Exp(value);
-          apims::MpsMsgEnv Gamma;
+            exp=hapi::MpsParser::Exp(value);
+          hapi::MpsMsgEnv Gamma;
           Gamma.clear();
           MpsMsgType *inputtype=exp->TypeCheck(Gamma);
           bool inputtypematch=inputtype->Equal(MpsBoolVal(true),*it2->type);

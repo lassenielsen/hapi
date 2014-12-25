@@ -1,9 +1,9 @@
-#include<apims/mpsguisync.hpp>
-#include <apims/mpsgui.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpsguisync.hpp>
+#include <hapi/mpsgui.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsGuiSync::MpsGuiSync(int maxpid, const std::string &session, int pid, const std::map<std::string, inputbranch> &branches) // {{{
 : mySession(session),
@@ -291,7 +291,7 @@ bool MpsGuiSync::SubSteps(vector<MpsStep> &dest) // {{{
     }
     else
     {
-#if APIMS_DEBUG_LEVEL>10
+#if HAPI_DEBUG_LEVEL>10
       cerr << "Illegal choice: " << choice->name << endl;
 #endif
     }

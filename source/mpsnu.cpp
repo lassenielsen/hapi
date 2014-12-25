@@ -1,8 +1,8 @@
-#include<apims/mpsnu.hpp>
-#include <apims/common.hpp>
+#include<hapi/mpsnu.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsNu::MpsNu(const vector<MpsParticipant> &participants, const string &channel, const MpsTerm &succ, const MpsGlobalType &type) // {{{
 : myParticipants(participants)

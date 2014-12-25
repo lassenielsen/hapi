@@ -1,6 +1,6 @@
-#include <apims/mpsevent.hpp>
+#include <hapi/mpsevent.hpp>
 
-using namespace apims;
+using namespace hapi;
 using namespace std;
 
 /* MpsEvent constructor and destructor

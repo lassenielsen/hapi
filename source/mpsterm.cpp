@@ -1,12 +1,12 @@
-#include <apims/mpstype.hpp>
+#include <hapi/mpstype.hpp>
 #include <dpl/slrparser.hpp>
-#include <apims/mpsterms.hpp>
-#include <apims/mpsgui.hpp>
+#include <hapi/mpsterms.hpp>
+#include <hapi/mpsgui.hpp>
 
-#include <apims/common.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 using namespace dpl;
 
 int MpsTerm::ourNextId = 1;
@@ -216,17 +216,17 @@ void MpsTerm::Steps(MpsEnv &env, const vector<MpsFunction> &defs, vector<MpsStep
     {
       if (mpsgui::GuiEnabeled())
       {
-#if APIMS_DEBUG_LEVEL>4
+#if HAPI_DEBUG_LEVEL>4
         cout << "*********** Waiting for GUI ***********" << endl;
 #endif
         mpsgui::GuiWait();
-#if APIMS_DEBUG_LEVEL>4
+#if HAPI_DEBUG_LEVEL>4
         cout << "*********** GUI Event *****************" << endl;
 #endif
       }
       else
       {
-#if APIMS_DEBUG_LEVEL>4
+#if HAPI_DEBUG_LEVEL>4
         cout << "******* Stuck: GUI not enabeled *******" << endl;
 #endif
       }
