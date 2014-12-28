@@ -1,5 +1,5 @@
 INTRODUCTION:
-This is the hapi (Happy Asynchronous PI-calsulus) library - which implements a
+This is the hapi (Happy Asynchronous PI-calculus) library - which implements a
 parser for the language, type checking and compilation. This is used by the
 hapi compiler.
 
@@ -28,6 +28,11 @@ write:
 To test the installation simply write
 -hapi -check ''
 This should typecheck and run the trivial (terminates imediately) program.
-Example programs are in the examples folder, and can be executed with the
--hapi -f <filename>
-command.
+Example programs are in the examples folder, and can be compiled with the
+command
+- make build
+or
+- make example
+which compiles the file <example>.pi to the executable <example>.
+
+- Enjoy!

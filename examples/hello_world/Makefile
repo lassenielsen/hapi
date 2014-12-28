@@ -1,10 +1,11 @@
 #=====================================================================#
-#                      HAPI PROGRAM MAKEFILE                         #
-# This is the Makefile for an HAPI program.                          #
+#                      HAPI PROGRAM MAKEFILE                          #
+# This is the Makefile for a HAPI program.                            #
 # Simply update the name variable, to adapt this makefile to another  #
-# HAPI project.                                                      #
+# HAPI project.                                                       #
 #                                                                     #
-# "make clean" will remove temporary files (.pip and .cpp)            #
+# "make autoclean" will remove temporary files (.pip and .cpp)        #
+# "make clean" will remove the executable as well.                    #
 # "make" or "make build" will build the application executable        #
 #                                                                     #
 # Enjoy!                                                              #
@@ -19,21 +20,27 @@ CC = g++
 
 default: build
 
-all: build clean
+all: build autoclean
 
-phony: build clean
+phony: build clean autoclean
 
 build: $(name)
 
 $(name): $(name).cpp
+	@echo "=== Building executable from C++ code in $(name).cpp"
 	$(CC) $(Copt) $(name).cpp -o $(name) -lpi
 
 $(name).cpp: $(name).pip
-	$(HAPI) -compile -f $(name).pip > $(name).cpp
+	@echo "=== Compiling $(name).pip to $(name).cpp"
+	$(HAPI) -compile -optimize -f $(name).pip > $(name).cpp
 
 $(name).pip: $(name).pi
+	@echo "=== Preprocessing $(name).pi to $(name).pip"
 	$(CPP) $(name).pi -I/opt/hapi/include | grep -v "^#" > $(name).pip
 
-clean:
-	rm -f $(name).pip
-	rm -f $(name).cpp
+autoclean:
+	@rm -f $(name).pip
+	@rm -f $(name).cpp
+
+clean: autoclean
+	@rm -f $(name)
