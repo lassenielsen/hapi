@@ -1,0 +1,23 @@
+// Define session type
+#define $branch \
+  1->2 \
+  {^A: 2->1:Int; $end; \
+   ^B: 2->1:String; $end; \
+  }
+
+// Create channel
+global $branch a(1,2);
+
+// First process implementation
+s=new a(1 of 2);
+s[2]<<^A;
+s[2]>>x;
+|
+// Second process implementation
+s=new a(2 of 2);
+s[1]>>
+{^A:
+  s[1]<<5;
+ ^B:
+  s[1]<<"five";
+}

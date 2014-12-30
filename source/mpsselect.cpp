@@ -1,8 +1,9 @@
-#include<apims/mpsselect.hpp>
-#include "common.cpp"
+#include<hapi/mpsselect.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsSelect::MpsSelect(const MpsChannel &channel, const string &label, const MpsTerm &succ, bool final) // {{{
 : myChannel(channel)
@@ -16,8 +17,13 @@ MpsSelect::~MpsSelect() // {{{
 {
   delete mySucc;
 } // }}}
-bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Sel {{{
+bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Sel {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+  // Verify select
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
   if (session==Gamma.end())
@@ -31,10 +37,10 @@ bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, *this, session->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, *this, session->first);
   // Check session has select type
   const MpsLocalSelectType *selType = dynamic_cast<const MpsLocalSelectType*>(msgType->GetLocalType());
   if (selType==NULL)
@@ -57,13 +63,13 @@ bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   
   // Make new environment
   MpsMsgEnv newGamma = Gamma;
-  newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second,msgType->GetPid(),msgType->GetMaxpid());
+  newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second,msgType->GetPid(),msgType->GetParticipants());
 
   // Store if this is final action in session
   myFinal=branch->second->IsDone();
   
   // Check rest of program
-  bool result = mySucc->TypeCheck(Theta,newGamma,Omega);
+  bool result = mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure);
 
   // Clean up
   delete newGamma[myChannel.GetName()];
@@ -191,7 +197,7 @@ string MpsSelect::ToString(string indent) const // {{{
 } // }}}
 string MpsSelect::ToTex(int indent, int sw) const // {{{
 {
-  return ToTex_Channel(myChannel) + "$\\ll$ "
+  return myChannel.ToTex() + "$\\ll$ "
        + ToTex_Label(myLabel) + ";\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
@@ -204,12 +210,12 @@ string MpsSelect::ToC() const // {{{
          << "    " << msgName << ".AddData(" << "\"" << myLabel << "\", " << int2string(myLabel.size()+1) << ");" << endl
          << ToC_Name(myChannel.GetName()) << "->Send(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl
          << "  }" << endl; // Send label
-  result << mySucc->ToC();
   if (myFinal)
   {
     result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
            << "  delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
   }
+  result << mySucc->ToC();
   return result.str();
 } // }}}
 string MpsSelect::ToCHeader() const // {{{
@@ -222,7 +228,7 @@ MpsTerm *MpsSelect::RenameAll() const // {{{
   delete newSucc;
   return result;
 } // }}}
-void MpsSelect::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm &*parTerm) const // {{{
+bool MpsSelect::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 {
   // Find used vars
   set<string> usedVars;
@@ -230,26 +236,23 @@ void MpsSelect::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm
   // Split receives using the used vars
   MpsTerm *pre;
   MpsTerm *post;
-  receivers.SplitReceives(usedVars,pre,post);
+  receivers.Split(usedVars,pre,post);
+  bool opt1=dynamic_cast<MpsEnd*>(post)==NULL;
   // Parallelize succ with post receives
   MpsTerm *seqSucc;
   MpsTerm *parSucc;
-  mySucc->Parallelize(*post,seqSucc,parSucc);
+  bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
   delete post;
   // Make parallelized term
   MpsTerm *parTmp = new MpsSelect(myChannel, myLabel, *parSucc, GetFinal());
   delete parSucc;
-  parTerm = pre->Append(parTmp);
+  parTerm = pre->Append(*parTmp);
   delete pre;
   delete parTmp;
-  if (seqSucc!=NULL)
-  { seqTerm = new MpsSelect(myChannel, myLabel, *seqSucc, GetFinal());
-    delete seqSucc;
-  }
-  else if (dynamic_cast<MpsEnd*>(post)!=NULL) // some optimization can be done
-    seqTerm=Copy();
-  else
-    seqTerm=NULL;
+  // Make sequential term
+  seqTerm = new MpsSelect(myChannel, myLabel, *seqSucc, GetFinal());
+  delete seqSucc;
+  return opt1 || opt2;
 } // }}}
 MpsTerm *MpsSelect::Append(const MpsTerm &term) const // {{{
 {

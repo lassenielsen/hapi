@@ -1,0 +1,14 @@
+#define $type \
+  2->1:Bool; \
+  1->2:Int; \
+  $end;
+global $type a(1,2);
+s=new a(1 of 2);
+s[2] >> b;
+if not (if b then false else true)
+  then s[2] << 1;
+  else s[2] << 2;
+|
+s=new a(2 of 2);
+s[1] << false;
+s[1] >> val;

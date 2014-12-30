@@ -1,8 +1,8 @@
-#include<apims/mpscond.hpp>
-#include "common.cpp"
+#include<hapi/mpscond.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsCond::MpsCond(const MpsExp &cond, const MpsTerm &truebranch, const MpsTerm &falsebranch) // {{{
 {
@@ -16,8 +16,12 @@ MpsCond::~MpsCond() // {{{
   delete myTrueBranch;
   delete myFalseBranch;
 } // }}}
-bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Cond {{{
+bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Cond {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
   MpsBoolMsgType booltype;
   MpsMsgType *condtype = myCond->TypeCheck(Gamma);
   bool condtypematch = booltype.Equal(Theta,*condtype);
@@ -30,8 +34,8 @@ bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   MpsExp *falseTheta = new MpsBinOpExp("and",Theta,*notCond,MpsBoolMsgType(),MpsBoolMsgType());
   delete notCond;
   
-  bool result = myTrueBranch->TypeCheck(*trueTheta,Gamma,Omega)
-             && myFalseBranch->TypeCheck(*falseTheta,Gamma,Omega);
+  bool result = myTrueBranch->TypeCheck(*trueTheta,Gamma,Omega,pureStack,curPure)
+             && myFalseBranch->TypeCheck(*falseTheta,Gamma,Omega,pureStack,curPure);
   // Clean Up
   delete trueTheta;
   delete falseTheta;
@@ -230,6 +234,21 @@ MpsTerm *MpsCond::RenameAll() const // {{{
   delete newTrueBranch;
   delete newFalseBranch;
 
+  return result;
+} // }}}
+bool MpsCond::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ MpsTerm *seqTrueBranch = myTrueBranch->Parallelize();
+  MpsTerm *seqFalseBranch = myFalseBranch->Parallelize();
+  seqTerm=new MpsCond(*myCond, *seqTrueBranch, *seqFalseBranch);
+  parTerm=receives.Append(*seqTerm);
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsCond::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newTrueBranch=myTrueBranch->Append(term);
+  MpsTerm *newFalseBranch=myFalseBranch->Append(term);
+  MpsTerm *result=new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
+  delete newTrueBranch;
+  delete newFalseBranch;
   return result;
 } // }}}
 MpsTerm *MpsCond::CloseDefinitions() const // {{{

@@ -1,0 +1,15 @@
+// Define session type
+#define $intmsg \
+  1->2:Int; \
+  $end;
+
+// Create channel
+global $intmsg a(1,2);
+
+// First process implementation
+s=new a(1 of 2);
+s[2]<<5;
+|
+// Second process implementation
+s=new a(2 of 2);
+s[1]>>x;

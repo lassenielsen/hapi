@@ -1,10 +1,10 @@
-#include <apims/mpsgui_sdl.hpp>
+#include <hapi/mpsgui_sdl.hpp>
 #include <algorithm>
-#include "common.cpp"
+#include <hapi/common.hpp>
 
 using namespace SdlWidgets;
 using namespace mpsgui;
-using namespace apims;
+using namespace hapi;
 using namespace std;
 
 namespace mpsgui

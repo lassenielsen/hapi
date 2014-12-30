@@ -1,11 +1,13 @@
-#include<apims/mpshoststatement.hpp>
-#include "common.cpp"
+#include<hapi/mpshoststatement.hpp>
+#include<hapi/mpsend.hpp>
+#include<hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
-MpsHostStatement::MpsHostStatement(const vector<string> &hostParts, const vector<MpsExp*> &expParts, const MpsTerm &succ, vector<MpsMsgType*> types) // {{{
+MpsHostStatement::MpsHostStatement(const vector<string> &hostParts, const vector<MpsExp*> &expParts, const MpsTerm &succ, vector<MpsMsgType*> types, bool pure) // {{{
 : myHostParts(hostParts)
+, myPure(pure)
 {
   for (vector<MpsExp*>::const_iterator exp=expParts.begin(); exp!=expParts.end(); ++exp)
     myExpParts.push_back((*exp)->Copy());
@@ -20,8 +22,15 @@ MpsHostStatement::~MpsHostStatement() // {{{
   DeleteVector(myExpParts);
   DeleteVector(myTypes);
 } // }}}
-bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Nres {{{
+bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Nres {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+  if (curPure.size()>0 && !myPure)
+    return PrintTypeError("HOST statements not allowed in pure context",*this,Theta,Gamma,Omega);
+
+  // Verify hoststatement
   // Clear infered typing info
   DeleteVector(myTypes);
 
@@ -35,7 +44,7 @@ bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, co
       return PrintTypeError("Host Language Statement uses session variable in expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega);
   }
 
-  return mySucc->TypeCheck(Theta,Gamma,Omega);
+  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,curPure);
 } // }}}
 MpsTerm *MpsHostStatement::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)
@@ -56,7 +65,7 @@ bool MpsHostStatement::SubSteps(vector<MpsStep> &dest) // {{{
 MpsHostStatement *MpsHostStatement::PRename(const string &src, const string &dst) const // {{{
 {
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
   delete newSucc;
   return result;
 } // }}}
@@ -69,7 +78,7 @@ MpsHostStatement *MpsHostStatement::ERename(const string &src, const string &dst
   for (vector<MpsExp*>::const_iterator part=myExpParts.begin(); part!=myExpParts.end(); ++part)
     newExpParts.push_back((*part)->Rename(src,dst));
 
-  MpsHostStatement *result = new MpsHostStatement(myHostParts, newExpParts, *newSucc, myTypes);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, newExpParts, *newSucc, myTypes, myPure);
   // Clean up
   delete newSucc;
   DeleteVector(newExpParts);
@@ -81,7 +90,7 @@ MpsHostStatement *MpsHostStatement::ReIndex(const string &session, int pid, int 
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
   // myExpParts cannot use sessions!
-  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
   // Clean up
   delete newSucc;
   return result;
@@ -90,7 +99,7 @@ MpsHostStatement *MpsHostStatement::PSubst(const string &var, const MpsTerm &exp
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PSubst(var, exp, args, argpids, stateargs);
-  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
   delete newSucc;
   return result;
 } // }}}
@@ -103,7 +112,7 @@ MpsHostStatement *MpsHostStatement::ESubst(const string &source, const MpsExp &d
   for (vector<MpsExp*>::const_iterator part=myExpParts.begin(); part!=myExpParts.end(); ++part)
     newExpParts.push_back((*part)->Subst(source,dest));
   // Create result
-  MpsHostStatement *result = new MpsHostStatement(myHostParts, newExpParts, *newSucc, myTypes);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, newExpParts, *newSucc, myTypes, myPure);
   // Clean up
   delete newSucc;
   DeleteVector(newExpParts);
@@ -117,7 +126,7 @@ MpsHostStatement *MpsHostStatement::GSubst(const string &source, const MpsGlobal
   for (vector<MpsMsgType*>::const_iterator tit=myTypes.begin(); tit!=myTypes.end(); ++tit)
     newTypes.push_back((*tit)->GSubst(source,dest,args));
 
-  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc,newTypes);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc,newTypes, myPure);
 
   // Clean up
   delete newSucc;
@@ -131,7 +140,7 @@ MpsHostStatement *MpsHostStatement::LSubst(const string &source, const MpsLocalT
   vector<MpsMsgType*> newTypes;
   for (vector<MpsMsgType*>::const_iterator tit=myTypes.begin(); tit!=myTypes.end(); ++tit)
     newTypes.push_back((*tit)->LSubst(source,dest,args));
-  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, newTypes);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, newTypes, myPure);
 
   // Clean up
   delete newSucc;
@@ -154,7 +163,7 @@ set<string> MpsHostStatement::FEV() const // {{{
 } // }}}
 MpsHostStatement *MpsHostStatement::Copy() const // {{{
 {
-  return new MpsHostStatement(myHostParts, myExpParts, *mySucc, myTypes);
+  return new MpsHostStatement(myHostParts, myExpParts, *mySucc, myTypes, myPure);
 } // }}}
 bool MpsHostStatement::Terminated() const // {{{
 {
@@ -163,7 +172,7 @@ bool MpsHostStatement::Terminated() const // {{{
 MpsHostStatement *MpsHostStatement::Simplify() const // {{{
 {
   MpsTerm *newSucc = mySucc->Simplify();
-  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
   delete newSucc;
   return result;
 } // }}}
@@ -176,7 +185,7 @@ string MpsHostStatement::ToString(string indent) const // {{{
     if (myExpParts.size()>i)
       result << "\", " << myExpParts[i]->ToString() << "\", \"";
   }
-  result << "\")" << endl
+  result << "\");" << endl
          << indent << mySucc->ToString(indent);
   return result.str();
 } // }}}
@@ -216,23 +225,57 @@ MpsHostStatement *MpsHostStatement::RenameAll() const // {{{
   for (vector<MpsMsgType*>::const_iterator tit=myTypes.begin(); tit!=myTypes.end(); ++tit)
     newTypes.push_back((*tit)->RenameAll());
 
-  MpsHostStatement *result=new MpsHostStatement(myHostParts, myExpParts, *newSucc, newTypes);
+  MpsHostStatement *result=new MpsHostStatement(myHostParts, myExpParts, *newSucc, newTypes, myPure);
   // Clean up
   delete newSucc;
   DeleteVector(newTypes);
 
   return result;
 } // }}}
+bool MpsHostStatement::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ // Find used vars
+  set<string> usedVars;
+  for (vector<MpsExp*>::const_iterator exp=myExpParts.begin(); exp!=myExpParts.end(); ++exp)
+  { set<string> fv = (*exp)->FV();
+    usedVars.insert(fv.begin(),fv.end());
+  }
+  // Split receives using the used vars
+  MpsTerm *pre;
+  MpsTerm *post;
+  receives.Split(usedVars,pre,post);
+  bool opt1=dynamic_cast<const MpsEnd*>(post)==NULL;
+  // Parallelize succ with post receives
+  MpsTerm *seqSucc;
+  MpsTerm *parSucc;
+  bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
+  delete post;
+  // Make parallelized term
+  MpsTerm *parTmp = new MpsHostStatement(myHostParts, myExpParts, *parSucc, myTypes, myPure);
+  delete parSucc;
+  parTerm = pre->Append(*parTmp);
+  delete pre;
+  delete parTmp;
+  // Make sequential term
+  seqTerm = new MpsHostStatement(myHostParts, myExpParts, *seqSucc, myTypes, myPure);
+  delete seqSucc;
+  return opt1 || opt2;
+} // }}}
+MpsTerm *MpsHostStatement::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
+  delete newSucc;
+  return result;
+} // }}}
 MpsHostStatement *MpsHostStatement::CloseDefinitions() const // {{{
 {
   MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsHostStatement *result= new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  MpsHostStatement *result= new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
   delete newSucc;
   return result;
 } // }}}
 MpsHostStatement *MpsHostStatement::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
-  MpsHostStatement *result=new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes);
+  MpsHostStatement *result=new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
   delete newSucc;
   return result;
 } // }}}

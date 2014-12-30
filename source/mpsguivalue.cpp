@@ -1,9 +1,10 @@
-#include<apims/mpsguivalue.hpp>
-#include <apims/mpsgui.hpp>
-#include "common.cpp"
+#include<hapi/mpsguivalue.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/mpsgui.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsGuiValue::MpsGuiValue(int maxpid, const std::string &session, int pid, const MpsExp &name, const MpsExp &value, const MpsTerm &succ) // {{{
 : mySession(session),
@@ -20,8 +21,13 @@ MpsGuiValue::~MpsGuiValue() // {{{
   delete myValue;
   delete mySucc;
 } // }}}
-bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Type check name, value and session {{{
+bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Type check name, value and session {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+  // Verify guivalue
   MpsStringMsgType stringtype;
   // Check label is a string
   MpsMsgType *nametype = myName->TypeCheck(Gamma);
@@ -51,7 +57,7 @@ bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const M
   if (untyped)
     return PrintTypeError((string)"guivalue uses untyped expression: " + myValue->ToString(),*this,Theta,Gamma,Omega);
 
-  return mySucc->TypeCheck(Theta,Gamma,Omega);
+  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,curPure);
 } // }}}
 MpsTerm *MpsGuiValue::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)
@@ -172,9 +178,6 @@ set<string> MpsGuiValue::FEV() const // {{{
 } // }}}
 MpsGuiValue *MpsGuiValue::Copy() const // {{{
 {
-  // assert mySucc != NULL
-  // assert myName != NULL
-  // assert myValue != NULL
   return new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *mySucc);
 } // }}}
 bool MpsGuiValue::Terminated() const // {{{
@@ -217,6 +220,41 @@ MpsTerm *MpsGuiValue::RenameAll() const // {{{
   
   delete newSucc;
 
+  return result;
+} // }}}
+bool MpsGuiValue::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{
+  // Find used vars
+  set<string> usedVars = myValue->FV();
+  set<string> fv = myName->FV();
+  usedVars.insert(fv.begin(),fv.end());
+  usedVars.insert(mySession);
+  // Split receives using the used vars
+  MpsTerm *pre;
+  MpsTerm *post;
+  receivers.Split(usedVars,pre,post);
+  bool opt1=dynamic_cast<const MpsEnd*>(post)==NULL;
+  // Parallelize succ with post receives
+  MpsTerm *seqSucc;
+  MpsTerm *parSucc;
+  bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
+  delete post;
+  // Make parallelized term
+  MpsTerm *parTmp = new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *parSucc);
+  delete parSucc;
+  parTerm = pre->Append(*parTmp);
+  delete pre;
+  delete parTmp;
+  // Make sequential term
+  seqTerm = new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *seqSucc);
+  delete seqSucc;
+  return opt1 || opt2;
+} // }}}
+MpsTerm *MpsGuiValue::Append(const MpsTerm &term) const // {{{
+{
+  MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
+  delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsGuiValue::CloseDefinitions() const // {{{

@@ -1,8 +1,8 @@
-#include <apims/mpsgui.hpp>
-#include <apims/mpstype.hpp>
+#include <hapi/mpsgui.hpp>
+#include <hapi/mpstype.hpp>
 
 using namespace mpsgui;
-using namespace apims;
+using namespace hapi;
 using namespace std;
 
 // ChoiceArg metods

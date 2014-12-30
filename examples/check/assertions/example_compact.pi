@@ -1,0 +1,78 @@
+// Define Sequence protocol {{{
+#define $seq(bit1,bit2,bit3,bit4) \
+  rec $state<Bool x1=bit1,Bool x2=bit2,Bool x3=bit3,Bool x4=bit4>; \
+  {^^Continue where not x1 or not x2 or not x3 or not x4: \
+    1->2:Int; \
+    $state<not x1, \
+           ((x1) or x2) and (not (x1) or not x2), \
+           ((x1 and x2) or x3) and (not (x1 and x2) or not x3), \
+           ((x1 and x2 and x3) or x4) and (not (x1 and x2 and x3) or not x4)>; \
+   ^^End where x1 and x2 and x3 and x4: \
+    $end; \
+  }
+// }}}
+// Define XOR protocol {{{
+#define $xor \
+  1->2:Bool as x; \
+  1->2:Bool as y; \
+  2->1:Bool as z where (z or (x and y) or (not x and not y)) and (not z or (x and not y) or (not x and y)); \
+  $end;
+// }}}
+global $seq(false,false,false,false) a(1,2);
+global $xor xor(1,2);
+// Implement XOR service {{{
+local XOR()
+( global s=new xor(2 of 2);
+  XOR();
+  |
+  s[1]>>x1;
+  s[1]>>x2;
+  s[1]<<(x1 and not x2) or (not x1 and x2);
+)
+XOR(); // }}}
+|
+s=new a(1 of 2); // Sending process {{{
+local SEQ1<Bool bit1,Bool bit2,Bool bit3,Bool bit4>($seq(bit1,bit2,bit3,bit4)(1 of 1,2) s,Int i)
+( sync(2,s)
+  {^^Continue where not (bit1 and bit2 and bit3 and bit4):
+    s[2]<<i;
+    t=new xor(1 of 2);
+    t[2]<<bit1;
+    t[2]<<bit2;
+    t[2]>>nBit2;
+    t=new xor(1 of 2);
+    t[2]<<bit1 and bit2;
+    t[2]<<bit3;
+    t[2]>>nBit3;
+    t=new xor(1 of 2);
+    t[2]<<bit1 and bit2 and bit3;
+    t[2]<<bit4;
+    t[2]>>nBit4;
+    SEQ1<not bit1,nBit2,nBit3,nBit4>(s,i+1);
+   ^^End where bit1 and bit2 and bit3 and bit4:
+  }
+)
+SEQ1<false,false,false,false>(s,1); // }}}
+|
+s=new a(2 of 2); // Receiving process {{{
+local SEQ2<Bool bit1,Bool bit2,Bool bit3,Bool bit4>($seq(bit1,bit2,bit3,bit4)(2 of 1,2) s)
+( sync(2,s)
+  {^^Continue where not (bit1 and bit2 and bit3 and bit4):
+    s[1]>>i;
+    t=new xor(1 of 2);
+    t[2]<<bit1;
+    t[2]<<bit2;
+    t[2]>>nBit2;
+    t=new xor(1 of 2);
+    t[2]<<bit1 and bit2;
+    t[2]<<bit3;
+    t[2]>>nBit3;
+    t=new xor(1 of 2);
+    t[2]<<bit1 and bit2 and bit3;
+    t[2]<<bit4;
+    t[2]>>nBit4;
+    SEQ2<not bit1,nBit2,nBit3,nBit4>(s);
+   ^^End where bit1 and bit2 and bit3 and bit4:
+  }
+)
+SEQ2<false,false,false,false>(s); // }}}

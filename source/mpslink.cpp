@@ -1,15 +1,17 @@
-#include<apims/mpslink.hpp>
-#include <apims/mpsgui.hpp>
-#include "common.cpp"
+#include<hapi/mpslink.hpp>
+#include <hapi/mpsend.hpp>
+#include <hapi/mpsgui.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
-MpsLink::MpsLink(const string &channel, const std::string &session, int pid, int maxpid, const MpsTerm &succ) // {{{
+MpsLink::MpsLink(const string &channel, const std::string &session, int pid, int maxpid, const MpsTerm &succ, bool pure) // {{{
 : myChannel(channel),
   mySession(session),
   myMaxpid(maxpid),
-  myPid(pid)
+  myPid(pid),
+  myPure(pure)
 {
   // Assert succ!=NULL
   mySucc = succ.Copy();
@@ -19,16 +21,33 @@ MpsLink::~MpsLink() // {{{
   // assert mySucc != NULL
   delete mySucc;
 } // }}}
-bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Use rules Mcast and Macc {{{
+bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // * Use rules Mcast and Macc {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+  // Verify link
   MpsMsgEnv newGamma = Gamma;
   // Check linking on available channel
   MpsMsgEnv::iterator var=newGamma.find(myChannel);
-  if (var==Gamma.end())
+  if (var==newGamma.end())
     return PrintTypeError((string)"Linking on unknown channel:" + myChannel,*this,Theta,Gamma,Omega);
   const MpsChannelMsgType *channel=dynamic_cast<const MpsChannelMsgType*>(var->second);
   if (channel==NULL)
     return PrintTypeError((string)"Linking on non-channel:" + myChannel,*this,Theta,Gamma,Omega);
+  // Check if linking breaks purity
+  if (channel->GetParticipants()[myPid-1].IsPure())
+    return PrintTypeError((string)"Linking as pure participant not allowed here",*this,Theta,Gamma,Omega);
+  // Store purity of channel
+  myPure=true;
+  for (int i=0; myPure && i<channel->GetMaxPid(); ++i)
+    if (i+1!=myPid && !channel->GetParticipants()[i].IsPure())
+      myPure=false;
+  // Check purity constraint
+  if (curPure.size()>0 && !myPure)
+    return PrintTypeError((string)"Unpure link in pure context is not allowed",*this,Theta,Gamma,Omega);
+
   // Check correct maxpid
   if (myMaxpid != channel->GetGlobalType()->GetMaxPid())
     return PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega);
@@ -53,10 +72,10 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     newType=tmpType;
   }
   // Create Gamma with new session
-  newGamma[mySession] = new MpsDelegateLocalMsgType(*newType,myPid,myMaxpid);
+  newGamma[mySession] = new MpsDelegateLocalMsgType(*newType,myPid,channel->GetParticipants());
   delete newType;
 
-  bool result=mySucc->TypeCheck(Theta,newGamma,Omega);
+  bool result=mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure);
 
   // Clean up
   delete newGamma[mySession];
@@ -96,7 +115,7 @@ MpsTerm *MpsLink::PRename(const string &src, const string &dst) const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc);
+  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
   delete newSucc;
   return result;
 } // }}}
@@ -105,7 +124,7 @@ MpsTerm *MpsLink::ERename(const string &src, const string &dst) const // {{{
   // assert mySucc != NULL
   string newChannel = myChannel==src?dst:myChannel;
   if (mySession == src) // No further substitution needed
-    return new MpsLink(newChannel, mySession, myPid, myMaxpid, *mySucc);
+    return new MpsLink(newChannel, mySession, myPid, myMaxpid, *mySucc, myPure);
 
   string newSession = mySession;
   MpsTerm *newSucc = NULL;
@@ -119,7 +138,7 @@ MpsTerm *MpsLink::ERename(const string &src, const string &dst) const // {{{
   else
     newSucc = mySucc->ERename(src,dst);
 
-  MpsTerm *result = new MpsLink(newChannel, newSession, myPid, myMaxpid, *newSucc);
+  MpsTerm *result = new MpsLink(newChannel, newSession, myPid, myMaxpid, *newSucc, myPure);
   delete newSucc;
   return result;
 } // }}}
@@ -127,11 +146,11 @@ MpsTerm *MpsLink::ReIndex(const string &session, int pid, int maxpid) const // {
 {
   // assert mySucc != NULL
   if (mySession == session) // No further substitution needed
-    return new MpsLink(myChannel, mySession, myPid, myMaxpid, *mySucc);
+    return new MpsLink(myChannel, mySession, myPid, myMaxpid, *mySucc, myPure);
 
   MpsTerm *newSucc =  mySucc->ReIndex(session,pid,maxpid);
 
-  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc);
+  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
   delete newSucc;
   return result;
 } // }}}
@@ -139,7 +158,7 @@ MpsTerm *MpsLink::PSubst(const string &var, const MpsTerm &exp, const vector<str
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PSubst(var,exp,args,argpids,stateargs);
-  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc);
+  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
   delete newSucc;
   return result;
 } // }}}
@@ -148,7 +167,7 @@ MpsTerm *MpsLink::ESubst(const string &source, const MpsExp &dest) const // {{{
   // assert mySucc != NULL
   string newChannel = stringESubst(myChannel,source,dest);
   if (mySession == source) // No further substitution needed
-    return new MpsLink(newChannel, mySession, myPid, myMaxpid, *mySucc);
+    return new MpsLink(newChannel, mySession, myPid, myMaxpid, *mySucc, myPure);
 
   set<string> fv=dest.FV();
   string newSession = mySession;
@@ -165,14 +184,14 @@ MpsTerm *MpsLink::ESubst(const string &source, const MpsExp &dest) const // {{{
   else
     newSucc = mySucc->ESubst(source,dest);
 
-  MpsTerm *result = new MpsLink(newChannel, newSession, myPid, myMaxpid, *newSucc);
+  MpsTerm *result = new MpsLink(newChannel, newSession, myPid, myMaxpid, *newSucc, myPure);
   delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsLink::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
-  MpsTerm *result = new MpsLink(myChannel,mySession,myPid,myMaxpid,*newSucc);
+  MpsTerm *result = new MpsLink(myChannel,mySession,myPid,myMaxpid,*newSucc, myPure);
 
   // Clean Up
   delete newSucc;
@@ -182,7 +201,7 @@ MpsTerm *MpsLink::GSubst(const string &source, const MpsGlobalType &dest, const 
 MpsTerm *MpsLink::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
-  MpsTerm *result = new MpsLink(myChannel,mySession,myPid,myMaxpid,*newSucc);
+  MpsTerm *result = new MpsLink(myChannel,mySession,myPid,myMaxpid,*newSucc, myPure);
 
   // Clean Up
   delete newSucc;
@@ -203,8 +222,7 @@ set<string> MpsLink::FEV() const // {{{
 } // }}}
 MpsTerm *MpsLink::Copy() const // {{{
 {
-  // assert mySucc != NULL
-return new MpsLink(myChannel, mySession, myPid, myMaxpid, *mySucc);
+return new MpsLink(myChannel, mySession, myPid, myMaxpid, *mySucc, myPure);
 } // }}}
 bool MpsLink::Terminated() const // {{{
 {
@@ -214,13 +232,13 @@ MpsTerm *MpsLink::Simplify() const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->Simplify();
-  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc);
+  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
   delete newSucc;
   return result;
 } // }}}
 string MpsLink::ToString(string indent) const // {{{
 {
-  return (string)"link(" + int2string(myMaxpid) + "," + myChannel + "," + mySession + "," + int2string(myPid) + ");\n"
+  return mySession + "= new " + myChannel + "(" + int2string(myPid) + " of " + int2string(myMaxpid) + ");\n"
        + indent + mySucc->ToString(indent);
 } // }}}
 string MpsLink::ToTex(int indent, int sw) const // {{{
@@ -246,22 +264,58 @@ MpsTerm *MpsLink::RenameAll() const // {{{
   MpsTerm *tmpSucc=mySucc->ERename(mySession,newSession);
   MpsTerm *newSucc=tmpSucc->RenameAll();
   delete tmpSucc;
-  MpsTerm *result=new MpsLink(myChannel,newSession,myPid,myMaxpid,*newSucc);
+  MpsTerm *result=new MpsLink(myChannel,newSession,myPid,myMaxpid,*newSucc, myPure);
   
   delete newSucc;
 
   return result;
 } // }}}
+bool MpsLink::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ MpsTerm *pre;
+  MpsTerm *post;
+  if (myPure) // Only optimize if pure
+  { set<string> fv;
+    fv.insert(myChannel);
+    fv.insert(mySession);
+    receives.Split(fv,pre,post);
+  }
+  else
+  { pre=receives.Copy();
+    post=new MpsEnd();
+  }
+  bool opt1 = dynamic_cast<const MpsEnd*>(post)==NULL;
+  // Parallelize succ
+  MpsTerm *seqSucc;
+  MpsTerm *parSucc;
+  bool opt2 = mySucc->Parallelize(*post,seqSucc,parSucc);
+  delete post;
+  // Create seqTerm as link;seqSucc
+  seqTerm=new MpsLink(myChannel, mySession, myPid, myMaxpid, *seqSucc, myPure);
+  delete seqSucc;
+  // Create parTerm as pre;link;parSucc
+  MpsTerm *parTmp=new MpsLink(myChannel, mySession, myPid, myMaxpid, *parSucc, myPure);
+  delete parSucc;
+  parTerm=pre->Append(*parTmp);
+  delete parTmp;
+  delete pre;
+  return opt1 || opt2;
+} // }}}
+MpsTerm *MpsLink::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsLink::CloseDefinitions() const // {{{
 {
   MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsTerm *result= new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc);
+  MpsTerm *result= new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
   delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsLink::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
-  MpsTerm *result=new MpsLink(myChannel,mySession,myPid,myMaxpid,*newSucc);
+  MpsTerm *result=new MpsLink(myChannel,mySession,myPid,myMaxpid,*newSucc, myPure);
   
   delete newSucc;
 

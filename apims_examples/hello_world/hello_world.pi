@@ -1,9 +1,0 @@
-#include <console.pi>
-
-link(2,console,c,1); // Get (uninterupted) access to console
-c[2]<<^PutString;    // Choose to write a string to the console
-c[2]<<"Hello World"; // Provide string to be written
-c[2]<<^End;          // Give up access to console
-end                  // End this process (although console process started by
-                     // console.pi is still running - press Controle-c to end
-                     // all processes)

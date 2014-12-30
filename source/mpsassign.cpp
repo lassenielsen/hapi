@@ -1,8 +1,9 @@
-#include<apims/mpsassign.hpp>
-#include "common.cpp"
+#include<hapi/mpsassign.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsAssign::MpsAssign(const string &id, const MpsExp &exp, const MpsMsgType &type, const MpsTerm &succ) // {{{
 {
@@ -17,8 +18,12 @@ MpsAssign::~MpsAssign() // {{{
   delete myType;
   delete mySucc;
 } // }}}
-bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Check exp has correct type, and check succ in updated sigma {{{
+bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // * Check exp has correct type, and check succ in updated sigma {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+  // Verify assign
   if (dynamic_cast<MpsDelegateMsgType*>(myType)!=NULL)
     return PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega);
   MpsMsgType *exptype=myExp->TypeCheck(Gamma);
@@ -31,11 +36,38 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   if (var!=Gamma.end() && dynamic_cast<const MpsDelegateMsgType*>(var->second)!=NULL)
     return PrintTypeError((string)"Session eclipsed by assignment: " + myId,*this,Theta,Gamma,Omega);
   // Make new environment
-  MpsMsgEnv newGamma=Gamma;
-  newGamma[myId]=myType;
+  string newId = MpsExp::NewVar(myId);
+  MpsExp *tmpTheta=Theta.Rename(myId,newId);
+  MpsExp *newTheta;
+  if (myType->ToString()=="Bool")
+  { MpsExp *eq1 = new MpsVarExp(myId,MpsMsgNoType());
+    MpsExp *eq2 = myExp->Rename(myId,newId);
+    MpsExp *neq1=new MpsUnOpExp("not",*eq1);
+    MpsExp *neq2=new MpsUnOpExp("not",*eq2);
+    MpsExp *leftExp=new MpsBinOpExp("or",*eq1,*neq2,MpsMsgNoType(),MpsMsgNoType());
+    MpsExp *rightExp=new MpsBinOpExp("or",*neq1,*eq2,MpsMsgNoType(),MpsMsgNoType());
+    MpsExp *addTheta=new MpsBinOpExp("and",*leftExp,*rightExp,MpsMsgNoType(),MpsMsgNoType());
+    newTheta=new MpsBinOpExp("and",*tmpTheta,*addTheta,MpsMsgNoType(),MpsMsgNoType());
+    delete eq1;
+    delete eq2;
+    delete neq1;
+    delete neq2;
+    delete leftExp;
+    delete rightExp;
+    delete addTheta;
+    delete tmpTheta;
+  }
+  else
+    newTheta=tmpTheta;
+  MpsMsgEnv newGamma;
+  for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
+    if (it->first!=myId)
+      newGamma[it->first]=it->second->ERename(myId,newId);
+  newGamma[myId]=myType->Copy();
   // Check new Successor
-  bool result = mySucc->TypeCheck(Theta,newGamma,Omega);
-
+  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure);
+  delete newTheta;
+  DeleteMap(newGamma);
   return result;
 } // }}}
 MpsTerm *MpsAssign::ApplyOther(const std::string &path) const // {{{
@@ -156,7 +188,7 @@ MpsAssign *MpsAssign::Simplify() const // {{{
 } // }}}
 string MpsAssign::ToString(string indent) const // {{{
 {
-  return myId + ":" + myType->ToString() + "=" + myExp->ToString() + ";\n" + indent + mySucc->ToString();
+  return myType->ToString() + " " + myId + "=" + myExp->ToString() + ";\n" + indent + mySucc->ToString(indent);
 } // }}}
 string MpsAssign::ToTex(int indent, int sw) const // {{{
 {
@@ -188,6 +220,37 @@ MpsTerm *MpsAssign::RenameAll() const // {{{
   delete newSucc;
   delete newType;
 
+  return result;
+} // }}}
+bool MpsAssign::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ // Find used vars
+  set<string> usedVars = myExp->FV();
+  usedVars.insert(myId);
+  // Split receives using the used vars
+  MpsTerm *pre;
+  MpsTerm *post;
+  receives.Split(usedVars,pre,post);
+  bool opt1=dynamic_cast<const MpsEnd*>(post)==NULL;
+  // Parallelize succ with post receives
+  MpsTerm *seqSucc;
+  MpsTerm *parSucc;
+  bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
+  delete post;
+  // Make parallelized term
+  MpsTerm *parTmp = new MpsAssign(myId, *myExp, *myType, *parSucc);
+  delete parSucc;
+  parTerm = pre->Append(*parTmp);
+  delete pre;
+  delete parTmp;
+  // Make sequential term
+  seqTerm = new MpsAssign(myId, *myExp, *myType, *seqSucc);
+  delete seqSucc;
+  return opt1 || opt2;
+} // }}}
+MpsTerm *MpsAssign::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsAssign(myId, *myExp, *myType, *newSucc);
+  delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsAssign::CloseDefinitions() const // {{{

@@ -1,0 +1,22 @@
+#include <console.pi>
+#include <timer.pi>
+local X(Int i)
+( if i<=0
+  then t=new timer(2 of 2);
+       t[1]<<^WaitSeconds;
+       t[1]<<10;
+       t[1]>>ready;
+       t[1]<<^End;
+       c=new console(2 of 2);
+       c[1]<<^PutInt;
+       c[1]<<SYSTEM&"aprocs";
+       c[1]<<^End;
+  else ( 
+       | X(i-1);
+       )
+)
+c=new console(2 of 2);
+c[1]<<^PutInt;
+c[1]<<SYSTEM&"aprocs";
+c[1]<<^End;
+X(100);

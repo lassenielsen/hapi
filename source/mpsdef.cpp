@@ -1,10 +1,10 @@
-#include<apims/mpsdef.hpp>
-#include<apims/mpscall.hpp>
-#include<apims/mpsend.hpp>
-#include "common.cpp"
+#include<hapi/mpsdef.hpp>
+#include<hapi/mpscall.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsDef::MpsDef(const string &name, const std::vector<std::string> &args, const vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, const MpsMsgEnv &env) // {{{
 : myName(name),
@@ -34,8 +34,13 @@ MpsDef::~MpsDef() // {{{
   delete mySucc;
   delete myBody;
 } // }}}
-bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Use rule Def {{{
+bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // * Use rule Def {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be inside a fork (ch x = new {...,pure n,...}@... in (def X() = ses s = new (n of m)@x in X() | ... in X()) | ... )",*this,Theta,Gamma,Omega);
+
+  // Verify def
   // Check if def is sound
   if (myArgs.size() != myTypes.size())
     return PrintTypeError((string)"Bad def: difference in number of arguments and number of types",*this,Theta,Gamma,Omega);
@@ -52,7 +57,7 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   // Make new environments for body
   MpsMsgEnv newGamma;
   for (MpsMsgEnv::const_iterator var = Gamma.begin(); var!=Gamma.end(); ++var)
-    if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Npt session type
+    if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Not session type
       newGamma[var->first]=var->second;
   // Update environments from state-arguments
   set<string> usedArgs;
@@ -74,7 +79,8 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
     myEnv[it->first]=it->second->Copy();
   // Make subcalls
-  return mySucc->TypeCheck(Theta,Gamma,newOmega) && myBody->TypeCheck(Theta,newGamma,newOmega);
+  return mySucc->TypeCheck(Theta,Gamma,newOmega,pureStack,curPure) &&
+         myBody->TypeCheck(Theta,newGamma,newOmega,pureStack,curPure);
 } // }}}
 MpsTerm *MpsDef::ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const // {{{
 { if (path.size()>0)
@@ -424,7 +430,6 @@ set<string> MpsDef::FEV() const // {{{
 } // }}}
 MpsTerm *MpsDef::Copy() const // {{{
 {
-  // assert mySucc != NULL
   return new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *mySucc, myEnv);
 } // }}}
 bool MpsDef::Terminated() const // {{{
@@ -447,11 +452,11 @@ MpsTerm *MpsDef::Simplify() const // {{{
 } // }}}
 string MpsDef::ToString(string indent) const // {{{
 {
-  string newIndent = indent + "   ";
-  string typeIndent = indent + "     ";
+  string newIndent = indent + "  ";
+  string typeIndent = indent + "       ";
   for (int i=0; i<myName.size();++i)
     typeIndent+=" ";
-  string result = (string)"def " + myName;
+  string result = (string)"local " + myName;
   if (myStateArgs.size()>0)
   {
     result += "<";
@@ -459,10 +464,7 @@ string MpsDef::ToString(string indent) const // {{{
     {
       if (i>0)
         result += ",\n" + typeIndent;
-      string newTypeIndent = typeIndent + "  ";
-      for (int j=0; j<myStateArgs[i].size();++j)
-        newTypeIndent+=" ";
-      result += myStateArgs[i] + ": " + myStateTypes[i]->ToString(newTypeIndent);
+      result += myStateTypes[i]->ToString(typeIndent) + " " + myStateArgs[i];
     }
     result += ">\n" + typeIndent.substr(1);
   }
@@ -471,14 +473,12 @@ string MpsDef::ToString(string indent) const // {{{
   {
     if (i>0)
       result += ",\n" + typeIndent;
-    string newTypeIndent = typeIndent + "  ";
-    for (int j=0; j<myArgs[i].size();++j)
-      newTypeIndent+=" ";
-    result += myArgs[i] + ": " + myTypes[i]->ToString(newTypeIndent);
+    result += myTypes[i]->ToString(typeIndent) + " " + myArgs[i];
   }
   result += ")";
-  result += (string)"=\n" + newIndent + myBody->ToString(newIndent);
-  result += (string)"\n" + indent + "in " + mySucc->ToString(newIndent);
+  result += (string)"\n" + indent + "( " + myBody->ToString(newIndent);
+  result += (string)"\n" + indent + ")";
+  result += (string)"\n" + indent + mySucc->ToString(newIndent);
   return result;
 } // }}}
 string MpsDef::ToTex(int indent, int sw) const // {{{
@@ -577,6 +577,21 @@ MpsTerm *MpsDef::RenameAll() const // {{{
   DeleteVector(newTypes);
   DeleteVector(newStateTypes);
 
+  return result;
+} // }}}
+bool MpsDef::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ MpsTerm *seqSucc = mySucc->Parallelize();
+  MpsTerm *seqBody = myBody->Parallelize();
+  seqTerm=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *seqBody, *seqSucc, myEnv);
+  delete seqSucc;
+  delete seqBody;
+  parTerm=receives.Append(*seqTerm);
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsDef::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *newSucc, myEnv);
+  delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsDef::CloseDefinitions() const // {{{

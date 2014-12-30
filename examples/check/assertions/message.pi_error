@@ -1,0 +1,10 @@
+#define $type \
+  1->2:Bool as x; \
+  1->2:Bool as y where x or y; \
+  2->1:Bool as z where z; \
+  $end;
+$type a(1,2);
+s=new a(2 of 2);
+s[1]>>q1;
+s[1]>>q2;
+s[1]<<not (q1 or q2);

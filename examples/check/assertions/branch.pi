@@ -1,0 +1,24 @@
+#define $type \
+  1->2 \
+  {^A where x or y: \
+    1->2 \
+    {^A where x: \
+      2->1:Bool as z where x or z; \
+      $end; \
+     ^B where y: \
+      2->1:Bool as z where x or z; \
+      $end; \
+    } \
+   ^B where not x or not y: \
+    $end; \
+  }
+
+$type a(1,2);
+s = new a(2 of 2);
+s[1]>>
+{^A: s[1]>>
+     {^A: s[1]<<false;
+      ^B: s[1]<<true;
+     }
+ ^B:
+}

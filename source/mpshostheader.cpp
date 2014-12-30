@@ -1,8 +1,9 @@
-#include<apims/mpshostheader.hpp>
-#include "common.cpp"
+#include<hapi/mpshostheader.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsHostHeader::MpsHostHeader(const string header, const MpsTerm &succ) // {{{
 : myHeader(header)
@@ -13,9 +14,16 @@ MpsHostHeader::~MpsHostHeader() // {{{
 {
   delete mySucc;
 } // }}}
-bool MpsHostHeader::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Nres {{{
+bool MpsHostHeader::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Nres {{{
 {
-  return mySucc->TypeCheck(Theta,Gamma,Omega);
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+  if (curPure.size()>0)
+    return PrintTypeError("HOST statements not allowed in pure context",*this,Theta,Gamma,Omega);
+
+  // Verify hostheader
+  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,curPure);
 } // }}}
 MpsTerm *MpsHostHeader::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)
@@ -147,6 +155,34 @@ MpsHostHeader *MpsHostHeader::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   MpsHostHeader *result=new MpsHostHeader(myHeader, *newSucc);
   // Clean up
+  delete newSucc;
+  return result;
+} // }}}
+bool MpsHostHeader::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ // Split receives using the used vars
+  MpsTerm *pre;
+  MpsTerm *post;
+  receives.Split(set<string>(),pre,post);
+  bool opt1=dynamic_cast<const MpsEnd*>(post)==NULL;
+  // Parallelize succ with post receives
+  MpsTerm *seqSucc;
+  MpsTerm *parSucc;
+  bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
+  delete post;
+  // Make parallelized term
+  MpsTerm *parTmp = new MpsHostHeader(myHeader, *parSucc);
+  delete parSucc;
+  parTerm = pre->Append(*parTmp);
+  delete pre;
+  delete parTmp;
+  // Make sequential term
+  seqTerm = new MpsHostHeader(myHeader, *seqSucc);
+  delete seqSucc;
+  return opt1 || opt2;
+} // }}}
+MpsTerm *MpsHostHeader::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsHostHeader(myHeader, *newSucc);
   delete newSucc;
   return result;
 } // }}}

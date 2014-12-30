@@ -1,8 +1,8 @@
-#include<apims/mpsend.hpp>
-#include "common.cpp"
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsEnd::MpsEnd() // {{{
 {
@@ -10,8 +10,13 @@ MpsEnd::MpsEnd() // {{{
 MpsEnd::~MpsEnd() // {{{
 {
 } // }}}
-bool MpsEnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Inact {{{
+bool MpsEnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Inact {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+  // Verify termination
   // Check that all sessions have been completed
   for (MpsMsgEnv::const_iterator var=Gamma.begin();var!=Gamma.end();++var)
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
@@ -79,7 +84,7 @@ MpsTerm *MpsEnd::Simplify() const // {{{
 } // }}}
 string MpsEnd::ToString(string indent) const // {{{
 {
-  return "end";
+  return "";
 } // }}}
 string MpsEnd::ToTex(int indent, int sw) const // {{{
 {
@@ -105,13 +110,10 @@ MpsTerm *MpsEnd::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 {
   return Copy();
 } // }}}
-void MpsEnd::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+bool MpsEnd::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 { parTerm = receives.Copy();
-  if (dynamic_cast<const MpsEnd*>(&receives)!=NULL)
-    seqTerm=Copy();
-  else
-    seqTerm=NULL;
-  return;
+  seqTerm=Copy();
+  return dynamic_cast<const MpsEnd*>(&receives)==NULL;
 } // }}}
 MpsTerm *MpsEnd::Append(const MpsTerm &term) const // {{{
 { return term.Copy();

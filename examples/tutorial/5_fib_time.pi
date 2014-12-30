@@ -1,0 +1,74 @@
+// Include console functionality like printing
+#include <console.pi>
+// Include timer functionality like measuring time spent
+#include <timer.pi>
+
+// Define api for service
+#define $fib \
+  2->1:Int; \
+  1->2:Int; \
+  $end;
+
+// Declare service
+global $fib fib(1 pure,2);
+
+// Implement service
+local Fib()
+( global s=new fib(1 of 2);              // Wait for client / invocation
+  Fib();                                 // Maintain number of processes waiting for clients
+  |                                      // Start process to serve the request
+  s[2]>>n;                               // Receive n from client
+  if n<=1
+  then s[2]<<1;                          // Simple case
+  else f1=new fib(2 of 2);               // Recursive case
+       f1[1]<<n-1;
+       f1[1]>>r1;                        // r1 = fib(n-1)
+       f2=new fib(2 of 2);
+       f2[1]<<n-2;
+       f2[1]>>r2;                        // r2 = fib(n-2)
+       s[2]<<r1+r2;                      // return r1+r2
+)
+Fib(); // Start service
+// Todo: Enable multiple service instances for pure implementations like below
+//local StartFib(Int n)
+//( if n<=1
+//  then Fib();
+//  else (Fib(); | StartFib(n-1);)
+//)
+//StartFib(SYSTEM & "tprocs");             // Start as many processes as the target number of active processes
+|
+
+// Declare fib wrapper with timer
+global $fib fib_time(1,2);
+
+// Implement fib wrapper with timer
+local FibTime()
+( global s=new fib_time(1 of 2);         // Wait for client
+  FibTime();                             // Maintain number of processes waiting for clients
+  |                                      // Start process to serve the request
+  t=new timer(2 of 2);                   // Start timer
+  s[2]>>n;                               // Receive n from client
+  u=new fib(2 of 2);                     // Forward request
+  u[1]<<n;
+  u[1]>>f;                               // f = fib(n)
+  s[2]<<f;                               // return f
+  t[1]<<^ReadSeconds;                    // Get used time
+  t[1]>>secs;                            // secs = used time
+  t[1]<<^End;                            // Stop / release timer
+  c=new console(2 of 2);                 // Get access to console
+  c[1]<<^PutString<<"Time used:"         // Print time used
+      <<^PutInt<<secs<<^End;
+)
+FibTime();
+|  
+// Main program
+c=new console(2 of 2);                   // Get access to console
+c[1]<<^PutString<<"Input n"<<^GetInt;    // Ask for n
+c[1]>>n;                                 // Read n
+c[1]<<^End;                              // Release access to console
+s=new fib_time(2 of 2);                  // Call fib(n)
+s[1]<<n;
+s[1]>>f;                                 // Get result
+c=new console(2 of 2);
+c[1]<<^PutString<<"Fib(n)="<<^PutInt<<f; // Print result
+c[1]<<^End;                              // Release access to console

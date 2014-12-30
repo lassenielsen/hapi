@@ -1,9 +1,9 @@
-#include<apims/mpscall.hpp>
-#include<apims/mpsend.hpp>
-#include "common.cpp"
+#include<hapi/mpscall.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsCall::MpsCall(const string &name, const vector<MpsExp*> &args, const vector<MpsExp*> &state, const vector<MpsMsgType*> &types, const vector<MpsMsgType*> &statetypes) // {{{
 : myName(name)
@@ -28,8 +28,15 @@ MpsCall::~MpsCall() // {{{
   DeleteVector(myTypes);
   DeleteVector(myStateTypes);
 } // }}}
-bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Use rule Var {{{
+bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // * Use rule Var {{{
 {
+  // Check purity constraints
+  if (pureStack.size()>0)
+    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+  if (curPure.size()>0 && curPure!=myName)
+    return PrintTypeError("Calls not allowed in pure context",*this,Theta,Gamma,Omega);
+
+  // Verify call
   // Check variable is defined
   MpsProcEnv::const_iterator omega = Omega.find(myName);
   if (omega == Omega.end())
@@ -45,7 +52,7 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   for (int i=0;i<myState.size();++i)
   {
     MpsMsgType *statetype = myState[i]->TypeCheck(Gamma);
-#if APIMS_DEBUG_LEVEL>99
+#if HAPI_DEBUG_LEVEL>99
     cerr << ">>>>Comparing: " << endl
          << ">>>>>>>>Theta: " << Theta.ToString() << endl
          << ">>>>>>>>>>LHS: " << statetype->ToString(">>>>>>>>>>>>>>") << endl
@@ -54,7 +61,7 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     bool statetypematch = statetype->Equal(Theta,*omega->second.stypes[i]);
     delete statetype;    
     if (!statetypematch)
-      return PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString(),*this,Theta,Gamma,Omega);
+      return PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString("!!!!                                      "),*this,Theta,Gamma,Omega);
     // Store type for compilation
     myStateTypes.push_back(omega->second.stypes[i]->Copy());
   }
@@ -69,14 +76,14 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
       delete callType;
       callType=tmpType;
     }
-#if APIMS_DEBUG_LEVEL>99
+#if HAPI_DEBUG_LEVEL>99
     cerr << ">>>>Comparing: " << endl
          << ">>>>>>>>Theta: " << Theta.ToString() << endl
          << ">>>>>>>>>>LHS: " << argType->ToString(">>>>>>>>>>>>>>") << endl
          << ">>>>>>>>>>RHS: " << callType->ToString(">>>>>>>>>>>>>>") << endl;
 #endif
     bool argtypematch = argType->Equal(Theta,*callType);
-    string callTypeString = callType->ToString();
+    string callTypeString = callType->ToString("!!!!                                      ");
 
     // Store type for compilation
     myTypes.push_back(callType->Copy());
@@ -170,14 +177,14 @@ MpsTerm *MpsCall::PSubst(const string &var, const MpsTerm &exp, const vector<str
   {
     if (myState.size() != stateargs.size())
     {
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
       cerr << "MpsCall::PSubst wrong number of state arguments in match" << endl;
 #endif
       return new MpsEnd();
     }
     if (myArgs.size() != args.size())
     {
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
       cerr << "MpsCall::PSubst wrong number of arguments in match" << endl;
 #endif
       return new MpsEnd();
@@ -325,7 +332,7 @@ string MpsCall::ToString(string indent) const // {{{
       result += ", ";
     result += (*it)->ToString();
   }
-  result += ")";
+  result += ");";
   return result;
 } // }}}
 string MpsCall::ToTex(int indent, int sw) const // {{{
@@ -380,6 +387,14 @@ string MpsCall::ToCHeader() const // {{{
 } // }}}
 MpsTerm *MpsCall::RenameAll() const // {{{
 { return Copy();
+} // }}}
+bool MpsCall::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ seqTerm=Copy();
+  parTerm=receives.Append(*seqTerm);
+  return false; // No optimizations
+} // }}}
+MpsTerm *MpsCall::Append(const MpsTerm &term) const // {{{
+{ throw (string)"Append applied to call term - not implemented";
 } // }}}
 MpsTerm *MpsCall::CloseDefinitions() const // {{{
 { return Copy();

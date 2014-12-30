@@ -1,0 +1,18 @@
+#define $a client->server:String[r"(a+b)*"]; $a_res
+#define $a_res server->client:String[r"a*"]; $end
+$a a(client, pure server);
+local As()
+( s = new (server of 2}@a;
+  s[client]>>str;
+  local A(abs : r"(a+b)*", $a_res(server of client, pure server) s)
+    match abs
+    { r"b*" x => s[client]<<nil;
+      r"(b*a)(a+b)*" ((bs,a),abs2) => s[client]<<cons; A(abs2,s);
+    }
+  ) A(str,s);
+) As();
+| // Start server in new process
+// Main program
+s = new a(client of 2);                // Create session
+s[server]<<r"(a+b)*"("abba");          // Sends cons inl cons inr cons inr cons inl nil
+s[server]>>x;                          // Receives String[a*]("aa") = cons cons nil;

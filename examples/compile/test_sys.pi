@@ -1,0 +1,22 @@
+#include <sys.pi>
+#include <console.pi>
+c = new console(2 of 2);
+s = new sys(2 of 2);
+
+s[1]<<^CountArgs;
+s[1]>>argc;
+c[1]<<^PutString;
+c[1]<<"Number of args";
+c[1]<<^PutInt;
+c[1]<<argc;
+local PrintArgs(Int i, $console(2 of 1,2) c, $sys(2 of 1 pure,2) s)
+( s[1]<<^GetArg<<i;
+  s[1]>>
+  {^Some: s[1]>>a;
+          c[1]<<^PutString<<a;
+          PrintArgs(i+1,c,s);
+   ^None: s[1]<<^End;
+          c[1]<<^End;
+  }
+)
+PrintArgs(0,c,s);

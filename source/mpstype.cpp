@@ -1,71 +1,14 @@
-#include <apims/mpstype.hpp>
+#include <hapi/mpstype.hpp>
+#include <hapi/mpsterm.hpp>
 
-#include "common.cpp"
-#include <algorithm>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
-using namespace dpl;
+using namespace hapi;
 
 int MpsLocalType::ourNextId = 1;
 int MpsGlobalType::ourNextId = 1;
 
-// Global Type BNFs {{{
-const string MpsGlobalType::BNF_TVALS=
-"Tvals ::= < exps > |";
-const string MpsGlobalType::BNF_TARG=
-"Targ ::= id : Mtype = exp";
-const string MpsGlobalType::BNF_TARGS=
-"Targs ::= < Targs2 > |";
-const string MpsGlobalType::BNF_TARGS2=
-"Targs2 ::= Targs3 |";
-const string MpsGlobalType::BNF_TARGS3=
-"Targs3 ::= Targ | Targ , Targs3";
-const string MpsGlobalType::BNF_ASSERTION=
-"Assertion ::= [[ exp ]] |";
-const string MpsGlobalType::BNF_NAMEDASSERTION=
-"NamedAssertion ::= as id Assertion |";
-const string MpsGlobalType::BNF_LABEL=
-"Label ::= bid Assertion";
-const string MpsGlobalType::BNF_GTYPE=
-"Gtype ::= int => int < Mtype > NamedAssertion ; Gtype \
-         | int => int { Gbranches } \
-         | rec gvar Targs . Gtype \
-         | gvar Tvals \
-         | Gend \
-         | { Gbranches }";
-const string MpsGlobalType::BNF_GBRANCHES=
-"Gbranches ::= Label : Gtype \
-             | Label : Gtype , Gbranches";
-// }}}
-// Local Type BNFs {{{
-const string MpsLocalType::BNF_LTYPE=
-"Ltype ::= int << < Mtype > NamedAssertion ; Ltype \
-         | int >> < Mtype > NamedAssertion ; Ltype \
-         | forall id [[ exp ]] ; Ltype \
-         | int << { Lbranches } \
-         | int >> { Lbranches } \
-         | rec lvar Targs . Ltype \
-         | lvar Tvals \
-         | Lend \
-         | { Lbranches }";
-const string MpsLocalType::BNF_LBRANCHES=
-"Lbranches ::= Label : Ltype \
-                                 | Label : Ltype , Lbranches";
-// }}}
-// Message Type BNFs {{{
-const string MpsMsgType::BNF_STYPE=
-"Stype ::= Int | String | Bool | ( Stypes )";
-const string MpsMsgType::BNF_STYPES=
-"Stypes ::= Stypes2 |";
-const string MpsMsgType::BNF_STYPES2=
-"Stypes2 ::= Stype , Stypes2 | Stype";
-const string MpsMsgType::BNF_MTYPE=
-"Mtype ::= Stype \
-         | < Gtype > \
-         | Ltype @ ( int of int ) \
-         | Gtype @ ( int of int )";
-// }}}
 string MpsLocalType::NewLVar(string basename) // {{{
 {
   string result = (string)"~%"+basename;
@@ -78,443 +21,6 @@ string MpsGlobalType::NewGVar(string orig) // {{{
   result += int2string(ourNextId);
   return result;
 } // }}}
-
-/* Parser and helper functions
- *
- */
-extern void SetAssertion(const parsed_tree *tree,  map<string,MpsExp*> &assertions); // From mpsterm.cpp
-extern void FindExps(const parsed_tree *tree, vector<MpsExp*> &dest);                // From mpsterm.cpp
-void FindGlobalBranches(const parsed_tree *tree, map<string,MpsGlobalType*> &dest, map<string,MpsExp*> &assertions) // {{{
-{
-  if (tree->type_name == "Gbranches" && tree->case_name == "case1") // Label : Gtype {{{
-  {
-    dest[tree->content[0]->content[0]->root.content] = MpsGlobalType::Create(tree->content[2]);
-    SetAssertion(tree->content[0],assertions);
-  } // }}}
-  else if (tree->type_name == "Gbranches" && tree->case_name == "case2") // Label : Gtype , Gbranches {{{
-  {
-    dest[tree->content[0]->content[0]->root.content] = MpsGlobalType::Create(tree->content[2]);
-    SetAssertion(tree->content[0],assertions);
-    FindGlobalBranches(tree->content[4],dest,assertions);
-  } // }}}
-  else // unknown {{{
-  {
-#if APIMS_DEBUG_LEVEL>1
-    cerr << "Unknown globalbranch constructor: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  } // }}}
-} // }}}
-void FindLocalBranches(const parsed_tree *tree, map<string,MpsLocalType*> &dest, map<string,MpsExp*> &assertions) // {{{
-{
-  if (tree->type_name == "Lbranches" && tree->case_name == "case1") // Label : Ltype {{{
-  {
-    dest[tree->content[0]->content[0]->root.content] = MpsLocalType::Create(tree->content[2]);
-    SetAssertion(tree->content[0],assertions);
-  } // }}}
-  else if (tree->type_name == "Lbranches" && tree->case_name == "case2") // Label : Ltype , Lbranches {{{
-  {
-    dest[tree->content[0]->content[0]->root.content] = MpsLocalType::Create(tree->content[2]);
-    SetAssertion(tree->content[0],assertions);
-    FindLocalBranches(tree->content[4],dest,assertions);
-  } // }}}
-  else // unknown {{{
-  {
-#if APIMS_DEBUG_LEVEL>1
-    cerr << "Unknown localbranch constructor: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  } // }}}
-} // }}}
-void FindMsgTypes(const parsed_tree *tree, vector<MpsMsgType*> &dest) // {{{
-{
-  if (tree->type_name == "Stypes" && tree->case_name == "case1") // Stypes2 {{{
-  {
-    FindMsgTypes(tree->content[0],dest);
-  } // }}}
-  else if (tree->type_name == "Stypes" && tree->case_name == "case2") // {{{
-  {
-  } // }}}
-  else if (tree->type_name == "Stypes2" && tree->case_name == "case1") // Stype , Stypes2{{{
-  {
-    dest.push_back(MpsMsgType::Create(tree->content[0]));
-    FindMsgTypes(tree->content[2],dest);
-  } // }}}
-  else if (tree->type_name == "Stypes2" && tree->case_name == "case2") // Stype {{{
-  {
-    dest.push_back(MpsMsgType::Create(tree->content[0]));
-  } // }}}
-  else // unknown {{{
-  {
-#if APIMS_DEBUG_LEVEL>1
-    cerr << "Unknown MsgTuple constructor: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  } // }}}
-} // }}}
-MpsMsgType *MpsMsgType::Create(const parsed_tree *tree) // {{{
-{
-  if (tree->type_name == "Mtype" && tree->case_name == "case1") // Stype {{{
-  {
-    return MpsMsgType::Create(tree->content[0]);
-  } // }}}
-  else if (tree->type_name == "Mtype" && tree->case_name == "case2") // < Gtype > {{{
-  {
-    MpsGlobalType *gtype = MpsGlobalType::Create(tree->content[1]);
-    MpsChannelMsgType *result = new MpsChannelMsgType(*gtype);
-    // Clean up
-    delete gtype;
-
-    return result;
-  } // }}}
-  else if (tree->type_name == "Mtype" && tree->case_name == "case3") // Ltype @ ( int of int ) {{{
-  {
-    MpsLocalType *ltype = MpsLocalType::Create(tree->content[0]);
-    int pid = string2int(tree->content[3]->root.content);
-    int maxpid = string2int(tree->content[5]->root.content);
-    MpsDelegateMsgType *result = new MpsDelegateLocalMsgType(*ltype,pid,maxpid);
-    // Clean up
-    delete ltype;
-
-    return result;
-  } // }}}
-  else if (tree->type_name == "Mtype" && tree->case_name == "case4") // Gtype @ ( int of int ) {{{
-  {
-    MpsGlobalType *gtype = MpsGlobalType::Create(tree->content[0]);
-    int pid = string2int(tree->content[3]->root.content);
-    int maxpid = string2int(tree->content[5]->root.content);
-    MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*gtype,pid,maxpid);
-
-    // Clean up
-    delete gtype;
-
-    return result;
-  } // }}}
-  else if (tree->type_name == "Stype" && tree->case_name == "case1") // Int {{{
-  {
-    MpsIntMsgType *result = new MpsIntMsgType();
-    return result;
-  } // }}}
-  else if (tree->type_name == "Stype" && tree->case_name == "case2") // String {{{
-  {
-    MpsStringMsgType *result = new MpsStringMsgType();
-    return result;
-  } // }}}
-  else if (tree->type_name == "Stype" && tree->case_name == "case3") // Bool {{{
-  {
-    MpsBoolMsgType *result = new MpsBoolMsgType();
-    return result;
-  } // }}}
-  else if (tree->type_name == "Stype" && tree->case_name == "case4") // ( Stypes ) {{{
-  {
-    vector<MpsMsgType*> elements;
-    elements.clear();
-    FindMsgTypes(tree->content[1],elements);
-    if (elements.size()==1) // Single type
-      return elements[0];
-    else
-    {
-      MpsTupleMsgType *result = new MpsTupleMsgType(elements);
-      DeleteVector(elements);
-      return result;
-    }
-  } // }}}
-  
-#if APIMS_DEBUG_LEVEL>1
-  cerr << "Unknown msg-type parsetree: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  return new MpsIntMsgType();
-} // }}}
-void CreateStateArgs(const parsed_tree *tree, vector<TypeArg> &dest) // {{{
-{
-  if (tree->type_name == "Targs" && tree->case_name == "case1") // < Targs2 > {{{
-    return CreateStateArgs(tree->content[1], dest); // }}}
-  if (tree->type_name == "Targs" && tree->case_name == "case2") // epsilon {{{
-    return; // }}}
-  if (tree->type_name == "Targs2" && tree->case_name == "case1") // Targs3 {{{
-    return CreateStateArgs(tree->content[0],dest); // }}}
-  if (tree->type_name == "Targs2" && tree->case_name == "case2") // epsilon {{{
-    return; // }}}
-  if (tree->type_name == "Targs3" && tree->case_name == "case1") // Targ {{{
-    return CreateStateArgs(tree->content[0],dest); // }}}
-  if (tree->type_name == "Targs3" && tree->case_name == "case2") // Targ , Targs3 {{{
-  { CreateStateArgs(tree->content[0],dest);
-    return CreateStateArgs(tree->content[2],dest);
-  } // }}}
-  if (tree->type_name == "Targ" && tree->case_name == "case1") // id : Bool = exp {{{
-  { string argname=tree->content[0]->root.content;
-    MpsMsgType *argtype=new MpsBoolMsgType();
-    MpsExp *argvalue= MpsExp::Create(tree->content[4]);
-    dest.push_back(TypeArg(argname,*argtype,*argvalue));
-    // clean up
-    delete argtype;
-    delete argvalue;
-    return;
-  } // }}}
-
-#if APIMS_DEBUG_LEVEL>1
-  cerr << "Unknown State Argument: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  return;
-} // }}}
-void CreateStateValues(const parsed_tree *tree, vector<MpsExp*> &dest) // {{{
-{
-  if (tree->type_name == "Tvals" && tree->case_name == "case1") // < exps > {{{
-    return FindExps(tree->content[1], dest); // }}}
-  if (tree->type_name == "Tvals" && tree->case_name == "case2") // epsilon {{{
-    return; // }}}
-
-#if APIMS_DEBUG_LEVEL>1
-  cerr << "Unknown State Value: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  return;
-} // }}}
-MpsExp *CreateNamedAssertion(const parsed_tree *tree) // {{{
-{ 
-  if (tree->type_name == "Assertion" && tree->case_name == "case1") // [[ exp ]] {{{
-  {
-    return MpsExp::Create(tree->content[1]);
-  } // }}}
-  else if (tree->type_name == "Assertion" && tree->case_name == "case2") // {{{
-  {
-    return new MpsBoolVal(true);
-  } // }}}
-  // else
-#if APIMS_DEBUG_LEVEL>1
-  cerr << "Unknown Assertion parsetree: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  return new MpsBoolVal(false);
-} // }}}
-MpsExp *CreateNamedAssertion(const parsed_tree *tree, bool &used, std::string &name) // {{{
-{
-  if (tree->type_name == "NamedAssertion" && tree->case_name == "case1") // as id Assertion {{{
-  {
-    used=true;
-    name=tree->content[1]->root.content;
-    return CreateNamedAssertion(tree->content[2]);
-  } // }}}
-  else if (tree->type_name == "NamedAssertion" && tree->case_name == "case2") // {{{
-  {
-    used=false;
-    return new MpsBoolVal(true);
-  } // }}}
-#if APIMS_DEBUG_LEVEL>1
-  cerr << "Unknown NamedAssertion parsetree: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  return new MpsBoolVal(false);
-} // }}}
-MpsGlobalType *MpsGlobalType::Create(const parsed_tree *tree) // {{{
-{
-  if (tree->type_name == "Gtype" && tree->case_name == "case1") // int => int < Mtype > NamedAssertion ; Gtype {{{
-  {
-    MpsGlobalType *succ = MpsGlobalType::Create(tree->content[8]);
-    MpsMsgType *msgtype = MpsMsgType::Create(tree->content[4]);
-    int from = string2int(tree->content[0]->root.content);
-    int to = string2int(tree->content[2]->root.content);
-    bool a_used=false;
-    string a_name;
-    MpsExp *assertion = CreateNamedAssertion(tree->content[6],a_used, a_name);
-    MpsGlobalType *result = NULL;
-    if (a_used)
-      result = new MpsGlobalMsgType(from,to,*msgtype,*succ,*assertion,a_name);
-    else
-      result = new MpsGlobalMsgType(from,to,*msgtype,*succ);
-    delete assertion;
-    delete msgtype;
-    delete succ;
-    return result;
-  } // }}}
-  else if (tree->type_name == "Gtype" && tree->case_name == "case2") // int => int { Gbranches } {{{
-  {
-    int from = string2int(tree->content[0]->root.content);
-    int to = string2int(tree->content[2]->root.content);
-    map<string,MpsGlobalType*> branches;
-    branches.clear();
-    map<string,MpsExp*> assertions;
-    assertions.clear();
-    FindGlobalBranches(tree->content[4],branches,assertions);
-    MpsGlobalType *result = new MpsGlobalBranchType(from,to,branches,assertions);
-    // Clean up
-    DeleteMap(branches);
-    DeleteMap(assertions);
-    return result;
-  } // }}}
-  else if (tree->type_name == "Gtype" && tree->case_name == "case3") // rec gvar Targs . Gtype {{{
-  {
-    MpsGlobalType *succ = MpsGlobalType::Create(tree->content[4]);
-    string name = tree->content[1]->root.content;
-    vector<TypeArg> args;
-    args.clear();
-    CreateStateArgs(tree->content[2],args);
-    MpsGlobalRecType *result = new MpsGlobalRecType(name,*succ, args);
-    delete succ;
-    return result;
-  } // }}}
-  else if (tree->type_name == "Gtype" && tree->case_name == "case4") // gvar Tvals {{{
-  {
-    vector<MpsExp*> args;
-    args.clear();
-    CreateStateValues(tree->content[1],args);
-    MpsGlobalVarType *result = new MpsGlobalVarType(tree->content[0]->root.content, args);
-    // Clean Up
-    while (args.size()>0)
-    { delete args.back();
-      args.pop_back();
-    }
-    return result;
-  } // }}}
-  else if (tree->type_name == "Gtype" && tree->case_name == "case5") // Gend {{{
-  {
-    MpsGlobalEndType *result = new MpsGlobalEndType();
-    return result;
-  } // }}}
-  else if (tree->type_name == "Gtype" && tree->case_name == "case6") // { Gbranches } {{{
-  {
-    map<string,MpsGlobalType*> branches;
-    branches.clear();
-    map<string,MpsExp*> assertions;
-    assertions.clear();
-    FindGlobalBranches(tree->content[1],branches,assertions);
-    MpsGlobalSyncType *result = new MpsGlobalSyncType(branches,assertions);
-    // Clean up
-    DeleteMap(branches);
-    DeleteMap(assertions);
-    return result;
-  } // }}}
-  
-#if APIMS_DEBUG_LEVEL>1
-  cerr << "Unknown global-type parsetree: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  return new MpsGlobalEndType();
-} // }}}
-MpsLocalType *MpsLocalType::Create(const parsed_tree *tree) // {{{
-{
-  if (tree->type_name == "Ltype" && tree->case_name == "case1") //  int << < Mtype > NamedAssertion ; Ltype {{{
-  {
-    MpsLocalType *succ = MpsLocalType::Create(tree->content[7]);
-    MpsMsgType *msgtype = MpsMsgType::Create(tree->content[3]);
-    int channel = string2int(tree->content[0]->root.content);
-    bool a_used=false;
-    string a_name;
-    MpsExp *assertion = CreateNamedAssertion(tree->content[5],a_used, a_name);
-    MpsLocalSendType *result=NULL;
-    if (a_used)
-      result = new MpsLocalSendType(channel,*msgtype,*succ,*assertion,a_name);
-    else
-      result = new MpsLocalSendType(channel,*msgtype,*succ);
-    delete assertion;
-    delete msgtype;
-    delete succ;
-    return result;
-  } // }}}
-  else if (tree->type_name == "Ltype" && tree->case_name == "case2") //  int >> < Mtype > NamedAssertion ; Ltype {{{
-  {
-    MpsLocalType *succ = MpsLocalType::Create(tree->content[7]);
-    MpsMsgType *msgtype = MpsMsgType::Create(tree->content[3]);
-    int channel = string2int(tree->content[0]->root.content);
-    bool a_used=false;
-    string a_name;
-    MpsExp *assertion = CreateNamedAssertion(tree->content[5],a_used, a_name);
-    MpsLocalRcvType *result=NULL;
-    if (a_used)
-      result = new MpsLocalRcvType(channel,*msgtype,*succ,*assertion,a_name);
-    else
-      result = new MpsLocalRcvType(channel,*msgtype,*succ);
-    delete assertion;
-    delete msgtype;
-    delete succ;
-    return result;
-  } // }}}
-  else if (tree->type_name == "Ltype" && tree->case_name == "case3") //  forall id [[ exp ]] ; Ltype {{{
-  {
-    string name=tree->content[1]->root.content;
-    MpsExp *assertion=MpsExp::Create(tree->content[3]);
-    MpsLocalType *succ = MpsLocalType::Create(tree->content[6]);
-    MpsLocalForallType *result=new MpsLocalForallType(name,*assertion,*succ);
-    delete succ;
-    delete assertion;
-    return result;
-  } // }}}
-  else if (tree->type_name == "Ltype" && tree->case_name == "case4") //  int << { Lbranches } {{{
-  {
-    int channel = string2int(tree->content[0]->root.content);
-    map<string,MpsLocalType*> branches;
-    branches.clear();
-    map<string,MpsExp*> assertions;
-    assertions.clear();
-    FindLocalBranches(tree->content[3],branches,assertions);
-    MpsLocalSelectType *result = new MpsLocalSelectType(channel,branches,assertions);
-    // Clean up
-    DeleteMap(branches);
-    DeleteMap(assertions);
-
-    return result;
-  } // }}}
-  else if (tree->type_name == "Ltype" && tree->case_name == "case5") //  int >> { Lbranches } {{{
-  {
-    int channel = string2int(tree->content[0]->root.content);
-    map<string,MpsLocalType*> branches;
-    branches.clear();
-    map<string,MpsExp*> assertions;
-    assertions.clear();
-    FindLocalBranches(tree->content[3],branches,assertions);
-    MpsLocalBranchType *result = new MpsLocalBranchType(channel,branches,assertions);
-    // Clean up
-    DeleteMap(branches);
-    DeleteMap(assertions);
-
-    return result;
-  } // }}}
-  else if (tree->type_name == "Ltype" && tree->case_name == "case6") // rec lvar Targs . Ltype {{{
-  {
-    MpsLocalType *succ = MpsLocalType::Create(tree->content[4]);
-    string name = tree->content[1]->root.content;
-    vector<TypeArg> args;
-    args.clear();
-    CreateStateArgs(tree->content[2],args);
-    MpsLocalRecType *result = new MpsLocalRecType(name,*succ,args);
-    delete succ;
-    return result;
-  } // }}}
-  else if (tree->type_name == "Ltype" && tree->case_name == "case7") // lvar Tvals {{{
-  {
-    vector<MpsExp*> args;
-    args.clear();
-    CreateStateValues(tree->content[1],args);
-    MpsLocalVarType *result = new MpsLocalVarType(tree->content[0]->root.content, args);
-    // Clean Up
-    while (args.size()>0)
-    { delete args.back();
-      args.pop_back();
-    }
-    return result;
-  } // }}}
-  else if (tree->type_name == "Ltype" && tree->case_name == "case8") // Lend {{{
-  {
-    MpsLocalEndType *result = new MpsLocalEndType();
-    return result;
-  } // }}}
-  else if (tree->type_name == "Ltype" && tree->case_name == "case9") // { Lbranches } {{{
-  {
-    map<string,MpsLocalType*> branches;
-    branches.clear();
-    map<string,MpsExp*> assertions;
-    assertions.clear();
-    FindLocalBranches(tree->content[1],branches,assertions);
-    MpsLocalSyncType *result = new MpsLocalSyncType(branches,assertions);
-    // Clean up
-    DeleteMap(branches);
-    DeleteMap(assertions);
-
-    return result;
-  } // }}}
-  
-#if APIMS_DEBUG_LEVEL>1
-  cerr << "Unknown local-type constructor: " << tree->type_name << "." << tree->case_name << endl;
-#endif
-  return new MpsLocalEndType();
-} // }}}
-
-/* MpsGlobalType implementation
- *
- */
 
 // Constructors
 MpsGlobalMsgType::MpsGlobalMsgType(int sender, int receiver, const MpsMsgType &msg, const MpsGlobalType &succ) // {{{
@@ -638,7 +144,7 @@ MpsGlobalSyncType *MpsGlobalSyncType::Copy() const // {{{
 // Compare
 bool ERROR_GLOBALEQ(const MpsExp &Theta, const MpsGlobalType &lhs, const MpsGlobalType &rhs, string msg) // {{{
 {
-#if APIMS_DEBUG_LEVEL>20
+#if HAPI_DEBUG_LEVEL>20
   cerr << "!!!!Types are not equal:" << endl
        << "!!!!Theta: " << Theta.ToString() << endl
        << "!!!!!!LHS: " << lhs.ToString("!!!!!!!!!! ") << endl
@@ -1369,7 +875,7 @@ MpsGlobalType *MpsGlobalVarType::GSubst(const string &source, const MpsGlobalTyp
     return Copy();
   if (myValues.size() != args.size())
   { 
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
     cerr << "GSubst ERROR: argument size mismatch" << endl;
 #endif
     return new MpsGlobalVarType("ERROR",vector<MpsExp*>());
@@ -1714,13 +1220,13 @@ MpsGlobalSyncType *MpsGlobalSyncType::RenameAll() const // {{{
 // Make parsable string representation
 string MpsGlobalMsgType::ToString(const string &indent) const// {{{
 {
-  string result = int2string(mySender) + "=>" + int2string(myReceiver) + "<";
+  string result = int2string(mySender) + "->" + int2string(myReceiver) + ":";
   string newIndent = indent;
   for (int i=0; i<result.size(); ++i)
     newIndent += " ";
-  result += myMsgType->ToString(newIndent) + ">";
+  result += myMsgType->ToString(newIndent);
   if (myAssertionType)
-    result += (string)" as " + myId + "[[" + myAssertion->ToString() + "]]";
+    result += (string)" as " + myId + " where " + myAssertion->ToString();
   result += (string)";\n"
          + indent + mySucc->ToString(indent);
   return result;
@@ -1728,7 +1234,7 @@ string MpsGlobalMsgType::ToString(const string &indent) const// {{{
 string MpsGlobalBranchType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "    ";
-  string result = int2string(mySender) + "=>" + int2string(myReceiver) + "\n"
+  string result = int2string(mySender) + "->" + int2string(myReceiver) + "\n"
                 + indent + "{ ";
   for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
   {
@@ -1740,7 +1246,7 @@ string MpsGlobalBranchType::ToString(const string &indent) const // {{{
     // Print assertion if any
     map<string,MpsExp*>::const_iterator assertion = myAssertions.find(it->first);
     if (assertion != myAssertions.end())
-      result += + "[[" + assertion->second->ToString() + "]]";
+      result += + " where " + assertion->second->ToString();
     // Print branch
     result += + ":\n"
             + newIndent + it->second->ToString(newIndent);
@@ -1760,13 +1266,13 @@ string MpsGlobalRecType::ToString(const string &indent) const// {{{
       if (i>0)
         result+=", ";
       // Declare NAME:TYPE=VALUE
-      result += myArgs[i].myName + ":"
-              + myArgs[i].myType->ToString() + "="
+      result += myArgs[i].myType->ToString() + " "
+              + myArgs[i].myName + "="
               + myArgs[i].myValue->ToString();
     }
     result += ">";
   }
-  result +=".\n" + indent + mySucc->ToString(indent);
+  result +=";\n" + indent + mySucc->ToString(indent);
   return result;
 } // }}}
 string MpsGlobalVarType::ToString(const string &indent) const// {{{
@@ -1782,13 +1288,13 @@ string MpsGlobalVarType::ToString(const string &indent) const// {{{
       // Add value
       result += myValues[i]->ToString();
     }
-    result += ">";
+    result += ">;";
   }
   return result;
 } // }}}
 string MpsGlobalEndType::ToString(const string &indent) const// {{{
 {
-  return "Gend";
+  return "$end;";
 } // }}}
 string MpsGlobalSyncType::ToString(const string &indent) const// {{{
 {
@@ -1804,7 +1310,7 @@ string MpsGlobalSyncType::ToString(const string &indent) const// {{{
     // Print assertion if any
     map<string,MpsExp*>::const_iterator assertion = myAssertions.find(it->first);
     if (assertion != myAssertions.end())
-      result += + "[[" + assertion->second->ToString() + "]]";
+      result += + " where " + assertion->second->ToString();
     // Print Branch
     result += ":\n"
             + newIndent + it->second->ToString(newIndent);
@@ -2069,10 +1575,6 @@ int MpsGlobalSyncType::GetMaxPid() const // {{{
   return maxpid;
 } // }}}
 
-/* MpsLocalType implementation
- *
- */
-
 // Constructors
 MpsLocalSendType::MpsLocalSendType(int receiver, const MpsMsgType &msgtype, const MpsLocalType &succ) // {{{
 {
@@ -2256,7 +1758,7 @@ MpsLocalSyncType *MpsLocalSyncType::Copy() const // {{{
 // Helper function, to eliminate exceeding foralls
 bool ERROR_LOCALEQ(const MpsExp &Theta, const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
 {
-#if APIMS_DEBUG_LEVEL>20
+#if HAPI_DEBUG_LEVEL>20
   cerr << "!!!!Types are not equal:" << msg << endl
        << "!!!!Theta: " << Theta.ToString() << endl
        << "!!!!!!LHS: " << lhs.ToString("!!!!!!!!!! ") << endl
@@ -3572,7 +3074,7 @@ MpsLocalType *MpsLocalVarType::LSubst(const string &source, const MpsLocalType &
     return Copy();
   if (args.size()!=myValues.size())
   {
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
     cerr << "LSubst error: argument and value list have different sizes" << endl;
 #endif
     return new MpsLocalVarType("ERROR",vector<MpsExp*>());
@@ -3987,9 +3489,9 @@ MpsLocalSyncType *MpsLocalSyncType::RenameAll() const // {{{
 string MpsLocalSendType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "  ";
-  string result = int2string(myReceiver) + " << <" + myMsgType->ToString(newIndent) + ">";
+  string result = int2string(myReceiver) + " << " + myMsgType->ToString(newIndent) ;
   if (myAssertionType)
-    result += (string)" as " + myId + "[[" + myAssertion->ToString() + "]]";
+    result += (string)" as " + myId + " where " + myAssertion->ToString();
   result += (string)";\n"
           + indent + mySucc->ToString(indent);
   return result;
@@ -3997,16 +3499,16 @@ string MpsLocalSendType::ToString(const string &indent) const // {{{
 string MpsLocalRcvType::ToString(const string &indent) const // {{{
 {
   string newIndent = indent + "  ";
-  string result = int2string(mySender) + " >> <" + myMsgType->ToString(newIndent) + ">";
+  string result = int2string(mySender) + " >> " + myMsgType->ToString(newIndent);
   if (myAssertionType)
-    result += (string)" as " + myId + "[[" + myAssertion->ToString() + "]]";
-  result += (string)"\n"
+    result += (string)" as " + myId + " where " + myAssertion->ToString();
+  result += (string)";\n"
           + indent + mySucc->ToString(indent);
   return result;
 } // }}}
 string MpsLocalForallType::ToString(const string &indent) const // {{{
 {
-  string result = (string)"forall " + myName + " [[" +myAssertion->ToString() + "]];\n"
+  string result = (string)"forall " + myName + " where " + myAssertion->ToString() + ";\n"
             + indent + mySucc->ToString(indent);
   return result;
 } // }}}
@@ -4024,11 +3526,11 @@ string MpsLocalSelectType::ToString(const string &indent) const // {{{
     // Print Assertion
     map<string,MpsExp*>::const_iterator ass = myAssertions.find(it->first);
     if (ass != myAssertions.end())
-      result += (string)"[[" + ass->second->ToString() + "]]";
+      result += (string)" where " + ass->second->ToString();
     else
     {
-#if APIMS_DEBUG_LEVEL>99
-      cerr << "ERROR: Missing assertion for breanch " << it->first << endl;
+#if HAPI_DEBUG_LEVEL>99
+      cerr << "ERROR: Missing assertion for branch " << it->first << endl;
 #endif
     }
     result += (string)":\n" + newIndent + it->second->ToString(newIndent);
@@ -4054,10 +3556,10 @@ string MpsLocalBranchType::ToString(const string &indent) const // {{{
     // Print Assertion
     map<string,MpsExp*>::const_iterator ass = myAssertions.find(it->first);
     if (ass != myAssertions.end())
-      result += (string)"[[" + ass->second->ToString() + "]]";
+      result += (string)" where " + ass->second->ToString();
     else
     {
-#if APIMS_DEBUG_LEVEL>99
+#if HAPI_DEBUG_LEVEL>99
       cerr << "ERROR: Missing assertion for breanch " << it->first << endl;
 #endif
     }
@@ -4079,13 +3581,13 @@ string MpsLocalRecType::ToString(const string &indent) const // {{{
       if (i>0)
         result+=", ";
       // Declare NAME:TYPE=VALUE
-      result += myArgs[i].myName + ":"
-              + myArgs[i].myType->ToString() + "="
+      result += myArgs[i].myType->ToString() + " "
+              + myArgs[i].myName + "="
               + myArgs[i].myValue->ToString();
     }
     result += ">";
   }
-  result +=  ".\n" + indent + mySucc->ToString(indent);
+  result +=  ";\n" + indent + mySucc->ToString(indent);
   return result;
 } // }}}
 string MpsLocalVarType::ToString(const string &indent) const // {{{
@@ -4101,14 +3603,14 @@ string MpsLocalVarType::ToString(const string &indent) const // {{{
       // Add value
       result += myValues[i]->ToString();
     }
-    result += ">";
+    result += ">;";
   }
 
   return result;
 } // }}}
 string MpsLocalEndType::ToString(const string &indent) const // {{{
 {
-  string result="Lend";
+  string result="\%end;";
   return result;
 } // }}}
 string MpsLocalSyncType::ToString(const string &indent) const // {{{
@@ -4125,7 +3627,7 @@ string MpsLocalSyncType::ToString(const string &indent) const // {{{
     // Print assertion if any
     map<string,MpsExp*>::const_iterator assertion = myAssertions.find(it->first);
     if (assertion != myAssertions.end())
-      result += + "[[" + assertion->second->ToString() + "]]";
+      result += + " where " + assertion->second->ToString();
     // Print branch
     result += ":\n"
             + newIndent + it->second->ToString(newIndent);
@@ -4276,7 +3778,7 @@ string MpsLocalSyncType::ToTex(int indent, int sw) const // {{{
 // Merge two types to find greatest common subtype
 MpsLocalType *MERGE_ERROR(const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
 {
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
   cerr << "!!!!MERGE ERROR: " << msg << endl
        << "!!!!!!!!!!!!LHS: " << lhs.ToString("!!!!!!!!!!!!LHS: ") << endl
        << "!!!!!!!!!!!!RHS: " << rhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
@@ -4288,7 +3790,7 @@ MpsLocalType *MERGE_ERROR(const MpsLocalType &lhs, const MpsLocalType &rhs, stri
 } // }}}
 MpsExp *MERGE_ERROR_EXP(const MpsLocalType &lhs, const MpsLocalType &rhs, string msg) // {{{
 {
-#if APIMS_DEBUG_LEVEL>2
+#if HAPI_DEBUG_LEVEL>2
   cerr << "!!!!MERGE ERROR: " << msg << endl
        << "!!!!!!!!!!!!LHS: " << lhs.ToString("!!!!!!!!!!!!LHS: ") << endl
        << "!!!!!!!!!!!!RHS: " << rhs.ToString("!!!!!!!!!!!!RHS: ") << endl;
@@ -4586,7 +4088,7 @@ MpsLocalType *MpsLocalSyncType::Merge(MpsLocalType &rhs) const // {{{
   bool same_mandatory = true;
   for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();same_mandatory && it!=myBranches.end();++it)
   {
-    if (it->first[0] == '^') // Is the branch mandatory
+    if (it->first[1] == '^') // Is the branch mandatory
     {
       map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.find(it->first); // find branch in rhs
       if (it2 == rhsptr->myBranches.end()) // not common branch
@@ -4595,7 +4097,7 @@ MpsLocalType *MpsLocalSyncType::Merge(MpsLocalType &rhs) const // {{{
   }
   for (map<string,MpsLocalType*>::const_iterator it2=rhsptr->myBranches.begin();same_mandatory && it2!=rhsptr->myBranches.end();++it2)
   {
-    if (it2->first[0] == '^') // Is the branch mandatory
+    if (it2->first[1] == '^') // Is the branch mandatory
     {
       map<string,MpsLocalType*>::const_iterator it=myBranches.find(it2->first); // find branch in lhs
       if (it == rhsptr->myBranches.end()) // not common branch
@@ -4767,10 +4269,6 @@ const vector<TypeArg> &MpsLocalRecType::GetArgs() const // {{{
   return myArgs;
 } // }}}
 
-/* MpsMsgType implementation
- *
- */
-
 // Constructors
 MpsMsgNoType::MpsMsgNoType() // {{{
 {
@@ -4790,22 +4288,23 @@ MpsTupleMsgType::MpsTupleMsgType(const vector<MpsMsgType*> &elements) // {{{
   for (vector<MpsMsgType*>::const_iterator it=elements.begin(); it!=elements.end(); ++it)
     myElements.push_back((*it)->Copy());
 } // }}}
-MpsChannelMsgType::MpsChannelMsgType(const MpsGlobalType &type) // {{{
+MpsChannelMsgType::MpsChannelMsgType(const MpsGlobalType &type, const vector<MpsParticipant> &participants) // {{{
+: myParticipants(participants)
 {
   myType = type.Copy();
 } // }}}
-MpsDelegateMsgType::MpsDelegateMsgType(int pid, int maxpid) // {{{
+MpsDelegateMsgType::MpsDelegateMsgType(int pid, const vector<MpsParticipant> &participants) // {{{
+: myParticipants(participants)
+, myPid(pid)
 {
-  myPid = pid;
-  myMaxpid = maxpid;
 } // }}}
-MpsDelegateLocalMsgType::MpsDelegateLocalMsgType(const MpsLocalType &type, int pid, int maxpid) // {{{
-: MpsDelegateMsgType(pid,maxpid)
+MpsDelegateLocalMsgType::MpsDelegateLocalMsgType(const MpsLocalType &type, int pid, const vector<MpsParticipant> &participants) // {{{
+: MpsDelegateMsgType(pid,participants)
 {
   myType=type.Copy();
 } // }}}
-MpsDelegateGlobalMsgType::MpsDelegateGlobalMsgType(const MpsGlobalType &type, int pid, int maxpid) // {{{
-: MpsDelegateMsgType(pid,maxpid)
+MpsDelegateGlobalMsgType::MpsDelegateGlobalMsgType(const MpsGlobalType &type, int pid, const vector<MpsParticipant> &participants) // {{{
+: MpsDelegateMsgType(pid,participants)
 {
   myGlobalType=type.Copy();
   myLocalType=myGlobalType->Project(GetPid());
@@ -4871,15 +4370,15 @@ MpsTupleMsgType *MpsTupleMsgType::Copy() const // {{{
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::Copy() const // {{{
 {
-  return new MpsChannelMsgType(*myType);
+  return new MpsChannelMsgType(*myType,myParticipants);
 } // }}}
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::Copy() const // {{{
 {
-  return new MpsDelegateLocalMsgType(*myType,GetPid(),GetMaxpid());
+  return new MpsDelegateLocalMsgType(*myType,GetPid(),GetParticipants());
 } // }}}
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::Copy() const // {{{
 {
-  return new MpsDelegateGlobalMsgType(*myGlobalType,GetPid(),GetMaxpid());
+  return new MpsDelegateGlobalMsgType(*myGlobalType,GetPid(),GetParticipants());
 } // }}}
 
 // Compare
@@ -4918,6 +4417,11 @@ bool MpsChannelMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const 
   const MpsChannelMsgType *rhsptr = dynamic_cast<const MpsChannelMsgType*>(&rhs);
   if (rhsptr==NULL)
     return false;
+  if (GetMaxPid() != rhsptr->GetMaxPid())
+    return false;
+  for (int i=0; i<GetMaxPid(); ++i)
+    if (GetParticipants()[i] != rhsptr->GetParticipants()[i])
+      return false;
   return myType->Equal(Theta,*rhsptr->myType);
 } // }}}
 bool MpsDelegateMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
@@ -4926,9 +4430,15 @@ bool MpsDelegateMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const
   const MpsDelegateMsgType *rhsptr=dynamic_cast<const MpsDelegateMsgType*>(&rhs);
   if (rhsptr==NULL)
     return false;
-  return GetPid() == rhsptr->GetPid() &&
-         GetMaxpid() == rhsptr->GetMaxpid() &&
-         GetLocalType()->Equal(Theta,*rhsptr->GetLocalType());
+  if (GetPid() != rhsptr->GetPid())
+    return false;
+  if (GetMaxpid() != rhsptr->GetMaxpid())
+    return false;
+  for (int i=0; i<GetMaxpid(); ++i)
+    if (GetParticipants()[i] != rhsptr->GetParticipants()[i])
+      return false;
+    
+  return GetLocalType()->Equal(Theta,*rhsptr->GetLocalType());
 } // }}}
 
 // Free Global Type Variables
@@ -5079,21 +4589,21 @@ MpsTupleMsgType *MpsTupleMsgType::GRename(const string &source, const string &de
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::GRename(const string &source, const string &dest) const // {{{
 { MpsGlobalType *newType = myType->GRename(source,dest);
-  MpsChannelMsgType *result = new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myParticipants);
   delete newType;
   return result;
 } // }}}
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::GRename(const string &source, const string &dest) const // {{{
 {
   MpsLocalType *newType = myType->GRename(source,dest);
-  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::GRename(const string &source, const string &dest) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->GRename(source,dest);
-  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
@@ -5126,21 +4636,21 @@ MpsTupleMsgType *MpsTupleMsgType::LRename(const string &source, const string &de
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::LRename(const string &source, const string &dest) const // {{{
 { MpsGlobalType *newType = myType->LRename(source,dest);
-  MpsChannelMsgType *result = new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myParticipants);
   delete newType;
   return result;
 } // }}}
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::LRename(const string &source, const string &dest) const // {{{
 {
   MpsLocalType *newType = myType->LRename(source,dest);
-  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::LRename(const string &source, const string &dest) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->LRename(source,dest);
-  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
@@ -5173,21 +4683,21 @@ MpsTupleMsgType *MpsTupleMsgType::ERename(const string &source, const string &de
 } // }}}
 MpsChannelMsgType *MpsChannelMsgType::ERename(const string &source, const string &dest) const // {{{
 { MpsGlobalType *newType = myType->ERename(source,dest);
-  MpsChannelMsgType *result = new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myParticipants);
   delete newType;
   return result;
 } // }}}
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::ERename(const string &source, const string &dest) const // {{{
 {
   MpsLocalType *newType = myType->ERename(source,dest);
-  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::ERename(const string &source, const string &dest) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->ERename(source,dest);
-  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
   delete newType;
   return result;
 } // }}}
@@ -5225,7 +4735,7 @@ MpsTupleMsgType *MpsTupleMsgType::GSubst(const string &source, const MpsGlobalTy
 MpsChannelMsgType *MpsChannelMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType=myType->GSubst(source,dest,args);
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myParticipants);
 
   // Clean Up
   delete newType;
@@ -5235,7 +4745,7 @@ MpsChannelMsgType *MpsChannelMsgType::GSubst(const string &source, const MpsGlob
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsLocalType *newType = myType->GSubst(source,dest,args);
-  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5245,7 +4755,7 @@ MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::GSubst(const string &source, c
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->GSubst(source,dest,args);
-  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5286,7 +4796,7 @@ MpsTupleMsgType *MpsTupleMsgType::LSubst(const string &source, const MpsLocalTyp
 MpsChannelMsgType *MpsChannelMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType=myType->LSubst(source,dest,args);
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myParticipants);
 
   // Clean Up
   delete newType;
@@ -5296,7 +4806,7 @@ MpsChannelMsgType *MpsChannelMsgType::LSubst(const string &source, const MpsLoca
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsLocalType *newType = myType->LSubst(source,dest,args);
-  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5306,7 +4816,7 @@ MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::LSubst(const string &source, c
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->LSubst(source,dest,args);
-  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5347,7 +4857,7 @@ MpsTupleMsgType *MpsTupleMsgType::ESubst(const string &source, const MpsExp &des
 MpsChannelMsgType *MpsChannelMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   MpsGlobalType *newType=myType->ESubst(source,dest);
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myParticipants);
 
   // Clean Up
   delete newType;
@@ -5357,7 +4867,7 @@ MpsChannelMsgType *MpsChannelMsgType::ESubst(const string &source, const MpsExp 
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   MpsLocalType *newType = myType->ESubst(source,dest);
-  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5367,7 +4877,7 @@ MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::ESubst(const string &source, c
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->ESubst(source,dest);
-  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5408,7 +4918,7 @@ MpsTupleMsgType *MpsTupleMsgType::RenameAll() const // {{{
 MpsChannelMsgType *MpsChannelMsgType::RenameAll() const // {{{
 {
   MpsGlobalType *newType=myType->RenameAll();
-  MpsChannelMsgType *result=new MpsChannelMsgType(*newType);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myParticipants);
 
   // Clean Up
   delete newType;
@@ -5418,7 +4928,7 @@ MpsChannelMsgType *MpsChannelMsgType::RenameAll() const // {{{
 MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::RenameAll() const // {{{
 {
   MpsLocalType *newType = myType->RenameAll();
-  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5428,7 +4938,7 @@ MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::RenameAll() const // {{{
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::RenameAll() const // {{{
 {
   MpsGlobalType *newType = myGlobalType->RenameAll();
-  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetMaxpid());
+  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
   delete newType;
@@ -5467,22 +4977,49 @@ string MpsTupleMsgType::ToString(const string &indent) const // {{{
       result += ",\n" + newIndent;
     result += (*it)->ToString(newIndent);
   }
-  result += " )";
+  result += ")";
   return result;
 } // }}}
 string MpsChannelMsgType::ToString(const string &indent) const // {{{
 {
-  string result=(string)"<" + myType->ToString(indent) + ">";
+  string result=myType->ToString(indent) + "(";
+  for (int p=0; p<GetParticipants().size(); ++p)
+  {
+    if (p!=0) // use separator
+      result += ", ";
+    result += int2string(GetParticipants()[p].GetId());
+    if (GetParticipants()[p].IsPure())
+      result += " pure";
+  }
+  result += ")";
   return result;
 } // }}}
 string MpsDelegateLocalMsgType::ToString(const string &indent) const // {{{
 {
-  string result=myType->ToString(indent) + "@(" + int2string(GetPid()) + " of " + int2string(GetMaxpid()) + ")";
+  string result=myType->ToString(indent) + "(" + int2string(GetPid()) + " of ";
+  for (int p=0; p<GetParticipants().size(); ++p)
+  {
+    if (p!=0) // use separator
+      result += ", ";
+    result += int2string(GetParticipants()[p].GetId());
+    if (GetParticipants()[p].IsPure())
+      result += " pure";
+  }
+  result += ")";
   return result;
 } // }}}
 string MpsDelegateGlobalMsgType::ToString(const string &indent) const // {{{
 {
-  string result=myLocalType->ToString(indent) + "@(" + int2string(GetPid()) + " of " + int2string(GetMaxpid()) + ")";
+  string result=myLocalType->ToString(indent) + "(" + int2string(GetPid()) + " of ";
+  for (int p=0; p<GetParticipants().size(); ++p)
+  {
+    if (p!=0) // use separator
+      result += ", ";
+    result += int2string(GetParticipants()[p].GetId());
+    if (GetParticipants()[p].IsPure())
+      result += " pure";
+  }
+  result += ")";
   return result;
 } // }}}
 
@@ -5576,7 +5113,7 @@ const MpsMsgType *MpsTupleMsgType::GetElement(int index) const // {{{
 {
   if (index<0 || index >=GetSize())
   {
-#if APIMS_DEBUG_LEVEL>1
+#if HAPI_DEBUG_LEVEL>1
     cerr << "ERROR: Tuple Exp Type index out of bounds!" << endl;
 #endif
     return new MpsMsgNoType(); 
@@ -5627,7 +5164,7 @@ TypeArg::~TypeArg() // {{{
 } // }}}
 string TypeArg::ToString(const string &indent) const // {{{
 {
-  string result = myName + ": " + myType->ToString(indent + "    ") + " = " + myValue->ToString();
+  string result = myType->ToString(indent) + myName + "=" + myValue->ToString();
   return result;
 } // }}}
 

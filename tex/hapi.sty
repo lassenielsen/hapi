@@ -1,0 +1,13 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Style file for hapi code inclusion  %%
+%% Requires the -escape-shell parameter %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ProvidesPackage{hapi}
+
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{stmaryrd}
+
+\newcommand{\hapi}[1]{\tt\input{|"hapi -texonly '#1'"}}
+\newcommand{\hapiinput}[1]{\tt\input{|"hapi -texonly -f '#1'"}}
+\newcommand{\hapiinputsw}[2]{\tt\input{|"hapi -texonly -spacewidth #2 -f '#1'"}}

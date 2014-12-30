@@ -1,6 +1,7 @@
-#include <apims/mpsgui_http.hpp>
-#include <dpl/parser.hpp>
-#include "common.cpp"
+#include <hapi/mpsgui_http.hpp>
+#include <dpl/slrparser.hpp>
+#include <hapi/mpsparser.hpp>
+#include <hapi/common.hpp>
 #include "SDL_net.h"
 #include "SDL_thread.h"
 #include <pthread.h>
@@ -13,7 +14,7 @@
 
 using namespace std;
 using namespace dpl;
-using namespace apims;
+using namespace hapi;
 
 namespace mpsgui
 {
@@ -154,7 +155,7 @@ string url_decode(string msg) // {{{
   }
   return result;
 } // }}}
-string extract_possibleid(parsed_tree *pid) // {{{
+string extract_possibleid(parsetree *pid) // {{{
 { if (pid->type_name=="PID" && pid->case_name=="case1") // id
     return pid->content[0]->root.content;
   else if (pid->type_name=="PID" && pid->case_name=="case2") // empty
@@ -164,7 +165,7 @@ string extract_possibleid(parsed_tree *pid) // {{{
     return "";
   }
 } // }}}
-void GetData(parsed_tree *request, map<string,string> &dest) // {{{
+void GetData(parsetree *request, map<string,string> &dest) // {{{
 {
   if (request->type_name == "req" && request->case_name=="case1") // GET path
     ;
@@ -190,14 +191,14 @@ void GetData(parsed_tree *request, map<string,string> &dest) // {{{
   }
   return;
 } // }}}
-map<string,string> GetData(parsed_tree *request) // {{{
+map<string,string> GetData(parsetree *request) // {{{
 {
   map<string,string> result;
   result.clear();
   GetData(request,result);
   return result;
 } // }}}
-void GetPath(parsed_tree *request, vector<string> &dest) // {{{
+void GetPath(parsetree *request, vector<string> &dest) // {{{
 {
   if (request->type_name == "req") // GET path
     return GetPath(request->content[1],dest);
@@ -215,7 +216,7 @@ void GetPath(parsed_tree *request, vector<string> &dest) // {{{
   }
   return;
 } // }}}
-vector<string> GetPath(parsed_tree *request) // {{{
+vector<string> GetPath(parsetree *request) // {{{
 {
   vector<string> result;
   result.clear();
@@ -279,7 +280,7 @@ void net_send(const string &msg, TCPsocket &dest) // {{{
   message.clear();
   message << "HTTP/1.1 200 OK\r\n"
 //          << "Date: Thu, 09 Sep 2010 14:00:00 GMT\r\n"
-          << "Server: APIMS/2.0\r\n"
+          << "Server: HAPI/2.0\r\n"
 //          << "Last-Modified: Thu, 09 Sep 2010 14:00:00 GMT\r\n"
 //          << "Accept-Ranges: bytes\r\n"
 //          << "Cache-Control: max-age=300, must-revalidate\r\n"
@@ -318,9 +319,8 @@ void net_sendfile(const string &filename, TCPsocket &dest) // {{{
 int server(void *arg) // HTTP Server thread {{{
 {
   // Initialise Parser {{{
-  Parser parser;
-  parser.DefToken("","[ \t\r][ \t\r]*",9); // Ignore whitespace, except linebreak
-  parser.DefToken("","[a-zA-Z0-9-][a-zA-Z0-9-]*: [^\n]*\n",9); // Ignore Browser-options
+  SlrParser parser("req");
+  parser.DefToken("","[ \t\r][ \t\r]*+[a-zA-Z0-9-][a-zA-Z0-9-]*: [^\n]*\n+HTTP/[1].[1]+.ico HTTP/[1].[1]",9); // Ignore whitespace, except linebreak and browser options
   parser.DefToken("AMP","&",9); // Value Seperator
   parser.DefToken("BR","\n",9); // Linebreak
   parser.DefKeywordToken("POST",1);
@@ -328,8 +328,6 @@ int server(void *arg) // HTTP Server thread {{{
   parser.DefKeywordToken("/",1);
   parser.DefKeywordToken("=",1);
   parser.DefToken("id","[^ \t\r\n/:=&][^ \t\r\n/:=&]*",10);
-  parser.DefToken("","HTTP/[1].[1]",9);
-  parser.DefToken("",".ico HTTP/[1].[1]",9);
   parser.DefType("req ::= GET path | POST path datas");
   parser.DefType("path ::= / id path | brs | / brs ");
   parser.DefType("PID ::= id | "); // Possible id
@@ -365,7 +363,7 @@ int server(void *arg) // HTTP Server thread {{{
         // Parse Request and get path and post data
         string request = buffer;
         //cout << "HTTP REQUEST:" << endl << request << endl;
-        parsed_tree *request_tree=parser.Parse(request + "\n");
+        parsetree *request_tree=parser.Parse(request + "\n");
         vector<string> path = GetPath(request_tree);
         map<string,string> data = GetData(request_tree);
         if (path.size()==1 && path[0]=="abc") // ABC MAIN MENU {{{
@@ -384,7 +382,7 @@ int server(void *arg) // HTTP Server thread {{{
         } // }}}
         else if (path.size()==2 && path[0] == "data" && path[1]=="logo.jpg") // {{{
         {
-          net_sendfile("/opt/apims/gfx/logo.jpg",csd);
+          net_sendfile("/opt/hapi/gfx/logo.jpg",csd);
         } // }}}
         else if (path.size()==1 && path[0] == "exit") // {{{
         {
@@ -757,7 +755,7 @@ void MpsGuiParticipant::SetChoices(const vector<Choice> &choices) // {{{
       if (val != myValues.end())
       {
         delete myChoices[choice].args[arg].value;
-        myChoices[choice].args[arg].value = apims::MpsExp::Create(val->second);
+        myChoices[choice].args[arg].value = hapi::MpsParser::Exp(val->second);
       }
     }
 } // }}}
@@ -785,12 +783,12 @@ bool MpsGuiParticipant::SetChoiceValue(const string &choice, const string &arg, 
     if (it->name == choice)
       for (vector<ChoiceArg>::iterator it2=it->args.begin(); cont && it2!=it->args.end(); ++it2)
         if (it2->name == arg)
-        { apims::MpsExp *exp=NULL;
+        { hapi::MpsExp *exp=NULL;
           if (typeid(*it2->type)==typeid(MpsStringMsgType)) // Create string value
             exp=new MpsStringVal(stuff_string(value));
           else
-            exp=apims::MpsExp::Create(value);
-          apims::MpsMsgEnv Gamma;
+            exp=hapi::MpsParser::Exp(value);
+          hapi::MpsMsgEnv Gamma;
           Gamma.clear();
           MpsMsgType *inputtype=exp->TypeCheck(Gamma);
           bool inputtypematch=inputtype->Equal(MpsBoolVal(true),*it2->type);

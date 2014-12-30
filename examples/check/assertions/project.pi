@@ -1,0 +1,11 @@
+#define $cpg \
+  1->2:Bool as x; \
+  1->3:Bool as y where (x or not y) and (not x or y); \
+  2->3:Bool as z where (x and y) or z; \
+  $end;
+$cpg a(1,2,3);
+s=new a(2 of 3);
+s[1]>>x1;
+if x1
+then s[3]<<false;
+else s[3]<<true;
