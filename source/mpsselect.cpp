@@ -17,11 +17,16 @@ MpsSelect::~MpsSelect() // {{{
 {
   delete mySucc;
 } // }}}
-bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Sel {{{
+bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Sel {{{
 {
   // Check purity constraints
-  if (pureStack.size()>0)
-    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+  if (checkPure)
+	{ if (pureStack.size()>0)
+      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+  }
 
   // Verify select
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
@@ -37,10 +42,10 @@ bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, *this, session->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   // Check session has select type
   const MpsLocalSelectType *selType = dynamic_cast<const MpsLocalSelectType*>(msgType->GetLocalType());
   if (selType==NULL)
@@ -69,7 +74,7 @@ bool MpsSelect::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   myFinal=branch->second->IsDone();
   
   // Check rest of program
-  bool result = mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure);
+  bool result = mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
 
   // Clean up
   delete newGamma[myChannel.GetName()];

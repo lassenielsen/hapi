@@ -11,7 +11,7 @@
 # - Lasse Nielsen.                                                    #
 #=====================================================================#
 name = hapi
-version = 3.0.0
+version = 2015
 libname = lib$(name).so
 #OS_LINUXlibname = lib$(name).so
 #OS_MAClibname = lib$(name).dylib

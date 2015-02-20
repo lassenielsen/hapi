@@ -22,26 +22,35 @@ MpsPar::~MpsPar() // {{{
   delete myLeft;
   delete myRight;
 } // }}}
-bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Par {{{
+bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Par {{{
 {
   // Check purity constraionts
-  if (pureStack.size()>0)
-  { MpsDef *pureDef=dynamic_cast<MpsDef*>(myLeft);
-    if (pureDef==NULL)
-      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
-    if (pureDef->GetArgs().size()>0 || pureDef->GetStateArgs().size()>0)
-      return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must have no arguments and state",*this,Theta,Gamma,Omega);
-    MpsCall *succCall=dynamic_cast<MpsCall*>(pureDef->GetSucc());
-    if (succCall==NULL || succCall->GetName()!=pureDef->GetName() || succCall->GetArgs().size()>0 || succCall->GetState().size()>0)
-      return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must be immediately followed by a direct invocation of implementation process (def X() = ... in X())",*this,Theta,Gamma,Omega);
-    MpsLink *bodyLink=dynamic_cast<MpsLink*>(pureDef->GetBody());
-    if (bodyLink==NULL)
-      return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega);
-    set<pair<string,int> > newPureStack=pureStack;
-    set<pair<string,int> >::iterator impl=newPureStack.find(pair<string,int>(bodyLink->GetChannel(),bodyLink->GetPid()));
-    if (impl==newPureStack.end())
-      return PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
-    newPureStack.erase(impl);
+  PureState nextState=pureState;
+  if (checkPure)
+  { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+    if (pureStack.size()>0)
+    { MpsDef *pureDef=dynamic_cast<MpsDef*>(myLeft);
+      if (pureDef==NULL)
+        return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+    // Move to Def
+    //if (pureDef->GetArgs().size()>0 || pureDef->GetStateArgs().size()>0)
+    //  return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must have no arguments and state",*this,Theta,Gamma,Omega);
+    //MpsCall *succCall=dynamic_cast<MpsCall*>(pureDef->GetSucc());
+    //if (succCall==NULL || succCall->GetName()!=pureDef->GetName() || succCall->GetArgs().size()>0 || succCall->GetState().size()>0)
+    //  return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must be immediately followed by a direct invocation of implementation process (def X() = ... in X())",*this,Theta,Gamma,Omega);
+      // Extract implemented participant
+      MpsLink *bodyLink=dynamic_cast<MpsLink*>(pureDef->GetBody());
+      if (bodyLink==NULL)
+        return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega);
+      set<pair<string,int> > newPureStack=pureStack;
+        set<pair<string,int> >::iterator impl=newPureStack.find(pair<string,int>(bodyLink->GetChannel(),bodyLink->GetPid()));
+        if (impl==newPureStack.end())
+          return PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
+        newPureStack.erase(impl);
+      }
+      else
+        pureState=CPS_SERVICE_DEF
     MpsPar *bodyPar=dynamic_cast<MpsPar*>(bodyLink->GetSucc());
     if (bodyPar==NULL)
       return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking and forking (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);

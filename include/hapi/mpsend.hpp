@@ -18,7 +18,9 @@ class MpsEnd : public MpsTerm // {{{
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
                    const std::set<std::pair<std::string, int> > &pureStack,
-                   const std::string &curPure);
+                   const std::string &curPure,
+                   PureState pureState,
+		               bool checkPure=true);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ReIndex(const std::string &session,
                      int pid, int maxpid) const;

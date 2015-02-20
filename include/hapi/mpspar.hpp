@@ -17,7 +17,9 @@ class MpsPar : public MpsTerm // {{{
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
                    const std::set<std::pair<std::string,int> > &pureStack,
-                   const std::string &curPure);
+                   const std::string &curPure,
+									 PureState pureState,
+									 bool checkPure=true);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyRcv(const std::string &path, const MpsExp *val) const;
     MpsTerm *ApplySnd(const std::string &path, MpsExp **val, MpsChannel &ch) const;

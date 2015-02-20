@@ -131,6 +131,52 @@ class MpsTerm // {{{
      */
     // }}}
     bool TypeCheck();
+    // DOCUMENTATION: MpsTerm::PureState {{{
+    /*!
+		 * PureState is amended to TypeCheck, to ensure that pure participants have
+		 * syntactically ensured pure implementations.
+     *
+		 * CheckPure ensures the following
+		 * - Implementations of pure participants are of the form
+		 *   local X()
+	   *   ( global s=new ch(p of n);
+		 *     X();
+		 *     |
+		 *     P
+		 *   )
+		 *   local StartX(Int i)
+		 *   ( if i<=0
+		 *     then X();
+		 *     else X(); | StartX(i-1);
+		 *   )
+		 *   StartX( E ); |
+     *
+		 * Standard typechecking ensures that
+		 * - All pure participants have an immediate implementation
+		 * - Only one implementation of pure participants exists (pure
+		 *   participants are not used in linking outside the pure implementation
+		 *   provided immediately.
+		 * - The implementation bodies ( P ) of pure participants does not break purity ie
+		 *   
+     *
+     * @param Pure List of unimplemented pure participants
+     * @param Gamma The type environment
+     * @result Returns true if the syntactic restrictions to the implementation
+     * of pure participants are fulfilled.
+     */
+    // }}}
+    enum PureState {CPS_IMPURE=0,
+		                CPS_SERVICE_DEF,
+                    CPS_SERVICE_LINK,
+                    CPS_SERVICE_FORK,
+                    CPS_SERVICE_LOOP,
+                    CPS_PURE, // Also known as CPS_SERVICE_BODY,
+                    CPS_INIT_DEF,
+                    CPS_INIT_BRANCH,
+                    CPS_INIT_CONT,
+                    CPS_INIT_TERM,
+                    CPS_INIT_CALL
+                   };
     // DOCUMENTATION: MpsTerm::TypeCheck {{{
     /*!
      * Static verification of communication safety using explicit types
@@ -149,7 +195,9 @@ class MpsTerm // {{{
                            const MpsMsgEnv &Gamma,
                            const MpsProcEnv &Omega,
                            const std::set<std::pair<std::string,int> > &pureStack,
-                           const std::string &curPure) = 0;
+                           const std::string &curPure,
+                           PureState pureState,
+													 bool checkPure=true) = 0;
 
     /************************************************
      ***************** Interpreter ******************
@@ -387,7 +435,7 @@ inline bool PrintTypeError(const std::string &message, const hapi::MpsTerm &term
 #endif
   return false;
 } // }}}
-inline bool TypeCheckRec(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, hapi::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
+inline bool TypeCheckRec(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
 {
   hapi::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
@@ -419,14 +467,14 @@ inline bool TypeCheckRec(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma
   newGamma[session] = newMsgType;
   bool result = false;
   if (dynamic_cast<hapi::MpsLocalRecType*>(newType)==NULL)
-    result = term.TypeCheck(Theta,newGamma,Omega,pureStack,curPure);
+    result = term.TypeCheck(Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   else
     result = PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega);
   delete newType;
   delete newMsgType;
   return result;
 } // }}}
-inline bool TypeCheckForall(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, hapi::MpsTerm &term, const std::string &session) // Using new rule forall {{{
+inline bool TypeCheckForall(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule forall {{{
 {
   hapi::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
@@ -448,7 +496,7 @@ inline bool TypeCheckForall(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Ga
   // Create new Gamma
   hapi::MpsMsgEnv newGamma = Gamma;
   newGamma[session] = newMsgType;
-  bool result = term.TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure);
+  bool result = term.TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Clean Up
   delete newTheta;
   return result;

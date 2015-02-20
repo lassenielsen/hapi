@@ -13,7 +13,7 @@
  := "[ \n\r\t][ \n\r\t]*+//[^\n]*"
 
 # KEYWORD tokens
-& :=_10 "&"
+& := "&"
 ( := "\("
 ) := "\)"
 * := "\*"
@@ -81,7 +81,7 @@ system := "SYSTEM"
 global := "public+global"
 local := "private+local"
 
-# Processes
+# Processes (Main / Root production)
 Pi ::= ::pi_par   PiActs par Pi
      | ::pi_acts  PiActs
      | ::pi_eacts PiEActs

@@ -40,7 +40,7 @@ bool MpsTerm::TypeCheck() // {{{
   MpsBoolVal Theta(true);
   MpsMsgEnv Gamma;
   MpsProcEnv Omega;
-  return TypeCheck(Theta,Gamma,Omega,set<pair<string,int> >(),"");
+  return TypeCheck(Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
 } // }}}
 
 /* Create list of possible steps

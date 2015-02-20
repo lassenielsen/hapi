@@ -16,11 +16,16 @@ MpsNu::~MpsNu() // {{{
   delete mySucc;
   delete myType;
 } // }}}
-bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Nres {{{
+bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
 {
   // Check purity constraints
-  if (pureStack.size()>0)
+  if (checkPure)
+	{ if (pureStack.size()>0)
     return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+  }
 
   // Verify new channel
   // Check that only completed sessions are hidden
@@ -42,7 +47,7 @@ bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProc
   for (vector<MpsParticipant>::const_iterator p=myParticipants.begin(); p!=myParticipants.end(); ++p)
     if (p->IsPure())
       newPureStack.insert(pair<string,int>(myChannel,p->GetId()));
-  int result=mySucc->TypeCheck(Theta,newGamma,Omega,newPureStack,curPure);
+  int result=mySucc->TypeCheck(Theta,newGamma,Omega,newPureStack,curPure,pureState,checkPure);
   delete newGamma[myChannel];
   return result;
 } // }}}
