@@ -10,7 +10,7 @@ namespace hapi {
 class MpsDef : public MpsTerm // {{{
 {
   public:
-    MpsDef(const std::string &name, const std::vector<std::string> &args, const std::vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const std::vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, const MpsMsgEnv &env);
+    MpsDef(const std::string &name, const std::vector<std::string> &args, const std::vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const std::vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, const MpsMsgEnv &env, bool pure);
     virtual ~MpsDef();
 
     bool TypeCheck(const MpsExp &Theta,
@@ -60,6 +60,7 @@ class MpsDef : public MpsTerm // {{{
     const MpsTerm *GetSucc() const { return mySucc; }
     MpsTerm *GetSucc() { return mySucc; }
     MpsMsgEnv &GetEnv() { return myEnv; }
+    bool IsPure() { return myPure; }
 
   private:
     static std::vector<std::pair<int,int> > GetArgPids(const std::vector<MpsMsgType*> &argTypes);
@@ -71,6 +72,7 @@ class MpsDef : public MpsTerm // {{{
     MpsMsgEnv myEnv;
     MpsTerm *myBody;
     MpsTerm *mySucc;
+    bool myPure;
 }; // }}}
 }
 #endif

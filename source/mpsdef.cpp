@@ -6,10 +6,11 @@
 using namespace std;
 using namespace hapi;
 
-MpsDef::MpsDef(const string &name, const std::vector<std::string> &args, const vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, const MpsMsgEnv &env) // {{{
+MpsDef::MpsDef(const string &name, const std::vector<std::string> &args, const vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, const MpsMsgEnv &env, bool pure) // {{{
 : myName(name),
   myArgs(args),
-  myStateArgs(stateargs)
+  myStateArgs(stateargs),
+  myPure(pure)
 {
   myTypes.clear();
   for (vector<MpsMsgType*>::const_iterator type=types.begin(); type!=types.end(); ++type)
@@ -113,7 +114,7 @@ MpsTerm *MpsDef::PRename(const string &src, const string &dst) const // {{{
   
   MpsTerm *newBody = myBody->PRename(src,dst);
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc, myEnv);
+  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc, myEnv, myPure);
   delete newBody;
   delete newSucc;
 
@@ -177,7 +178,7 @@ MpsTerm *MpsDef::ERename(const string &src, const string &dst) const // {{{
   }
 
   // Create result
-  MpsTerm *result = new MpsDef(myName,newArgs,myTypes,newStateArgs,myStateTypes,*newBody,*newSucc,newEnv);
+  MpsTerm *result = new MpsDef(myName,newArgs,myTypes,newStateArgs,myStateTypes,*newBody,*newSucc,newEnv, myPure);
 
   DeleteMap(newEnv);
   delete newBody;
@@ -209,7 +210,7 @@ MpsTerm *MpsDef::ReIndex(const string &session, int pid, int maxpid) const // {{
     newBody=tmpBody;
   }
 
-  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv);
+  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv, myPure);
   delete newBody;
   delete newSucc;
   return result;
@@ -279,7 +280,7 @@ MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<stri
     newBody = tmpBody;
   }
   // Make result
-  MpsTerm *result = new MpsDef(newName, newArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc, myEnv);
+  MpsTerm *result = new MpsDef(newName, newArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc, myEnv, myPure);
   delete newBody;
   delete newSucc;
   return result;
@@ -311,7 +312,7 @@ MpsTerm *MpsDef::ESubst(const string &source, const MpsExp &dest) const // {{{
     if (*it == source)
       found=true;
   if (found) // Do not substitute in body
-    result = new MpsDef(newName, myArgs, newTypes, myStateArgs, newStateTypes, *newBody, *newSucc, newEnv);
+    result = new MpsDef(newName, myArgs, newTypes, myStateArgs, newStateTypes, *newBody, *newSucc, newEnv, myPure);
   else
   {
     vector<string> newStateArgs; // Find new state arguments, and rename if necessary
@@ -346,7 +347,7 @@ MpsTerm *MpsDef::ESubst(const string &source, const MpsExp &dest) const // {{{
     MpsTerm *tmpBody = newBody->ESubst(source,dest); // Make substitution in body
     delete newBody;
     newBody=tmpBody;
-    result = new MpsDef(newName, newArgs, newTypes, newStateArgs, newStateTypes, *newBody, *newSucc, newEnv);
+    result = new MpsDef(newName, newArgs, newTypes, newStateArgs, newStateTypes, *newBody, *newSucc, newEnv, myPure);
   }
   delete newBody;
   delete newSucc;
@@ -372,7 +373,7 @@ MpsTerm *MpsDef::GSubst(const string &source, const MpsGlobalType &dest, const v
   for (MpsMsgEnv::const_iterator it=myEnv.begin(); it!=myEnv.end(); ++it)
     newEnv[it->first]=it->second->GSubst(source,dest,args);
   
-  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*newBody,*newSucc,newEnv);
+  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*newBody,*newSucc,newEnv, myPure);
 
   // Clean Up
   DeleteVector(newStateTypes);
@@ -400,7 +401,7 @@ MpsTerm *MpsDef::LSubst(const string &source, const MpsLocalType &dest, const ve
   for (MpsMsgEnv::const_iterator it=myEnv.begin(); it!=myEnv.end(); ++it)
     newEnv[it->first]=it->second->LSubst(source,dest,args);
   
-  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*myBody,*mySucc,newEnv);
+  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*myBody,*mySucc,newEnv, myPure);
 
   // Clean Up
   DeleteVector(newStateTypes);
@@ -430,7 +431,7 @@ set<string> MpsDef::FEV() const // {{{
 } // }}}
 MpsTerm *MpsDef::Copy() const // {{{
 {
-  return new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *mySucc, myEnv);
+  return new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *mySucc, myEnv, myPure);
 } // }}}
 bool MpsDef::Terminated() const // {{{
 {
@@ -445,7 +446,7 @@ MpsTerm *MpsDef::Simplify() const // {{{
   if (newSucc->ToString() == "end")
     result = new MpsEnd();
   else
-    result = new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc, myEnv);
+    result = new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc, myEnv, myPure);
   delete newSucc;
   delete newBody;
   return result;
@@ -569,7 +570,8 @@ MpsTerm *MpsDef::RenameAll() const // {{{
                              newStateTypes,
                              *newBody,
                              *newSucc,
-                             myEnv);
+                             myEnv,
+                             myPure);
 
   // Cleanup
   delete newSucc;
@@ -582,7 +584,7 @@ MpsTerm *MpsDef::RenameAll() const // {{{
 bool MpsDef::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 { MpsTerm *seqSucc = mySucc->Parallelize();
   MpsTerm *seqBody = myBody->Parallelize();
-  seqTerm=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *seqBody, *seqSucc, myEnv);
+  seqTerm=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *seqBody, *seqSucc, myEnv, myPure);
   delete seqSucc;
   delete seqBody;
   parTerm=receives.Append(*seqTerm);
@@ -590,7 +592,7 @@ bool MpsDef::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &p
 } // }}}
 MpsTerm *MpsDef::Append(const MpsTerm &term) const // {{{
 { MpsTerm *newSucc=mySucc->Append(term);
-  MpsTerm *result=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *newSucc, myEnv);
+  MpsTerm *result=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *newSucc, myEnv, myPure);
   delete newSucc;
   return result;
 } // }}}
@@ -636,7 +638,7 @@ MpsTerm *MpsDef::CloseDefinitions() const // {{{
   MpsTerm *newBody = tmpBody->CloseDefinitions();
   delete tmpBody;
   // Create result
-  MpsTerm *result=new MpsDef(myName,newArgs,newTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv);
+  MpsTerm *result=new MpsDef(myName,newArgs,newTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv, myPure);
 
   delete newBody;
   delete newSucc;

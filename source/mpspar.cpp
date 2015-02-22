@@ -23,14 +23,18 @@ MpsPar::~MpsPar() // {{{
   delete myRight;
 } // }}}
 bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Par {{{
-{
+{ 
   // Check purity constraionts
-  PureState nextState=pureState;
+  PureState leftState=pureState;
+  PureState rightState=pureState;
+  set<pair<string,int> > rightPureStack=pureStack;
   if (checkPure)
-  { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+  { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_FORK)
       return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
     if (pureStack.size()>0)
-    { MpsDef *pureDef=dynamic_cast<MpsDef*>(myLeft);
+    { leftState=CPS_SERVICE_DEF;
+      // Check what participant is implemented
+      MpsDef *pureDef=dynamic_cast<MpsDef*>(myLeft);
       if (pureDef==NULL)
         return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
     // Move to Def
@@ -43,92 +47,96 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
       MpsLink *bodyLink=dynamic_cast<MpsLink*>(pureDef->GetBody());
       if (bodyLink==NULL)
         return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega);
-      set<pair<string,int> > newPureStack=pureStack;
-        set<pair<string,int> >::iterator impl=newPureStack.find(pair<string,int>(bodyLink->GetChannel(),bodyLink->GetPid()));
-        if (impl==newPureStack.end())
-          return PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
-        newPureStack.erase(impl);
-      }
-      else
-        pureState=CPS_SERVICE_DEF
-    MpsPar *bodyPar=dynamic_cast<MpsPar*>(bodyLink->GetSucc());
-    if (bodyPar==NULL)
-      return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking and forking (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);
-    const MpsCall *bodyCall=dynamic_cast<const MpsCall*>(bodyPar->myLeft);
-    if (bodyCall==NULL || bodyCall->GetName()!=pureDef->GetName())
-      return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking and forking and invocation of implementation process (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);
+      set<pair<string,int> >::iterator impl=rightPureStack.find(pair<string,int>(bodyLink->GetChannel(),bodyLink->GetPid()));
+      if (impl==rightPureStack.end())
+        return PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
+      rightPureStack.erase(impl);
 
-    // Structure alright, now invoke typechecking of body and succ
-    MpsMsgEnv pureGamma;
-    for (MpsMsgEnv::const_iterator var = Gamma.begin(); var!=Gamma.end(); ++var)
-      if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Not session type
-        pureGamma[var->first]=var->second;
-      else if (!dynamic_cast<const MpsDelegateMsgType*>(var->second)->GetLocalType()->IsDone())
-        myLeftFinal.push_back(var->first);
 
-    // Store env (for pureDef) for later (compilation)
-    DeleteMap(pureDef->GetEnv());
-    for (MpsMsgEnv::const_iterator it=pureGamma.begin(); it!=pureGamma.end(); ++it)
-      pureDef->GetEnv()[it->first]=it->second->Copy();
+    //MpsPar *bodyPar=dynamic_cast<MpsPar*>(bodyLink->GetSucc());
+    //if (bodyPar==NULL)
+    //  return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking and forking (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);
+    //const MpsCall *bodyCall=dynamic_cast<const MpsCall*>(bodyPar->myLeft);
+    //if (bodyCall==NULL || bodyCall->GetName()!=pureDef->GetName())
+    //  return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking and forking and invocation of implementation process (def X() = ses ... in X() | ...)",*this,Theta,Gamma,Omega);
 
-    // Check linking on available channel
-    MpsMsgEnv::iterator var=pureGamma.find(bodyLink->GetChannel());
-    if (var==pureGamma.end())
-      return PrintTypeError((string)"Linking on unknown channel:" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
-    const MpsChannelMsgType *channel=dynamic_cast<const MpsChannelMsgType*>(var->second);
-    if (channel==NULL)
-      return PrintTypeError((string)"Linking on non-channel:" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
-    // Check correct maxpid
-    if (bodyLink->GetMaxpid() != channel->GetGlobalType()->GetMaxPid())
-      return PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega);
-    // Create local type
-    MpsLocalType *newType=channel->GetGlobalType()->Project(bodyLink->GetPid());
-    set<string> fv = newType->FEV();
-    // Rename all free variables
-    for (set<string>::const_iterator it=fv.begin(); it!=fv.end(); ++it)
-    { MpsLocalType *tmpType=newType->ERename(*it,MpsExp::NewVar(*it));
-      delete newType;
-      newType=tmpType;
+    //// Structure alright, now invoke typechecking of body and succ
+    //MpsMsgEnv pureGamma;
+    //for (MpsMsgEnv::const_iterator var = Gamma.begin(); var!=Gamma.end(); ++var)
+    //  if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Not session type
+    //    pureGamma[var->first]=var->second;
+    //  else if (!dynamic_cast<const MpsDelegateMsgType*>(var->second)->GetLocalType()->IsDone())
+    //    myLeftFinal.push_back(var->first);
+
+    //// Store env (for pureDef) for later (compilation)
+    //DeleteMap(pureDef->GetEnv());
+    //for (MpsMsgEnv::const_iterator it=pureGamma.begin(); it!=pureGamma.end(); ++it)
+    //  pureDef->GetEnv()[it->first]=it->second->Copy();
+
+    //// Check linking on available channel
+    //MpsMsgEnv::iterator var=pureGamma.find(bodyLink->GetChannel());
+    //if (var==pureGamma.end())
+    //  return PrintTypeError((string)"Linking on unknown channel:" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
+    //const MpsChannelMsgType *channel=dynamic_cast<const MpsChannelMsgType*>(var->second);
+    //if (channel==NULL)
+    //  return PrintTypeError((string)"Linking on non-channel:" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
+    //// Check correct maxpid
+    //if (bodyLink->GetMaxpid() != channel->GetGlobalType()->GetMaxPid())
+    //  return PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega);
+    //// Create local type
+    //MpsLocalType *newType=channel->GetGlobalType()->Project(bodyLink->GetPid());
+    //set<string> fv = newType->FEV();
+    //// Rename all free variables
+    //for (set<string>::const_iterator it=fv.begin(); it!=fv.end(); ++it)
+    //{ MpsLocalType *tmpType=newType->ERename(*it,MpsExp::NewVar(*it));
+    //  delete newType;
+    //  newType=tmpType;
+    //}
+    //// Create Gamma with new session
+    //pureGamma[bodyLink->GetSession()] = new MpsDelegateLocalMsgType(*newType,bodyLink->GetPid(),channel->GetParticipants());
+    //bodyPar->myLeftFinal.push_back(bodyLink->GetSession());
+
+    //MpsProcEnv pureOmega;
+    //bool result;
+    //MpsDef *subDef=dynamic_cast<MpsDef*>(bodyPar->myRight);
+    //if (subDef==NULL)
+    //{
+    //  result = bodyPar->myRight->TypeCheck(Theta, pureGamma, pureOmega, set<pair<string,int> >(), "$") &&
+    //           myRight->TypeCheck(Theta, Gamma, Omega, rightPureStack, curPure);
+    //}
+    //else
+    //{ // FIXME: Check only one arg with correct type
+    //  if (subDef->GetArgs().size()!=1 || pureDef->GetStateArgs().size()>0)
+    //    return PrintTypeError("Recursive implementation of pure participant " + subDef->GetName() + " must have exactly one argument and no state",*this,Theta,Gamma,Omega);
+    //  // FIXME: Check body is direct call with pure session as only arg
+    //  const MpsCall *subCall=dynamic_cast<const MpsCall*>(subDef->GetSucc());
+    //  if (subCall==NULL || subCall->GetName()!=subDef->GetName() || subCall->GetArgs().size()!=1 || subCall->GetState().size()>0 || subCall->GetArgs()[0]->ToString()!=bodyLink->GetSession())
+    //    return PrintTypeError("Recursive implementation of pure participant " + subDef->GetName() + " must be immediately followed by a direct invocation of implementation process (def X(G s) = ... in X(s))",*this,Theta,Gamma,Omega);
+    //  // Store env (for pureDef) for later (compilation)
+    //  DeleteMap(subDef->GetEnv());
+    //  for (MpsMsgEnv::const_iterator it=pureGamma.begin(); it!=pureGamma.end(); ++it)
+    //    subDef->GetEnv()[it->first]=it->second->Copy();
+    //  // Add subDef to pureOmega
+    //  pureOmega[subDef->GetName()].types = subDef->GetTypes();
+    //  pureOmega[subDef->GetName()].snames = subDef->GetStateArgs();
+    //  pureOmega[subDef->GetName()].stypes = subDef->GetStateTypes();
+    //  result = subDef->GetBody()->TypeCheck(Theta, pureGamma, pureOmega, set<pair<string,int> >(), subDef->GetName()) &&
+    //           myRight->TypeCheck(Theta, Gamma, Omega, rightPureStack, curPure);
+    //}
+    //
+    //// Clean up
+    //delete pureGamma[bodyLink->GetSession()];
+
+    //return result;
     }
-    // Create Gamma with new session
-    pureGamma[bodyLink->GetSession()] = new MpsDelegateLocalMsgType(*newType,bodyLink->GetPid(),channel->GetParticipants());
-    bodyPar->myLeftFinal.push_back(bodyLink->GetSession());
-
-    MpsProcEnv pureOmega;
-    bool result;
-    MpsDef *subDef=dynamic_cast<MpsDef*>(bodyPar->myRight);
-    if (subDef==NULL)
-    {
-      result = bodyPar->myRight->TypeCheck(Theta, pureGamma, pureOmega, set<pair<string,int> >(), "$") &&
-               myRight->TypeCheck(Theta, Gamma, Omega, newPureStack, curPure);
+    else if (pureState==CPS_SERVICE_FORK)
+    { leftState=CPS_SERVICE_LOOP;
+      rightState=CPS_PURE;
     }
-    else
-    { // FIXME: Check only one arg with correct type
-      if (subDef->GetArgs().size()!=1 || pureDef->GetStateArgs().size()>0)
-        return PrintTypeError("Recursive implementation of pure participant " + subDef->GetName() + " must have exactly one argument and no state",*this,Theta,Gamma,Omega);
-      // FIXME: Check body is direct call with pure session as only arg
-      const MpsCall *subCall=dynamic_cast<const MpsCall*>(subDef->GetSucc());
-      if (subCall==NULL || subCall->GetName()!=subDef->GetName() || subCall->GetArgs().size()!=1 || subCall->GetState().size()>0 || subCall->GetArgs()[0]->ToString()!=bodyLink->GetSession())
-        return PrintTypeError("Recursive implementation of pure participant " + subDef->GetName() + " must be immediately followed by a direct invocation of implementation process (def X(G s) = ... in X(s))",*this,Theta,Gamma,Omega);
-      // Store env (for pureDef) for later (compilation)
-      DeleteMap(subDef->GetEnv());
-      for (MpsMsgEnv::const_iterator it=pureGamma.begin(); it!=pureGamma.end(); ++it)
-        subDef->GetEnv()[it->first]=it->second->Copy();
-      // Add subDef to pureOmega
-      pureOmega[subDef->GetName()].types = subDef->GetTypes();
-      pureOmega[subDef->GetName()].snames = subDef->GetStateArgs();
-      pureOmega[subDef->GetName()].stypes = subDef->GetStateTypes();
-      result = subDef->GetBody()->TypeCheck(Theta, pureGamma, pureOmega, set<pair<string,int> >(), subDef->GetName()) &&
-               myRight->TypeCheck(Theta, Gamma, Omega, newPureStack, curPure);
+    else // Nothing to check
+    { 
     }
-    
-    // Clean up
-    delete pureGamma[bodyLink->GetSession()];
-
-    return result;
   }
-
-  // Normal fork
   // Split Gammma
   MpsMsgEnv leftGamma;
   MpsMsgEnv rightGamma;
@@ -157,8 +165,8 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   }
 
   // Check each sub-process with the split Gamma
-  return myLeft->TypeCheck(Theta,leftGamma,Omega,pureStack,curPure) &&
-         myRight->TypeCheck(Theta,rightGamma,Omega,pureStack,curPure);
+  return myLeft->TypeCheck(Theta,leftGamma,Omega,set<pair<string,int> >(),curPure, pureState, checkPure) &&
+         myRight->TypeCheck(Theta,rightGamma,Omega,rightPureStack,curPure, pureState, checkPure);
 } // }}}
 MpsTerm *MpsPar::ApplyRcv(const std::string &path, const MpsExp *val) const // {{{
 { if (path.size()==0)

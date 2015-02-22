@@ -108,17 +108,18 @@ MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (tree->case_name == "piact_def") // local pvar Dargs ( Args ) ( Pi ) {{{
-  { MpsTerm *body = Pi(tree->content[7]);
+  else if (tree->case_name == "piact_def") // local Mode pvar Dargs ( Args ) ( Pi ) {{{
+  { MpsTerm *body = Pi(tree->content[8]);
     // Parse args
     vector<string> args;
     vector<MpsMsgType*> types;
-    Args(tree->content[4],args,types);
+    Args(tree->content[5],args,types);
     // Parse state
     vector<string> stateargs;
     vector<MpsMsgType*> statetypes;
-    DArgs(tree->content[2],stateargs,statetypes);
-    MpsTerm *result = new MpsDef(tree->content[1]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv());
+    DArgs(tree->content[3],stateargs,statetypes);
+    bool pure=Mode(tree->content[1],false);
+    MpsTerm *result = new MpsDef(tree->content[2]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv(), pure);
     // Clean up
     delete succ;
     delete body;
@@ -250,18 +251,19 @@ MpsTerm *MpsParser::PiEAct(const parsetree *tree) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (tree->case_name == "pieact_def") // global pvar Dargs ( Args ) ( Pi ) Pi {{{
-  { MpsTerm *succ = Pi(tree->content[9]);
-    MpsTerm *body = Pi(tree->content[7]);
+  else if (tree->case_name == "pieact_def") // global Mode pvar Dargs ( Args ) ( Pi ) Pi {{{
+  { MpsTerm *succ = Pi(tree->content[10]);
+    MpsTerm *body = Pi(tree->content[8]);
     // Parse args
     vector<string> args;
     vector<MpsMsgType*> types;
-    Args(tree->content[4],args,types);
+    Args(tree->content[5],args,types);
     // Parse state
     vector<string> stateargs;
     vector<MpsMsgType*> statetypes;
     DArgs(tree->content[2],stateargs,statetypes);
-    MpsTerm *result = new MpsDef(tree->content[1]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv());
+    bool pure=Mode(tree->content[1],false);
+    MpsTerm *result = new MpsDef(tree->content[2]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv(), pure);
     // Clean up
     delete succ;
     delete body;

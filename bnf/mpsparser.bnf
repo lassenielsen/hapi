@@ -97,7 +97,7 @@ PiAct ::= ::piact_sends Ch Sends ;
         | ::piact_ch    Gtype id ( Participants ) ;
         | ::piact_ass   Mtype id = Exp ;
         | ::piact_a_ass id = Exp ;
-        | ::piact_def   local pvar Dargs ( Args ) ( Pi )
+        | ::piact_def   local Mode pvar Dargs ( Args ) ( Pi )
         | ::piact_gval  guivalue ( Exps ) ;
         | ::piact_hosts host ( Exps ) Mode ;
         | ::piact_hosth hostheader ( Exps ) ;
@@ -106,7 +106,7 @@ PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi
          | ::pieact_ch    global Gtype id ( Participants ) ; Pi
          | ::pieact_ass   global Mtype id = Exp ; Pi
          | ::pieact_a_ass global id = Exp ; Pi
-         | ::pieact_def   global pvar Dargs ( Args ) ( Pi ) Pi
+         | ::pieact_def   global Mode pvar Dargs ( Args ) ( Pi ) Pi
 # Non-sequential process constructions (branching termination etc.
 PiTerm ::= ::piterm_pi   ( Pi )
          | ::piterm_end
