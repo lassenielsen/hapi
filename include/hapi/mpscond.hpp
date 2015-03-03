@@ -49,6 +49,13 @@ class MpsCond : public MpsTerm // {{{
     std::string ToC() const;
     std::string ToCHeader() const;
 
+    const MpsExp *GetCond() const { return myCond; }
+    MpsExp *GetCond() { return myCond; }
+    const MpsTerm *GetTrueBranch() const { return myTrueBranch; }
+    MpsTerm *GetTrueBranch() { return myTrueBranch; }
+    const MpsTerm *GetFalseBranch() const { return myFalseBranch; }
+    MpsTerm *GetFalseBranch() { return myFalseBranch; }
+
   private:
     MpsExp *myCond;
     MpsTerm *myTrueBranch;

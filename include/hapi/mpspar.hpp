@@ -57,6 +57,8 @@ class MpsPar : public MpsTerm // {{{
     std::string ToC() const;
     std::string ToCHeader() const;
 
+    const MpsTerm *GetLeft() const { return myLeft; }
+    const MpsTerm *GetRight() const { return myRight; }
     const std::vector<std::string> &GetLeftFinal() const;
     const std::vector<std::string> &GetRightFinal() const;
 

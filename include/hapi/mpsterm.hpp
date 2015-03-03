@@ -105,7 +105,6 @@
 // }}}
 namespace hapi
 {
-
 // DOCUMENTATION: MpsTerm {{{
 /*!
  * MpsTerm represents a process in the asynchronous pi-calculus with multi
@@ -138,13 +137,13 @@ class MpsTerm // {{{
      *
 		 * CheckPure ensures the following
 		 * - Implementations of pure participants are of the form
-		 *   local X()
+		 *   local pure X()
 	   *   ( global s=new ch(p of n);
 		 *     X();
 		 *     |
 		 *     P
 		 *   )
-		 *   local StartX(Int i)
+		 *   local pure StartX(Int i)
 		 *   ( if i<=0
 		 *     then X();
 		 *     else X(); | StartX(i-1);
@@ -153,16 +152,14 @@ class MpsTerm // {{{
      *
 		 * Standard typechecking ensures that
 		 * - All pure participants have an immediate implementation
-		 * - Only one implementation of pure participants exists (pure
-		 *   participants are not used in linking outside the pure implementation
-		 *   provided immediately.
+     * - Only one implementation of each pure participants exists (pure
+     *   participants are not used in linking outside the pure implementation
+     *   provided immediately.
 		 * - The implementation bodies ( P ) of pure participants does not break purity ie
-		 *   
-     *
-     * @param Pure List of unimplemented pure participants
-     * @param Gamma The type environment
-     * @result Returns true if the syntactic restrictions to the implementation
-     * of pure participants are fulfilled.
+		 *   - Linking only with (not necessarily as) pure participants
+     *   - Calling only pure defs
+     *   - No impure host statements (trusting provided tags)
+     *   - Communicating only on pure sessions
      */
     // }}}
     enum PureState {CPS_IMPURE=0,
