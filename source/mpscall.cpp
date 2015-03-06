@@ -28,19 +28,27 @@ MpsCall::~MpsCall() // {{{
   DeleteVector(myTypes);
   DeleteVector(myStateTypes);
 } // }}}
-bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // * Use rule Var {{{
-{
-  // Check purity constraints
-  if (pureStack.size()>0)
-    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
-  if (curPure.size()>0 && curPure!=myName)
-    return PrintTypeError("Calls not allowed in pure context",*this,Theta,Gamma,Omega);
+bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Var {{{
+{ if (checkPure)
+	{ // Check purity constraints
+    if (pureStack.size()>0)
+      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_CALL && pureState!=CPS_INIT_BRANCH1_CALL1 && pureState!=CPS_INIT_BRANCH1_CALL2 && pureState!=CPS_INIT_BRANCH2_CALL && pureState!=CPS_INIT_CALL)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+  }
 
   // Verify call
   // Check variable is defined
   MpsProcEnv::const_iterator omega = Omega.find(myName);
   if (omega == Omega.end())
     return PrintTypeError((string)"Process Variable not defined: " + myName,*this,Theta,Gamma,Omega);
+
+  if (checkPure)
+  { // Verify purity constraint
+    if (pureState!=CPS_IMPURE && !omega->second.pure)
+      return PrintTypeError("Calling impure method " + myName + " from a pure setting.",*this,Theta,Gamma,Omega);
+  }
   // Check correct number of arguments
   if (omega->second.stypes.size() != myState.size() ||
       omega->second.stypes.size() != myState.size() ||
@@ -52,12 +60,6 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   for (int i=0;i<myState.size();++i)
   {
     MpsMsgType *statetype = myState[i]->TypeCheck(Gamma);
-#if HAPI_DEBUG_LEVEL>99
-    cerr << ">>>>Comparing: " << endl
-         << ">>>>>>>>Theta: " << Theta.ToString() << endl
-         << ">>>>>>>>>>LHS: " << statetype->ToString(">>>>>>>>>>>>>>") << endl
-         << ">>>>>>>>>>RHS: " << omega->second.stypes[i]->ToString(">>>>>>>>>>>>>>") << endl;
-#endif
     bool statetypematch = statetype->Equal(Theta,*omega->second.stypes[i]);
     delete statetype;    
     if (!statetypematch)
@@ -76,12 +78,6 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
       delete callType;
       callType=tmpType;
     }
-#if HAPI_DEBUG_LEVEL>99
-    cerr << ">>>>Comparing: " << endl
-         << ">>>>>>>>Theta: " << Theta.ToString() << endl
-         << ">>>>>>>>>>LHS: " << argType->ToString(">>>>>>>>>>>>>>") << endl
-         << ">>>>>>>>>>RHS: " << callType->ToString(">>>>>>>>>>>>>>") << endl;
-#endif
     bool argtypematch = argType->Equal(Theta,*callType);
     string callTypeString = callType->ToString("!!!!                                      ");
 

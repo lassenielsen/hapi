@@ -42,21 +42,22 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   // Check purity constraints
   PureState nextState=pureState;
   if (checkPure)
-	{ if (pureState==CPS_SERVICE_LINK) // Apply special purity rule
+  { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_LINK)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n       *   ( global s=new ch(p of n);\n         *     X();\n         *     |\n         *     P\n         *   )\n         *   local StartX(Int i)\n         *   ( if i<=0\n         *     then X();\n         *     else X(); | StartX(i-1);\n         *   )\n         *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+    if (pureState==CPS_SERVICE_LINK) // Apply special purity rule
     { nextState=CPS_SERVICE_FORK;
+      if (!channel->GetParticipants()[myPid-1].IsPure())
+        return PrintTypeError((string)"Linking as impure participant not allowed here",*this,Theta,Gamma,Omega);
     }
     else
     { // Check if linking breaks purity
-      if (checkPure && channel->GetParticipants()[myPid-1].IsPure())
+      if (channel->GetParticipants()[myPid-1].IsPure())
         return PrintTypeError((string)"Linking as pure participant not allowed here",*this,Theta,Gamma,Omega);
 
       if (pureStack.size()>0)
         return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
 
-    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_LINK)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
-
-    
       if (pureState==CPS_PURE && !myPure)
         return PrintTypeError((string)"Unpure link in pure context is not allowed",*this,Theta,Gamma,Omega);
     }

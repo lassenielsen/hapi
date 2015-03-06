@@ -943,6 +943,7 @@ struct omega // {{{
   std::vector<MpsMsgType*> stypes;
   std::vector<std::string> snames;
   std::vector<MpsMsgType*> types;
+  bool pure;
 }; // }}}
 
 //typedef std::map<std::string,MpsGlobalType*> MpsGlobalEnv;

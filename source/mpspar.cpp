@@ -29,7 +29,7 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   PureState rightState=pureState;
   set<pair<string,int> > rightPureStack=pureStack;
   if (checkPure)
-  { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_FORK)
+  { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_INIT_BRANCH1_FORK && pureState!=CPS_SERVICE_FORK)
       return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
     if (pureStack.size()>0)
     { leftState=CPS_SERVICE_DEF;
@@ -49,8 +49,12 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
 
     }
     else if (pureState==CPS_SERVICE_FORK)
-    { leftState=CPS_SERVICE_LOOP;
+    { leftState=CPS_SERVICE_CALL;
       rightState=CPS_PURE;
+    }
+    else if (pureState==CPS_INIT_BRANCH1_FORK)
+    { leftState=CPS_INIT_BRANCH1_CALL1;
+      rightState=CPS_INIT_BRANCH1_CALL2;
     }
     else
     { // No additional checks
@@ -84,8 +88,8 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   }
 
   // Check each sub-process with the split Gamma
-  return myLeft->TypeCheck(Theta,leftGamma,Omega,set<pair<string,int> >(),curPure, pureState, checkPure) &&
-         myRight->TypeCheck(Theta,rightGamma,Omega,rightPureStack,curPure, pureState, checkPure);
+  return myLeft->TypeCheck(Theta,leftGamma,Omega,set<pair<string,int> >(),curPure, leftState, checkPure) &&
+         myRight->TypeCheck(Theta,rightGamma,Omega,rightPureStack,curPure, rightState, checkPure);
 } // }}}
 MpsTerm *MpsPar::ApplyRcv(const std::string &path, const MpsExp *val) const // {{{
 { if (path.size()==0)

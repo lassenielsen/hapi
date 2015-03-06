@@ -16,11 +16,20 @@ MpsCond::~MpsCond() // {{{
   delete myTrueBranch;
   delete myFalseBranch;
 } // }}}
-bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Cond {{{
+bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Cond {{{
 {
-  // Check purity constraints
-  if (pureStack.size()>0)
-    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+  PureState trueState=pureState;
+  PureState falseState=pureState;
+  if (checkPure)
+	{ // Check purity constraints
+    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_INIT_BRANCH)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+    if (pureState==CPS_INIT_BRANCH)
+    { trueState=CPS_INIT_BRANCH2_CALL;
+      falseState=CPS_INIT_BRANCH1_FORK;
+    }
+  }
 
   MpsBoolMsgType booltype;
   MpsMsgType *condtype = myCond->TypeCheck(Gamma);
@@ -34,8 +43,8 @@ bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   MpsExp *falseTheta = new MpsBinOpExp("and",Theta,*notCond,MpsBoolMsgType(),MpsBoolMsgType());
   delete notCond;
   
-  bool result = myTrueBranch->TypeCheck(*trueTheta,Gamma,Omega,pureStack,curPure)
-             && myFalseBranch->TypeCheck(*falseTheta,Gamma,Omega,pureStack,curPure);
+  bool result = myTrueBranch->TypeCheck(*trueTheta,Gamma,Omega,pureStack,curPure, trueState, checkPure)
+             && myFalseBranch->TypeCheck(*falseTheta,Gamma,Omega,pureStack,curPure, falseState, checkPure);
   // Clean Up
   delete trueTheta;
   delete falseTheta;

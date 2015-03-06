@@ -18,11 +18,13 @@ MpsAssign::~MpsAssign() // {{{
   delete myType;
   delete mySucc;
 } // }}}
-bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // * Check exp has correct type, and check succ in updated sigma {{{
+bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Check exp has correct type, and check succ in updated sigma {{{
 {
-  // Check purity constraints
-  if (pureStack.size()>0)
-    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+  if (checkPure)
+	{ // Check purity constraints
+    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+  }
   // Verify assign
   if (dynamic_cast<MpsDelegateMsgType*>(myType)!=NULL)
     return PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega);
@@ -65,7 +67,7 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
       newGamma[it->first]=it->second->ERename(myId,newId);
   newGamma[myId]=myType->Copy();
   // Check new Successor
-  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure);
+  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
   delete newTheta;
   DeleteMap(newGamma);
   return result;

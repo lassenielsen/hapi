@@ -6,7 +6,7 @@
   $end;
 
 global $fib fib(1 pure,2);
-local Fib()
+local pure Fib()
 ( global s = new fib(1 of 2);
   Fib(); |
   s[2]>>x;
@@ -20,7 +20,13 @@ local Fib()
        s2[1]>>f2;
        s[2]<<f1+f2;
 )
-Fib(); |
+local pure StartFib(Int i)
+( if i<=0
+  then Fib();
+  else ( Fib(); | StartFib(i-1); )
+)
+StartFib(SYSTEM&"tprocs");
+|
 c = new console(2 of 2);
 c[1] << ^PutString << "What is n?"
      << ^GetInt;

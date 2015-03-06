@@ -40,61 +40,70 @@ MpsDef::~MpsDef() // {{{
 } // }}}
 bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Def {{{
 {
+  PureState succState=pureState;
+  PureState bodyState=myPure?CPS_PURE:CPS_IMPURE;
+
   if (checkPure) // Check purity constraints {{{
-	{ if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_DEF && pureState!=CPS_INIT_DEF)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+   { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_DEF && pureState!=CPS_INIT_DEF)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n    *   ( global s=new ch(p of n);\n     *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
 
     if (pureStack.size()>0)
       return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
 
-    if (pureState==CPS_SERVICE_DEF)
-    { // Test structure
+    if (pureState==CPS_INIT_DEF)
+    { bodyState=CPS_INIT_BRANCH;
+      succState=CPS_INIT_CALL;
+    }
+    else if (pureState==CPS_SERVICE_DEF)
+    { bodyState=CPS_SERVICE_LINK;
+      succState=CPS_INIT_DEF;
+      // Test structure
       if (GetArgs().size()>0 || GetStateArgs().size()>0) // No args or state
         return PrintTypeError("Implementation of pure participant " + GetName() + " must have no arguments and state",*this,Theta,Gamma,Omega);
 
       // Body structure
       const MpsLink *bodyLink=dynamic_cast<const MpsLink*>(GetBody());
       if (bodyLink==NULL) // Link immediately
-        return PrintTypeError("Implementation of pure participant " + GetName() + ". Pure implementations must start with linking as implemented participant.\n     *   local X()\n	   !   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Implementation of pure participant " + GetName() + ". Pure implementations must start with linking as implemented participant.\n     *   local X()\n      !   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
       const MpsPar *bodyPar=dynamic_cast<const MpsPar*>(bodyLink->GetSucc());
       if (bodyPar==NULL) // Fork after linking
-        return PrintTypeError("Implementation of pure participant " + GetName() + ". Pure implementations must form imediately after linking.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 !     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Implementation of pure participant " + GetName() + ". Pure implementations must form imediately after linking.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       !     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
       const MpsCall *bodyCall=dynamic_cast<const MpsCall*>(bodyPar->GetLeft());
       if (bodyCall==NULL || bodyCall->GetName()!=GetName()) // Call immediately (after fork)
-        return PrintTypeError("Implementation of pure participant " + GetName() + ". Pure implementations must reinitiate service immediately after linking and forking.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 !     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Implementation of pure participant " + GetName() + ". Pure implementations must reinitiate service immediately after linking and forking.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       !     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
 
       // Init structure
       // local pure StartX(Int i)
       const MpsDef *initDef=dynamic_cast<const MpsDef*>(GetSucc());
       if (initDef==NULL) // Define initiating process
-        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementations must use pure def to initiate service.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 !   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementations must use pure def to initiate service.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       !   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
      if (initDef->GetStateArgs().size()!=0)
-        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementations pure def to must have no state.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 !   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementations pure def to must have no state.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       !   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
      if (initDef->GetTypes().size()!=1 || dynamic_cast<const MpsIntMsgType*>(initDef->GetTypes()[0])==NULL)
-        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementations pure def must have exactly one argument of type Int.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 !   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementations pure def must have exactly one argument of type Int.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       !   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
 
       const MpsCond *initCond=dynamic_cast<const MpsCond*>(initDef->GetBody());
       if (initCond==NULL) // if ...
-        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementation must branch.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 !   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementation must branch.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       !   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
       const MpsBinOpExp *initCondExp=dynamic_cast<const MpsBinOpExp*>(initCond->GetCond());
       if (initCondExp==NULL || initCondExp->GetOp()!="<=" || initCondExp->GetLeft().ToString()!=initDef->GetArgs()[0] || initCondExp->GetRight().ToString()!="0")
-        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementation initialization uses wrong expression for branching.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 !   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementation initialization uses wrong expression for branching.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       !   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
 
       const MpsCall *initThenCall=dynamic_cast<const MpsCall*>(initCond->GetTrueBranch());
       if (initThenCall==NULL || initThenCall->GetName()!=GetName() )
-        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 !     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       !     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
 
       const MpsPar *initElsePar=dynamic_cast<const MpsPar*>(initCond->GetFalseBranch());
       if (initElsePar==NULL )
-        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 !     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       !     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
 
       const MpsCall *initElseCall1=dynamic_cast<const MpsCall*>(initElsePar->GetLeft());
       if (initElseCall1==NULL || initElseCall1->GetName()!=GetName() )
-        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 !     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       !     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
 
       const MpsCall *initElseCall2=dynamic_cast<const MpsCall*>(initElsePar->GetRight());
       if (initElseCall2==NULL || initElseCall2->GetName()!=initDef->GetName() )
-        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 !     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       !     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
 
       // Test no open sessions
       for (MpsMsgEnv::const_iterator var = Gamma.begin(); var!=Gamma.end(); ++var)
@@ -110,6 +119,7 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
     return PrintTypeError((string)"Bad def: difference in number of state arguments and number of state types",*this,Theta,Gamma,Omega);
   // Make new process-environment
   MpsProcEnv newOmega = Omega;
+  newOmega[myName].pure = myPure;
   newOmega[myName].types = myTypes;
   newOmega[myName].snames = myStateArgs;
   for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin(); it!=myStateTypes.end(); ++it)
@@ -141,8 +151,8 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
     myEnv[it->first]=it->second->Copy();
   // Make subcalls
-  return mySucc->TypeCheck(Theta,Gamma,newOmega,pureStack,curPure, pureState, checkPure) &&
-         myBody->TypeCheck(Theta,newGamma,newOmega,pureStack,curPure, myPure?CPS_PURE:CPS_IMPURE, checkPure);
+  return mySucc->TypeCheck(Theta,Gamma,newOmega,pureStack,curPure, succState, checkPure) &&
+         myBody->TypeCheck(Theta,newGamma,newOmega,pureStack,curPure, bodyState, checkPure);
 } // }}}
 MpsTerm *MpsDef::ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const // {{{
 { if (path.size()>0)

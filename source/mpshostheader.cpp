@@ -14,16 +14,19 @@ MpsHostHeader::~MpsHostHeader() // {{{
 {
   delete mySucc;
 } // }}}
-bool MpsHostHeader::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure) // Use rule Nres {{{
+bool MpsHostHeader::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
 {
-  // Check purity constraints
-  if (pureStack.size()>0)
-    return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
-  if (curPure.size()>0)
-    return PrintTypeError("HOST statements not allowed in pure context",*this,Theta,Gamma,Omega);
+  if (checkPure)
+	{ // Check purity constraints
+    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+    if (pureState==CPS_PURE)
+      return PrintTypeError("HOST statements not allowed in pure context",*this,Theta,Gamma,Omega);
+  }
 
   // Verify hostheader
-  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,curPure);
+  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
 } // }}}
 MpsTerm *MpsHostHeader::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)

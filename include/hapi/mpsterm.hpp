@@ -166,12 +166,14 @@ class MpsTerm // {{{
 		                CPS_SERVICE_DEF,
                     CPS_SERVICE_LINK,
                     CPS_SERVICE_FORK,
-                    CPS_SERVICE_LOOP,
+                    CPS_SERVICE_CALL,
                     CPS_PURE, // Also known as CPS_SERVICE_BODY,
                     CPS_INIT_DEF,
                     CPS_INIT_BRANCH,
-                    CPS_INIT_CONT,
-                    CPS_INIT_TERM,
+                    CPS_INIT_BRANCH1_FORK,
+                    CPS_INIT_BRANCH1_CALL1,
+                    CPS_INIT_BRANCH1_CALL2,
+                    CPS_INIT_BRANCH2_CALL,
                     CPS_INIT_CALL
                    };
     // DOCUMENTATION: MpsTerm::TypeCheck {{{

@@ -261,7 +261,7 @@ MpsTerm *MpsParser::PiEAct(const parsetree *tree) // {{{
     // Parse state
     vector<string> stateargs;
     vector<MpsMsgType*> statetypes;
-    DArgs(tree->content[2],stateargs,statetypes);
+    DArgs(tree->content[3],stateargs,statetypes);
     bool pure=Mode(tree->content[1],false);
     MpsTerm *result = new MpsDef(tree->content[2]->root.content, args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv(), pure);
     // Clean up
