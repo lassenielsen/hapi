@@ -1,0 +1,2 @@
+local impure X() ()
+local pure Y() ( X(); )

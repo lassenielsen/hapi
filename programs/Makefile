@@ -4,7 +4,7 @@ version = 3.0.0
 compiler = g++
 opt = -O3
 args = $(opt) `sdl-config --cflags`
-libs = -lhapi -lSDL_net
+#GUI_HTTPlibs = -lhapi -lSDL_net
 #GUI_SDLlibs = -lhapi -lsdlwidgets
 OS_AUTO = $(shell uname -s)
 COMMENT = _
@@ -58,7 +58,7 @@ include/config.hpp: Makefile
 	echo "#ifndef CONFIG_HPP" >> include/config.hpp
 	echo "#define CONFIG_HPP" >> include/config.hpp
 #OS_MAC	echo "#define OS_MAC" >> include/config.hpp
-	echo "#define OS_LINUX" >> include/config.hpp
+#OS_LINUX	echo "#define OS_LINUX" >> include/config.hpp
 #OS_WIN	echo "#define OS_WIN" >> include/config.hpp
 #GLOOX_VER_0.8.8	echo "#define GLOOX_0_8_8" >> include/config.hpp
 #GLOOX_VER_0.9.0	echo "#define GLOOX_0_9_0" >> include/config.hpp

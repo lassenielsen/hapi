@@ -9,11 +9,11 @@
 Int argc=0;
 __ARGC(argc);
 global $sys sys(1 pure, 2);
-local Sys()
+local pure Sys()
 ( global s = new sys(1 of 2);
   Sys();
   |
-  local SysSession($sys(1 of 1 pure,2) s)
+  local pure SysSession($sys(1 of 1 pure,2) s)
   ( s[2]>>
     {^CountArgs: s[2]<<argc;
                  SysSession(s);
@@ -29,4 +29,11 @@ local Sys()
      ^End:
     }
   ) SysSession(s);
-) Sys(); |
+)
+local pure StartSys(Int c)
+( if c<=0
+  then Sys();
+  else ( Sys(); | StartSys(c-1); )
+)
+StartSys(SYSTEM&"tprocs");
+|

@@ -1,0 +1,87 @@
+#include <console.pi>
+#include <sys.pi>
+#include <convert.pi>
+
+#define $intpred 2->1:Int;1->2:Bool;$end;
+global $intpred even(1 pure,2);
+global $intpred odd(1 pure,2);
+local pure Even()
+( global s=new even(1 of 2);
+  ( Even();
+  | s[2]>>n;
+    if n=0
+    then s[2]<<true;
+    else if n<=0
+    then e=new even(2 of 2);
+         e[1]<<0-n;
+         e[1]>>res;
+         s[2]<<res;
+    else o=new odd(2 of 2);
+         o[1]<<n-1;
+         o[1]>>res;
+         s[2]<<res;
+  )
+)
+local pure StartEven(Int i)
+( if i<=0
+  then Even();
+  else ( Even(); | StartEven(i-1); )
+)
+StartEven(SYSTEM&"tprocs"); |
+local pure Odd()
+( global s=new odd(1 of 2);
+  ( Odd();
+  | s[2]>>n;
+    if n=0
+    then s[2]<<false;
+    else if n<=0
+    then o=new odd(2 of 2);
+         o[1]<<0-n;
+         o[1]>>res;
+         s[2]<<res;
+    else e=new even(2 of 2);
+         e[1]<<n-1;
+         e[1]>>res;
+         s[2]<<res;
+  )
+)
+local pure StartOdd(Int i)
+( if i<=0
+  then Odd();
+  else ( Odd(); | StartOdd(i-1); )
+)
+StartOdd(SYSTEM&"tprocs");
+|
+// Actual program
+global PrintRes(String whenTrue, String whenFalse, Bool res)
+( c=new console(2 of 2);
+  c[1]<<^PutString<<if res then whenTrue else whenFalse<<^End;
+)
+global CheckEven(Int n)
+( e=new even(2 of 2);
+  e[1]<<n;
+  e[1]>>res;
+  PrintRes("even","not even",res);
+)
+global CheckOdd(Int n)
+( o=new odd(2 of 2);
+  o[1]<<n;
+  o[1]>>res;
+  PrintRes("odd","not odd",res);
+)
+s=new sys(2 of 2);
+s[1]<<^GetArg<<1;
+s[1]>>
+{^None:
+  c=new console(2 of 2);
+  c[1]<<^PutString<<"Please provide integer arg."<<^End;
+  s[1]<<^End;
+ ^Some:
+  s[1]>>nstr;
+  s[1]<<^End;
+  Int nval=0;
+  STRING2INT(nstr,nval);
+  ( CheckEven(nval);
+  | CheckOdd(nval);
+  )
+}
