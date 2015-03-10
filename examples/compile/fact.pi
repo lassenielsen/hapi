@@ -7,7 +7,7 @@
   $end;
 
 global $prodseq prodseq(1 pure ,2);
-local Prodseq()
+local pure Prodseq()
 ( global s = new prodseq(1 of 2);
   Prodseq(); |
   s[2]>>x1;
@@ -27,7 +27,12 @@ local Prodseq()
        s2[1]>>r2;
        s[2]<<r1*r2;
 )
-Prodseq();
+local pure StartProdseq(Int c)
+( if c<=0
+  then Prodseq();
+  else ( Prodseq(); | StartProdseq(c-1); )
+)
+StartProdseq(SYSTEM&"tprocs");
 |
 c = new console(2 of 2);
 c[1] << ^PutString << "What is n?"
