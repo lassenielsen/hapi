@@ -1,3 +1,5 @@
+// Example 3.0 - Calculating fibonacchi numbers
+// 
 // Include console functionality like printing
 #include <console.pi>
 
@@ -11,7 +13,7 @@
 global $fib fib(1 pure,2);
 
 // Implement service
-local Fib()
+local pure Fib()
 ( global s=new fib(1 of 2);              // Wait for client / invocation
   Fib();                                 // Maintain number of processes waiting for clients
   |                                      // Start process to serve the request
@@ -26,14 +28,12 @@ local Fib()
        f2[1]>>r2;                        // r2 = fib(n-2)
        s[2]<<r1+r2;                      // return r1+r2
 )
-Fib(); // Start service
-// Todo: Enable multiple service instances for pure implementations like below
-//local StartFib(Int n)
-//( if n<=1
-//  then Fib();
-//  else (Fib(); | StartFib(n-1);)
-//)
-//StartFib(SYSTEM & "tprocs");             // Start as many processes as the target number of active processes
+local pure StartFib(Int n)               // Start n copies of service
+( if n<=0
+  then Fib();
+  else ( Fib(); | StartFib(n-1); )
+)
+StartFib(SYSTEM & "tprocs");             // Start as many processes as the target number of active processes
 |
 
 // Main program
