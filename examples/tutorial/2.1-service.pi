@@ -2,7 +2,8 @@
 // The most basic design pattern in hapi is SOA - Implement functionality as
 // services.
 // Defines function type as protocol, creates channel for service, implements
-// service as a participant and have client invoke service to use functionality.
+// service as a participant and have client invoke service to use
+// functionality.
 
 #include <console.pi>
 
@@ -18,13 +19,13 @@
 global $intfun double(1,2);
 // Implement participant 1 as a service
 local Double()
-( global s=new double(1 of 2); // Wait for connection. global means the session can scope across forks
-  Double();                  // Keep service available
-  |                          // Fork process to handle request
-  s[2]>>x;                   // Receive argument
-  s[2]<<x+x;                 // Send result
+( global s=new double(1 of 2); // Wait for connection
+  Double();                    // Keep service available
+  |                            // Fork process to handle request
+  s[2]>>x;                     // Receive argument
+  s[2]<<x+x;                   // Send result
 )
-Double();                    // Start service
+Double();                      // Start service
 |
 // Implement a client using service
 c=new console(2 of 2);

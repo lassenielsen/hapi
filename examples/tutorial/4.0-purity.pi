@@ -1,0 +1,90 @@
+// Example 4.0 - Introducing notion of purity
+// Pure methods and services separate functionality by guaranteeing not to
+// change the imparative state of other processes and services.
+// This is useful in testing and debugging, and allows automatic optimization
+// of concurrency while providing strong semantics preservation properties.
+// We give examples of pure and impure services and methods.
+
+#include <console.pi>
+
+// Example 1: Counter service
+// Not pure, because different connections will get different answers from service
+#define $state \
+  1->2:Int; \
+  $end;
+global $state counter(1,2);
+local Counter(Int i)
+( global s=new counter(1 of 2);
+  Counter(i+1);
+  |
+  s[2]<<i;
+)
+Counter(1);
+|
+// Example 2: Random service
+// Not pure, because different connections may get different answers from service
+#define $rand \
+  1->2:Bool; \
+  $end;
+global $rand random(1,2);
+local Random1()
+( global s=new random(1 of 2);
+  Random1();
+  |
+  s[2]<<true;
+)
+Random1();
+|
+local Random2()
+( global s=new random(1 of 2);
+  Random2();
+  |
+  s[2]<<false;
+)
+Random2();
+|
+// Example 3: Inherited impurity and host language impurity
+// Not pure, because using unpure services
+#define $fun \
+  2->1:Int; \
+  1->2:Int; \
+  $end;
+HOSTHEADER("#include <iostream>");
+global $fun fun(1,2);
+local Fun()
+( global s=new fun(1 of 2);
+  Fun();
+  |
+  s[2]>>x;
+  c=new counter(2 of 2); //! Inharited impurity
+  c[1]>>val;
+  HOST("std::cout << ", val, ".ToString() << std::endl;"); // HOST impurity
+  s[2]<<5*x*x-3*x;
+)
+Fun();
+|
+// Example 4: Pure service
+global $fun fact(1 pure,2); // Notice pure declaration of 1st participant
+local pure Fact()              // Notice pure declaration of method
+( global s=new fact(1 of 2);
+  Fact();
+  |
+  s[2]>>n;
+  // Can use pure services (itself or others)
+  f=new fact(2 of 2);
+  f[1]<<n-1;
+  f[1]>>res;
+  // Can use HOST statements, but must be 'pure'
+  HOST(";") pure; // Notice pure declaration
+  s[2]<<res*n;
+)
+local pure StartFact(Int n)
+( if n<=0
+  then Fact();
+  else (Fact(); | StartFact(n-1);)
+)
+StartFact(1);
+|
+// The following tutorials will show examples where purity is used to obtain
+// highly (and customizably) concurrent programs from sequentially defined
+// processes.

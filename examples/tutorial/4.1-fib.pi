@@ -1,5 +1,5 @@
 // Example 3.0 - Calculating fibonacchi numbers
-// 
+// Utilizinf pure services to automatically obtain concurrency
 // Include console functionality like printing
 #include <console.pi>
 
