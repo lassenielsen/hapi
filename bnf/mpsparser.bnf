@@ -1,0 +1,235 @@
+# BNF for APIMS
+# Main production is Pi - Apims programs
+# Exp is expressions
+# Gtype is Global Types
+# Ltype is Local (projected) types
+# Mtype is Message (value) types
+
+# OPTIONAL: Add xml-expressions
+# FIXME: Implement rand
+# FIXME: Add expression operations (<,>,<=,>=,s1++s2,head,tail) [+,-,*,/,and,or,not,=]
+
+# Whitespace and comments are ignored
+ := "[ \n\r\t][ \n\r\t]*+//[^\n]*"
+
+# KEYWORD tokens
+& := "&"
+( := "\("
+) := "\)"
+* := "\*"
++ := "\+"
+, := ","
+- := "-"
+-> := "->"
+/ := "/"
+; := ";"
+< :=_1 "<"
+<< := "<<"
+<= := "<="
+= := "="
+> :=_1 ">"
+>> := ">>"
+>= := ">="
+Bool := "Bool"
+$end := "$end"
+Int := "Int"
+%end := "%end"
+String := "String"
+[ :=_1 "\["
+] :=_1 "]"
+and := "and"
+as := "as"
+else := "else"
+false := "false"
+forall := "forall"
+guisync := "guisync"
+guivalue := "guivalue"
+if := "if"
+impure := "impure"
+in := "in"
+new := "new"
+not := "not"
+of := "of"
+or := "or"
+pure := "pure"
+rec := "rec"
+sync := "sync"
+then := "then"
+true := "true"
+where := "where"
+{ := "\{"
+} := "}"
+
+# NON-KEYWORD tokens
+# Expression value domains
+int := "(~)?[0-9][0-9]*"
+string := "\"[^\"]*\""
+
+# Names
+id   :=_1 "[a-z][a-zA-Z0-9_]*"
+lvar :=_1 "%[a-zA-Z0-9_][a-zA-Z0-9_]*"
+gvar :=_1 "$[a-zA-Z0-9_][a-zA-Z0-9_]*"
+bid  :=   "\^{1,2}[a-zA-Z0-9_][a-zA-Z0-9_]*"
+pvar :=_1 "[A-Z][a-zA-Z0-9_]*"
+
+# Term tokens
+par := "\|"
+COLON := ":"
+host := "HOST"
+hostheader := "HOSTHEADER"
+system := "SYSTEM"
+global := "public+global"
+local := "private+local"
+
+# Processes (Main / Root production)
+Pi ::= ::pi_par   PiActs par Pi
+     | ::pi_acts  PiActs
+     | ::pi_eacts PiEActs
+# Statement sequence
+PiActs ::= ::piacts_end PiTerm
+         | ::piacts_act PiAct PiActs
+PiEActs ::= ::pieacts_end PiEAct
+          | ::pieacts_act PiAct PiEActs
+# Process Statements
+PiAct ::= ::piact_sends Ch Sends ;
+        | ::piact_recvs Ch Recvs ;
+        | ::piact_link  id = new id ( int of int ) ;
+        | ::piact_ch    Gtype id ( Participants ) ;
+        | ::piact_ass   Mtype id = Exp ;
+        | ::piact_a_ass id = Exp ;
+        | ::piact_def   local Mode pvar Dargs ( Args ) ( Pi )
+        | ::piact_gval  guivalue ( Exps ) ;
+        | ::piact_hosts host ( Exps ) Mode ;
+        | ::piact_hosth hostheader ( Exps ) ;
+# Extended statements (for associativity)
+PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi
+         | ::pieact_ch    global Gtype id ( Participants ) ; Pi
+         | ::pieact_ass   global Mtype id = Exp ; Pi
+         | ::pieact_a_ass global id = Exp ; Pi
+         | ::pieact_def   global Mode pvar Dargs ( Args ) ( Pi ) Pi
+# Non-sequential process constructions (branching termination etc.
+PiTerm ::= ::piterm_pi   ( Pi )
+         | ::piterm_end
+         | ::piterm_call pvar Dexps ( Exps ) ;
+         | ::piterm_if   if Exp then Pi else PiActs
+         | ::piterm_br   Ch >> { Branches }
+         | ::piterm_syn  sync ( Exps ) { Branches }
+         | ::piterm_gsyn guisync ( Exps ) { Inputbranches }
+
+# Global Types
+Gtype ::= ::gtype_term Gterm
+        | ::gtype_act  Gact Gtype
+Gact ::= ::gact_msg int -> int COLON Mtype NamedAssertion ;
+       | ::gact_rec rec gvar Targs ;
+Gterm ::= ::gterm_end    $end ;
+        | ::gterm_call   gvar Tvals ;
+        | ::gterm_branch int -> int { Gbranches }
+        | ::gterm_synch  { Gbranches }
+Gbranches ::= ::gbranches_end  bid Assertion COLON Gtype
+            | ::gbranches_cont bid Assertion COLON Gtype Gbranches
+
+# Local Types
+Ltype ::= ::ltype_term Lterm 
+        | ::ltype_act Lact Ltype
+Lact ::= ::lact_snd    int << Mtype NamedAssertion ;
+       | ::lact_rcv    int >> Mtype NamedAssertion ;
+       | ::lact_forall forall id where Exp ;
+       | ::lact_rec    rec lvar Targs ;
+Lterm ::= ::lterm_bsnd int << { Lbranches } 
+        | ::lterm_brcv int >> { Lbranches } 
+        | ::lterm_call lvar Tvals ; 
+        | ::lterm_end  %end ; 
+        | ::lterm_sync { Lbranches } 
+Lbranches ::= ::lbranches_end  bid Assertion COLON Ltype 
+            | ::lbranches_cont bid Assertion COLON Ltype , Lbranches 
+
+# Message (value) Types
+Mtype ::= ::mtype_stype Stype 
+        | ::mtype_gtype Gtype ( Participants )
+        | ::mtype_ltype Ltype ( int of Participants )
+        | ::mtype_ptype Gtype ( int of Participants )
+Stype ::= ::type_int    Int 
+        | ::type_string String 
+        | ::type_bool   Bool 
+        | ::type_tuple  ( Stypes ) 
+Stypes ::= ::tuple_some Stypes2 
+         | ::tuple_none 
+Stypes2 ::= ::tuple_cont Stype , Stypes2 
+          | ::tuple_end Stype 
+                 
+# Expressions (value)
+Exp  ::= ::exp_if      if Exp then Exp else Exp
+       | ::exp_lvl     Exp2
+Exp2 ::= ::exp_eq      Exp3 = Exp2
+       | ::exp_lvl     Exp3
+Exp3 ::= ::exp_leq     Exp4 <= Exp3
+       | ::exp_lvl     Exp4
+Exp4 ::= ::exp_plus    Exp5 + Exp4
+       | ::exp_lvl     Exp5
+Exp5 ::= ::exp_minus   Exp6 - Exp5
+       | ::exp_lvl     Exp6
+Exp6 ::= ::exp_mult    Exp7 * Exp6
+       | ::exp_lvl     Exp7
+Exp7 ::= ::exp_div     Exp8 / Exp7
+       | ::exp_lvl     Exp8
+Exp8 ::= ::exp_and     Exp9 and Exp8
+       | ::exp_lvl     Exp9
+Exp9 ::= ::exp_or      Exp10 or Exp9
+       | ::exp_lvl     Exp10
+Exp10 ::= ::exp_amp    Exp10 & int
+        | ::exp_lvl    Exp11
+Exp11 ::= ::exp_not    not Exp11
+        | ::exp_lvl    Exp12
+Exp12 ::= ::exp_id     id 
+        | ::exp_int    int 
+        | ::exp_str    string 
+        | ::exp_true   true 
+        | ::exp_false  false 
+        | ::exp_tuple  ( Exps ) 
+        | ::exp_sys    system & string
+Exps ::= ::tuple_some  Exps2
+       | ::tuple_none 
+Exps2 ::= ::tuple_end  Exp
+        | ::tuple_cons Exp , Exps2
+
+# Leftovers / details
+Ch ::= ::ch id [ int ]
+Participant ::= int Mode
+Participants ::= ::participants_end  Participant
+               | ::participants_cont Participant , Participants
+Assertion ::= ::ass_some where Exp
+            | ::ass_none
+NamedAssertion ::= ::name as id Assertion
+                 | ::noname
+Branch ::= ::branch bid Assertion COLON Pi
+Branches ::= ::branches_end  Branch
+           | ::branches_cont Branch Branches
+Inputbranch ::= ::inputbranch bid Assertion ( Targs2 ) COLON Pi
+Inputbranches ::= ::inputbranches_end  Inputbranch
+                | ::inputbranches_cont Inputbranch Inputbranches
+Args ::= ::args_some Args2
+       | ::args_none
+Args2 ::= ::args_end  Mtype id
+        | ::args_cons Mtype id , Args2
+Dargs ::= ::dargs_some < Args2 >
+        | ::dargs_none
+Dexps ::= ::dexps_some < Exps >
+        | ::dexps_none
+Mode ::= ::mode_default
+       | ::mode_pure pure
+       | ::mode_impure impure
+Send ::= ::send_val << Exp
+       | ::send_lbl << bid
+Sends ::= ::sends_end Send
+        | ::sends_cont Send Sends
+Recv ::= ::recv_val >> id
+       | ::recv_ses >> id ( int of int )
+Recvs ::= ::recvs_end Recv
+        | ::recvs_cont Recv Recvs
+Tvals ::= ::tvals_some < Exps >
+        | ::tvals_none
+Targ ::= ::targ_def Mtype id = Exp
+Targs ::= ::targs_some < Targs2 >
+        | ::targs_none
+Targs2 ::= ::targs_end Targ
+         | ::targs_cont Targ , Targs2

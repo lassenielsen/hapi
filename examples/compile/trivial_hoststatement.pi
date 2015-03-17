@@ -1,0 +1,2 @@
+String str = "Hello World";
+HOST("std::cout << (", str, ").ToString() << std::endl;");

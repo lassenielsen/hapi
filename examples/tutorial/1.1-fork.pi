@@ -1,0 +1,25 @@
+// Example 1.1 - Introducing fork ( | )
+// Fork to 5 processes each printing a number to console, resulting in the
+// numbers 1 to 5 being printed, although not necessarily in order!
+
+#include <console.pi>
+
+// Print 1
+c=new console(2 of 2);
+c[1]<<^PutInt<<1;c[1]<<^End;
+| // fork
+// Print 2
+c=new console(2 of 2);
+c[1]<<^PutInt<<2;c[1]<<^End;
+| // fork
+// Print 3
+c=new console(2 of 2);
+c[1]<<^PutInt<<3;c[1]<<^End;
+| // fork
+// Print 4
+c=new console(2 of 2);
+c[1]<<^PutInt<<4;c[1]<<^End;
+| // fork
+// Print 5
+c=new console(2 of 2);
+c[1]<<^PutInt<<5;c[1]<<^End;

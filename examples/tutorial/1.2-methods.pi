@@ -1,0 +1,25 @@
+// Example 1.2 - Introducing methods
+// Declares method, and uses it.
+// Note that methods can only be applied tail-recursively,
+// if non-tail recursive functionality is required, use a
+// service as introduced in tutorial 2.1.
+
+#include <console.pi>
+
+// Implement the method PrintInt
+local PrintInt(Int i)
+( // Print i to console
+  c=new console(2 of 2);
+  c[1]<<^PutInt 
+      <<i;c[1]
+      <<^End;
+)
+// Implement the method PrintInts
+global PrintInts(Int i)
+( // Print 1,2,...,i
+  if i<=0
+  then
+  else ( PrintInt(i); | PrintInts(i-1); )
+)
+// Now the declared methods can be used
+PrintInts(10);

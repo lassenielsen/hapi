@@ -1,0 +1,49 @@
+#define $intpred 2->1:Int;1->2:Bool;$end;
+global $intpred even(1 pure,2);
+global $intpred odd(1 pure,2);
+local pure Even()
+( global s=new even(1 of 2);
+  ( Even();
+  | s[2]>>n;
+    if n=0
+    then s[2]<<true;
+    else if n<=0
+    then e=new even(2 of 2);
+         e[1]<<0-n;
+         e[1]>>res;
+         s[2]<<res;
+    else o=new odd(2 of 2);
+         o[1]<<n-1;
+         o[1]>>res;
+         s[2]<<res;
+  )
+)
+local pure StartEven(Int i)
+( if i<=0
+  then Even();
+  else ( Even(); | StartEven(i-1); )
+)
+StartEven(SYSTEM&"tprocs"); |
+local pure Odd()
+( global s=new odd(1 of 2);
+  ( Odd();
+  | s[2]>>n;
+    if n=0
+    then s[2]<<false;
+    else if n<=0
+    then o=new odd(2 of 2);
+         o[1]<<0-n;
+         o[1]>>res;
+         s[2]<<res;
+    else e=new even(2 of 2);
+         e[1]<<n-1;
+         e[1]>>res;
+         s[2]<<res;
+  )
+)
+local pure StartOdd(Int i)
+( if i<=0
+  then Odd();
+  else ( Odd(); | StartOdd(i-1); )
+)
+StartOdd(SYSTEM&"tprocs"); |

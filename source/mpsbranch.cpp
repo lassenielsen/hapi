@@ -1,8 +1,8 @@
-#include<apims/mpsbranch.hpp>
-#include "common.cpp"
+#include<hapi/mpsbranch.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsBranch::MpsBranch(const MpsChannel &channel, const map<string,MpsTerm*> &branches, const vector<string> &finalBranches) // {{{
 : myChannel(channel)
@@ -25,8 +25,18 @@ MpsBranch::~MpsBranch() // {{{
     myBranches.erase(myBranches.begin());
   }
 } // }}}
-bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Branch {{{
+bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Branch {{{
 {
+  // Check purity constraints
+  if (checkPure)
+	{ if (pureStack.size()>0)
+      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+  }
+
+  // Verify branch
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
   if (session==Gamma.end())
@@ -40,10 +50,10 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, *this, session->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   // Check session has select type
   const MpsLocalBranchType *branchType = dynamic_cast<const MpsLocalBranchType*>(msgType->GetLocalType());
   if (branchType==NULL)
@@ -56,11 +66,12 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   for (map<string,MpsLocalType*>::const_iterator branch=branches.begin();branch!=branches.end();++branch)
   {
     // Add branch to myFinalBranches if type is Done
-    if (branch->second->IsDone())
+    if (branch->second->IsDone()) {
       myFinalBranches.push_back(branch->first);
+    }
     // Create new session environment
     MpsMsgEnv newGamma = Gamma;
-    newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second, msgType->GetPid(), msgType->GetMaxpid());
+    newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second, msgType->GetPid(), msgType->GetParticipants());
     map<string,MpsTerm*>::const_iterator succ = myBranches.find(branch->first);
     if (succ==myBranches.end())
       return PrintTypeError((string)"Branching cannot receive label: " + branch->first,*this,Theta,Gamma,Omega);
@@ -70,7 +81,7 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
       return PrintTypeError((string)"Branch has no assertion: " + branch->first,*this,Theta,Gamma,Omega);
     MpsExp *newTheta = new MpsBinOpExp("and",Theta,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Typecheck Branch
-    bool brcheck=succ->second->TypeCheck(*newTheta,newGamma,Omega);
+    bool brcheck=succ->second->TypeCheck(*newTheta,newGamma,Omega, pureStack, curPure, pureState, checkPure);
 
     // Clean up
     delete newTheta;
@@ -285,7 +296,7 @@ string MpsBranch::ToString(string indent) const // {{{
 } // }}}
 string MpsBranch::ToTex(int indent, int sw) const // {{{
 {
-  string result = ToTex_Channel(myChannel) + "$\\gg$\\newline\n"
+  string result = myChannel.ToTex() + "$\\gg$\\newline\n"
                 + ToTex_Hspace(indent,sw) + "\\{ ";
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
@@ -318,7 +329,7 @@ string MpsBranch::ToC() const // {{{
       result << "  else ";
     result << "  if (" << lblName << ".ToString()==\"" << it->first << "\")" << endl
            << "  {" << endl;
-    if (find(myFinalBranches.begin(),myFinalBranches.end(),lblName)!=myFinalBranches.end()) {
+    if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
       result << "    " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
              << "    delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
     }
@@ -345,13 +356,19 @@ MpsTerm *MpsBranch::RenameAll() const // {{{
   DeleteMap(newBranches);
   return result;
 } // }}}
-void MpsBranch::Parallelize(const MpsTerm &receives, MpsTerm &*seqTerm, MpsTerm &*parTerm) const // {{{
-{
+bool MpsBranch::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+    newBranches[branch->first]=branch->second->Parallelize();
+  seqTerm = new MpsBranch(myChannel,newBranches, GetFinalBranches());
+  parTerm = receives.Append(*seqTerm);
+  DeleteMap(newBranches);
+  return false; // All optimizations are guarded
 } // }}}
 MpsTerm *MpsBranch::Append(const MpsTerm &term) const // {{{
 { map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
-    newBranches[it->first]=it->second->Append(term);
+    newBranches[branch->first]=branch->second->Append(term);
   MpsTerm *result = new MpsBranch(myChannel,newBranches, GetFinalBranches());
   DeleteMap(newBranches);
   return result;

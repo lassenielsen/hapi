@@ -1,0 +1,39 @@
+#define $sys rec $sys; \
+  2->1 \
+  {^CountArgs: 1->2:Int; $sys; \
+   ^GetArg: 2->1:Int; 1->2{^Some: 1->2:String; $sys; ^None: $sys;} \
+   ^End: $end; \
+  }
+#define __ARGC(x) HOST("  ", x, "=libpi::IntValue(__system_args.size());") pure
+#define __ARGV(x,i) HOST("  ", x, "=libpi::StringValue(__system_args[ mpz_get_ui(", i, ".GetValue())]);") pure
+Int argc=0;
+__ARGC(argc);
+global $sys sys(1 pure, 2);
+local pure Sys()
+( global s = new sys(1 of 2);
+  Sys();
+  |
+  local pure SysSession($sys(1 of 1 pure,2) s)
+  ( s[2]>>
+    {^CountArgs: s[2]<<argc;
+                 SysSession(s);
+     ^GetArg:    s[2]>>idx;
+                 if (0<=idx) and (idx+1<=argc)
+                 then s[2]<<^Some;
+                      String arg="";
+                      __ARGV(arg,idx);
+                      s[2]<<arg;
+                      SysSession(s);
+                 else s[2]<<^None;
+                      SysSession(s);
+     ^End:
+    }
+  ) SysSession(s);
+)
+local pure StartSys(Int c)
+( if c<=0
+  then Sys();
+  else ( Sys(); | StartSys(c-1); )
+)
+StartSys(SYSTEM&"tprocs");
+|

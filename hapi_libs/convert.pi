@@ -1,0 +1,30 @@
+// string2int conversion of base 10 string representation of integers to their ordinal values
+#define STRING2INT(str,val) HOST("{ ", val, "=IntValue(", str, ".GetValue()); }")
+
+#define $string2int \
+  2->1:String; \
+  1->2 \
+  {^Error: \
+    1->2:String; \
+    $end; \
+   ^Ok: \
+    1->2:Int; \
+    $end; \
+  }
+global $string2int string2int(1 pure, 2);
+local pure ConvertString2Int()
+( s=new string2int(1 of 2);
+  ( ConvertString2Int();
+  | s[2]>>str;
+    Int val=0;
+    STRING2INT(str,val) pure;
+    s[2]<<^Ok<<val;
+  )
+)
+local pure StartConvertString2Int(Int c)
+( if c<=0
+  then ConvertString2Int();
+  else ( ConvertString2Int(); | StartConvertString2Int(c-1); )
+)
+StartConvertString2Int(SYSTEM&"tprocs");
+|

@@ -1,12 +1,12 @@
-#include <apims/mpsfunction.hpp>
-#include <apims/mpsterm.hpp>
+#include <hapi/mpsfunction.hpp>
+#include <hapi/mpsterm.hpp>
 #include <sstream>
 
-#include "common.cpp"
+#include <hapi/common.hpp>
 
 using namespace std;
 
-namespace apims
+namespace hapi
 {
 std::string DefEnvToString(const MpsFunctionEnv &env) // {{{
 {

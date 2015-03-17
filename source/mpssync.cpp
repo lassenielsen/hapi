@@ -1,8 +1,8 @@
-#include<apims/mpssync.hpp>
-#include "common.cpp"
+#include<hapi/mpssync.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsSync::MpsSync(int maxpid, const std::string &session, const std::map<std::string, MpsTerm*> &branches, const std::map<std::string, MpsExp*> &assertions) // {{{
 : mySession(session),
@@ -20,8 +20,15 @@ MpsSync::~MpsSync() // {{{
   DeleteMap(myBranches);
   DeleteMap(myAssertions);
 } // }}}
-bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rule Sync {{{
+bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Sync {{{
 {
+  // Check purity constraints
+  if (checkPure)
+	{ if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+  }
+
+  // Verify sync
   MpsMsgEnv::const_iterator var=Gamma.find(mySession);
   // Check that session exists
   if (var==Gamma.end())
@@ -34,10 +41,10 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   // Check if unfolding is necessary
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, *this, var->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, *this, var->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
 
   // Check session has sync type
   const MpsLocalSyncType *syncType = dynamic_cast<const MpsLocalSyncType*>(msgType->GetLocalType());
@@ -54,7 +61,7 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   MpsExp *mandatoryOr=new MpsBoolVal(false); // FIXME: This is necessary because Global Type Validity Check is Missing
   for (map<string,MpsLocalType*>::const_iterator branch=branches.begin();branch!=branches.end();++branch)
   {
-    if (branch->first[0]=='^') // Mandatory branch
+    if (branch->first[1]=='^') // Mandatory branch
     {
       map<string,MpsTerm*>::const_iterator myBranch=myBranches.find(branch->first);
       map<string,MpsExp*>::const_iterator assertion=assertions.find(branch->first);
@@ -121,11 +128,11 @@ bool MpsSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
         return PrintTypeError((string)"Synchronisation may accept inactive branch: " + branch->first,*this,Theta,Gamma,Omega);
     // Make new Gamma
     MpsMsgEnv newGamma = Gamma;
-    newGamma[mySession] = new MpsDelegateLocalMsgType(*type->second,msgType->GetPid(), msgType->GetMaxpid());
+    newGamma[mySession] = new MpsDelegateLocalMsgType(*type->second,msgType->GetPid(), msgType->GetParticipants());
     // Make new Theta
     MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Check Branch
-    bool checkBranch=branch->second->TypeCheck(*newTheta,newGamma,Omega);
+    bool checkBranch=branch->second->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
     delete newTheta;
     if (not checkBranch)
       return false;
@@ -413,6 +420,23 @@ MpsTerm *MpsSync::RenameAll() const // {{{
 
   DeleteMap(newBranches);
 
+  return result;
+} // }}}
+bool MpsSync::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+    newBranches[branch->first]=branch->second->Parallelize();
+  seqTerm = new MpsSync(myMaxpid, mySession,newBranches, myAssertions);
+  parTerm = receives.Append(*seqTerm);
+  DeleteMap(newBranches);
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsSync::Append(const MpsTerm &term) const // {{{
+{ map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+    newBranches[branch->first]=branch->second->Append(term);
+  MpsTerm *result = new MpsSync(myMaxpid, mySession,newBranches, myAssertions);
+  DeleteMap(newBranches);
   return result;
 } // }}}
 MpsTerm *MpsSync::CloseDefinitions() const // {{{

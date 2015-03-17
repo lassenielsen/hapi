@@ -1,0 +1,15 @@
+#define $proxy \
+  1->2:String; \
+  2->3:String; \
+  $end;
+global $proxy a(1,2,3);
+// Sender
+s=new a(1 of 3);
+s[2] << "Hello";
+| // Proxy
+s=new a(2 of 3);
+s[1] >> value;
+s[3] << value;
+| // Receiver
+s=new a(3 of 3);
+s[2] >> value;

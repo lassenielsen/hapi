@@ -1,0 +1,19 @@
+// Exampe 3.4 - Introduconig the convert service
+// Converting between string and int
+
+#include <console.pi>
+// Include convertion services like string2int
+#include <convert.pi>
+
+c=new console(2 of 2);
+// Connect to string2int service
+s=new string2int(2 of 2);
+s[1]<<"123";
+s[1]>>
+{^Error:
+  s[1]>>e;
+  c[1]<<^PutString<<"Error:"<<^PutString<<e<<^End;
+ ^Ok:
+  s[1]>>n;
+  c[1]<<^PutString<<"The result of converting 123 to an integer is"<<^PutInt<<n<<^End;
+}

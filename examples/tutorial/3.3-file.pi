@@ -1,0 +1,47 @@
+// Example 3.3 - Introducing the file service
+// Read write and delete local files
+#include <console.pi>
+// Include file service
+#include <file.pi>
+
+// Error handling
+local FError(String s, $console(2 of 1,2) c, 1->2:String;$end;(2 of 1,2) f)
+( f[1]>>e;
+  c[1]<<^PutString<<s<<^PutString<<e<<^End;
+)
+ 
+c = new console(2 of 2);
+// Create file with content: Hello World
+f = new file(2 of 2);
+f[1]<<^Create;
+f[1]<<"test.txt";
+f[1]>>
+{^Error:
+  FError("Write Error:",c,f);
+ ^OK:
+  f[1]<<^Write<<"Hello World"<<^Close;
+  c[1]<<^PutString;
+  c[1]<<"File written with content: Hello World";
+  // Open created file, and read content
+  f = new file(2 of 2);
+  f[1]<<^Read<<"test.txt";
+  f[1]>>
+  {^Error:
+    FError("Read Error:",c,f);
+   ^OK:
+    f[1]<<^All;
+    f[1]>>s;
+    c[1]<<^PutString<<"Read content"<<^PutString<<s;
+    // Remove file
+    f = new file(2 of 2);
+    f[1]<<^Remove<<"file.txt";
+    f[1]>>
+    {^Error:
+      FError("Remove Error:",c,f);
+     ^OK:
+      c[1]<<^PutString;
+      c[1]<<"Removed file";
+      c[1]<<^End;
+    }
+  }
+}

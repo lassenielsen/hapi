@@ -1,9 +1,9 @@
-#include<apims/mpsguisync.hpp>
-#include <apims/mpsgui.hpp>
-#include "common.cpp"
+#include<hapi/mpsguisync.hpp>
+#include <hapi/mpsgui.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsGuiSync::MpsGuiSync(int maxpid, const std::string &session, int pid, const std::map<std::string, inputbranch> &branches) // {{{
 : mySession(session),
@@ -46,8 +46,15 @@ MpsGuiSync::~MpsGuiSync() // {{{
     myBranches.erase(myBranches.begin());
   }
 } // }}}
-bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Use rule Sync (extended) {{{
+bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Sync (extended) {{{
 {
+  if (checkPure)
+	{ // Check purity constraints
+    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+  }
+
+  // Verify guisync
   MpsMsgEnv::const_iterator var=Gamma.find(mySession);
   // Check that session exists
   if (var==Gamma.end())
@@ -60,10 +67,10 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
   // Check if unfolding is necessary
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, *this, var->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, *this, var->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
 
   // Check session has sync type
   const MpsLocalSyncType *syncType = dynamic_cast<const MpsLocalSyncType*>(msgType->GetLocalType());
@@ -82,7 +89,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
   MpsExp *mandatoryOr=new MpsBoolVal(false); // FIXME: This is necessary because Global Type Validity Check is Missing
   for (map<string,MpsLocalType*>::const_iterator branch=branches.begin();branch!=branches.end();++branch)
   {
-    if (branch->first[0]=='^') // Mandatory branch
+    if (branch->first[1]=='^') // Mandatory branch
     {
       map<string,inputbranch>::const_iterator myBranch=myBranches.find(branch->first);
       map<string,MpsExp*>::const_iterator assertion=assertions.find(branch->first);
@@ -171,7 +178,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
           delete tmp1;
           tmp1=tmp2;
         }
-        newGamma[gamma->first]=new MpsDelegateLocalMsgType(*tmp1,gammaDel->GetPid(),gammaDel->GetMaxpid());
+        newGamma[gamma->first]=new MpsDelegateLocalMsgType(*tmp1,gammaDel->GetPid(),gammaDel->GetParticipants());
       }
       else
       { newGamma[gamma->first]=gamma->second; // COPY?
@@ -193,7 +200,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
       newTheta=tmpTheta;
     }
     // Check Branch
-    bool checkBranch=myBranch->second.term->TypeCheck(*newTheta,newGamma,Omega);
+    bool checkBranch=myBranch->second.term->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
     delete newTheta;
     while (newGamma.size()>0)
     { const MpsDelegateMsgType *gammaDel=dynamic_cast<const MpsDelegateMsgType*>(newGamma.begin()->second);
@@ -286,7 +293,7 @@ bool MpsGuiSync::SubSteps(vector<MpsStep> &dest) // {{{
     }
     else
     {
-#if APIMS_DEBUG_LEVEL>10
+#if HAPI_DEBUG_LEVEL>10
       cerr << "Illegal choice: " << choice->name << endl;
 #endif
     }
@@ -741,7 +748,7 @@ string MpsGuiSync::ToString(string indent) const // {{{
     {
       if (i>0)
         result += ",";
-      result += it->second.args[i] + "=" + it->second.values[i]->ToString() + ": " +it->second.types[i]->ToString();
+      result += it->second.types[i]->ToString() + " " + it->second.args[i] + "=" + it->second.values[i]->ToString();
     }
     result += "):\n" + newIndent + it->second.term->ToString(newIndent);
   }
@@ -816,6 +823,52 @@ MpsTerm *MpsGuiSync::RenameAll() const // {{{
   while (newBranches.size() > 0)
   {
     delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    DeleteVector(newBranches.begin()->second.types);
+    DeleteVector(newBranches.begin()->second.values);
+    newBranches.erase(newBranches.begin());
+  }
+
+  return result;
+} // }}}
+bool MpsGuiSync::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ map<string,inputbranch> newBranches;
+  for (map<string,inputbranch>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+  {
+    newBranches[branch->first].term=branch->second.term->Parallelize();
+    newBranches[branch->first].assertion=branch->second.assertion->Copy();
+    newBranches[branch->first].names=branch->second.names;
+    newBranches[branch->first].args=branch->second.args;
+    newBranches[branch->first].types=CopyVector(branch->second.types);
+    newBranches[branch->first].values=CopyVector(branch->second.values);
+  }
+  seqTerm = new MpsGuiSync(myMaxpid, mySession, myPid, newBranches);
+  parTerm = receives.Append(*seqTerm);
+  // Clean up
+  while (newBranches.size()>0)
+  { delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    DeleteVector(newBranches.begin()->second.types);
+    DeleteVector(newBranches.begin()->second.values);
+    newBranches.erase(newBranches.begin());
+  }
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsGuiSync::Append(const MpsTerm &term) const // {{{
+{ map<string,inputbranch> newBranches;
+  for (map<string,inputbranch>::const_iterator branch=myBranches.begin(); branch!=myBranches.end(); ++branch)
+  {
+    newBranches[branch->first].term=branch->second.term->Append(term);
+    newBranches[branch->first].assertion=branch->second.assertion->Copy();
+    newBranches[branch->first].names=branch->second.names;
+    newBranches[branch->first].args=branch->second.args;
+    newBranches[branch->first].types=CopyVector(branch->second.types);
+    newBranches[branch->first].values=CopyVector(branch->second.values);
+  }
+  MpsTerm *result = new MpsGuiSync(myMaxpid, mySession, myPid, newBranches);
+  // Clean up
+  while (newBranches.size()>0)
+  { delete newBranches.begin()->second.term;
     delete newBranches.begin()->second.assertion;
     DeleteVector(newBranches.begin()->second.types);
     DeleteVector(newBranches.begin()->second.values);

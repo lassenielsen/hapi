@@ -1,0 +1,47 @@
+// Implementation of math server using branching
+#define $type \
+  1->2 \
+  {^^sum: 1->2:Int; \
+          1->2:Int; \
+          2->1:Int; \
+          $end; \
+   ^^mult:1->2:Int; \
+          1->2:Int; \
+          2->1:Int; \
+          $end; \
+   ^^neg: 1->2:Int; \
+          2->1:Int; \
+          $end; \
+  }
+global $type a(1,2 pure);
+local X()
+( global s=new a(2 of 2);
+  X();
+  |
+  s[1] >>
+  {^^sum: s[1] >> x;
+          s[1] >> y;
+          s[1] << x+y;
+   ^^mult:s[1] >> x;
+          s[1] >> y;
+          s[1] << x*y;
+   ^^neg: s[1] >> x;
+          s[1] << 0-x;
+  }
+)
+X();
+|
+s=new a(1 of 2);
+s[2] << ^^mult;
+s[2] << 5;
+s[2] << 3;
+s[2] >> x;
+s=new a(1 of 2);
+s[2] << ^^sum;
+s[2] << x;
+s[2] << x;
+s[2] >> x;
+s=new a(1 of 2);
+s[2] << ^^neg;
+s[2] << x;
+s[2] >> x;

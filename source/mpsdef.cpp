@@ -1,15 +1,19 @@
-#include<apims/mpsdef.hpp>
-#include<apims/mpscall.hpp>
-#include<apims/mpsend.hpp>
-#include "common.cpp"
+#include <hapi/mpslink.hpp>
+#include <hapi/mpscond.hpp>
+#include <hapi/mpsdef.hpp>
+#include <hapi/mpscall.hpp>
+#include <hapi/mpsend.hpp>
+#include <hapi/mpspar.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
-MpsDef::MpsDef(const string &name, const std::vector<std::string> &args, const vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, const MpsMsgEnv &env) // {{{
+MpsDef::MpsDef(const string &name, const std::vector<std::string> &args, const vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, const MpsMsgEnv &env, bool pure) // {{{
 : myName(name),
   myArgs(args),
-  myStateArgs(stateargs)
+  myStateArgs(stateargs),
+  myPure(pure)
 {
   myTypes.clear();
   for (vector<MpsMsgType*>::const_iterator type=types.begin(); type!=types.end(); ++type)
@@ -34,8 +38,80 @@ MpsDef::~MpsDef() // {{{
   delete mySucc;
   delete myBody;
 } // }}}
-bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // * Use rule Def {{{
+bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Def {{{
 {
+  PureState succState=pureState;
+  PureState bodyState=myPure?CPS_PURE:CPS_IMPURE;
+
+  if (checkPure) // Check purity constraints {{{
+   { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_DEF && pureState!=CPS_INIT_DEF)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n    *   ( global s=new ch(p of n);\n     *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+    if (pureStack.size()>0)
+      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+    if (pureState==CPS_INIT_DEF)
+    { bodyState=CPS_INIT_BRANCH;
+      succState=CPS_INIT_CALL;
+    }
+    else if (pureState==CPS_SERVICE_DEF)
+    { bodyState=CPS_SERVICE_LINK;
+      succState=CPS_INIT_DEF;
+      // Test structure
+      if (GetArgs().size()>0 || GetStateArgs().size()>0) // No args or state
+        return PrintTypeError("Implementation of pure participant " + GetName() + " must have no arguments and state",*this,Theta,Gamma,Omega);
+
+      // Body structure
+      const MpsLink *bodyLink=dynamic_cast<const MpsLink*>(GetBody());
+      if (bodyLink==NULL) // Link immediately
+        return PrintTypeError("Implementation of pure participant " + GetName() + ". Pure implementations must start with linking as implemented participant.\n     *   local X()\n      !   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      const MpsPar *bodyPar=dynamic_cast<const MpsPar*>(bodyLink->GetSucc());
+      if (bodyPar==NULL) // Fork after linking
+        return PrintTypeError("Implementation of pure participant " + GetName() + ". Pure implementations must form imediately after linking.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       !     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      const MpsCall *bodyCall=dynamic_cast<const MpsCall*>(bodyPar->GetLeft());
+      if (bodyCall==NULL || bodyCall->GetName()!=GetName()) // Call immediately (after fork)
+        return PrintTypeError("Implementation of pure participant " + GetName() + ". Pure implementations must reinitiate service immediately after linking and forking.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       !     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+      // Init structure
+      // local pure StartX(Int i)
+      const MpsDef *initDef=dynamic_cast<const MpsDef*>(GetSucc());
+      if (initDef==NULL) // Define initiating process
+        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementations must use pure def to initiate service.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       !   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+     if (initDef->GetStateArgs().size()!=0)
+        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementations pure def to must have no state.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       !   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+     if (initDef->GetTypes().size()!=1 || dynamic_cast<const MpsIntMsgType*>(initDef->GetTypes()[0])==NULL)
+        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementations pure def must have exactly one argument of type Int.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       !   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+      const MpsCond *initCond=dynamic_cast<const MpsCond*>(initDef->GetBody());
+      if (initCond==NULL) // if ...
+        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementation must branch.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       !   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      const MpsBinOpExp *initCondExp=dynamic_cast<const MpsBinOpExp*>(initCond->GetCond());
+      if (initCondExp==NULL || initCondExp->GetOp()!="<=" || initCondExp->GetLeft().ToString()!=initDef->GetArgs()[0] || initCondExp->GetRight().ToString()!="0")
+        return PrintTypeError("Initialization of service " + GetName() + ". Pure implementation initialization uses wrong expression for branching.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       !   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+      const MpsCall *initThenCall=dynamic_cast<const MpsCall*>(initCond->GetTrueBranch());
+      if (initThenCall==NULL || initThenCall->GetName()!=GetName() )
+        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       !     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+      const MpsPar *initElsePar=dynamic_cast<const MpsPar*>(initCond->GetFalseBranch());
+      if (initElsePar==NULL )
+        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       !     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+      const MpsCall *initElseCall1=dynamic_cast<const MpsCall*>(initElsePar->GetLeft());
+      if (initElseCall1==NULL || initElseCall1->GetName()!=GetName() )
+        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       !     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+      const MpsCall *initElseCall2=dynamic_cast<const MpsCall*>(initElsePar->GetRight());
+      if (initElseCall2==NULL || initElseCall2->GetName()!=initDef->GetName() )
+        return PrintTypeError("Purity error, expected bekow structure.\n     *   local X()\n      *   ( global s=new ch(p of n);\n       *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       !     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+
+      // Test no open sessions
+      for (MpsMsgEnv::const_iterator var = Gamma.begin(); var!=Gamma.end(); ++var)
+        if (dynamic_cast<const MpsDelegateMsgType*>(var->second)!=NULL) // Session type
+          return PrintTypeError("Implementation of pure participant " + GetName() + " uses open session " + var->first + " breaking purity." ,*this,Theta,Gamma,Omega);
+    }
+  } // }}}
+  // Verify def
   // Check if def is sound
   if (myArgs.size() != myTypes.size())
     return PrintTypeError((string)"Bad def: difference in number of arguments and number of types",*this,Theta,Gamma,Omega);
@@ -43,6 +119,7 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
     return PrintTypeError((string)"Bad def: difference in number of state arguments and number of state types",*this,Theta,Gamma,Omega);
   // Make new process-environment
   MpsProcEnv newOmega = Omega;
+  newOmega[myName].pure = myPure;
   newOmega[myName].types = myTypes;
   newOmega[myName].snames = myStateArgs;
   for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin(); it!=myStateTypes.end(); ++it)
@@ -52,7 +129,7 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   // Make new environments for body
   MpsMsgEnv newGamma;
   for (MpsMsgEnv::const_iterator var = Gamma.begin(); var!=Gamma.end(); ++var)
-    if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Npt session type
+    if (dynamic_cast<const MpsDelegateMsgType*>(var->second)==NULL) // Not session type
       newGamma[var->first]=var->second;
   // Update environments from state-arguments
   set<string> usedArgs;
@@ -74,7 +151,8 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
     myEnv[it->first]=it->second->Copy();
   // Make subcalls
-  return mySucc->TypeCheck(Theta,Gamma,newOmega) && myBody->TypeCheck(Theta,newGamma,newOmega);
+  return mySucc->TypeCheck(Theta,Gamma,newOmega,pureStack,curPure, succState, checkPure) &&
+         myBody->TypeCheck(Theta,newGamma,newOmega,pureStack,curPure, bodyState, checkPure);
 } // }}}
 MpsTerm *MpsDef::ApplyDef(const std::string &path, std::vector<MpsFunction> &dest) const // {{{
 { if (path.size()>0)
@@ -107,7 +185,7 @@ MpsTerm *MpsDef::PRename(const string &src, const string &dst) const // {{{
   
   MpsTerm *newBody = myBody->PRename(src,dst);
   MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc, myEnv);
+  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc, myEnv, myPure);
   delete newBody;
   delete newSucc;
 
@@ -171,7 +249,7 @@ MpsTerm *MpsDef::ERename(const string &src, const string &dst) const // {{{
   }
 
   // Create result
-  MpsTerm *result = new MpsDef(myName,newArgs,myTypes,newStateArgs,myStateTypes,*newBody,*newSucc,newEnv);
+  MpsTerm *result = new MpsDef(myName,newArgs,myTypes,newStateArgs,myStateTypes,*newBody,*newSucc,newEnv, myPure);
 
   DeleteMap(newEnv);
   delete newBody;
@@ -203,7 +281,7 @@ MpsTerm *MpsDef::ReIndex(const string &session, int pid, int maxpid) const // {{
     newBody=tmpBody;
   }
 
-  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv);
+  MpsTerm *result = new MpsDef(myName,myArgs,myTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv, myPure);
   delete newBody;
   delete newSucc;
   return result;
@@ -273,7 +351,7 @@ MpsTerm *MpsDef::PSubst(const string &var, const MpsTerm &exp, const vector<stri
     newBody = tmpBody;
   }
   // Make result
-  MpsTerm *result = new MpsDef(newName, newArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc, myEnv);
+  MpsTerm *result = new MpsDef(newName, newArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc, myEnv, myPure);
   delete newBody;
   delete newSucc;
   return result;
@@ -305,7 +383,7 @@ MpsTerm *MpsDef::ESubst(const string &source, const MpsExp &dest) const // {{{
     if (*it == source)
       found=true;
   if (found) // Do not substitute in body
-    result = new MpsDef(newName, myArgs, newTypes, myStateArgs, newStateTypes, *newBody, *newSucc, newEnv);
+    result = new MpsDef(newName, myArgs, newTypes, myStateArgs, newStateTypes, *newBody, *newSucc, newEnv, myPure);
   else
   {
     vector<string> newStateArgs; // Find new state arguments, and rename if necessary
@@ -340,7 +418,7 @@ MpsTerm *MpsDef::ESubst(const string &source, const MpsExp &dest) const // {{{
     MpsTerm *tmpBody = newBody->ESubst(source,dest); // Make substitution in body
     delete newBody;
     newBody=tmpBody;
-    result = new MpsDef(newName, newArgs, newTypes, newStateArgs, newStateTypes, *newBody, *newSucc, newEnv);
+    result = new MpsDef(newName, newArgs, newTypes, newStateArgs, newStateTypes, *newBody, *newSucc, newEnv, myPure);
   }
   delete newBody;
   delete newSucc;
@@ -366,7 +444,7 @@ MpsTerm *MpsDef::GSubst(const string &source, const MpsGlobalType &dest, const v
   for (MpsMsgEnv::const_iterator it=myEnv.begin(); it!=myEnv.end(); ++it)
     newEnv[it->first]=it->second->GSubst(source,dest,args);
   
-  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*newBody,*newSucc,newEnv);
+  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*newBody,*newSucc,newEnv, myPure);
 
   // Clean Up
   DeleteVector(newStateTypes);
@@ -394,7 +472,7 @@ MpsTerm *MpsDef::LSubst(const string &source, const MpsLocalType &dest, const ve
   for (MpsMsgEnv::const_iterator it=myEnv.begin(); it!=myEnv.end(); ++it)
     newEnv[it->first]=it->second->LSubst(source,dest,args);
   
-  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*myBody,*mySucc,newEnv);
+  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*myBody,*mySucc,newEnv, myPure);
 
   // Clean Up
   DeleteVector(newStateTypes);
@@ -424,8 +502,7 @@ set<string> MpsDef::FEV() const // {{{
 } // }}}
 MpsTerm *MpsDef::Copy() const // {{{
 {
-  // assert mySucc != NULL
-  return new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *mySucc, myEnv);
+  return new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *mySucc, myEnv, myPure);
 } // }}}
 bool MpsDef::Terminated() const // {{{
 {
@@ -440,18 +517,18 @@ MpsTerm *MpsDef::Simplify() const // {{{
   if (newSucc->ToString() == "end")
     result = new MpsEnd();
   else
-    result = new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc, myEnv);
+    result = new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *newBody, *newSucc, myEnv, myPure);
   delete newSucc;
   delete newBody;
   return result;
 } // }}}
 string MpsDef::ToString(string indent) const // {{{
 {
-  string newIndent = indent + "   ";
-  string typeIndent = indent + "     ";
+  string newIndent = indent + "  ";
+  string typeIndent = indent + "       ";
   for (int i=0; i<myName.size();++i)
     typeIndent+=" ";
-  string result = (string)"def " + myName;
+  string result = (string)"local " + myName;
   if (myStateArgs.size()>0)
   {
     result += "<";
@@ -459,10 +536,7 @@ string MpsDef::ToString(string indent) const // {{{
     {
       if (i>0)
         result += ",\n" + typeIndent;
-      string newTypeIndent = typeIndent + "  ";
-      for (int j=0; j<myStateArgs[i].size();++j)
-        newTypeIndent+=" ";
-      result += myStateArgs[i] + ": " + myStateTypes[i]->ToString(newTypeIndent);
+      result += myStateTypes[i]->ToString(typeIndent) + " " + myStateArgs[i];
     }
     result += ">\n" + typeIndent.substr(1);
   }
@@ -471,14 +545,12 @@ string MpsDef::ToString(string indent) const // {{{
   {
     if (i>0)
       result += ",\n" + typeIndent;
-    string newTypeIndent = typeIndent + "  ";
-    for (int j=0; j<myArgs[i].size();++j)
-      newTypeIndent+=" ";
-    result += myArgs[i] + ": " + myTypes[i]->ToString(newTypeIndent);
+    result += myTypes[i]->ToString(typeIndent) + " " + myArgs[i];
   }
   result += ")";
-  result += (string)"=\n" + newIndent + myBody->ToString(newIndent);
-  result += (string)"\n" + indent + "in " + mySucc->ToString(newIndent);
+  result += (string)"\n" + indent + "( " + myBody->ToString(newIndent);
+  result += (string)"\n" + indent + ")";
+  result += (string)"\n" + indent + mySucc->ToString(newIndent);
   return result;
 } // }}}
 string MpsDef::ToTex(int indent, int sw) const // {{{
@@ -569,7 +641,8 @@ MpsTerm *MpsDef::RenameAll() const // {{{
                              newStateTypes,
                              *newBody,
                              *newSucc,
-                             myEnv);
+                             myEnv,
+                             myPure);
 
   // Cleanup
   delete newSucc;
@@ -577,6 +650,21 @@ MpsTerm *MpsDef::RenameAll() const // {{{
   DeleteVector(newTypes);
   DeleteVector(newStateTypes);
 
+  return result;
+} // }}}
+bool MpsDef::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
+{ MpsTerm *seqSucc = mySucc->Parallelize();
+  MpsTerm *seqBody = myBody->Parallelize();
+  seqTerm=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *seqBody, *seqSucc, myEnv, myPure);
+  delete seqSucc;
+  delete seqBody;
+  parTerm=receives.Append(*seqTerm);
+  return false; // All optimizations are guarded
+} // }}}
+MpsTerm *MpsDef::Append(const MpsTerm &term) const // {{{
+{ MpsTerm *newSucc=mySucc->Append(term);
+  MpsTerm *result=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *myBody, *newSucc, myEnv, myPure);
+  delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsDef::CloseDefinitions() const // {{{
@@ -621,7 +709,7 @@ MpsTerm *MpsDef::CloseDefinitions() const // {{{
   MpsTerm *newBody = tmpBody->CloseDefinitions();
   delete tmpBody;
   // Create result
-  MpsTerm *result=new MpsDef(myName,newArgs,newTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv);
+  MpsTerm *result=new MpsDef(myName,newArgs,newTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv, myPure);
 
   delete newBody;
   delete newSucc;

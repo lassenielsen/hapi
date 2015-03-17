@@ -1,0 +1,39 @@
+#include <console.pi>
+
+#define $fib \
+  2->1:Int;\
+  1->2:Int;\
+  $end;
+
+global $fib fib(1 pure,2);
+local pure Fib()
+( global s = new fib(1 of 2);
+  Fib(); |
+  s[2]>>x;
+  if x <=1
+  then s[2]<<1;
+  else s1 = new fib(2 of 2);
+       s1[1]<<x-1;
+       s1[1]>>f1;
+       s2=new fib(2 of 2);
+       s2[1]<<x-2;
+       s2[1]>>f2;
+       s[2]<<f1+f2;
+)
+local pure StartFib(Int i)
+( if i<=0
+  then Fib();
+  else ( Fib(); | StartFib(i-1); )
+)
+StartFib(SYSTEM&"tprocs");
+|
+c = new console(2 of 2);
+c[1] << ^PutString << "What is n?"
+     << ^GetInt;
+c[1] >> v;
+f = new fib(2 of 2);
+f[1] << v;
+f[1] >> r;
+c[1] << ^PutString << "Fib(n) is"
+     << ^PutInt << r
+     << ^End;

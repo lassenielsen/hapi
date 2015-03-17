@@ -1,8 +1,9 @@
-#include<apims/mpssnd.hpp>
-#include "common.cpp"
+#include<hapi/mpssnd.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsSnd::MpsSnd(const MpsChannel &channel, const MpsExp &exp, const MpsTerm &succ, const MpsMsgType &type, bool final) // {{{
 : myChannel(channel)
@@ -18,8 +19,18 @@ MpsSnd::~MpsSnd() // {{{
   delete mySucc;
   delete myExp;
 } // }}}
-bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rules Send and Deleg (and new rule for delegaing the session itself) {{{
+bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rules Send and Deleg (and new rule for delegaing the session itself) {{{
 {
+  // Check purity constraints
+  if (checkPure)
+	{ if (pureStack.size()>0)
+      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+  }
+
+  // Verify snd
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
   if (session==Gamma.end())
@@ -31,10 +42,10 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
-    return TypeCheckRec(Theta, Gamma, Omega, *this, session->first);
+    return TypeCheckRec(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, *this, session->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   // Check session has send type
   const MpsLocalSendType *sndType = dynamic_cast<const MpsLocalSendType*>(msgType->GetLocalType());
   if (sndType==NULL)
@@ -48,7 +59,7 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
     newType = sndType->GetSucc()->ESubst(sndType->GetAssertionName(),*myExp);
   else
     newType = sndType->GetSucc()->Copy();
-  MpsDelegateLocalMsgType *newMsgType=new MpsDelegateLocalMsgType(*newType,msgType->GetPid(),msgType->GetMaxpid());
+  MpsDelegateLocalMsgType *newMsgType=new MpsDelegateLocalMsgType(*newType,msgType->GetPid(),msgType->GetParticipants());
   delete newType;
   MpsMsgEnv newGamma = Gamma;
   newGamma[myChannel.GetName()]=newMsgType;
@@ -76,7 +87,7 @@ bool MpsSnd::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   if (dynamic_cast<const MpsDelegateMsgType*>(sndType->GetMsgType())!=NULL)
     newGamma.erase(newGamma.find(myExp->ToString()));
   // Check rest of program
-  bool result = mySucc->TypeCheck(Theta,newGamma,Omega);
+  bool result = mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Store if this is final action in session
   myFinal=newMsgType->GetLocalType()->IsDone();
   // Clean Up
@@ -215,7 +226,7 @@ string MpsSnd::ToString(string indent) const // {{{
 } // }}}
 string MpsSnd::ToTex(int indent, int sw) const // {{{
 {
-  return ToTex_Channel(myChannel) + "$\\ll$" + myExp->ToString() + ";\\newline\n"
+  return myChannel.ToTex() + "$\\ll$" + myExp->ToString() + ";\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
 string MpsSnd::ToC() const // {{{
@@ -265,7 +276,7 @@ MpsTerm *MpsSnd::RenameAll() const // {{{
   delete newType;
   return result;
 } // }}}
-void MpsSnd::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm &*parTerm) const // {{{
+bool MpsSnd::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 {
   // Find used vars
   set<string> usedVars = myExp->FV();
@@ -273,26 +284,23 @@ void MpsSnd::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm &*
   // Split receives using the used vars
   MpsTerm *pre;
   MpsTerm *post;
-  receivers.SplitReceives(usedVars,pre,post);
+  receivers.Split(usedVars,pre,post);
+  bool opt1=dynamic_cast<const MpsEnd*>(post)==NULL;
   // Parallelize succ with post receives
   MpsTerm *seqSucc;
   MpsTerm *parSucc;
-  mySucc->Parallelize(*post,seqSucc,parSucc);
+  bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
   delete post;
   // Make parallelized term
   MpsTerm *parTmp = new MpsSnd(myChannel, *myExp, *parSucc, GetMsgType(), GetFinal());
   delete parSucc;
-  parTerm = pre->Append(parTmp);
+  parTerm = pre->Append(*parTmp);
   delete pre;
   delete parTmp;
-  if (seqSucc!=NULL)
-  { seqTerm = new MpsSnd(myChannel, *myExp, *seqSucc, GetMsgType(), GetFinal());
-    delete seqSucc;
-  }
-  else if (dynamic_cast<MpsEnd*>(post)!=NULL) // some optimization can be done
-    seqTerm=Copy();
-  else
-    seqTerm=NULL;
+  // Make sequential term
+  seqTerm = new MpsSnd(myChannel, *myExp, *seqSucc, GetMsgType(), GetFinal());
+  delete seqSucc;
+  return opt1 || opt2;
 } // }}}
 MpsTerm *MpsSnd::Append(const MpsTerm &term) const // {{{
 {

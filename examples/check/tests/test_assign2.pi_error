@@ -1,0 +1,11 @@
+// Test assign
+#define $a \
+  1->2:Int; \
+  $end;
+global $a a(1,2);
+s=new a(1 of 2);
+Int s=5;
+s[1]<<5;
+|
+s=new a(2 of 2);
+s[2]>>x;

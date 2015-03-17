@@ -1,0 +1,10 @@
+// Test if unused metods are removed from the environment
+local X(Int x)
+( local Y(Int y)
+  ( X(x-y);
+  )
+  if x=0
+  then
+  else Y(1);
+)
+X(1000);

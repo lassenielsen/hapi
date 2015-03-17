@@ -1,6 +1,6 @@
-#include <apims/mpsevent.hpp>
+#include <hapi/mpsevent.hpp>
 
-using namespace apims;
+using namespace hapi;
 using namespace std;
 
 /* MpsEvent constructor and destructor
@@ -64,15 +64,6 @@ string MpsEvent::ToString() const // {{{
     case brcv:
       return (string)">" + myLabel;
       break;
-    //case tau:
-    //  return "_TAU"; // This case should not be reached
-    //  break;
-    //case link:
-    //  return (string)"new " + mySession;
-    //  break;
-    //case sync:
-    //  return (string)"sync";
-    //  break;
     default:
       return "?";
   }

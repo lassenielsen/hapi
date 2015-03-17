@@ -1,0 +1,49 @@
+// Example 3.0 - Calculating fibonacchi numbers
+// Utilizinf pure services to automatically obtain concurrency
+// Include console functionality like printing
+#include <console.pi>
+
+// Define api for service
+#define $fib \
+  2->1:Int; \
+  1->2:Int; \
+  $end;
+
+// Declare service
+global $fib fib(1 pure,2);
+
+// Implement service
+local pure Fib()
+( global s=new fib(1 of 2);              // Wait for client / invocation
+  Fib();                                 // Maintain number of processes waiting for clients
+  |                                      // Start process to serve the request
+  s[2]>>n;                               // Receive n from client
+  if n<=1
+  then s[2]<<1;                          // Simple case
+  else f1=new fib(2 of 2);               // Recursive case
+       f1[1]<<n-1;
+       f1[1]>>r1;                        // r1 = fib(n-1)
+       f2=new fib(2 of 2);
+       f2[1]<<n-2;
+       f2[1]>>r2;                        // r2 = fib(n-2)
+       s[2]<<r1+r2;                      // return r1+r2
+)
+local pure StartFib(Int n)               // Start n copies of service
+( if n<=0
+  then Fib();
+  else ( Fib(); | StartFib(n-1); )
+)
+StartFib(SYSTEM & "tprocs");             // Start as many processes as the target number of active processes
+|
+
+// Main program
+c=new console(2 of 2);                   // Get access to console
+c[1]<<^PutString<<"Input n"<<^GetInt;    // Ask for n
+c[1]>>n;                                 // Read n
+c[1]<<^End;                              // Release access to console
+s=new fib(2 of 2);                       // Call fib(n)
+s[1]<<n;
+s[1]>>f;                                 // Get result
+c=new console(2 of 2);
+c[1]<<^PutString<<"Fib(n)="<<^PutInt<<f; // Print result
+c[1]<<^End;                              // Release access to console

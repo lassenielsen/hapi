@@ -1,0 +1,42 @@
+// Fib Server Protocol
+#define $fib \
+  1->2:Int; \
+  2->1:Int; \
+  $end;
+global $fib a(1,2 pure);
+local Fib()                         // Define Fib Server
+( global s=new a(2 of 2);           // Receive Connection
+  Fib();                            // Start new server
+  |
+  s[1] >> x;                        // Receive argument
+  if x<=1                           // If simple case
+  then s[1] << 1;                   // Return directly
+  else t1=new a(1 of 2);            // Connect to (another) Fib Server
+       t1[2]<<x-1;                  // Send x-1 to second server
+       t1[2]>>y1;                   // Receive fib(n-1)
+       t2=new a(1 of 2);            // Connect to (a third) Fib Server
+       t2[2]<<x-2;                  // Send x-2 to third server
+       t2[2]>>y2;                   // Receive fib(n-2)
+       s[1]<<y1+y2;                 // Send result: fib(n-1)+fib(n-2)
+)
+Fib();
+|
+// User Interface Behavior
+#define $gui \
+  {^^Fib: \
+    {^^Quit: \
+      $end; \
+    } \
+  }
+$gui gui(1);
+user=new gui(1 of 1);               // Create User Interface
+guisync(1,user,1)                   // Wait for User Input
+{^^Fib(Int n=5):                    // Request n
+  s=new a(1 of 2);                  // Connect to Fib Server
+  s[2] << n;                        // Send n
+  s[2] >> result;                   // Receive fib(n)
+  guivalue(1,user,1,"Fib:",result); // Add result to User Interface
+  guisync(1,user,1)                 // Wait for user to quit
+  {^^Quit(String comment=""):
+  }
+}

@@ -1,11 +1,11 @@
-programs = apims apims-compile
-name = apims
+programs = hapi hapi-compile
+name = hapi
 version = 3.0.0
 compiler = g++
 opt = -O3
 args = $(opt) `sdl-config --cflags`
-#GUI_HTTPlibs = -lapims -lSDL_net
-#GUI_SDLlibs = -lapims -lsdlwidgets
+#GUI_HTTPlibs = -lhapi -lSDL_net
+#GUI_SDLlibs = -lhapi -lsdlwidgets
 OS_AUTO = $(shell uname -s)
 COMMENT = _
 
@@ -50,7 +50,7 @@ install: $(programs)
 	cp $(programs) /usr/local/bin/
 
 uninstall: $(programs)
-	rm /usr/local/bin/apims /usr/local/bin/apims_verify /usr/local/bin/apims_run
+	rm /usr/local/bin/hapi /usr/local/bin/hapi_verify /usr/local/bin/hapi_run
 
 include/config.hpp: Makefile
 	mkdir -p include
@@ -82,8 +82,8 @@ objects/%.o: source/%.cpp include/*.hpp include/config.hpp
 	mkdir -p objects
 	$(compiler) -c source/$*.cpp $(args) -o objects/$*.o
 
-apims-compile: source/apims-compile
-	cp source/apims-compile ./apims-compile
+hapi-compile: source/hapi-compile
+	cp source/hapi-compile ./hapi-compile
 
 %: $(objects) objects/%.o include/config.hpp
 	$(compiler) objects/$*.o $(objects) -o $* $(args) $(libs)
@@ -105,16 +105,16 @@ deb: $(programs)
 	echo "Maintainer: Lasse Nielsen <lasse.nielsen.dk@gmail.com>"  >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Installed-Size: 1024"                                    >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Pre-Depends: dpkg (>= 1.14.12ubuntu3)"                   >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Depends: libapims (>= $(version)), libpi (>= $(version))">> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Depends: libhapi (>= $(version)), libpi (>= $(version))">> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Recommends: "                                            >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Suggests: "                                              >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Conflicts: "                                             >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Replaces: "                                              >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Provides: apims"                                         >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Provides: hapi"                                         >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Section: interpretor"                                    >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Priority: optional"                                      >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Homepage: http://www.thelas.dk"                          >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Description: Interpretor for the Apims Language."        >> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Description: Interpretor for the Hapi Language."        >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Finalizing package"
 	dpkg -b debs/$(name)_$(version)_i386/
 	rm -Rf debs/$(name)_$(version)_i386

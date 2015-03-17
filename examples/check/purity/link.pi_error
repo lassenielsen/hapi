@@ -1,0 +1,15 @@
+global 1->2:Int;$end; a(1 pure,2);
+local pure A()
+( s=new a(1 of 2);
+  ( A();
+  | s[2]<<3;
+  )
+)
+local pure StartA(Int i)
+( if i<=0
+  then A();
+  else ( A(); | StartA(i-1); )
+)
+StartA(SYSTEM&"tprocs"); |
+t=new a(1 of 2);
+t[2]<<2;

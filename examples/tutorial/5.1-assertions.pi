@@ -1,0 +1,38 @@
+// Example 5.1 - Assertions
+// Create session with assertions, and observe the sent messages respect them
+// - trying to change program to break them would result in typechecking errors.
+
+#include <console.pi>
+
+// Define protocol $type as three booleans with propositional assertions
+#define $type \
+  1->2:Bool as x; \
+  1->2:Bool as y where x or y; \
+  2->1:Bool as z where z; \
+  $end;
+
+// Create channel a with 2 participants using protocol $type
+global $type a(1,2);
+
+c=new console(2 of 2);
+c[1]<<^PutString<<"Input bool x"<<^GetString;
+c[1]>>x_str;
+Bool x=(x_str="true");
+c[1]<<^End;
+s=new a(1 of 2);
+s[2]<<x;
+s[2]<<not x;
+s[2]>>z;
+c=new console(2 of 2);
+c[1]<<^PutString
+    <<"We know that z is true - it has been proven!"
+    <<^PutString<<(if z then "true" else "false")
+    <<^End;
+
+|
+s=new a(2 of 2);
+s[1]>>q1;
+s[1]>>q2;
+// Type checking verifies that this message will always fulfill the assertion
+// from the used protocol, and hence q1 or q2 will always evaluate to true.
+s[1]<<q1 or q2;

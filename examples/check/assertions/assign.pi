@@ -1,0 +1,10 @@
+#define $type \
+  1->2:Bool as x1; \
+  2->1:Bool as x2 where x1 or x2; \
+  $end;
+
+$type a(1,2);
+s=new a(2 of 2);
+s[1]>>q;
+Bool q = not q;
+s[1] << q;

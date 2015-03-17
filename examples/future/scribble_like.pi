@@ -1,0 +1,23 @@
+channel a:
+participants client, pure server
+in
+  client -> server <String[r"(a+b)*"]>;
+  server -> client <String[r"a*"]>;
+  Gend;
+( def As() =
+    s = new (server of 2)@a;
+    s[client]>>str;
+    def A(abs : String[r"(a+b)*"],
+          s: (2 of {1, pure 2})@1->2<String[r"a*"]>;Gend) =
+      match abs
+      { r"b*" => s[client]<<nil;end,
+        r"(b*a)(a+b)*" as ((bs,a),abs2) => s[client]<<cons; A(abs2,s)
+      }
+    in A(str,s)
+  in As()
+) | // Start server in new process
+// Main program
+s = new (client of 2)@a;               // Create session
+s[server]<< String[r"(a+b)*"]("abba"); // Sends cons inl cons inr cons inr cons inl nil
+s[server]>> x;                         // Receives String[a*]("aa") = cons cons nil;
+end

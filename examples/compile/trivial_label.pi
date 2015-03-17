@@ -1,0 +1,16 @@
+#include<console.pi>
+
+#define $bt 1->2{^X: $end; ^Y: $end;}
+global $bt a(1,2);
+s=new a(1 of 2);
+c=new console(2 of 2);
+c[1] << ^PutString << "Sending Y" << ^End;
+s[2]<<^Y;
+|
+s=new a(2 of 2);
+c=new console(2 of 2);
+c[1]<<^PutString;
+s[1]>>
+{ ^X: c[1]<<"Received X"<<^End;
+  ^Y: c[1]<<"Received Y"<<^End;
+}

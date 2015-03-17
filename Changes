@@ -1,23 +1,29 @@
-Changes for version 1.x
-- Integrate with apims_thrift code
-  // This enables multiple ways to access the same UIs
-  // The user can change between tablet UI and browser UI
-  // depending on the users current access to hardware.
--Improve tokenizer
--Improve parser
+Changes for hapi version 2015
++ Improve parser (more expressive, better error messages)
++ Implement compilation from hapi to C++
++ Implement host language statements
++ Start stdlib
++ Implement automated program optimization (target parallelism)
 
-Changes for version 2.0
-*Concept code showing potential of different language extensions.
- + Host language integration
- + Parametrically polymorphic types
- o Regular expression types
- o Byte level protocols
-
--Change from session channel spec to names session participants spec
--Make C++ compiler
-Add selected language extensions
-
--Changes for version 3.0
- + Implement compilation from apims to C++
- + Implementez host language statements
- + 
+Future plans:
++ Implement compiler for synchronous operations (sync, guisync and guivalue)
++ Implement debugger (werbservice created by compile-option)
++ Multichannel waiting (waiting on more than one channel, any channel can activate process)
++ Parametrically polymorphic types
++ Performance optimizations
+  + Counting active processes (options)
+    - System call (if one exists)
+    - If decrementing directly followed by incrementing (and vice versa), erase both
+  + More channel types (see seperate item)
++ Multiple channel types (options)
+  + FIFO (existing)
+  + TCP (using tcp connections, enables multi computer processing)
+  + IPC-SYSV (SYS-V ipc mesage passing, more efficient?)
+  + IPC-POSIX (POSIX ipc mesage passing, more efficient?)
+  + IPC-LINUX (Linux native ipc mesage passing, more efficient?)
++ Enable non tail-recursive method calls (merge pi-calculus with lambda-calculus)
++ Regular expression types
++ Regular expression native library (written in hapi)
++ Byte level protocols (define protocol syntax to support existing protocols)
++ Session types with named participants (alice and bob as opposed to 1 and 2)
++ Bootstrapped compiler (written in hapi)

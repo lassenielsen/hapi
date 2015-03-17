@@ -1,0 +1,1 @@
+global 1->2:Int;$end; a(1 pure,2);

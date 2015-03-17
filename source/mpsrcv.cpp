@@ -1,8 +1,9 @@
-#include<apims/mpsrcv.hpp>
-#include "common.cpp"
+#include<hapi/mpsrcv.hpp>
+#include<hapi/mpsend.hpp>
+#include <hapi/common.hpp>
 
 using namespace std;
-using namespace apims;
+using namespace hapi;
 
 MpsRcv::MpsRcv(const MpsChannel &channel, const string &dest, int pid, int maxpid, const MpsTerm &succ, const MpsMsgType &type, bool final) // {{{
 : myChannel(channel)
@@ -11,7 +12,7 @@ MpsRcv::MpsRcv(const MpsChannel &channel, const string &dest, int pid, int maxpi
 , myMaxPid(maxpid)
 , myFinal(final)
 {
-  mySucc = succ.Copy();
+  mySucc=succ.Copy();
   myType=type.Copy();
 } // }}}
 MpsRcv::~MpsRcv() // {{{
@@ -19,8 +20,18 @@ MpsRcv::~MpsRcv() // {{{
   delete myType;
   delete mySucc;
 } // }}}
-bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega) // Use rules Rcv and Srec {{{
+bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rules Rcv and Srec {{{
 {
+  // Check purity constraints
+  if (checkPure)
+	{ if (pureStack.size()>0)
+      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+
+    if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
+      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+  }
+ 
+  // Verify rcv
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
   if (session==Gamma.end())
@@ -32,10 +43,10 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, *this, session->first);
+    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, *this, session->first);
+    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   // Check session has receive type
   const MpsLocalRcvType *rcvType = dynamic_cast<const MpsLocalRcvType*>(msgType->GetLocalType());
   if (rcvType==NULL)
@@ -82,7 +93,7 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
         else
           newType=delType->GetLocalType()->Copy();
       }
-      newGamma[it->first] = new MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetMaxpid());
+      newGamma[it->first] = new MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetParticipants());
       delete newType;
     }
   }
@@ -125,7 +136,7 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   else
     newTheta=Theta.Copy();
   // Check rest of program
-  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega);
+  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Store if this is final action in session
   myFinal=newType->GetLocalType()->IsDone();
   // Clean Up
@@ -317,13 +328,13 @@ string MpsRcv::ToString(string indent) const // {{{
 {
   string result = myChannel.ToString() + " >> " + myDest;
   if (myMaxPid!=-1)
-    result += "@(" + int2string(myPid) + " of " + int2string(myMaxPid) + ")";
+    result += "(" + int2string(myPid) + " of " + int2string(myMaxPid) + ")";
   result += ";\n" + indent + mySucc->ToString(indent);
   return result;
 } // }}}
 string MpsRcv::ToTex(int indent, int sw) const // {{{
 {
-  string result = ToTex_Channel(myChannel) + "$\\gg$" + myDest;
+  string result = myChannel.ToTex() + "$\\gg$" + myDest;
   if (myMaxPid!=-1)
     result += "\\at (" + ToTex_PP(myPid) + " " + ToTex_KW("def") + " " + ToTex_PP(myMaxPid) + ")";
   result += ";\\newline\n"
@@ -374,7 +385,7 @@ MpsTerm *MpsRcv::RenameAll() const // {{{
   delete newType;
   return result;
 } // }}}
-void MpsRcv::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm &*parTerm) const // {{{
+bool MpsRcv::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 {
   // Create updated receivers
   MpsTerm *rcvTerm = new MpsRcv(myChannel, myDest, myPid, myMaxPid, MpsEnd(), GetMsgType(), GetFinal());
@@ -382,14 +393,12 @@ void MpsRcv::Parallelize(const MpsTerm &receivers, MpsTerm &*seqTerm, MpsTerm &*
   delete rcvTerm;
   // Perform parallelization of succ
   MpsTerm *seqSucc;
-  mySucc->Parallelize(*newReceivers,seqSucc,parTerm);
+  bool opt = mySucc->Parallelize(*newReceivers,seqSucc,parTerm);
   delete newReceivers;
-  if (seqSucc!=NULL)
-  { seqTerm = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *seqSucc, GetMsgType(), GetFinal());
-    delete seqSucc;
-  }
-  else
-    seqTerm=NULL;
+  // Create seqTerm as rcv;seqSucc
+  seqTerm = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *seqSucc, GetMsgType(), GetFinal());
+  delete seqSucc;
+  return opt;
 } // }}}
 MpsTerm *MpsRcv::Append(const MpsTerm &term) const // {{{
 {
@@ -398,6 +407,41 @@ MpsTerm *MpsRcv::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
+void MpsRcv::Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &post) const // {{{
+{ if (fv.find(myChannel.GetName())!=fv.end() ||
+      fv.find(myDest)!=fv.end()) // Cannot postpone
+  { MpsTerm *succPre;
+    mySucc->Split(fv,succPre,post);
+    pre = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *succPre, GetMsgType(), GetFinal());
+    delete succPre;
+  }
+  else
+  { // First split succ
+    MpsTerm *succPre, *succPost;
+    mySucc->Split(fv,succPre,succPost);
+    // Then split pre on the vars used int this receive
+    set<string> preFV;
+    preFV.insert(myChannel.GetName());
+    preFV.insert(myDest);
+    MpsTerm *prePre, *prePost;
+    succPre->Split(preFV,prePre,prePost);
+    delete prePost;
+    if (dynamic_cast<const MpsEnd*>(prePre)==NULL)
+    { // This op cannot be moved to post
+      delete prePre;
+      pre = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *succPre, GetMsgType(), GetFinal());
+      delete succPre;
+      post=succPost;
+    }
+    else
+    { // Move this op to post
+      delete prePre;
+      post = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *succPost, GetMsgType(), GetFinal());
+      delete succPost;
+      pre = succPre;
+    }
+  }
+} //}}}
 MpsTerm *MpsRcv::CloseDefinitions() const // {{{
 {
   MpsTerm *newSucc = mySucc->CloseDefinitions();

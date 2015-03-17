@@ -1,0 +1,50 @@
+// Example 2.1 - Branching
+// Two processes connect on channel, and the second participant selects how the
+// session proceeds.
+
+#include <console.pi>
+
+// Define the $branch protocol (session type)
+// Participant 2 selects either number or text
+// If Number, partiicipant 1 sends an integer back
+// If Text, participant 1 sends a string back.
+#define $branch \
+  2->1 \
+  {^Number: 1->2:Int; $end; \
+   ^Text: 1->2:String; $end; \
+  }
+
+// Create channel a with 2 participants using the $branch protocol
+global $branch a(1,2);
+// First participant implementation as service
+local A2()
+( global s=new a(1 of 2);
+  A2(); |
+  s[2]>>
+  {^Number:
+    s[2]<<5;
+   ^Text:
+    s[2]<<"five";
+  }
+)
+A2();
+|
+// Implementation of client (selecting number)
+c=new console(2 of 2);
+s=new a(2 of 2);
+c[1]<<^PutString<<"Requesting a number";
+s[1]<<^Number;
+s[1]>>x;
+c[1]<<^PutString<<"Received:";
+c[1]<<^PutInt<<x;
+c[1]<<^End;
+|
+// Implementation of client (selecting text)
+c=new console(2 of 2);
+s=new a(2 of 2);
+c[1]<<^PutString<<"Requesting a text";
+s[1]<<^Text;
+s[1]>>x;
+c[1]<<^PutString<<"Received:";
+c[1]<<^PutString<<x;
+c[1]<<^End;

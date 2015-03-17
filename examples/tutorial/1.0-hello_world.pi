@@ -1,0 +1,12 @@
+// Example 1.0 - Hello world
+// Includes console service, connects and makes it print the hello world string
+
+// Include console functionality like printing
+#include <console.pi>
+
+// Create console session (and get uninterupted access to console io)
+c=new console(2 of 2);
+// Print string
+c[1]<<^PutString<<"Hello World";
+// Finish console session (and release console io)
+c[1]<<^End;
