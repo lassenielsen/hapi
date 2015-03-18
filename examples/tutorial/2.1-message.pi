@@ -1,4 +1,4 @@
-// Example 2.0 - Message passing
+// Example 2.1 - Message passing
 // Two processes connect on channel, and
 // transfer a value over the resulting session.
 

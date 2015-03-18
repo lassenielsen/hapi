@@ -1,4 +1,4 @@
-// Example 2.1 - Service
+// Example 2.2 - Service
 // The most basic design pattern in hapi is SOA - Implement functionality as
 // services.
 // Defines function type as protocol, creates channel for service, implements

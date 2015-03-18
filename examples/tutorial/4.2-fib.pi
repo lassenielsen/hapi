@@ -1,7 +1,7 @@
+// Example 4.2 - Calculating fibonacchi numbers
+// Utilizinf pure services to automatically obtain concurrency
 // Include console functionality like printing
 #include <console.pi>
-// Include timer functionality like measuring time spent
-#include <timer.pi>
 
 // Define api for service
 #define $fib \
@@ -28,8 +28,7 @@ local pure Fib()
        f2[1]>>r2;                        // r2 = fib(n-2)
        s[2]<<r1+r2;                      // return r1+r2
 )
-// Multiple service instances for pure implementations like below
-local pure StartFib(Int n)
+local pure StartFib(Int n)               // Start n copies of service
 ( if n<=0
   then Fib();
   else ( Fib(); | StartFib(n-1); )
@@ -37,35 +36,12 @@ local pure StartFib(Int n)
 StartFib(SYSTEM & "tprocs");             // Start as many processes as the target number of active processes
 |
 
-// Declare fib wrapper with timer
-global $fib fib_time(1,2);
-
-// Implement fib wrapper with timer
-local FibTime()
-( global s=new fib_time(1 of 2);         // Wait for client
-  FibTime();                             // Maintain number of processes waiting for clients
-  |                                      // Start process to serve the request
-  t=new timer(2 of 2);                   // Start timer
-  s[2]>>n;                               // Receive n from client
-  u=new fib(2 of 2);                     // Forward request
-  u[1]<<n;
-  u[1]>>f;                               // f = fib(n)
-  s[2]<<f;                               // return f
-  t[1]<<^ReadSeconds;                    // Get used time
-  t[1]>>secs;                            // secs = used time
-  t[1]<<^End;                            // Stop / release timer
-  c=new console(2 of 2);                 // Get access to console
-  c[1]<<^PutString<<"Time used:"         // Print time used
-      <<^PutInt<<secs<<^End;
-)
-FibTime();
-|  
 // Main program
 c=new console(2 of 2);                   // Get access to console
 c[1]<<^PutString<<"Input n"<<^GetInt;    // Ask for n
 c[1]>>n;                                 // Read n
 c[1]<<^End;                              // Release access to console
-s=new fib_time(2 of 2);                  // Call fib(n)
+s=new fib(2 of 2);                       // Call fib(n)
 s[1]<<n;
 s[1]>>f;                                 // Get result
 c=new console(2 of 2);

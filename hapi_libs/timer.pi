@@ -1,3 +1,4 @@
+#pragma once
 HOSTHEADER("#include <time.h>");
 HOSTHEADER("#include <unistd.h>");
 

@@ -1,3 +1,4 @@
+#pragma once
 // string2int conversion of base 10 string representation of integers to their ordinal values
 #define STRING2INT(str,val) HOST("{ ", val, "=IntValue(", str, ".GetValue()); }")
 

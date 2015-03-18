@@ -1,4 +1,4 @@
-// Example 2.1 - Branching
+// Example 2.3 - Branching
 // Two processes connect on channel, and the second participant selects how the
 // session proceeds.
 
