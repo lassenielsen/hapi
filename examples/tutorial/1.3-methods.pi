@@ -11,7 +11,7 @@ local PrintInt(Int i)
 ( // Print i to console
   c=new console(2 of 2);
   c[1]<<^PutInt 
-      <<i;c[1]
+      <<i
       <<^End;
 )
 // Implement the method PrintInts

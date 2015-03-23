@@ -6,20 +6,20 @@
 
 // Print 1
 c=new console(2 of 2);
-c[1]<<^PutInt<<1;c[1]<<^End;
+c[1]<<^PutInt<<1<<^End;
 | // fork
 // Print 2
 c=new console(2 of 2);
-c[1]<<^PutInt<<2;c[1]<<^End;
+c[1]<<^PutInt<<2<<^End;
 | // fork
 // Print 3
 c=new console(2 of 2);
-c[1]<<^PutInt<<3;c[1]<<^End;
+c[1]<<^PutInt<<3<<^End;
 | // fork
 // Print 4
 c=new console(2 of 2);
-c[1]<<^PutInt<<4;c[1]<<^End;
+c[1]<<^PutInt<<4<<^End;
 | // fork
 // Print 5
 c=new console(2 of 2);
-c[1]<<^PutInt<<5;c[1]<<^End;
+c[1]<<^PutInt<<5<<^End;
