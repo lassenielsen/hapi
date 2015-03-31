@@ -14,7 +14,7 @@ SHELL = /bin/bash
 CPP = cpp
 HAPI = hapi
 Copt = -O3
-CC = g++
+CC = g++ -std=c++11
 
 OK_PI_FILES = $(shell ls *.pi)
 OK_PIP_FILES = $(OK_PI_FILES:.pi=.pip)

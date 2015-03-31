@@ -20,5 +20,5 @@ local As()
 |
 s=new a(2 of 2);
 s[1]<< r"(a+b)*"("abba"); // Sends cons inl cons inr cons inr cons inl nil
-s[1]>> x; // Receives r"a*]("aa") = cons cons nil;
+s[1]>> x; // Receives r"a*"("aa") = cons cons nil;
 )

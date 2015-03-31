@@ -14,7 +14,7 @@
           $end; \
   }
 global $type a(1,2 pure);
-local X()
+local pure X()
 ( global s=new a(2 of 2);
   X();
   |
@@ -29,7 +29,12 @@ local X()
           s[1] << 0-x;
   }
 )
-X();
+local pure StartX(Int i)
+( if i<=0
+  then X();
+  else ( X(); | StartX(i-1); )
+)
+StartX(1);
 |
 s=new a(1 of 2);
 s[2] << ^^mult;

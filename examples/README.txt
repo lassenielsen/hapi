@@ -6,10 +6,16 @@ There are a number of sub-folders, and the content of each will be briefly descr
 The hello_world folder holds an example "Hello World" project, including source
 code and makefile. Assuming hapi has been correctly installed, enter this
 folder and type "make build" to compile the program to an executable.
-This example project is intended as a starting platform for making yout own
+This example project is intended as a starting platform for making your own
 projects - simply copy the folder, rename the .pi file to the desired project
 name, update the Makefile 'name' variable to the desired, and start
 programming.
+
+The tutorial folder holds programs that shows the capabilities and syntax of
+hapi. This is intended as a way to learn the language for people who are used
+to programming in other languages.
+Each file <filename>.pi files in this folder can be compiled using the command
+"make <filename>".
 
 The compile folder holds programs that has been used to test the hapi
 compiler, but can also be used to learn the syntax of hapi.
