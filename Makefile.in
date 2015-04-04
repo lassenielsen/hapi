@@ -174,6 +174,7 @@ deb: $(libname)$(libversion)
 	mkdir -p debs/lib$(name)_$(version)_i386/opt
 	mkdir -p debs/lib$(name)_$(version)_i386/opt/$(name)
 	cp -R gfx debs/lib$(name)_$(version)_i386/opt/$(name)/gfx
+	cp -R hapi_libs/ debs/lib$(name)_$(version)_i386/opt/$(name)/include
 	echo "Making control"
 	mkdir -p debs/lib$(name)_$(version)_i386/DEBIAN
 	echo "Package: libhapi"                                       > debs/lib$(name)_$(version)_i386/DEBIAN/control
