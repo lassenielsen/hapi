@@ -175,7 +175,9 @@ deb: $(libname)$(libversion)
 	cp -R include/$(name) debs/lib$(name)_$(version)_i386/usr/include/$(name)
 	mkdir -p debs/lib$(name)_$(version)_i386/opt
 	mkdir -p debs/lib$(name)_$(version)_i386/opt/$(name)
+	mkdir -p debs/lib$(name)_$(version)_i386/opt/$(name)/bnf
 	cp -R gfx debs/lib$(name)_$(version)_i386/opt/$(name)/gfx
+	cp bnf/mpsparser.bnf debs/lib$(name)_$(version)_i386/opt/$(name)/bnf/syntax.bnf
 	cp -R hapi_libs/ debs/lib$(name)_$(version)_i386/opt/$(name)/include
 	echo "Making control"
 	mkdir -p debs/lib$(name)_$(version)_i386/DEBIAN
