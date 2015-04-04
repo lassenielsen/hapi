@@ -49,8 +49,8 @@ build: $(programs)
 install: $(programs)
 	cp $(programs) /usr/local/bin/
 
-uninstall: $(programs)
-	rm /usr/local/bin/hapi /usr/local/bin/hapi_verify /usr/local/bin/hapi_run
+uninstall:
+	rm -f /usr/local/bin/hapi /usr/local/bin/hapi-compile
 
 include/config.hpp: Makefile
 	mkdir -p include

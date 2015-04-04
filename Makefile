@@ -137,6 +137,8 @@ uninstall:
 	rm -f /usr/lib/$(libname)*
 	@echo "Removing include-files"
 	rm -Rf /usr/include/$(name)
+	@echo "Removing opt files"
+	rm -Rf /opt/$(name)
 #OS_LINUX	@echo "Reindexing libraries"
 #OS_LINUX	ldconfig -n /usr/lib
 
