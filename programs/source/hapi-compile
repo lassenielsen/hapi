@@ -34,6 +34,6 @@ fi
 if [ $START -lt 3 ]
 then
   echo "Stage 3: Compiling $BASE.cpp to $BASE using g++"
-  g++ -O3 -o $BASE $BASE.cpp -lpi
+  g++ -std=c++11 -O3 -o $BASE $BASE.cpp -lpi
 fi
 echo Done
