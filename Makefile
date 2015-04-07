@@ -137,6 +137,8 @@ uninstall:
 	rm -f /usr/lib/$(libname)*
 	@echo "Removing include-files"
 	rm -Rf /usr/include/$(name)
+	@echo "Removing opt files"
+	rm -Rf /opt/$(name)
 #OS_LINUX	@echo "Reindexing libraries"
 #OS_LINUX	ldconfig -n /usr/lib
 
@@ -173,7 +175,9 @@ deb: $(libname)$(libversion)
 	cp -R include/$(name) debs/lib$(name)_$(version)_i386/usr/include/$(name)
 	mkdir -p debs/lib$(name)_$(version)_i386/opt
 	mkdir -p debs/lib$(name)_$(version)_i386/opt/$(name)
+	mkdir -p debs/lib$(name)_$(version)_i386/opt/$(name)/bnf
 	cp -R gfx debs/lib$(name)_$(version)_i386/opt/$(name)/gfx
+	cp bnf/mpsparser.bnf debs/lib$(name)_$(version)_i386/opt/$(name)/bnf/syntax.bnf
 	cp -R hapi_libs/ debs/lib$(name)_$(version)_i386/opt/$(name)/include
 	echo "Making control"
 	mkdir -p debs/lib$(name)_$(version)_i386/DEBIAN
@@ -194,6 +198,7 @@ deb: $(libname)$(libversion)
 	echo "Homepage: http://www.thelas.dk"                         >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "Description: Library for working with the pi-calculus." >> debs/lib$(name)_$(version)_i386/DEBIAN/control
 	echo "#!/bin/sh"                                               > debs/lib$(name)_$(version)_i386/DEBIAN/postinst
+	echo "ln -f -s /usr/lib/$(libname)$(libversion) /usr/lib/$(libname)" >> debs/lib$(name)_$(version)_i386/DEBIAN/postinst
 	echo "ldconfig -n /usr/lib"                                   >> debs/lib$(name)_$(version)_i386/DEBIAN/postinst
 	chmod a+x debs/lib$(name)_$(version)_i386/DEBIAN/postinst
 	echo "#!/bin/sh"                                               > debs/lib$(name)_$(version)_i386/DEBIAN/postrm

@@ -49,8 +49,8 @@ build: $(programs)
 install: $(programs)
 	cp $(programs) /usr/local/bin/
 
-uninstall: $(programs)
-	rm /usr/local/bin/hapi /usr/local/bin/hapi_verify /usr/local/bin/hapi_run
+uninstall:
+	rm -f /usr/local/bin/hapi /usr/local/bin/hapi-compile
 
 include/config.hpp: Makefile
 	mkdir -p include
@@ -105,7 +105,7 @@ deb: $(programs)
 	echo "Maintainer: Lasse Nielsen <lasse.nielsen.dk@gmail.com>"  >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Installed-Size: 1024"                                    >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Pre-Depends: dpkg (>= 1.14.12ubuntu3)"                   >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Depends: libhapi (>= $(version)), libpi (>= $(version))">> debs/$(name)_$(version)_i386/DEBIAN/control
+	echo "Depends: libhapi (>= $(version)), libpi (>= $(version)), g++">> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Recommends: "                                            >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Suggests: "                                              >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Conflicts: "                                             >> debs/$(name)_$(version)_i386/DEBIAN/control
@@ -115,7 +115,9 @@ deb: $(programs)
 	echo "Priority: optional"                                      >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Homepage: http://www.thelas.dk"                          >> debs/$(name)_$(version)_i386/DEBIAN/control
 	echo "Description: Interpretor for the Hapi Language."        >> debs/$(name)_$(version)_i386/DEBIAN/control
-	echo "Finalizing package"
+	echo "chmod a+x /usr/local/bin/hapi-compile"                   > debs/$(name)_$(version)_i386/DEBIAN/postinst
+	chmod a+x debs/$(name)_$(version)_i386/DEBIAN/postinst
+	@echo "Finalizing package"
 	dpkg -b debs/$(name)_$(version)_i386/
 	rm -Rf debs/$(name)_$(version)_i386
 
