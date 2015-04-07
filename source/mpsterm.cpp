@@ -301,6 +301,7 @@ string MpsTerm::MakeC() const // {{{
        + "#include <fcntl.h>\n"
        + "#include <sys/mman.h>\n"
        + "#include <atomic>\n"
+       + "#include <thread>\n"
 //     + "#include <pthread.h>\n"
        + main->ToCHeader()
        + "using namespace std;\n"
@@ -329,7 +330,7 @@ string MpsTerm::MakeC() const // {{{
        + "inline void DecAprocs() // {{{\n"
        + "{ --(*__system_aprocs);\n"
        + "} // }}}\n"
-       + "int __system_tprocs=4; // Target number of active processes\n"
+       + "int __system_tprocs=std::thread::hardware_concurrency(); // Target number of active processes\n"
        + "std::vector<char*> __system_args;   // Store args for use in processes\n"
        + DefEnvToCHeader(defs)
        + DefEnvToC(defs)

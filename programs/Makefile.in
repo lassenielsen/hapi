@@ -3,7 +3,7 @@ name = hapi
 version = 2015
 compiler = g++
 opt = -O3
-args = $(opt) `sdl-config --cflags`
+args = -std=c++11 $(opt) `sdl-config --cflags`
 #GUI_HTTPlibs = -lhapi -lSDL_net
 #GUI_SDLlibs = -lhapi -lsdlwidgets
 OS_AUTO = $(shell uname -s)

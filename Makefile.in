@@ -23,7 +23,7 @@ OS_AUTO = $(shell uname -s)
 opt = -O3
 compiler = g++
 ctags = ctags
-args = -std=c++0x -fPIC `sdl-config --cflags` $(opt) -I./include/
+args = -std=c++11 -fPIC `sdl-config --cflags` $(opt) -I./include/
 #OS_MAClibs = 
 #OS_LINUXlibs = -ldpl -lz -lgmpxx -lgmp
 
