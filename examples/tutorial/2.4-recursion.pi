@@ -1,0 +1,43 @@
+// Example 2.4 - Recursive protocols
+// Two processes connect on channel, and
+// transfer an unspecified number of values over the resulting session.
+
+#include <console.pi>
+
+// Define thee $intsmsg protocol (session type)
+// where participant 1 sends an integer to participant 2.
+#define $intmsgs \
+  rec $x; \
+  1->2 \
+  {^Done: $end; \
+   ^More: 1->2:Int; $x;\
+  }
+
+// Create channel a with 2 participants using $intmsg protocol
+global $intmsgs a(1,2);
+
+// First process implementation
+s=new a(1 of 2); // Connect on channel a as participant 1 of 2, resulting in session s
+local SendInts($intmsgs(1 of 1,2) t, Int i)
+( if i<=0
+  then t[2]<<^Done;
+  else c=new console(2 of 2);
+       c[1]<<^PutString<<"Sending value"<<^PutInt<<i<<^End;
+       t[2]<<^More<<i; SendInts(t,i-1);
+)
+SendInts(s,10);
+
+| // Fork
+
+// Second process implementation
+s=new a(2 of 2); // Connect on channel a as participant 2 of 2, resulting in session s
+local ReceiveInts($intmsgs(2 of 1,2) t)
+( t[1]>>
+  {^Done:
+   ^More: t[1]>>x;
+          c=new console(2 of 2);
+          c[1]<<^PutString<<"Received value"<<^PutInt<<x<<^End;
+          ReceiveInts(t);
+  }
+)
+ReceiveInts(s);
