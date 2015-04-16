@@ -25,14 +25,25 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
       return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
   }
+  MpsMsgType *exptype=myExp->TypeCheck(Gamma);
+  // Is exp typed
+  if (dynamic_cast<const MpsMsgNoType*>(exptype))
+    return PrintTypeError((string)"Expression does not typecheck",*this,Theta,Gamma,Omega);
+  if (dynamic_cast<const MpsMsgNoType*>(myType)==NULL)
+  { // Compare types
+    bool exptypematch = exptype->Equal(Theta,*myType);
+    delete exptype;
+    if (not exptypematch)
+      return PrintTypeError((string)"Expression does not have type: " + myType->ToString(),*this,Theta,Gamma,Omega);
+  }
+  else
+  { // Store type
+    delete myType;
+    myType = exptype->Copy();
+  }
   // Verify assign
   if (dynamic_cast<MpsDelegateMsgType*>(myType)!=NULL)
     return PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega);
-  MpsMsgType *exptype=myExp->TypeCheck(Gamma);
-  bool exptypematch = exptype->Equal(Theta,*myType);
-  delete exptype;
-  if (not exptypematch)
-    return PrintTypeError((string)"Expression does not have type: " + myType->ToString(),*this,Theta,Gamma,Omega);
   // Check no session is eclipsed
   MpsMsgEnv::const_iterator var=Gamma.find(myId);
   if (var!=Gamma.end() && dynamic_cast<const MpsDelegateMsgType*>(var->second)!=NULL)
