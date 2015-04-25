@@ -1,0 +1,13 @@
+#define $delmsg \
+  1->2:Int;\
+  $end;
+
+#define $del \
+  1->2:$delmsg(2 of 1, 2); \
+  $end;
+
+global $del a(1,2);
+
+s=new a(2 of 2);
+s[1]>>t;
+t[1]>>x;

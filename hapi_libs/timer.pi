@@ -8,6 +8,7 @@ HOSTHEADER("#include <unistd.h>");
    ^ReadSeconds: 1->2:Int; $timer; \
    ^WaitSeconds: 2->1:Int; 1->2:Bool; $timer; \
    ^GetTimestamp: 1->2:Int; $timer; \
+   ^Require: 2->1:Int; $timer; \
    ^End: $end; \
   }
 global $timer timer(1,2);
@@ -28,6 +29,8 @@ local TimeServer()
      ^GetTimestamp: Int now=0;
                     HOST("{ time_t _t=time(0); ", start, "=libpi::IntValue(_t); }");
                     t[2]<<now;
+                    TimeSession(t,start);
+     ^Require:      t[2]>>wait;
                     TimeSession(t,start);
      ^End:          
     }

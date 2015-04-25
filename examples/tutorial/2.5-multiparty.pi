@@ -4,8 +4,11 @@
 
 #include <console.pi>
 
-// Define thee $intmsg protocol (session type)
-// where participant 1 sends an integer to participant 2.
+// Define the $rr4 protocol (session type)
+// where participant 1 sends an integer to participant 2
+// who sends an integer to participant 3
+// who sends an integer to participant 4
+// who sends an integer to participant 1.
 #define $rr4 \
   1->2:Int; \
   2->3:Int; \
@@ -30,30 +33,27 @@ c[1]<<^PutString<<"1: Received value"<<^PutInt<<x<<^End;
 // Second process implementation
 s=new a(2 of 4); // Connect on channel a as participant 2 of 4, resulting in session s
 s[1]>>x;
-Int y=x+1;
 c=new console(2 of 2);
 c[1]<<^PutString<<"2:Received value"<<^PutInt<<x
-    <<^PutString<<"2:Sending value"<<^PutInt<<y<<^End;
-s[3]<<y;
+    <<^PutString<<"2:Sending value"<<^PutInt<<x<<^End;
+s[3]<<x;
 
 | // Fork
 
-// Second process implementation
+// Third process implementation
 s=new a(3 of 4); // Connect on channel a as participant 3 of 4, resulting in session s
 s[2]>>x;
-Int y=x*x;
 c=new console(2 of 2);
 c[1]<<^PutString<<"3:Received value"<<^PutInt<<x
-    <<^PutString<<"3:Sending value"<<^PutInt<<y<<^End;
-s[4]<<y;
+    <<^PutString<<"3:Sending value"<<^PutInt<<x<<^End;
+s[4]<<x;
 
 | // Fork
 
-// Second process implementation
+// Fourth process implementation
 s=new a(4 of 4); // Connect on channel a as participant 4 of 4, resulting in session s
 s[3]>>x;
-Int y=x-1;
 c=new console(2 of 2);
 c[1]<<^PutString<<"4:Received value"<<^PutInt<<x
-    <<^PutString<<"4:Sending value"<<^PutInt<<y<<^End;
-s[1]<<y;
+    <<^PutString<<"4:Sending value"<<^PutInt<<x<<^End;
+s[1]<<x;

@@ -1,11 +1,12 @@
 // Example 2.4 - Recursive protocols
-// Two processes connect on channel, and
-// transfer an unspecified number of values over the resulting session.
+// Two processes connect on channel, and transfer
+// a number of values over the resulting session.
 
 #include <console.pi>
 
 // Define thee $intsmsg protocol (session type)
-// where participant 1 sends an integer to participant 2.
+// where participant 1 sends an unspecified
+// number of integers to participant 2.
 #define $intmsgs \
   rec $x; \
   1->2 \
@@ -13,7 +14,7 @@
    ^More: 1->2:Int; $x;\
   }
 
-// Create channel a with 2 participants using $intmsg protocol
+// Create channel a with 2 participants using $intmsgs protocol
 global $intmsgs a(1,2);
 
 // First process implementation

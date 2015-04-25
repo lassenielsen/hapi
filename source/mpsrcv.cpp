@@ -110,10 +110,17 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
       !dynamic_cast<const MpsDelegateMsgType*>(dstVar->second)->GetLocalType()->Equal(Theta,MpsLocalEndType()))
     return PrintTypeError((string)"Overwriting open session: " + myDest,*this,Theta,Gamma,Omega);
   // Check specification of pid and maxpid
-  if (dynamic_cast<const MpsDelegateMsgType*>(rcvType->GetMsgType())!=NULL &&
-      (dynamic_cast<const MpsDelegateMsgType*>(rcvType->GetMsgType())->GetPid()!=myPid ||
-       dynamic_cast<const MpsDelegateMsgType*>(rcvType->GetMsgType())->GetMaxpid()!=myMaxPid) )
-      return PrintTypeError((string)"Receiving session with pid or maxpid different than specified",*this,Theta,Gamma,Omega);
+  const MpsDelegateMsgType *delRcvType=dynamic_cast<const MpsDelegateMsgType*>(rcvType->GetMsgType());
+  if (delRcvType!=NULL)
+  { if (myPid==-1)
+      myPid=delRcvType->GetPid();
+    else if (delRcvType->GetPid()!=myPid)
+      return PrintTypeError((string)"Receiving session with pid different than specified",*this,Theta,Gamma,Omega);
+    if (myMaxPid==-1)
+      myMaxPid=delRcvType->GetMaxpid();
+    else if (delRcvType->GetMaxpid()!=myMaxPid)
+      return PrintTypeError((string)"Receiving session with maxpid different than specified",*this,Theta,Gamma,Omega);
+  }
   newGamma[myDest]=rcvType->GetMsgType()->Copy();
   // Create new Assumptions
   MpsExp *newTheta=NULL;
