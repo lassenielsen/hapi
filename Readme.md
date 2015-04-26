@@ -47,7 +47,7 @@ $intopt a(1,2);
 s=new a(2 of 2);
 s[1]>>
 {^ok: s[1]>>result;
-  ^error: s[1]>>message;
+ ^error: s[1]>>message;
 }
 ```
 
