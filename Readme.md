@@ -24,7 +24,7 @@ Guarantees provided
 
 ### Protocol Adherence Example
 A classic mistake is forgetting to handle errors as seen below.
-`
+```
 #define $intopt \
   1->2 \
   {^ok: 1->2:Int; $end; \
@@ -33,11 +33,11 @@ A classic mistake is forgetting to handle errors as seen below.
 $intopt a(1,2);
 s=new a(2 of 2);
 s[1]>>result;
-`
+```
 The above code will not typecheck, and report an error stating that we are
 trying to receive a value on session s, when we should be branching. The below
 code detects and handles errors as required by the type.
-`
+```
 #define $intopt \
   1->2 \
   {^ok: 1->2:Int; $end; \
@@ -49,7 +49,7 @@ s[1]>>
 {^ok: s[1]>>result;
   ^error: s[1]>>message;
 }
-`
+```
 
 
 
