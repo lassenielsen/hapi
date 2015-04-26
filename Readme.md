@@ -201,3 +201,6 @@ maintaining and so on, and then have the implementation automatically
 transformed to a finitely concurrent version with semantical preservation
 guarantees, and enjoy the benefits on multicore systems - getting the best of
 both worlds.
+
+Read the tutorial on [thelas.dk](http://www.thelas.dk?title=HAPI)
+=================================================================
