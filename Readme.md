@@ -202,5 +202,5 @@ transformed to a finitely concurrent version with semantical preservation
 guarantees, and enjoy the benefits on multicore systems - getting the best of
 both worlds.
 
-Read the tutorial on [thelas.dk](http://www.thelas.dk?title=HAPI)
-=================================================================
+Read the tutorial examples and more on [thelas.dk](http://www.thelas.dk?title=HAPI)
+===================================================================================
