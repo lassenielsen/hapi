@@ -56,7 +56,7 @@ programs are guaranteed to be free of such errors.
 
 #### Protocol Adherence Example
 A classic mistake is forgetting to handle errors as seen below.
-```
+```sml
 #define $intopt \
   1->2 \
   {^ok: 1->2:Int; $end; \
@@ -69,7 +69,7 @@ s[1]>>result;
 The above code will not typecheck, and report an error stating that we are
 trying to receive a value on session s, when we should be branching. The below
 code detects and handles errors as required by the type.
-```
+```sml
 #define $intopt \
   1->2 \
   {^ok: 1->2:Int; $end; \
@@ -85,7 +85,7 @@ s[1]>>
 
 #### Protocol Completion Example
 A classic mistake is forgetting end an open session.
-```
+```sml
 #include <console.pi>
 
 c=new console(2 of 2);
@@ -98,7 +98,7 @@ the console ls locked to the terminated process, other processes trying to use
 the console will be deadlocked because the console is never released.
 
 The below code ends the session as required.
-```
+```sml
 #include <console.pi>
 
 c=new console(2 of 2);
@@ -121,7 +121,7 @@ concurrent processes.
 ### Example
 Consider the below code-snippet implementing the recursive part of a fibonacci
 service.
-```
+```sml
 fib1=new fib(2 of 2);
 fib1[1]<<n-1;
 fib1[1]>>f1;           // f1=fib(n-1)
@@ -139,7 +139,7 @@ sequentially - it is easier to debug, maintain and so on. There is one drawback
 however - it does not utilize multicore systems satisfactory. If we wish to
 utilize multicore systems, we could update the code snippet to be more
 concurrent as below.
-```
+```sml
 fib1=new fib(2 of 2);
 fib1[1]<<n-1;
 fib2=new fib(2 of 2);
@@ -168,7 +168,7 @@ be obtained with the expression `SYSTEM&"aprocs"` while the number of target
 processes can be set with the CLI argument `-pi_tprocs n`, and obtained with the
 expression `SYSTEM&"tprocs"`. Thus a finitely concurrent version can be written
 as
-```
+```sml
 if SYSTEM&"tprocs"<=SYSTEM&"aprocs"
 then fib1=new fib(2 of 2);  // Sequential version
      fib1[1]<<n-1;
