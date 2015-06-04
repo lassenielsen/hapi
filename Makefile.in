@@ -37,6 +37,7 @@ library_objects = \
   objects/mpsbranch.o \
   objects/mpsnu.o \
   objects/mpslink.o \
+  objects/mpsnew.o \
   objects/mpspar.o \
   objects/mpsdef.o \
   objects/mpscall.o \

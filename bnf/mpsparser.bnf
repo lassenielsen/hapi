@@ -94,6 +94,7 @@ PiEActs ::= ::pieacts_end PiEAct
 PiAct ::= ::piact_sends Ch Sends ;
         | ::piact_recvs Ch Recvs ;
         | ::piact_link  id = new id ( int of int ) ;
+        | ::piact_new   Gtype Ids ;
         | ::piact_ch    Gtype id ( Participants ) ;
         | ::piact_ass   Mtype id = Exp ;
         | ::piact_a_ass id = Exp ;
@@ -103,6 +104,7 @@ PiAct ::= ::piact_sends Ch Sends ;
         | ::piact_hosth hostheader ( Exps ) ;
 # Extended statements (for associativity)
 PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi
+         | ::pieact_new   global Gtype Ids ; Pi
          | ::pieact_ch    global Gtype id ( Participants ) ; Pi
          | ::pieact_ass   global Mtype id = Exp ; Pi
          | ::pieact_a_ass global id = Exp ; Pi
@@ -195,6 +197,9 @@ Exps2 ::= ::tuple_end  Exp
 # Leftovers / details
 Ch ::= ::ch id [ int ]
 Participant ::= int Mode
+Ids ::= ::ids_cons id , Ids2
+Ids2 ::= ::ids_end id
+       | ::ids_cons id , Ids2
 Participants ::= ::participants_end  Participant
                | ::participants_cont Participant , Participants
 Assertion ::= ::ass_some where Exp

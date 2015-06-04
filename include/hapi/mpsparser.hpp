@@ -44,6 +44,8 @@ namespace hapi
       static MpsExp *Exp(const dpl::parsetree *tree);
       static void Exps(const dpl::parsetree *tree, std::vector<MpsExp*> &dest);
 
+      static void Ids(const dpl::parsetree *tree, std::vector<std::string> &dest);
+
       static MpsChannel Channel(const dpl::parsetree *tree);
       static MpsParticipant Participant(const dpl::parsetree *tree);
       static void Participants(const dpl::parsetree *tree, std::vector<MpsParticipant> &dest);

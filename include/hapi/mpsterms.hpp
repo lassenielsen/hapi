@@ -1,18 +1,19 @@
-#include<hapi/mpsterm.hpp>           // ok
-#include<hapi/mpsend.hpp>            // ok
-#include<hapi/mpssnd.hpp>            // ok
-#include<hapi/mpsrcv.hpp>            // ok
-#include<hapi/mpsselect.hpp>         // ok
-#include<hapi/mpsbranch.hpp>         // ok (-)
-#include<hapi/mpscond.hpp>           // ok (-)
-#include<hapi/mpsnu.hpp>             // ok (-)
-#include<hapi/mpslink.hpp>           // ok
-#include<hapi/mpspar.hpp>            // ok
-#include<hapi/mpsdef.hpp>            // ok (-)
-#include<hapi/mpscall.hpp>           // ok
-#include<hapi/mpssync.hpp>           // ok (-)
-#include<hapi/mpsguisync.hpp>        // ok (-)
-#include<hapi/mpsguivalue.hpp>       // ok
-#include<hapi/mpsassign.hpp>         // ok
-#include<hapi/mpshoststatement.hpp>  // ok
-#include<hapi/mpshostheader.hpp>     // ok
+#include<hapi/mpsterm.hpp>
+#include<hapi/mpsend.hpp>
+#include<hapi/mpssnd.hpp>
+#include<hapi/mpsrcv.hpp>
+#include<hapi/mpsselect.hpp>
+#include<hapi/mpsbranch.hpp>
+#include<hapi/mpscond.hpp>
+#include<hapi/mpsnu.hpp>
+#include<hapi/mpslink.hpp>
+#include<hapi/mpsnew.hpp>
+#include<hapi/mpspar.hpp>
+#include<hapi/mpsdef.hpp>
+#include<hapi/mpscall.hpp>
+#include<hapi/mpssync.hpp>
+#include<hapi/mpsguisync.hpp>
+#include<hapi/mpsguivalue.hpp>
+#include<hapi/mpsassign.hpp>
+#include<hapi/mpshoststatement.hpp>
+#include<hapi/mpshostheader.hpp>

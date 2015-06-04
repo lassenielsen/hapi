@@ -78,6 +78,15 @@ MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
     delete succ;
     return result;
   } // }}}
+  else if (tree->case_name == "piact_new") // Gtype Ids ; {{{
+  { vector<string> names;
+    Ids(tree->content[1], names);
+    MpsGlobalType *type=Gtype(tree->content[0]);
+    MpsTerm *result = new MpsNew(names, *type, *succ);
+    delete type;
+    delete succ;
+    return result;
+  } // }}}
   else if (tree->case_name == "piact_ch") // Gtype id ( Participants ) ; {{{
   { vector<MpsParticipant> participants;
     Participants(tree->content[3],participants);
@@ -215,6 +224,16 @@ MpsTerm *MpsParser::PiEAct(const parsetree *tree) // {{{
                                   stoi(tree->content[8]->root.content),
                                   *succ,
                                   false);
+    delete succ;
+    return result;
+  } // }}}
+  else if (tree->case_name == "pieact_new") // global Gtype Ids ; Pi {{{
+  { MpsTerm *succ = Pi(tree->content[4]);
+    vector<string> names;
+    Ids(tree->content[2], names);
+    MpsGlobalType *type=Gtype(tree->content[1]);
+    MpsTerm *result = new MpsNew(names, *type, *succ);
+    delete type;
     delete succ;
     return result;
   } // }}}
@@ -901,6 +920,21 @@ void MpsParser::Exps(const parsetree *tree, vector<MpsExp*> &dest) // {{{
   throw string("Unknown Exps parsetree: ") + tree->type_name + "." + tree->case_name;
 } // }}}
 
+void MpsParser::Ids(const parsetree *tree, vector<string> &dest) // {{{
+{
+  if (tree->case_name == "ids_cons") // id , Ids2
+  { dest.push_back(tree->content[0]->root.content);
+    Ids(tree->content[2],dest);
+    return;
+  }
+  else if (tree->case_name == "ids_end") // id
+  {
+    dest.push_back(tree->content[0]->root.content);
+    return;
+  }
+
+  throw string("Unknown Ids parsetree: ") + tree->type_name + "." + tree->case_name;
+} // }}}
 MpsChannel MpsParser::Channel(const parsetree *tree) // {{{
 {
   if (tree->case_name == "ch") // id [ int ]
