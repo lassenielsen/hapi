@@ -281,11 +281,11 @@ string MpsNew::ToC() const // {{{
   stringstream result;
   // Declare new sessions
   for (int i=0; i<myNames.size(); ++i)
-    result << "  Session *" << myNames[i] << ";" << endl;
+    result << "  Session *" << ToC_Name(myNames[i]) << ";" << endl;
 
   result << "  {" << endl;
   string vecName = ToC_Name(MpsExp::NewVar("channels"));
-  result << "    vector<Channel*> " << vecName << ";" << endl;
+  result << "    vector<Channel_FIFO*> " << vecName << ";" << endl;
   // Create all channels
   for (int i=0; i<myNames.size(); ++i)
     for (int j=0; j<myNames.size(); ++j)
@@ -294,12 +294,12 @@ string MpsNew::ToC() const // {{{
   for (int i=0; i<myNames.size(); ++i)
   { string sesInChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_in"));
     string sesOutChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_out"));
-    result << "    vector<Channel*> " << sesInChannels << ";";
+    result << "    vector<Channel_FIFO*> " << sesInChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
-      result << "  " << sesInChannels << ".push_back(" << vecName << "[" << (j+i*myNames.size()) << "]);" << endl;
-    result << "    vector<Channel*> " << sesOutChannels << ";";
+      result << "    " << sesInChannels << ".push_back(" << vecName << "[" << (j+i*myNames.size()) << "]);" << endl;
+    result << "    vector<Channel_FIFO*> " << sesOutChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
-      result << "  " << sesInChannels << ".push_back(" << vecName << "[" << (i+j*myNames.size()) << "]);" << endl;
+      result << "    " << sesOutChannels << ".push_back(" << vecName << "[" << (i+j*myNames.size()) << "]);" << endl;
   
     result << "    " << ToC_Name(myNames[i]) << "= new Session_FIFO(" << sesInChannels << "," << sesOutChannels << "," << (i+1) << "," << myNames.size() << ");" << endl;
   }
