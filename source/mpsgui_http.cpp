@@ -155,33 +155,33 @@ string url_decode(string msg) // {{{
   }
   return result;
 } // }}}
-string extract_possibleid(parsetree *pid) // {{{
-{ if (pid->type_name=="PID" && pid->case_name=="case1") // id
-    return pid->content[0]->root.content;
-  else if (pid->type_name=="PID" && pid->case_name=="case2") // empty
+string extract_possibleid(const parsetree *pid) // {{{
+{ if (pid->Type()=="PID" && pid->Case()=="case1") // id
+    return pid->Child(0)->Token().Content();
+  else if (pid->Type()=="PID" && pid->Case()=="case2") // empty
     return "";
   else
   { cerr << "Error extracting PID content" << endl;
     return "";
   }
 } // }}}
-void GetData(parsetree *request, map<string,string> &dest) // {{{
+void GetData(const parsetree *request, map<string,string> &dest) // {{{
 {
-  if (request->type_name == "req" && request->case_name=="case1") // GET path
+  if (request->Type() == "req" && request->Case()=="case1") // GET path
     ;
-  else if (request->type_name == "req" && request->case_name=="case2") // POST path datas
-    return GetData(request->content[2],dest);
-  else if (request->type_name == "datas" && request->case_name=="case1") // data datas
+  else if (request->Type() == "req" && request->Case()=="case2") // POST path datas
+    return GetData(request->Child(2),dest);
+  else if (request->Type() == "datas" && request->Case()=="case1") // data datas
   {
-    string name = url_decode(request->content[0]->content[0]->root.content);
-    string value = url_decode(extract_possibleid(request->content[0]->content[2]));
+    string name = url_decode(request->Child(0)->Child(0)->Token().Content());
+    string value = url_decode(extract_possibleid(request->Child(0)->Child(2)));
     dest[name] = value;
-    return GetData(request->content[1],dest);
+    return GetData(request->Child(1),dest);
   }
-  else if (request->type_name == "datas" && request->case_name=="case2") // data
+  else if (request->Type() == "datas" && request->Case()=="case2") // data
   {
-    string name = url_decode(request->content[0]->content[0]->root.content);
-    string value = url_decode(extract_possibleid(request->content[0]->content[2]));
+    string name = url_decode(request->Child(0)->Child(0)->Token().Content());
+    string value = url_decode(extract_possibleid(request->Child(0)->Child(2)));
     dest[name] = value;
   }
   else // bad tree
@@ -191,24 +191,24 @@ void GetData(parsetree *request, map<string,string> &dest) // {{{
   }
   return;
 } // }}}
-map<string,string> GetData(parsetree *request) // {{{
+map<string,string> GetData(const parsetree *request) // {{{
 {
   map<string,string> result;
   result.clear();
   GetData(request,result);
   return result;
 } // }}}
-void GetPath(parsetree *request, vector<string> &dest) // {{{
+void GetPath(const parsetree *request, vector<string> &dest) // {{{
 {
-  if (request->type_name == "req") // GET path
-    return GetPath(request->content[1],dest);
-  else if (request->type_name == "path" && request->case_name=="case1") // / id path
+  if (request->Type() == "req") // GET path
+    return GetPath(request->Child(1),dest);
+  else if (request->Type() == "path" && request->Case()=="case1") // / id path
   {
-    dest.push_back(request->content[1]->root.content);
-    return GetPath(request->content[2],dest);
+    dest.push_back(request->Child(1)->Token().Content());
+    return GetPath(request->Child(2),dest);
   }
-  else if (request->type_name == "path" && request->case_name=="case2"); // / brs
-  else if (request->type_name == "path" && request->case_name=="case3"); // brs
+  else if (request->Type() == "path" && request->Case()=="case2"); // / brs
+  else if (request->Type() == "path" && request->Case()=="case3"); // brs
   else // bad tree
   {
     cerr << "Path error at: " << request->ToString() << endl;
@@ -216,7 +216,7 @@ void GetPath(parsetree *request, vector<string> &dest) // {{{
   }
   return;
 } // }}}
-vector<string> GetPath(parsetree *request) // {{{
+vector<string> GetPath(const parsetree *request) // {{{
 {
   vector<string> result;
   result.clear();

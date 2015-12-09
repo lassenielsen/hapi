@@ -44,7 +44,7 @@ bool MpsDef::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   PureState bodyState=myPure?CPS_PURE:CPS_IMPURE;
 
   if (checkPure) // Check purity constraints {{{
-   { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_DEF && pureState!=CPS_INIT_DEF)
+  { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_DEF && pureState!=CPS_INIT_DEF)
       return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n    *   ( global s=new ch(p of n);\n     *     X();\n       *     |\n       *     P\n       *   )\n       *   local StartX(Int i)\n       *   ( if i<=0\n       *     then X();\n       *     else X(); | StartX(i-1);\n       *   )\n       *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
 
     if (pureStack.size()>0)

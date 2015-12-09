@@ -46,6 +46,7 @@ guisync := "guisync"
 guivalue := "guivalue"
 if := "if"
 impure := "impure"
+service := "service"
 in := "in"
 new := "new"
 not := "not"
@@ -99,6 +100,8 @@ PiAct ::= ::piact_sends Ch Sends ;
         | ::piact_ass   Mtype id = Exp ;
         | ::piact_a_ass id = Exp ;
         | ::piact_def   local Mode pvar Dargs ( Args ) ( Pi )
+        | ::piact_sdef  local Mode ::mode service pvar ::name ( id ::channel ( int ::pid of int ::pids ) id ::session ) ( Pi ::body )
+          :-> :"local ::mode ::name ( ) ( global ::session = new ::channel ( ::pid of ::pids ); ::name (); | ::body ) local ::mode StartService(Int i) (if i<=0 then ::name (); else ( ::name (); | StartService(i-1); ) ) StartService(SYSTEM&\"tprocs\");"
         | ::piact_gval  guivalue ( Exps ) ;
         | ::piact_hosts host ( Exps ) Mode ;
         | ::piact_hosth hostheader ( Exps ) ;
@@ -109,6 +112,8 @@ PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi
          | ::pieact_ass   global Mtype id = Exp ; Pi
          | ::pieact_a_ass global id = Exp ; Pi
          | ::pieact_def   global Mode pvar Dargs ( Args ) ( Pi ) Pi
+         | ::pieact_sdef  global Mode ::mode service pvar ::name ( id ::channel ( int ::pid of int ::pids ) id ::session ) ( Pi ::body ) Pi ::succ
+          :-> :"global ::mode ::name ( ) ( global ::session = new ::channel ( ::pid of ::pids ); ::name (); | ::body ) local ::mode StartService(Int i) (if i<=0 then ::name (); else ( ::name (); | StartService(i-1); ) ) StartService(SYSTEM&\"tprocs\"); | ::succ"
 # Non-sequential process constructions (branching termination etc.
 PiTerm ::= ::piterm_pi   ( Pi )
          | ::piterm_end
