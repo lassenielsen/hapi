@@ -3,7 +3,4 @@
 c=new console(2 of 2); // Get (uninterupted) access to console
 c[1]<<^PutString;      // Choose to write a string to the console
 c[1]<<"Hello World";   // Provide string to be written
-c[1]<<^End;            // Give up access to console
-                       // End this process (although console process started by
-                       // console.pi is still running - press Controle-c to end
-                       // all processes)
+c[1]<<^Stop;           // Stop console process
