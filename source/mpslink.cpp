@@ -52,7 +52,7 @@ bool MpsLink::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     }
     else
     { // Check if linking breaks purity
-      if (channel->GetParticipants()[myPid-1].IsPure())
+      if (pureState==CPS_IMPURE && channel->GetParticipants()[myPid-1].IsPure())
         return PrintTypeError((string)"Linking as pure participant not allowed here",*this,Theta,Gamma,Omega);
 
       if (pureStack.size()>0)

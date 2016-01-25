@@ -8,6 +8,7 @@ HOSTHEADER("#include <iostream>");
    ^GetString: 1->2:String; $console; \
    ^GetInt:    1->2:Int; $console; \
    ^End:       $end; \
+   ^Stop:      $end; \
   }
 global $console console(1,2);
 local Console()
@@ -29,6 +30,7 @@ local Console()
                  s[2]<<val;
                  ConsoleSession(s);
      ^End:       Console();
+     ^Stop:
     }
   )
   ConsoleSession(s);
