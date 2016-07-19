@@ -148,7 +148,7 @@ Lterm ::= ::lterm_bsnd int << { Lbranches }
         | ::lterm_end  %end ; 
         | ::lterm_sync { Lbranches } 
 Lbranches ::= ::lbranches_end  bid Assertion COLON Ltype 
-            | ::lbranches_cont bid Assertion COLON Ltype , Lbranches 
+            | ::lbranches_cont bid Assertion COLON Ltype Lbranches 
 
 # Message (value) Types
 Mtype ::= ::mtype_stype Stype 

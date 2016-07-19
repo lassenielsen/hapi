@@ -43,4 +43,4 @@ s[1] << 1 << v;
 s[1] >> r;
 c[1] << ^PutString << "Fact of n is"
      << ^PutInt << r
-     << ^End;
+     << ^Stop;
