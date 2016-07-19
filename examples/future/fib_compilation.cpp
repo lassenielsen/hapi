@@ -32,8 +32,8 @@ namespace libpi {
         : msgs(new std::queue<libpi::Value*>())
         , sync(new Mutex(true))
         , lock(new Mutex())
-        , msg_count(new std::atomic<int>(0))
-        , ref_count(new std::atomic<int>(1))
+        , msg_count(new int(0))
+        , ref_count(new int(1))
         {} // }}}
         Channel(const Channel &rhs) // {{{
         : msgs(rhs.msgs)
@@ -41,21 +41,23 @@ namespace libpi {
         , lock(rhs.lock)
         , msg_count(rhs.msg_count)
         , ref_count(rhs.ref_count)
-        { ++(*ref_count);
+        { lock->Lock();
+          ++(*ref_count);
+          lock->Release();
         } // }}}
         virtual ~Channel() { Detach(); }
         void Snd(Value *msg)
         { lock->Lock();
           ++(*msg_count);
           msgs->push(msg);
-          if (msg_count<=0)
+          if (*msg_count<=0)
             sync->Release();
           lock->Release();
         }
         Value *Rcv()
         { lock->Lock();
           --(*msg_count);
-          if (msg_count<0)
+          if (*msg_count<0)
           { lock->Release();
             sync->Lock();
             lock->Lock();
@@ -68,8 +70,10 @@ namespace libpi {
         }
     
         std::string ToString() const
-        { std::stringstream ss;
+        { lock->Lock();
+          std::stringstream ss;
           ss << msgs;
+          lock->Release();
           return ss.str();
         }
     
@@ -98,16 +102,18 @@ namespace libpi {
 
       protected:
         void Detach()
-        { return; // FIXME
+        { //return; // FIXME
           lock->Lock();
           --(*ref_count);
           if (*ref_count<=0)
-          { std::cout << "Deleting queue at: " << size_t(msgs) << std::endl;
+          { //std::cout << "Deleting queue at: " << size_t(msgs) << std::endl;
             delete ref_count;
             delete msg_count;
+            sync->Release();
             delete sync;
             while (msgs->size()>0)
-            { delete msgs->front();
+            { std::cout << "Deleting msg: " << msgs->front()->ToString() << std::endl;
+              delete msgs->front();
               msgs->pop();
             }
             delete msgs;
@@ -116,6 +122,7 @@ namespace libpi {
           }
           else
             lock->Release();
+
           ref_count=NULL;
           msg_count=NULL;
           lock=NULL;
@@ -127,8 +134,8 @@ namespace libpi {
         std::queue<Value*> *msgs;
         Mutex *sync;
         Mutex *lock;
-        std::atomic<int> *msg_count;
-        std::atomic<int> *ref_count;
+        int *msg_count;
+        int *ref_count;
     };
 
   }
@@ -176,8 +183,8 @@ void *all_methods(void *arg)
   State *s1=new State();
   libpi::thread::Channel *f(new libpi::thread::Channel());
   s1->label=&&method_fib;
-  s1->values.push_back(new libpi::IntValue(20));
-  s1->values.push_back(f);
+  s1->values.push_back(new libpi::IntValue(28));
+  s1->values.push_back(f->Copy());
   spawn(s1);
   libpi::Value *r=f->Rcv();
   cout << "Result: " << r->ToString() << endl;
@@ -197,10 +204,11 @@ void *all_methods(void *arg)
     libpi::IntValue *n1(new libpi::IntValue((*x)-libpi::IntValue(1)));
     State *s2=new State();
     s2->label=&&method_fib;
-    s2->values.push_back(dynamic_cast<libpi::Value*>(n1));
+    s2->values.push_back(n1);
     s2->values.push_back(f1->Copy());
     spawn(s2);
     libpi::Value *r1=f1->Rcv();
+    delete f1;
     libpi::IntValue *r1ptr=dynamic_cast<libpi::IntValue*>(r1);
 
     libpi::thread::Channel *f2(new libpi::thread::Channel());
@@ -211,14 +219,13 @@ void *all_methods(void *arg)
     s3->values.push_back(f2->Copy());
     spawn(s3);
     libpi::Value *r2=f2->Rcv();
+    delete f2;
     libpi::IntValue *r2ptr=dynamic_cast<libpi::IntValue*>(r2);
 
     f0->Snd(new libpi::IntValue((*r1ptr)+(*r2ptr)));
     delete r1;
     delete r2;
     delete state;
-    delete f1;
-    delete f2;
     pthread_exit(0);
   }
 }
