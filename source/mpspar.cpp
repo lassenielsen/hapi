@@ -10,6 +10,7 @@ using namespace hapi;
 MpsPar::MpsPar(const MpsTerm &left, const MpsTerm &right, const vector<string> &leftFinal, const vector<string> &rightFinal) // {{{
 : myLeftFinal(leftFinal)
 , myRightFinal(rightFinal)
+, myType("fork")
 {
   // Assert left != NULL
   // Assert right != NULL
@@ -434,27 +435,52 @@ string MpsPar::ToTex(int indent, int sw) const // {{{
 string MpsPar::ToC() const // {{{
 {
   stringstream result;
-  string newName = ToC_Name(MpsExp::NewVar("fork")); // Create variable name foor the mmessagee to send
-  result << "  IncAprocs();" << endl
-         << "  int " << newName << "=fork();" << endl
-         << "  if (" << newName << ">0)" << endl
-         << "  {" << endl;
-  for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it) {
-    result << "    " << ToC_Name(*it) << "->Close(false);" << endl
-           << "    delete " << ToC_Name(*it) << ";" << endl;
+  if (myType=="fork")
+  { string newName = ToC_Name(MpsExp::NewVar("fork")); // Create variable name foor the mmessagee to send
+    result << "  IncAprocs();" << endl
+           << "  int " << newName << "=fork();" << endl
+           << "  if (" << newName << ">0)" << endl
+           << "  { // Left process" << endl;
+    for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it) {
+      result << "    " << ToC_Name(*it) << "->Close(false);" << endl
+             << "    delete " << ToC_Name(*it) << ";" << endl;
+    }
+    result <<  myLeft->ToC()
+           << "  }" << endl
+           << "  else if (" << newName << "==0)" << endl
+           << "  { // Right process" << endl;
+    for (vector<string>::const_iterator it=myRightFinal.begin(); it!=myRightFinal.end(); ++it) {
+      result << "    " << ToC_Name(*it) << "->Close(false);" << endl
+             << "    delete " << ToC_Name(*it) << ";" << endl;
+    }
+    result <<  myRight->ToC()
+           << "  }" << endl
+           << "else throw (string)\"Error during fork!\";" << endl
+           << "return new Cnt();" << endl;
   }
-  result <<  myLeft->ToC()
-         << "  }" << endl
-         << "  else if (" << newName << "==0)" << endl
-         << "  {" << endl;
-  for (vector<string>::const_iterator it=myRightFinal.begin(); it!=myRightFinal.end(); ++it) {
-    result << "    " << ToC_Name(*it) << "->Close(false);" << endl
-           << "    delete " << ToC_Name(*it) << ";" << endl;
+  else if (myType=="pthread")
+  { string lbl=ToC_Name(MpsExp::NewVar("label"));
+    result << "  IncAprocs();" << endl
+           << "  ..." << endl
+           << "  pthread_create(par_" << label << ", arg);" << endl
+           << "  { // Left process" << endl;
+    for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it) {
+      result << "    " << ToC_Name(*it) << "->Close(false);" << endl
+             << "    delete " << ToC_Name(*it) << ";" << endl;
+    }
+    result <<  myLeft->ToC()
+           << "  }" << endl
+           << "  " << label << ":" << endl
+           << "  { // Right process" << endl;
+    for (vector<string>::const_iterator it=myRightFinal.begin(); it!=myRightFinal.end(); ++it) {
+      result << "    " << ToC_Name(*it) << "->Close(false);" << endl
+             << "    delete " << ToC_Name(*it) << ";" << endl;
+    }
+    result <<  myRight->ToC()
+           << "  }" << endl;
   }
-  result <<  myRight->ToC()
-         << "  }" << endl
-         << "else throw (string)\"Error during fork!\";" << endl
-         << "return new Cnt();" << endl;
+  else
+    throw string("Error, unknown par type ")+myType;
   return result.str();
 } // }}}
 string MpsPar::ToCHeader() const // {{{

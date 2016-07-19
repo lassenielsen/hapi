@@ -67,6 +67,7 @@ class MpsPar : public MpsTerm // {{{
     MpsTerm *myRight;
     std::vector<std::string> myLeftFinal;
     std::vector<std::string> myRightFinal;
+    std::string myType; // pthread or proc
 }; // }}}
 }
 #endif
