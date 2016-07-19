@@ -55,4 +55,4 @@ f[1] << v;
 f[1] >> r;
 c[1] << ^PutString << "Fib(n) is"
      << ^PutInt << r
-     << ^End;
+     << ^Stop;

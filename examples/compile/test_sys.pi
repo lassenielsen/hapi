@@ -1,5 +1,5 @@
-#include <sys.pi>
 #include <console.pi>
+#include <sys.pi>
 c = new console(2 of 2);
 s = new sys(2 of 2);
 
@@ -16,7 +16,7 @@ local PrintArgs(Int i, $console(2 of 1,2) c, $sys(2 of 1 pure,2) s)
           c[1]<<^PutString<<a;
           PrintArgs(i+1,c,s);
    ^None: s[1]<<^End;
-          c[1]<<^End;
+          c[1]<<^Stop;
   }
 )
 PrintArgs(0,c,s);
