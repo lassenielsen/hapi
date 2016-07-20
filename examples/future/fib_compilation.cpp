@@ -1,145 +1,11 @@
 #include <iostream>
 #include <pthread.h>
 #include <libpi/value.hpp>
+#include <libpi/thread/channel.hpp>
 #include <vector>
 #include <queue>
 #include <sstream>
 #include <atomic>
-
-namespace libpi {
-  class Mutex
-  { public:
-      Mutex(bool locked=false)
-      { pthread_mutex_init(&myMutex,NULL);
-        if (locked)
-          pthread_mutex_lock(&myMutex);
-      }
-      Mutex(const Mutex &init) {throw std::string("Copying a lock is forbidden"); }
-      ~Mutex() { pthread_mutex_destroy(&myMutex); }
-
-      Mutex &operator=(const Mutex &rhs) {throw std::string("Assigning a lock is forbidden"); }
-      void Lock() {pthread_mutex_lock(&myMutex);}
-      void Release() {pthread_mutex_unlock(&myMutex);}
-
-    private:
-      pthread_mutex_t myMutex;
-  };
-
-  namespace thread {
-    class Channel : public Value
-    { public:
-        Channel() // {{{
-        : msgs(new std::queue<libpi::Value*>())
-        , sync(new Mutex(true))
-        , lock(new Mutex())
-        , msg_count(new int(0))
-        , ref_count(new int(1))
-        {} // }}}
-        Channel(const Channel &rhs) // {{{
-        : msgs(rhs.msgs)
-        , sync(rhs.sync)
-        , lock(rhs.lock)
-        , msg_count(rhs.msg_count)
-        , ref_count(rhs.ref_count)
-        { lock->Lock();
-          ++(*ref_count);
-          lock->Release();
-        } // }}}
-        virtual ~Channel() { Detach(); }
-        void Snd(Value *msg)
-        { lock->Lock();
-          ++(*msg_count);
-          msgs->push(msg);
-          if (*msg_count<=0)
-            sync->Release();
-          lock->Release();
-        }
-        Value *Rcv()
-        { lock->Lock();
-          --(*msg_count);
-          if (*msg_count<0)
-          { lock->Release();
-            sync->Lock();
-            lock->Lock();
-          }
-
-          Value *result=msgs->front();
-          msgs->pop();
-          lock->Release();
-          return result;
-        }
-    
-        std::string ToString() const
-        { lock->Lock();
-          std::stringstream ss;
-          ss << msgs;
-          lock->Release();
-          return ss.str();
-        }
-    
-        Channel *Copy() const
-        { return new Channel(*this);
-        }
-
-        bool operator==(const Value &rhs) const
-        { const Channel *rhsptr=dynamic_cast<const Channel*>(&rhs);
-          return rhsptr!=NULL && msgs==rhsptr->msgs;
-        }
-
-        Channel &operator=(const Channel &rhs)
-        { Detach();
-          rhs.lock->Lock();
-          ref_count=rhs.ref_count;
-          ++(*ref_count);
-          msgs=rhs.msgs;
-          msg_count=rhs.msg_count;
-          sync=rhs.sync;
-          lock=rhs.lock;
-          rhs.lock->Release();
-          return *this;
-        }
-
-
-      protected:
-        void Detach()
-        { //return; // FIXME
-          lock->Lock();
-          --(*ref_count);
-          if (*ref_count<=0)
-          { //std::cout << "Deleting queue at: " << size_t(msgs) << std::endl;
-            delete ref_count;
-            delete msg_count;
-            sync->Release();
-            delete sync;
-            while (msgs->size()>0)
-            { std::cout << "Deleting msg: " << msgs->front()->ToString() << std::endl;
-              delete msgs->front();
-              msgs->pop();
-            }
-            delete msgs;
-            lock->Release();
-            delete lock;
-          }
-          else
-            lock->Release();
-
-          ref_count=NULL;
-          msg_count=NULL;
-          lock=NULL;
-          sync=NULL;
-          msgs=NULL;
-        }
-
-      private:
-        std::queue<Value*> *msgs;
-        Mutex *sync;
-        Mutex *lock;
-        int *msg_count;
-        int *ref_count;
-    };
-
-  }
-}
 
 using namespace std;
 //using namespace pi;
@@ -183,7 +49,7 @@ void *all_methods(void *arg)
   State *s1=new State();
   libpi::thread::Channel *f(new libpi::thread::Channel());
   s1->label=&&method_fib;
-  s1->values.push_back(new libpi::IntValue(28));
+  s1->values.push_back(new libpi::IntValue(20));
   s1->values.push_back(f->Copy());
   spawn(s1);
   libpi::Value *r=f->Rcv();
