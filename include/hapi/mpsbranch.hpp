@@ -41,6 +41,7 @@ class MpsBranch : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *FlattenFork(bool normLhs, bool normRhs) const;
     MpsTerm *RenameAll() const;
     bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
@@ -54,6 +55,7 @@ class MpsBranch : public MpsTerm // {{{
   private:
     MpsChannel myChannel;
     std::map< std::string, MpsTerm*> myBranches;
+    // FIXME: Have map of channels to close for each choice
     //! \brief myFinalBranches holds the names of the branches where
     //! myChannel can be closed after the transmission. This is
     //! determined by the type-checking.

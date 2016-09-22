@@ -222,6 +222,13 @@ string MpsAssign::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+MpsTerm *MpsAssign::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs, normRhs);
+  MpsTerm *result= new MpsAssign(myId, *myExp, *myType, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsAssign::RenameAll() const // {{{
 { string newId=MpsExp::NewVar(myId);
   MpsTerm *tmpSucc=mySucc->ERename(myId,newId);

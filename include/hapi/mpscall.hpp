@@ -41,12 +41,14 @@ class MpsCall : public MpsTerm // {{{
     MpsTerm *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *FlattenFork(bool normLhs, bool normRhs) const;
     MpsTerm *RenameAll() const;
     bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
     MpsTerm *CloseDefinitions() const;
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
+    std::string ToC_prepare(const std::string &dest) const;
     std::string ToCHeader() const;
 
     const std::string &GetName() const { return myName; }

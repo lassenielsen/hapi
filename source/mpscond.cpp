@@ -234,6 +234,18 @@ string MpsCond::ToCHeader() const // {{{
   result << myFalseBranch->ToCHeader();
   return result.str();
 } // }}}
+MpsTerm *MpsCond::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newTrueBranch=myTrueBranch->FlattenFork(normLhs,normRhs);
+  MpsTerm *newFalseBranch=myFalseBranch->FlattenFork(normLhs,normRhs);
+
+  MpsTerm *result=new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
+
+  delete newTrueBranch;
+  delete newFalseBranch;
+
+  return result;
+} // }}}
 MpsTerm *MpsCond::RenameAll() const // {{{
 { MpsTerm *newTrueBranch=myTrueBranch->RenameAll();
   MpsTerm *newFalseBranch=myFalseBranch->RenameAll();

@@ -355,31 +355,35 @@ string MpsCall::ToTex(int indent, int sw) const // {{{
   result += ")";
   return result;
 } // }}}
-string MpsCall::ToC() const // {{{
-{
-  stringstream precall;
-  stringstream call;
-  call << "  return new __Cnt__" << ToC_Name(myName) << "(";
+string MpsCall::ToC_prepare(const string &dest) const // {{{
+{ stringstream result;
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
-  { string newName = (*it)->ToC(precall, (*tit)->ToC());
-    if (it != myState.begin())
-      call << ", ";
-    call << newName;
+  { string name=(*it)->ToC(result, (*tit)->ToC());
+    result << "  " << dest << "->values.push_back(" << name << ");" << endl;
   }
   tit=myTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it, ++tit)
-  { string newName = (*it)->ToC(precall, (*tit)->ToC());
-    if (it != myArgs.begin() || myState.size()>0)
-      call << ", ";
-    call << newName;
+  { string name=(*it)->ToC(result, (*tit)->ToC());
+    result << "  " << dest << "->values.push_back(" << name << ");" << endl;
   }
-  call << ");" << endl;
-  return precall.str() + call.str();
+  result << "  " << dest << "->label=&&def_" << ToC_Name(myName) << ";" << endl;
+
+  return result.str();
+} // }}}
+string MpsCall::ToC() const // {{{
+{ stringstream result;
+  result << "  state->values.clear();" << endl;
+  result << ToC_prepare("state");
+  result << "  goto *state->label;" << endl;
+  return result.str();
 } // }}}
 string MpsCall::ToCHeader() const // {{{
 {
   return "";
+} // }}}
+MpsTerm *MpsCall::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{ return Copy();
 } // }}}
 MpsTerm *MpsCall::RenameAll() const // {{{
 { return Copy();

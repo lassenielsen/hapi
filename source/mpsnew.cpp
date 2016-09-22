@@ -312,6 +312,13 @@ string MpsNew::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+MpsTerm *MpsNew::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *result= new MpsNew(myNames, *myType, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsNew::RenameAll() const // {{{
 { vector<string> newNames;
   for (int i=0; i<myNames.size(); ++i)

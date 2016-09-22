@@ -239,6 +239,13 @@ string MpsNu::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+MpsTerm *MpsNu::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *result= new MpsNu(myParticipants, myChannel, *newSucc, *myType);
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsNu::RenameAll() const // {{{
 { string newChannel = MpsExp::NewVar(myChannel);
   MpsTerm *tmpSucc=mySucc->ERename(myChannel,newChannel);

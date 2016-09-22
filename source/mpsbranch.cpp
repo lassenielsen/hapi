@@ -348,6 +348,17 @@ string MpsBranch::ToCHeader() const // {{{
   }
   return result.str();
 } // }}}
+MpsTerm *MpsBranch::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+    newBranches[it->first]=it->second->FlattenFork(normLhs,normRhs);
+
+  MpsTerm *result=new MpsBranch(myChannel,newBranches, GetFinalBranches());
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
 MpsTerm *MpsBranch::RenameAll() const // {{{
 { map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)

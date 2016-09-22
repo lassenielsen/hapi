@@ -381,6 +381,14 @@ string MpsRcv::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+MpsTerm *MpsRcv::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *myType, GetFinal());
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsTerm *MpsRcv::RenameAll() const // {{{
 { string newDest=MpsExp::NewVar(myDest);
   MpsTerm *tmpSucc=mySucc->ERename(myDest,newDest);

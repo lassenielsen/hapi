@@ -310,6 +310,16 @@ class MpsTerm // {{{
      */
     // }}}
     std::string MakeC() const;
+    // DOCUMENTATION: MpsTerm::FlattenFork {{{
+    /*!
+     * FlattenFork rewrites terms like P1 | P2 to P1 | (def X() (P2) X()).
+     * After performing CloseDefinitions and ExtractDefinitions this
+     * will look like P1 | X(...), and can be implemented using
+     * frameworks like pthread_create, with an API significnatly
+     * different from fork.
+     */
+    // }}}
+    virtual MpsTerm *FlattenFork(bool normLhs, bool normRhs) const=0;
     // DOCUMENTATION: MpsTerm::RenameAll {{{
     /*!
      * RenameAll renames all bound variables (Process, logical and

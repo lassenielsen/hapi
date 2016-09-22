@@ -154,6 +154,14 @@ string MpsHostHeader::ToCHeader() const // {{{
 {
   return unwrap_string(myHeader) + "\n" + mySucc->ToCHeader();
 } // }}}
+MpsTerm *MpsHostHeader::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsHostHeader *result= new MpsHostHeader(myHeader, *newSucc);
+  // Clean up
+  delete newSucc;
+  return result;
+} // }}}
 MpsHostHeader *MpsHostHeader::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   MpsHostHeader *result=new MpsHostHeader(myHeader, *newSucc);

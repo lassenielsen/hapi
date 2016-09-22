@@ -274,6 +274,13 @@ string MpsLink::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+MpsTerm *MpsLink::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *result= new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsLink::RenameAll() const // {{{
 { string newSession=MpsExp::NewVar(mySession);
   MpsTerm *tmpSucc=mySucc->ERename(mySession,newSession);

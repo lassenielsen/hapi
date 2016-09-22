@@ -216,6 +216,13 @@ string MpsGuiValue::ToCHeader() const // {{{
 {
   throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
 } // }}}
+MpsTerm *MpsGuiValue::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *result= new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsGuiValue::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   MpsTerm *result=new MpsGuiValue(myMaxpid,mySession,myPid,*myName,*myValue,*newSucc);

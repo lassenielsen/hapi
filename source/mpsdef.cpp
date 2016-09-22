@@ -597,6 +597,14 @@ string MpsDef::ToCHeader() const // {{{
   result << mySucc->ToCHeader();
   return result.str();
 } // }}}
+MpsTerm *MpsDef::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{ MpsTerm *flatSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *flatBody = myBody->FlattenFork(normLhs,normRhs);
+  MpsTerm *flatTerm=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *flatBody, *flatSucc, myEnv, myPure);
+  delete flatSucc;
+  delete flatBody;
+  return flatTerm;
+} // }}}
 MpsTerm *MpsDef::RenameAll() const // {{{
 { string newName=MpsTerm::NewName(myName);
   // Create new statearg names

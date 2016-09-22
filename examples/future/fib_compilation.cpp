@@ -35,6 +35,8 @@ inline void spawn(State *state)
   pthread_create(&x,&y,all_methods,(void*)state);
 }
 
+size_t val=0;
+
 //void *args;
 #define state ((State*)(arg))
 void *all_methods(void *arg)
@@ -49,7 +51,7 @@ void *all_methods(void *arg)
   State *s1=new State();
   libpi::thread::Channel *f(new libpi::thread::Channel());
   s1->label=&&method_fib;
-  s1->values.push_back(new libpi::IntValue(20));
+  s1->values.push_back(new libpi::IntValue(val));
   s1->values.push_back(f->Copy());
   spawn(s1);
   libpi::Value *r=f->Rcv();
@@ -98,6 +100,9 @@ void *all_methods(void *arg)
 
 int main(int argc, char **argv)
 {
+  stringstream ss;
+  ss << argv[1];
+  ss >> val;
   State *s0=new State();
   s0->label=NULL;
   all_methods(s0);

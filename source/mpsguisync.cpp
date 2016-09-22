@@ -790,6 +790,36 @@ string MpsGuiSync::ToCHeader() const // {{{
 {
   throw (string)"MpsGuiSync::ToC(): guisync is not implemented yet!";
 } // }}}
+MpsTerm *MpsGuiSync::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  // Create new branches
+  map<string,inputbranch> newBranches;
+  for (map<string,inputbranch>::const_iterator br=myBranches.begin(); br!=myBranches.end(); ++br)
+  { inputbranch newBr;
+    newBr.term=br->second.term->FlattenFork(normLhs,normRhs);
+    newBr.assertion=br->second.assertion->Copy();
+    newBr.names=br->second.names;
+    newBr.args=br->second.args;
+    for (vector<MpsMsgType*>::const_iterator t=br->second.types.begin(); t!=br->second.types.end(); ++t)
+      newBr.types.push_back((*t)->Copy());
+    for (vector<MpsExp*>::const_iterator v=br->second.values.begin(); v!=br->second.values.end(); ++v)
+      newBr.values.push_back((*v)->Copy());
+    newBranches[br->first]=newBr;
+  }
+  // Create result
+  MpsTerm *result=new MpsGuiSync(myMaxpid, mySession, myPid, newBranches);
+  // Clean up
+  while (newBranches.size()>0)
+  {
+    delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    DeleteVector(newBranches.begin()->second.types);
+    DeleteVector(newBranches.begin()->second.values);
+    newBranches.erase(newBranches.begin());
+  }
+  // return
+  return result;
+} // }}}
 MpsTerm *MpsGuiSync::RenameAll() const // {{{
 { map<string,inputbranch> newBranches;
   for (map<string,inputbranch>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)

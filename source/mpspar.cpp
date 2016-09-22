@@ -10,7 +10,7 @@ using namespace hapi;
 MpsPar::MpsPar(const MpsTerm &left, const MpsTerm &right, const vector<string> &leftFinal, const vector<string> &rightFinal) // {{{
 : myLeftFinal(leftFinal)
 , myRightFinal(rightFinal)
-, myType("fork")
+, myType("thread")
 {
   // Assert left != NULL
   // Assert right != NULL
@@ -435,7 +435,7 @@ string MpsPar::ToTex(int indent, int sw) const // {{{
 string MpsPar::ToC() const // {{{
 {
   stringstream result;
-  if (myType=="fork")
+  if (myType=="process")
   { string newName = ToC_Name(MpsExp::NewVar("fork")); // Create variable name foor the mmessagee to send
     result << "  IncAprocs();" << endl
            << "  int " << newName << "=fork();" << endl
@@ -458,25 +458,21 @@ string MpsPar::ToC() const // {{{
            << "else throw (string)\"Error during fork!\";" << endl
            << "return new Cnt();" << endl;
   }
-  else if (myType=="pthread")
-  { string lbl=ToC_Name(MpsExp::NewVar("label"));
+  else if (myType=="thread")
+  { const MpsCall *callptr=dynamic_cast<const MpsCall*>(myRight);
+    if (callptr==NULL)
+      throw string("MpsPar type thread requires rhs to be a direct methodcall.");
     result << "  IncAprocs();" << endl
-           << "  ..." << endl
-           << "  pthread_create(par_" << label << ", arg);" << endl
+           << "  { State *_arg=new State();" << endl
+           << callptr->ToC_prepare("_arg")
+           << "    _spawn_thread(_arg);" << endl
+           << "  }" << endl
            << "  { // Left process" << endl;
     for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it) {
       result << "    " << ToC_Name(*it) << "->Close(false);" << endl
              << "    delete " << ToC_Name(*it) << ";" << endl;
     }
     result <<  myLeft->ToC()
-           << "  }" << endl
-           << "  " << label << ":" << endl
-           << "  { // Right process" << endl;
-    for (vector<string>::const_iterator it=myRightFinal.begin(); it!=myRightFinal.end(); ++it) {
-      result << "    " << ToC_Name(*it) << "->Close(false);" << endl
-             << "    delete " << ToC_Name(*it) << ";" << endl;
-    }
-    result <<  myRight->ToC()
            << "  }" << endl;
   }
   else
@@ -489,6 +485,40 @@ string MpsPar::ToCHeader() const // {{{
   result << myLeft->ToCHeader();
   result << myRight->ToCHeader();
   return result.str();
+} // }}}
+bool isCall(const MpsTerm *term) // {{{
+{ if (dynamic_cast<const MpsCall*>(term)!=NULL)
+    return true;
+  const MpsDef *defptr=dynamic_cast<const MpsDef*>(term);
+  return (defptr!=NULL && isCall(defptr->GetBody()));
+} // }}}
+MpsTerm *MpsPar::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newLeft = myLeft->FlattenFork(normLhs,normRhs);
+  if (normLhs && !isCall(newLeft))
+  { string defName=MpsTerm::NewName("FlatLeft");
+    MpsTerm *succ=new MpsCall(defName,vector<MpsExp*>(),vector<MpsExp*>(),vector<MpsMsgType*>(),vector<MpsMsgType*>());
+    MpsTerm *flatLeft=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(),*newLeft, *succ, MpsMsgEnv(),false);
+    delete succ;
+    delete newLeft;
+    newLeft=flatLeft;
+  }
+  MpsTerm *newRight = myRight->FlattenFork(normLhs,normRhs);
+  if (normRhs && !isCall(newRight))
+  { string defName=MpsTerm::NewName("FlatRight");
+    MpsTerm *succ=new MpsCall(defName,vector<MpsExp*>(),vector<MpsExp*>(),vector<MpsMsgType*>(),vector<MpsMsgType*>());
+    MpsTerm *flatRight=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(),*newRight, *succ, MpsMsgEnv(),false);
+    delete succ;
+    delete newRight;
+    newRight=flatRight;
+  }
+
+  MpsTerm *result=new MpsPar(*newLeft,*newRight, GetLeftFinal(), GetRightFinal());
+
+  delete newLeft;
+  delete newRight;
+
+  return result;
 } // }}}
 MpsTerm *MpsPar::RenameAll() const // {{{
 { MpsTerm *newLeft=myLeft->RenameAll();

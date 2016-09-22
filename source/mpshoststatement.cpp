@@ -222,6 +222,13 @@ string MpsHostStatement::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+MpsTerm *MpsHostStatement::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsHostStatement *result= new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
+  delete newSucc;
+  return result;
+} // }}}
 MpsHostStatement *MpsHostStatement::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   vector<MpsMsgType*> newTypes;

@@ -227,6 +227,14 @@ string MpsSelect::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+MpsTerm *MpsSelect::FlattenFork(bool normLhs, bool normRhs) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc, GetFinal());
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsTerm *MpsSelect::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc, GetFinal());

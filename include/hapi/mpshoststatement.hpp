@@ -46,6 +46,7 @@ class MpsHostStatement : public MpsTerm // {{{
     MpsHostStatement *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *FlattenFork(bool normLhs, bool normRhs) const;
     MpsHostStatement *RenameAll() const;
     bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
