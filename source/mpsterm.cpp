@@ -276,9 +276,9 @@ int _compile_id=0;
 string MpsTerm::MakeC() const // {{{
 { _compile_id=1;
   MpsTerm *step1=RenameAll();
-  MpsTerm *step2=step1->FlattenFork(false,true);
+  MpsTerm *step2=step1->FlattenFork(false,true,false);
   delete step1;
-  MpsTerm *step3=step2->CloseDefinitions();
+  MpsTerm *step3=step2->CloseDefinitions(MpsMsgEnv());
   delete step2;
   MpsFunctionEnv defs;
   // Move definitions to global env

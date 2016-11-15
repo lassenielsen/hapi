@@ -84,6 +84,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <functional>
 
 #include <hapi/mpsexp.hpp>
 #include <hapi/mpschannel.hpp>
@@ -120,16 +121,6 @@ class MpsTerm // {{{
     //! Make a deep copy of the object
     virtual MpsTerm *Copy() const = 0; // Make a deep copy
 
-    /************************************************
-     *************** Type Checking ******************
-     ************************************************/
-    // DOCUMENTATION: MpsTerm::TypeCheck {{{
-    /*!
-     * Static verification of communication safety using explicit types
-     * @result Returns true if the process is well typed, and false otherwise.
-     */
-    // }}}
-    bool TypeCheck();
     // DOCUMENTATION: MpsTerm::PureState {{{
     /*!
 		 * PureState is amended to TypeCheck, to ensure that pure participants have
@@ -176,6 +167,38 @@ class MpsTerm // {{{
                     CPS_INIT_BRANCH2_CALL,
                     CPS_INIT_CALL
                    };
+
+    /************************************************
+     ********** Type Driven Compilation *************
+     ************************************************/
+    virtual void* TDCompile(std::function<void *(MpsTerm *term,
+                                                 const MpsExp &Theta,
+                                                 const MpsMsgEnv &Gamma,
+                                                 const MpsProcEnv &Omega, 
+                                                 const std::set<std::pair<std::string,int> > &pureStack,
+                                                 const std::string &curPure,
+                                                 PureState pureState,
+								                                 bool checkPure,
+                                                 std::map<std::string,void*> children)> wrap,
+                            std::function<void *(std::string &msg)> wrap_err,
+                            const MpsExp &Theta,
+                            const MpsMsgEnv &Gamma,
+                            const MpsProcEnv &Omega, 
+                            const std::set<std::pair<std::string,int> > &pureStack,
+                            const std::string &curPure,
+                            PureState pureState,
+								            bool checkPure=true) = 0;
+
+    /************************************************
+     *************** Type Checking ******************
+     ************************************************/
+    // DOCUMENTATION: MpsTerm::TypeCheck {{{
+    /*!
+     * Static verification of communication safety using explicit types
+     * @result Returns true if the process is well typed, and false otherwise.
+     */
+    // }}}
+    bool TypeCheck();
     // DOCUMENTATION: MpsTerm::TypeCheck {{{
     /*!
      * Static verification of communication safety using explicit types
@@ -319,7 +342,7 @@ class MpsTerm // {{{
      * different from fork.
      */
     // }}}
-    virtual MpsTerm *FlattenFork(bool normLhs, bool normRhs) const=0;
+    virtual MpsTerm *FlattenFork(bool normLhs, bool normRhs, bool pureMode) const=0;
     // DOCUMENTATION: MpsTerm::RenameAll {{{
     /*!
      * RenameAll renames all bound variables (Process, logical and
@@ -335,7 +358,8 @@ class MpsTerm // {{{
      * function is called.
      */
     // }}}
-    virtual MpsTerm *CloseDefinitions() const=0;
+    //MpsTerm *CloseDefinitions() { return CloseDefinitions(MpsMsgEnv()); }
+    virtual MpsTerm *CloseDefinitions(const MpsMsgEnv &Gamma) const=0;
     // DOCUMENTATION: MpsTerm::ExtractDefinitions {{{
     /*!
      * ExtractDefinitions extracts all function definitions from the
@@ -416,6 +440,10 @@ class MpsTerm // {{{
     virtual MpsTerm *Append(const MpsTerm &term) const=0;
 
   protected:
+    void CheckPure(PureState pureState, std::vector<PureState> allowedStates, std::vector<std::string> &errors) // {{{
+    { if (allowedStates.find(pureState)==allowedState.end())
+        errors.push_back(return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+    } // }}}
     static int ourNextId;
     std::vector<std::string> myFreeLinks;
 }; // }}}
@@ -432,17 +460,17 @@ class inputbranch // {{{
     std::vector< MpsExp* > values;
 }; // }}}
 
-inline bool PrintTypeError(const std::string &message, const hapi::MpsTerm &term, const hapi::MpsExp &Theta,  const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega) // {{{
+#define PRINTTYPEERROR(_m) PrintTypeError(_m,*this,Theta,Gamma,Omega)
+inline std::string PrintTypeError(const std::string &message, const hapi::MpsTerm &term, const hapi::MpsExp &Theta,  const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega) // {{{
 {
-#if HAPI_DEBUG_LEVEL>1
-  std::cerr << "!!!!!!!!!!!!!!! Type Error: !!!!!!!!!!!!!!!" << std::endl
-            << "!!!!!!!Term: " << term.ToString("!!!!!        ") << std::endl
-            << "!Assertions: " << Theta.ToString() << std::endl
-            << "!!!Type Env: " << PrintGamma(Gamma,"!!!!         ") << std::endl
-            << "!Method Env: " << PrintOmega(Omega,"!!!!         ") << std::endl
-            << "!!!!Message: " << message << std::endl;
-#endif
-  return false;
+  std::stringstream ss;
+  ss << "!!!!!!!!!!!!!!! Type Error: !!!!!!!!!!!!!!!" << std::endl
+     << "!!!!!!!Term: " << term.ToString("!!!!!        ") << std::endl
+     << "!Assertions: " << Theta.ToString() << std::endl
+     << "!!!Type Env: " << PrintGamma(Gamma,"!!!!         ") << std::endl
+     << "!Method Env: " << PrintOmega(Omega,"!!!!         ") << std::endl
+     << "!!!!Message: " << message << std::endl;
+  return ss.str();
 } // }}}
 inline bool TypeCheckRec(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
 {
@@ -457,6 +485,7 @@ inline bool TypeCheckRec(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma
   // Create type for substitution
   std::vector<hapi::TypeArg> args;
   std::vector<std::string> argnames;
+  // Create args with (x1=x1,x2=x2,...) for initial substituttion
   for (std::vector<hapi::TypeArg>::const_iterator arg=type->GetArgs().begin(); arg!=type->GetArgs().end(); ++arg)
   { hapi::MpsExp *newValue = new hapi::MpsVarExp(arg->myName, hapi::MpsMsgNoType());
     hapi::TypeArg newArg(arg->myName, *arg->myType,  *newValue);
@@ -510,6 +539,32 @@ inline bool TypeCheckForall(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Ga
   delete newTheta;
   return result;
 } // }}}
+
+namespace tdc_wrap
+{
+void *check(MpsTerm *term, // {{{
+            const MpsExp &Theta,
+            const MpsMsgEnv &Gamma,
+            const MpsProcEnv &Omega, 
+            const std::set<std::pair<std::string,int> > &pureStack,
+            const std::string &curPure,
+            MpsTerm::PureState pureState,
+						bool checkPure,
+            std::map<std::string,void*> &children)
+{ std::vector<std::string> *result=new std::vector<std::string>();
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+  { result->insert(result->end(),((std::vector<std::string>*)child->second)->begin(),((std::vector<std::string>*)child->second)->end());
+    delete ((std::vector<std::string>*)child->second);
+  }
+  return result;
+} // }}}
+void *check_err(MpsTerm *term, // {{{
+                std::string &msg)
+{ std::vector<std::string> *result=new std::vector<std::string>();
+  result->push_back(msg);
+  return (void*)result;
+} // }}}
+}
 }
 
 #endif

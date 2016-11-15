@@ -367,7 +367,7 @@ string MpsCall::ToC_prepare(const string &dest) const // {{{
   { string name=(*it)->ToC(result, (*tit)->ToC());
     result << "  " << dest << "->values.push_back(" << name << ");" << endl;
   }
-  result << "  " << dest << "->label=&&def_" << ToC_Name(myName) << ";" << endl;
+  result << "  " << dest << "->label=&&method_" << ToC_Name(myName) << ";" << endl;
 
   return result.str();
 } // }}}
@@ -382,7 +382,7 @@ string MpsCall::ToCHeader() const // {{{
 {
   return "";
 } // }}}
-MpsTerm *MpsCall::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsCall::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 { return Copy();
 } // }}}
 MpsTerm *MpsCall::RenameAll() const // {{{
@@ -396,7 +396,7 @@ bool MpsCall::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &
 MpsTerm *MpsCall::Append(const MpsTerm &term) const // {{{
 { throw (string)"Append applied to call term - not implemented";
 } // }}}
-MpsTerm *MpsCall::CloseDefinitions() const // {{{
+MpsTerm *MpsCall::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 { return Copy();
 } // }}}
 MpsTerm *MpsCall::ExtractDefinitions(MpsFunctionEnv &env) const // {{{

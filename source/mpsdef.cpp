@@ -597,9 +597,9 @@ string MpsDef::ToCHeader() const // {{{
   result << mySucc->ToCHeader();
   return result.str();
 } // }}}
-MpsTerm *MpsDef::FlattenFork(bool normLhs, bool normRhs) const // {{{
-{ MpsTerm *flatSucc = mySucc->FlattenFork(normLhs,normRhs);
-  MpsTerm *flatBody = myBody->FlattenFork(normLhs,normRhs);
+MpsTerm *MpsDef::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
+{ MpsTerm *flatSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
+  MpsTerm *flatBody = myBody->FlattenFork(normLhs,normRhs,pureMode||myPure);
   MpsTerm *flatTerm=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *flatBody, *flatSucc, myEnv, myPure);
   delete flatSucc;
   delete flatBody;
@@ -675,9 +675,8 @@ MpsTerm *MpsDef::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsDef::CloseDefinitions() const // {{{
-{
-  // Copy current args and types
+MpsTerm *MpsDef::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
+{ // Copy current args and types
   vector<string> newArgs=myArgs;
   vector<MpsMsgType*> newTypes;
   for (vector<MpsMsgType*>::const_iterator t=myTypes.begin(); t!=myTypes.end(); ++t)
@@ -693,11 +692,15 @@ MpsTerm *MpsDef::CloseDefinitions() const // {{{
   for (set<string>::const_iterator fv=fvs.begin(); fv!=fvs.end(); ++fv)
   { newArgs.push_back(*fv);
     MpsMsgEnv::const_iterator bt=myEnv.find(*fv);
-    if (bt==myEnv.end())
+    MpsMsgEnv::const_iterator gt=Gamma.find(*fv);
+    if (bt==myEnv.end() && gt==Gamma.end())
       newTypes.push_back(new MpsMsgNoType());
+    else if (bt==myEnv.end()
+      newTypes.push_back(gt->second->Copy());
     else
       newTypes.push_back(bt->second->Copy());
   }
+
   // Create call term for substitution
   vector<MpsExp*> callArgs;
   for (vector<string>::const_iterator it=newArgs.begin(); it!=newArgs.end(); ++it)
@@ -708,13 +711,21 @@ MpsTerm *MpsDef::CloseDefinitions() const // {{{
   MpsTerm *newCall = new MpsCall(myName,callArgs,callStateArgs,newTypes,myStateTypes);
   DeleteVector(callArgs);
   DeleteVector(callStateArgs);
-  // Create new body
-  MpsTerm *tmpSucc = mySucc->PSubst(myName,*newCall,myArgs,GetArgPids(),myStateArgs);
-  MpsTerm *newSucc = tmpSucc->CloseDefinitions();
-  delete tmpSucc;
   // Create new succ
+  MpsTerm *tmpSucc = mySucc->PSubst(myName,*newCall,myArgs,GetArgPids(),myStateArgs);
+  MpsTerm *newSucc = tmpSucc->CloseDefinitions(Gamma);
+  delete tmpSucc;
+  // Create new body
+
+  // Create Gamma for body
+  MpsMsgEnv bodyGamma;
+  for (size_t i=0; i<myStateArgs.size(); ++i)
+    bodyGamma[myStateArgs[i] ]=myStateTypes[i];
+  for (size_t i=0; i<newArgs.size(); ++i)
+    bodyGamma[newArgs[i] ]=newTypes[i];
+
   MpsTerm *tmpBody = myBody->PSubst(myName,*newCall,myArgs,GetArgPids(),myStateArgs);
-  MpsTerm *newBody = tmpBody->CloseDefinitions();
+  MpsTerm *newBody = tmpBody->CloseDefinitions(bodyGamma);
   delete tmpBody;
   // Create result
   MpsTerm *result=new MpsDef(myName,newArgs,newTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myEnv, myPure);

@@ -411,11 +411,11 @@ string MpsSync::ToCHeader() const // {{{
 {
   throw (string)"MpsSync::ToC(): Symmetric synchronization is not supported yet!";
 } // }}}
-MpsTerm *MpsSync::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsSync::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator br=myBranches.begin(); br!=myBranches.end(); ++br)
-    newBranches[br->first]=br->second->FlattenFork(normLhs,normRhs);
+    newBranches[br->first]=br->second->FlattenFork(normLhs,normRhs,pureMode);
 
   MpsTerm *result=new MpsSync(myMaxpid, mySession, newBranches, myAssertions);
 

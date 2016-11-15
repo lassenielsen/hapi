@@ -222,9 +222,9 @@ string MpsHostStatement::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
-MpsTerm *MpsHostStatement::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsHostStatement::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
-  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
   MpsHostStatement *result= new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
   delete newSucc;
   return result;
@@ -276,9 +276,9 @@ MpsTerm *MpsHostStatement::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsHostStatement *MpsHostStatement::CloseDefinitions() const // {{{
+MpsHostStatement *MpsHostStatement::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  MpsTerm *newSucc = mySucc->CloseDefinitions(Gamma);
   MpsHostStatement *result= new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
   delete newSucc;
   return result;

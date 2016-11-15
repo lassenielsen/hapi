@@ -13,6 +13,23 @@ class MpsGuiSync : public MpsTerm // {{{
     MpsGuiSync(int maxpid, const std::string &session, int pid, const std::map< std::string, inputbranch> &branches);
     virtual ~MpsGuiSync();
 
+    void* TDCompile(std::function<void *(MpsTerm *term,
+                                         const MpsExp &Theta,
+                                         const MpsMsgEnv &Gamma,
+                                         const MpsProcEnv &Omega, 
+                                         const std::set<std::pair<std::string,int> > &pureStack,
+                                         const std::string &curPure,
+                                         PureState pureState,
+				                                 bool checkPure,
+                                         std::map<std::string,void*> children)> wrap,
+                    std::function<void *(std::string &msg)> wrap_err,
+                    const MpsExp &Theta,
+                    const MpsMsgEnv &Gamma,
+                    const MpsProcEnv &Omega, 
+                    const std::set<std::pair<std::string,int> > &pureStack,
+                    const std::string &curPure,
+                    PureState pureState,
+				            bool checkPure=true);
     bool TypeCheck(const MpsExp &Theta,
                    const MpsMsgEnv &Gamma,
                    const MpsProcEnv &Omega,
@@ -41,11 +58,11 @@ class MpsGuiSync : public MpsTerm // {{{
     MpsGuiSync *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
-    MpsTerm *FlattenFork(bool normLhs, bool normRhs) const;
+    MpsTerm *FlattenFork(bool normLhs, bool normRhs, bool pureMode) const;
     MpsTerm *RenameAll() const;
     bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
-    MpsTerm *CloseDefinitions() const;
+    MpsTerm *CloseDefinitions(const MpsMsgEnv &Gamma) const;
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
     std::string ToCHeader() const;

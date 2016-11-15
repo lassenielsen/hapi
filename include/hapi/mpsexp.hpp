@@ -137,6 +137,33 @@ class MpsIntVal : public MpsExp // {{{
     mpz_t myValue;
 
 }; // }}}
+class MpsFloatVal : public MpsExp // {{{
+{
+  public:
+    MpsFloatVal(const mpf_t &value);
+    virtual ~MpsFloatVal();
+    MpsFloatVal *Copy() const;
+    MpsFloatVal *Eval() const;
+    MpsMsgType *TypeCheck(const MpsMsgEnv &Gamma);
+    bool operator==(const MpsExp &rhs) const;
+    std::set<std::string> FV() const;
+    MpsFloatVal *Rename(const std::string &src, const std::string &dst) const;
+    MpsFloatVal *Subst(const std::string &source, const MpsExp &dest) const;
+    std::string ToString() const;
+    std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    const mpf_t &GetValue() const;
+
+    MpsExp *Negate() const;
+    MpsExp *MakeNNF(bool negate=false) const;
+    MpsExp *MakeCNF() const;
+    bool ValidOR(std::set<std::string> &lits, std::set<std::string> &neglits) const;
+    bool ValidCNF() const;
+
+  private:
+//    int myValue;
+    mpf_t myValue;
+
+}; // }}}
 class MpsStringVal : public MpsExp // {{{
 {
   public:

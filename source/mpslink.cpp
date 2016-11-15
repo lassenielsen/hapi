@@ -274,9 +274,9 @@ string MpsLink::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
-MpsTerm *MpsLink::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsLink::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
-  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
   MpsTerm *result= new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
   delete newSucc;
   return result;
@@ -328,11 +328,22 @@ MpsTerm *MpsLink::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsLink::CloseDefinitions() const // {{{
+MpsTerm *MpsLink::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  // Create new Gamma
+  MpsMsgEnv newGamma = Gamma;
+  MpsMsgEnv::iterator var=newGamma.find(myChannel);
+  if (var==newGamma.end())
+    throw string("MpsLink::CloseDefinitions: Unable to findd channel type");
+  const MpsChannelMsgType *channel=dynamic_cast<const MpsChannelMsgType*>(var->second);
+  if (channel==NULL)
+    return throw string("MpsLink::CloseDefinitions: Channel type does not have channe type");
+  newGamma[mySession] = new MpsDelegateLocalMsgType(*newType,myPid,channel->GetParticipants());
+
+  MpsTerm *newSucc = mySucc->CloseDefinitions(newGamma);
   MpsTerm *result= new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
   delete newSucc;
+  delete newGamma[mySession];
   return result;
 } // }}}
 MpsTerm *MpsLink::ExtractDefinitions(MpsFunctionEnv &env) const // {{{

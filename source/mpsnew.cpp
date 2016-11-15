@@ -312,9 +312,9 @@ string MpsNew::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
-MpsTerm *MpsNew::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsNew::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
-  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
   MpsTerm *result= new MpsNew(myNames, *myType, *newSucc);
   delete newSucc;
   return result;
@@ -351,11 +351,29 @@ MpsTerm *MpsNew::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsNew::CloseDefinitions() const // {{{
+MpsTerm *MpsNew::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  // Create new Gamma
+  MpsMsgEnv newGamma;
+  for (int i=0; i<myNames.size(); ++i)
+  { // Create local type
+    MpsLocalType *newType=myType->Project(i+1);
+    set<string> fv = newType->FEV();
+    // Create Gamma with new session
+    vector<MpsParticipant> participants;
+    for (int i=0; i<myNames.size(); ++i)
+      participants.push_back(MpsParticipant(i+1,to_string(i+1),false));
+    newGamma[myNames[i]] = new MpsDelegateLocalMsgType(*newType,i+1,participants);
+    delete newType;
+  }
+
+  MpsTerm *newSucc = mySucc->CloseDefinitions(newGamma);
   MpsTerm *result= new MpsNew(myNames, *myType, *newSucc);
   delete newSucc;
+
+  for (int i=0; i<myNames.size(); ++i)
+    delete newGamma[myNames[i]];
+
   return result;
 } // }}}
 MpsTerm *MpsNew::ExtractDefinitions(MpsFunctionEnv &env) const // {{{

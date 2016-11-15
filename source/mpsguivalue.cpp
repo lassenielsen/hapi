@@ -216,9 +216,9 @@ string MpsGuiValue::ToCHeader() const // {{{
 {
   throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
 } // }}}
-MpsTerm *MpsGuiValue::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsGuiValue::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
-  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
   MpsTerm *result= new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
   delete newSucc;
   return result;
@@ -266,9 +266,9 @@ MpsTerm *MpsGuiValue::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsGuiValue::CloseDefinitions() const // {{{
+MpsTerm *MpsGuiValue::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  MpsTerm *newSucc = mySucc->CloseDefinitions(Gamma);
   MpsTerm *result= new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
   delete newSucc;
   return result;

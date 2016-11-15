@@ -239,9 +239,9 @@ string MpsNu::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
-MpsTerm *MpsNu::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsNu::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
-  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
   MpsTerm *result= new MpsNu(myParticipants, myChannel, *newSucc, *myType);
   delete newSucc;
   return result;
@@ -273,11 +273,17 @@ MpsTerm *MpsNu::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsNu::CloseDefinitions() const // {{{
+MpsTerm *MpsNu::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
+  // Create new Gamma
+  MpsMsgEnv newGamma = Gamma;
+  newGamma[myChannel] = new MpsChannelMsgType(*myType,myParticipants);
+
+  MpsTerm *newSucc = mySucc->CloseDefinitions(newGamma);
   MpsTerm *result= new MpsNu(myParticipants, myChannel, *newSucc, *myType);
   delete newSucc;
+  delete newGamma[myChannel];
+
   return result;
 } // }}}
 MpsTerm *MpsNu::ExtractDefinitions(MpsFunctionEnv &env) const // {{{

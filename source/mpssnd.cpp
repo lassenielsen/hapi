@@ -268,9 +268,9 @@ string MpsSnd::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
-MpsTerm *MpsSnd::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsSnd::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
-  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
   MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *myType, GetFinal());
   delete newSucc;
 

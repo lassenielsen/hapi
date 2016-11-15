@@ -29,6 +29,10 @@ MpsIntVal::MpsIntVal(const mpz_t &value) // {{{
   mpz_init_set(myValue,value);
   //myValue = value;
 } // }}}
+MpsFloatVal::MpsFloatVal(const mpf_t &value) // {{{
+{
+  mpf_init_set(myValue,value);
+} // }}}
 MpsStringVal::MpsStringVal(const string &value) // {{{
 {
   myValue = value;
@@ -80,6 +84,10 @@ MpsIntVal::~MpsIntVal() // {{{
 {
   mpz_clear(myValue);
 } // }}}
+MpsFloatVal::~MpsFloatVal() // {{{
+{
+  mpf_clear(myValue);
+} // }}}
 MpsStringVal::~MpsStringVal() // {{{
 {
 } // }}}
@@ -121,6 +129,10 @@ MpsIntVal *MpsIntVal::Copy() const // {{{
 {
   return new MpsIntVal(myValue);
 } // }}}
+MpsFloatVal *MpsFloatVal::Copy() const // {{{
+{
+  return new MpsFloatVal(myValue);
+} // }}}
 MpsStringVal *MpsStringVal::Copy() const // {{{
 {
   return new MpsStringVal(myValue);
@@ -157,6 +169,10 @@ MpsVarExp *MpsVarExp::Eval() const // {{{
   return Copy();
 } // }}}
 MpsIntVal *MpsIntVal::Eval() const// {{{
+{
+  return Copy();
+} // }}}
+MpsFloatVal *MpsFloatVal::Eval() const// {{{
 {
   return Copy();
 } // }}}
@@ -333,6 +349,10 @@ MpsMsgType *MpsIntVal::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   return new MpsIntMsgType();
 } // }}}
+MpsMsgType *MpsFloatVal::TypeCheck(const MpsMsgEnv &Gamma) // {{{
+{
+  return new MpsFloatMsgType();
+} // }}}
 MpsMsgType *MpsStringVal::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   return new MpsStringMsgType();
@@ -487,6 +507,13 @@ bool MpsIntVal::operator==(const MpsExp &rhs) const // {{{
   MpsIntVal *rhsptr=(MpsIntVal*)&rhs;
   return (mpz_cmp(myValue,rhsptr->myValue)==0);
 } // }}}
+bool MpsFloatVal::operator==(const MpsExp &rhs) const // {{{
+{
+  if (typeid(rhs) != typeid(MpsFloatVal))
+    return false;
+  const MpsFloatVal *rhsptr=(const MpsFloatVal*)&rhs;
+  return (mpf_cmp(myValue,rhsptr->myValue)==0);
+} // }}}
 bool MpsStringVal::operator==(const MpsExp &rhs) const // {{{
 {
   if (typeid(rhs) != typeid(MpsStringVal))
@@ -565,6 +592,12 @@ set<string> MpsIntVal::FV() const// {{{
   result.clear();
   return result;
 } // }}}
+set<string> MpsFloatVal::FV() const// {{{
+{
+  set<string> result;
+  result.clear();
+  return result;
+} // }}}
 set<string> MpsStringVal::FV() const// {{{
 {
   set<string> result;
@@ -629,6 +662,10 @@ MpsExp *MpsVarExp::Rename(const string &src, const string &dst) const // {{{
     return Copy();
 } // }}}
 MpsIntVal *MpsIntVal::Rename(const string &src, const string &dst) const // {{{
+{
+  return Copy();
+} // }}}
+MpsFloatVal *MpsFloatVal::Rename(const string &src, const string &dst) const // {{{
 {
   return Copy();
 } // }}}
@@ -697,6 +734,10 @@ MpsExp *MpsVarExp::Subst(const string &source, const MpsExp &dest) const// {{{
   return Copy();
 } // }}}
 MpsIntVal *MpsIntVal::Subst(const string &source, const MpsExp &dest) const// {{{
+{
+  return Copy();
+} // }}}
+MpsFloatVal *MpsFloatVal::Subst(const string &source, const MpsExp &dest) const// {{{
 {
   return Copy();
 } // }}}
@@ -773,6 +814,13 @@ string MpsIntVal::ToString() const // {{{
   free(str);
   return result;
 } // }}}
+string MpsFloatVal::ToString() const // {{{
+{
+  char *str=mpf_get_str(NULL,10,myValue);
+  string result(str);
+  free(str);
+  return result;
+} // }}}
 string MpsStringVal::ToString() const // {{{
 {
   return (string)"\"" + stuff_string(myValue) + "\"";
@@ -829,6 +877,15 @@ string MpsIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
   free(str);
   string varName = ToC_Name(MpsExp::NewVar("intval"));
   dest << "    IntValue " << varName << "(\"" << val << "\");" << endl;
+  return varName;
+} // }}}
+string MpsFloatVal::ToC(stringstream &dest, const string &typeName) const // {{{
+{ 
+  char *str=mpf_get_str(NULL,10,myValue);
+  string val(str);
+  free(str);
+  string varName = ToC_Name(MpsExp::NewVar("floatval"));
+  dest << "    libpi::FloatValue " << varName << "(\"" << val << "\");" << endl;
   return varName;
 } // }}}
 string MpsStringVal::ToC(stringstream &dest, const string &typeName) const // {{{
@@ -1329,6 +1386,10 @@ MpsExp *MpsIntVal::Negate() const// {{{
 { throw (string)"ERROR: Negate applied to Integer Value";
   return new MpsVarExp("ERROR: Negate applied to Integer Value",MpsMsgNoType());
 } // }}}
+MpsExp *MpsFloatVal::Negate() const// {{{
+{ throw (string)"ERROR: Negate applied to Float Value";
+  return new MpsVarExp("ERROR: Negate applied to Float Value",MpsMsgNoType());
+} // }}}
 MpsExp *MpsStringVal::Negate() const// {{{
 { throw (string)"ERROR: Negate applied to String Value";
   return new MpsVarExp("ERROR: Negate applied to String Value",MpsMsgNoType());
@@ -1401,6 +1462,10 @@ MpsExp *MpsVarExp::MakeCNF() const// {{{
 MpsExp *MpsIntVal::MakeCNF() const// {{{
 { throw (string)"ERROR: MakeCNF applied to Integer Value";
   return new MpsVarExp("ERROR: MakeCNF applied to Integer Value",MpsMsgNoType());
+} // }}}
+MpsExp *MpsFloatVal::MakeCNF() const// {{{
+{ throw (string)"ERROR: MakeCNF applied to Float Value";
+  return new MpsVarExp("ERROR: MakeCNF applied to Float Value",MpsMsgNoType());
 } // }}}
 MpsExp *MpsStringVal::MakeCNF() const// {{{
 { throw (string)"ERROR: MakeCNF applied to String Value";
@@ -1520,6 +1585,10 @@ MpsExp *MpsIntVal::MakeNNF(bool negate) const// {{{
 { cerr << (string)"WARNING: MakeNNF applied to Integer Value: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
+MpsExp *MpsFloatVal::MakeNNF(bool negate) const// {{{
+{ cerr << (string)"WARNING: MakeNNF applied to Float Value: " + ToString() + " - approximating as false!" << endl;
+  return new MpsBoolVal(false);
+} // }}}
 MpsExp *MpsStringVal::MakeNNF(bool negate) const// {{{
 { cerr << (string)"ERROR: MakeNNF applied to String Value: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
@@ -1584,6 +1653,10 @@ bool MpsIntVal::ValidCNF() const// {{{
 { throw (string)"ERROR: ValidCNF applied to Integer Value";
   return false;
 } // }}}
+bool MpsFloatVal::ValidCNF() const// {{{
+{ throw (string)"ERROR: ValidCNF applied to Float Value";
+  return false;
+} // }}}
 bool MpsStringVal::ValidCNF() const// {{{
 { throw (string)"ERROR: ValidCNF applied to String Value";
   return false;
@@ -1634,6 +1707,10 @@ bool MpsIntVal::ValidOR(set<string> &pos, set<string> &neg) const// {{{
 { throw (string)"ERROR: ValidOR applied to Integer Value";
   return false;
 } // }}}
+bool MpsFloatVal::ValidOR(set<string> &pos, set<string> &neg) const// {{{
+{ throw (string)"ERROR: ValidOR applied to Float Value";
+  return false;
+} // }}}
 bool MpsStringVal::ValidOR(set<string> &pos, set<string> &neg) const// {{{
 { throw (string)"ERROR: ValidOR applied to String Value";
   return false;
@@ -1675,6 +1752,10 @@ bool MpsSystemExp::ValidOR(set<string> &pos, set<string> &neg) const// {{{
 /* Subclass specific methods
  */
 const mpz_t &MpsIntVal::GetValue() const // {{{
+{
+  return myValue;
+} // }}}
+const mpf_t &MpsFloatVal::GetValue() const // {{{
 {
   return myValue;
 } // }}}

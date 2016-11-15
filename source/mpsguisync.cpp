@@ -790,13 +790,13 @@ string MpsGuiSync::ToCHeader() const // {{{
 {
   throw (string)"MpsGuiSync::ToC(): guisync is not implemented yet!";
 } // }}}
-MpsTerm *MpsGuiSync::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsGuiSync::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   // Create new branches
   map<string,inputbranch> newBranches;
   for (map<string,inputbranch>::const_iterator br=myBranches.begin(); br!=myBranches.end(); ++br)
   { inputbranch newBr;
-    newBr.term=br->second.term->FlattenFork(normLhs,normRhs);
+    newBr.term=br->second.term->FlattenFork(normLhs,normRhs,pureMode);
     newBr.assertion=br->second.assertion->Copy();
     newBr.names=br->second.names;
     newBr.args=br->second.args;
@@ -907,13 +907,18 @@ MpsTerm *MpsGuiSync::Append(const MpsTerm &term) const // {{{
 
   return result;
 } // }}}
-MpsTerm *MpsGuiSync::CloseDefinitions() const // {{{
+MpsTerm *MpsGuiSync::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
   // Create new branches
   map<string,inputbranch> newBranches;
   for (map<string,inputbranch>::const_iterator br=myBranches.begin(); br!=myBranches.end(); ++br)
   { inputbranch newBr;
-    newBr.term=br->second.term->CloseDefinitions();
+    // Create new Gamma
+    MpsMsgEnv newGamma;
+    for (size_t i=0; i<br->second.args.size(); ++i)
+      newGamma[br->second.args[i] ]=br->second.types[i];
+
+    newBr.term=br->second.term->CloseDefinitions(newGamma);
     newBr.assertion=br->second.assertion->Copy();
     newBr.names=br->second.names;
     newBr.args=br->second.args;

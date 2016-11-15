@@ -103,7 +103,7 @@ string MpsEnd::ToCHeader() const // {{{
 {
   return "";
 } // }}}
-MpsTerm *MpsEnd::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsEnd::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   return Copy();
 } // }}}
@@ -111,7 +111,7 @@ MpsTerm *MpsEnd::RenameAll() const // {{{
 {
   return Copy();
 } // }}}
-MpsTerm *MpsEnd::CloseDefinitions() const // {{{
+MpsTerm *MpsEnd::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
   return Copy();
 } // }}}

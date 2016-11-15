@@ -227,9 +227,9 @@ string MpsSelect::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
-MpsTerm *MpsSelect::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsSelect::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
-  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
   MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc, GetFinal());
   delete newSucc;
 

@@ -734,6 +734,30 @@ class MpsIntMsgType : public MpsMsgType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
 }; // }}}
+class MpsFloatMsgType : public MpsMsgType // {{{
+{
+  public:
+    MpsFloatMsgType();
+    virtual ~MpsFloatMsgType();
+    MpsFloatMsgType *Copy() const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    //bool operator==(const MpsMsgType &rhs) const;
+
+    std::set<std::string> FGV() const;
+    std::set<std::string> FLV() const;
+    std::set<std::string> FEV() const;
+    MpsFloatMsgType *GRename(const std::string &source, const std::string &dest) const;
+    MpsFloatMsgType *LRename(const std::string &source, const std::string &dest) const;
+    MpsFloatMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsFloatMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
+    MpsFloatMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
+    MpsFloatMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsFloatMsgType *RenameAll() const;
+
+    std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
+}; // }}}
 class MpsStringMsgType : public MpsMsgType // {{{
 {
   public:

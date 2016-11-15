@@ -348,11 +348,11 @@ string MpsBranch::ToCHeader() const // {{{
   }
   return result.str();
 } // }}}
-MpsTerm *MpsBranch::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsBranch::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
-    newBranches[it->first]=it->second->FlattenFork(normLhs,normRhs);
+    newBranches[it->first]=it->second->FlattenFork(normLhs,normRhs,pureMode);
 
   MpsTerm *result=new MpsBranch(myChannel,newBranches, GetFinalBranches());
   DeleteMap(newBranches);
@@ -384,11 +384,11 @@ MpsTerm *MpsBranch::Append(const MpsTerm &term) const // {{{
   DeleteMap(newBranches);
   return result;
 } // }}}
-MpsTerm *MpsBranch::CloseDefinitions() const // {{{
+MpsTerm *MpsBranch::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
   map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
-    newBranches[it->first]=it->second->CloseDefinitions();
+    newBranches[it->first]=it->second->CloseDefinitions(Gamma);
 
   MpsTerm *result=new MpsBranch(myChannel,newBranches, GetFinalBranches());
   DeleteMap(newBranches);

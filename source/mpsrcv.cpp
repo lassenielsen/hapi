@@ -40,8 +40,8 @@ bool MpsRcv::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
     return PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
-  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   if (recType!=NULL)
     return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
@@ -381,9 +381,9 @@ string MpsRcv::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
-MpsTerm *MpsRcv::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsRcv::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
-  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs);
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
   MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *myType, GetFinal());
   delete newSucc;
 
@@ -457,8 +457,29 @@ void MpsRcv::Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &pos
     }
   }
 } //}}}
-MpsTerm *MpsRcv::CloseDefinitions() const // {{{
+MpsTerm *MpsRcv::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
+  // Create new Gamma
+  // Verify rcv
+  MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
+  // Check session is open
+  if (session==Gamma.end())
+    return PrintTypeError((string)"Receiving on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
+  // Check if session type
+  const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
+  if (msgType==NULL)
+    return PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
+  // Check if unfolding is necessary
+  MpsLocalType *ufldType=msgType->GetLocalType()->Unfold();
+  // Check session has receive type
+  const MpsLocalRcvType *rcvType = dynamic_cast<const MpsLocalRcvType*>(msgType->GetLocalType());
+  if (rcvType==NULL)
+    return PrintTypeError((string)"Receiving on session: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
+  // Check channel index is correct
+  if (myChannel.GetIndex() != rcvType->GetSender())
+    return PrintTypeError((string)"Receiving on session(wrong index): " + myChannel.ToString(),*this,Theta,Gamma,Omega);
+
   MpsTerm *newSucc = mySucc->CloseDefinitions();
   MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *myType, GetFinal());
   delete newSucc;

@@ -22,20 +22,6 @@ std::string DefEnvToString(const MpsFunctionEnv &env) // {{{
 std::string DefEnvToC(const MpsFunctionEnv &env) // {{{
 {
   stringstream ss;
-  ss << endl << "/* Procedure declerations */" << endl
-     << "class Cnt // {{{" << endl
-     << "{" << endl
-     << "  public:" << endl
-     << "    Cnt() {}" << endl
-     << "    virtual ~Cnt() {}" << endl
-     << "    virtual bool IsEmpty() { return true; }" << endl
-     << "    virtual Cnt *Run() { return new Cnt(); }" << endl
-     << "}; // }}}" << endl;
-  for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
-  {
-    ss << def->ToCDecl() << ";" << endl;
-    ss << def->ToCCnt() << ";" << endl;
-  }
   ss << endl << "/* Procedure implementations */" << endl;
   for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
   {
@@ -184,10 +170,22 @@ string MpsFunction::ToCDecl() const // {{{
 string MpsFunction::ToC() const // {{{
 {
   stringstream ss;
-  ss << ToCDecl() << " // {{{" << endl
-     << "{" << endl
-     << GetBody().ToC()
-     << "} // }}}";
+  ss << "  method_" << ToC_Name(GetName()) << ": // {{{" << endl
+     << "  {" << endl;
+  vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
+  for (vector<string>::const_iterator it=myStateArgs.begin(); it!=myStateArgs.end(); ++it)
+  { ss << "    " << (*tit)->ToC() << " " << ToC_Name(*it) << "= state->vals.front();" << endl
+       << "    state->vals.pop_front();" << endl;
+    ++tit;
+  }
+  tit=myTypes.begin();
+  for (vector<string>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+  { ss << "    " << (*tit)->ToC() << " " << ToC_Name(*it) << "= state->vals.front();" << endl
+       << "    state->vals.pop_front();" << endl;
+    ++tit;
+  }
+  ss << GetBody().ToC()
+     << "  } // }}}";
   return ss.str();
 } // }}}
 string MpsFunction::ToCCnt() const // {{{

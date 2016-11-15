@@ -234,10 +234,10 @@ string MpsCond::ToCHeader() const // {{{
   result << myFalseBranch->ToCHeader();
   return result.str();
 } // }}}
-MpsTerm *MpsCond::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsCond::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
-  MpsTerm *newTrueBranch=myTrueBranch->FlattenFork(normLhs,normRhs);
-  MpsTerm *newFalseBranch=myFalseBranch->FlattenFork(normLhs,normRhs);
+  MpsTerm *newTrueBranch=myTrueBranch->FlattenFork(normLhs,normRhs,pureMode);
+  MpsTerm *newFalseBranch=myFalseBranch->FlattenFork(normLhs,normRhs,pureMode);
 
   MpsTerm *result=new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
 
@@ -272,10 +272,10 @@ MpsTerm *MpsCond::Append(const MpsTerm &term) const // {{{
   delete newFalseBranch;
   return result;
 } // }}}
-MpsTerm *MpsCond::CloseDefinitions() const // {{{
+MpsTerm *MpsCond::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
-  MpsTerm *newTrueBranch=myTrueBranch->CloseDefinitions();
-  MpsTerm *newFalseBranch=myFalseBranch->CloseDefinitions();
+  MpsTerm *newTrueBranch=myTrueBranch->CloseDefinitions(Gamma);
+  MpsTerm *newFalseBranch=myFalseBranch->CloseDefinitions(Gamma);
 
   MpsTerm *result=new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
 

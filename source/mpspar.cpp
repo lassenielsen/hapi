@@ -492,22 +492,22 @@ bool isCall(const MpsTerm *term) // {{{
   const MpsDef *defptr=dynamic_cast<const MpsDef*>(term);
   return (defptr!=NULL && isCall(defptr->GetBody()));
 } // }}}
-MpsTerm *MpsPar::FlattenFork(bool normLhs, bool normRhs) const // {{{
+MpsTerm *MpsPar::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
-  MpsTerm *newLeft = myLeft->FlattenFork(normLhs,normRhs);
+  MpsTerm *newLeft = myLeft->FlattenFork(normLhs,normRhs,pureMode);
   if (normLhs && !isCall(newLeft))
   { string defName=MpsTerm::NewName("FlatLeft");
     MpsTerm *succ=new MpsCall(defName,vector<MpsExp*>(),vector<MpsExp*>(),vector<MpsMsgType*>(),vector<MpsMsgType*>());
-    MpsTerm *flatLeft=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(),*newLeft, *succ, MpsMsgEnv(),false);
+    MpsTerm *flatLeft=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(),*newLeft, *succ, MpsMsgEnv(),pureMode);
     delete succ;
     delete newLeft;
     newLeft=flatLeft;
   }
-  MpsTerm *newRight = myRight->FlattenFork(normLhs,normRhs);
+  MpsTerm *newRight = myRight->FlattenFork(normLhs,normRhs,pureMode);
   if (normRhs && !isCall(newRight))
   { string defName=MpsTerm::NewName("FlatRight");
     MpsTerm *succ=new MpsCall(defName,vector<MpsExp*>(),vector<MpsExp*>(),vector<MpsMsgType*>(),vector<MpsMsgType*>());
-    MpsTerm *flatRight=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(),*newRight, *succ, MpsMsgEnv(),false);
+    MpsTerm *flatRight=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(),*newRight, *succ, MpsMsgEnv(),pureMode);
     delete succ;
     delete newRight;
     newRight=flatRight;
@@ -540,10 +540,10 @@ bool MpsPar::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &p
 MpsTerm *MpsPar::Append(const MpsTerm &term) const // {{{
 { throw (string)"Error: Appending to parallell terms not implemented";
 } // }}}
-MpsTerm *MpsPar::CloseDefinitions() const // {{{
+MpsTerm *MpsPar::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
 {
-  MpsTerm *newLeft = myLeft->CloseDefinitions();
-  MpsTerm *newRight = myRight->CloseDefinitions();
+  MpsTerm *newLeft = myLeft->CloseDefinitions(Gamma);
+  MpsTerm *newRight = myRight->CloseDefinitions(Gamma);
 
   MpsTerm *result=new MpsPar(*newLeft,*newRight, GetLeftFinal(), GetRightFinal());
 
