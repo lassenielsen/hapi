@@ -13,16 +13,8 @@ class MpsCond : public MpsTerm // {{{
     MpsCond(const MpsExp &cond, const MpsTerm &truebranch, const MpsTerm &falsebranch);
     virtual ~MpsCond();
 
-    void* TDCompile(std::function<void *(MpsTerm *term,
-                                         const MpsExp &Theta,
-                                         const MpsMsgEnv &Gamma,
-                                         const MpsProcEnv &Omega, 
-                                         const std::set<std::pair<std::string,int> > &pureStack,
-                                         const std::string &curPure,
-                                         PureState pureState,
-				                                 bool checkPure,
-                                         std::map<std::string,void*> children)> wrap,
-                    std::function<void *(std::string &msg)> wrap_err,
+    void* TDCompile(tdc_wrapper wrap,
+                    tdc_wraperr wrap_err,
                     const MpsExp &Theta,
                     const MpsMsgEnv &Gamma,
                     const MpsProcEnv &Omega, 

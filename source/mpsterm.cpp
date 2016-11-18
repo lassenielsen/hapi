@@ -40,7 +40,18 @@ bool MpsTerm::TypeCheck() // {{{
   MpsBoolVal Theta(true);
   MpsMsgEnv Gamma;
   MpsProcEnv Omega;
-  return TypeCheck(Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
+  tdc_wrapper wrap=tdc_wrap::check;
+  tdc_wraperr wrap_err=tdc_wrap::check_err;
+  vector<string> *result=(vector<string>*)TDCompile(wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
+  bool success=true;
+
+  for (size_t i=0; i<result->size(); ++i)
+  { success=false;
+    cerr << "TypeCheck Error: " << (*result)[i] << endl;
+  }
+
+  delete result;
+  return success;
 } // }}}
 
 /* Create list of possible steps
