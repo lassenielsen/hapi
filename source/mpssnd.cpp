@@ -41,11 +41,11 @@ void *MpsSnd::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
     return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega));
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
-//  if (recType!=NULL)
-//    return TypeCheckRec(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
+  if (recType!=NULL)
+    return TypeCheckRec(wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
-//  if (allType!=NULL)
-//    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
+  if (allType!=NULL)
+    return TypeCheckForall(wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   // Check session has send type
   const MpsLocalSendType *sndType = dynamic_cast<const MpsLocalSendType*>(msgType->GetLocalType());
   if (sndType==NULL)

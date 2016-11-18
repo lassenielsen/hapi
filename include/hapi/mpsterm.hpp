@@ -463,18 +463,16 @@ inline std::string PrintTypeError(const std::string &message, const hapi::MpsTer
      << "!!!!Message: " << message << std::endl;
   return ss.str();
 } // }}}
-inline bool TypeCheckRec(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
+inline void *TypeCheckRec(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
 {
   hapi::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
-  { //errors.push_back(PrintTypeError((std::string)"Unfolding closed session: " + session,term,Theta,Gamma,Omega));
-    return false;
+  { return wrap_err(&term,PrintTypeError((std::string)"Unfolding closed session: " + session,term,Theta,Gamma,Omega));
   }
   const hapi::MpsDelegateMsgType *delType = dynamic_cast<const hapi::MpsDelegateMsgType*>(it->second);
   const hapi::MpsLocalRecType *type = dynamic_cast<const hapi::MpsLocalRecType*>(delType->GetLocalType());
   if (type==NULL)
-  { //errors.push_back(PrintTypeError((std::string)"Unfolding non-rec type: " + it->second->ToString(),term,Theta,Gamma,Omega));
-    return false;
+  { return wrap_err(&term,PrintTypeError((std::string)"Unfolding non-rec type: " + it->second->ToString(),term,Theta,Gamma,Omega));
   }
   hapi::MpsMsgEnv newGamma = Gamma;
   // Create type for substitution
@@ -498,24 +496,24 @@ inline bool TypeCheckRec(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma
   }
   hapi::MpsDelegateLocalMsgType *newMsgType=new hapi::MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetParticipants());
   newGamma[session] = newMsgType;
-  bool result = false;
+  void *result = NULL;
   if (dynamic_cast<hapi::MpsLocalRecType*>(newType)==NULL)
-    result = false; //term.TypeCheck(Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+    result = term.TDCompile(wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   else
-    result = false; //PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+    result = wrap_err(&term,PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega));
   delete newType;
   delete newMsgType;
   return result;
 } // }}}
-inline bool TypeCheckForall(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule forall {{{
+inline void *TypeCheckForall(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule forall {{{
 {
   hapi::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
-    return false; //PrintTypeError((std::string)"Forall on closed session: " + session,term,Theta,Gamma,Omega);
+    return wrap_err(&term,PrintTypeError((std::string)"Forall on closed session: " + session,term,Theta,Gamma,Omega));
   const hapi::MpsDelegateMsgType *delType = dynamic_cast<const hapi::MpsDelegateMsgType*>(it->second);
   const hapi::MpsLocalForallType *type = dynamic_cast<const hapi::MpsLocalForallType*>(delType->GetLocalType());
   if (type==NULL)
-    return false; //PrintTypeError((std::string)"Forall on non-forall type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+    return wrap_err(&term,PrintTypeError((std::string)"Forall on non-forall type: " + it->second->ToString(),term,Theta,Gamma,Omega));
   // Find new name for bound variable
   std::string newName = hapi::MpsExp::NewVar(type->GetName());
   // Create type for substitution
@@ -529,7 +527,7 @@ inline bool TypeCheckForall(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Ga
   // Create new Gamma
   hapi::MpsMsgEnv newGamma = Gamma;
   newGamma[session] = newMsgType;
-  bool result = false; //term.TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+  void *result = term.TDCompile(wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Clean Up
   delete newTheta;
   return result;

@@ -16,12 +16,12 @@ MpsNu::~MpsNu() // {{{
   delete mySucc;
   delete myType;
 } // }}}
-bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
-{
+void *MpsNu::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
+{ map<string,void*> children;
   // Check purity constraints
   if (checkPure)
 	{ if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
   }
 
   // Verify new channel
@@ -32,7 +32,7 @@ bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProc
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
     if (session!=NULL &&
         !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return PrintTypeError((string)"Hiding uncompleted session:" + myChannel,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Hiding uncompleted session:" + myChannel,*this,Theta,Gamma,Omega));
 
     // Remove hidden variable
     newGamma.erase(var);
@@ -44,9 +44,10 @@ bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProc
   for (vector<MpsParticipant>::const_iterator p=myParticipants.begin(); p!=myParticipants.end(); ++p)
     if (p->IsPure())
       newPureStack.insert(pair<string,int>(myChannel,p->GetId()));
-  int result=mySucc->TypeCheck(Theta,newGamma,Omega,newPureStack,curPure,pureState,checkPure);
+  children["succ"] = mySucc->TDCompile(wrap,wrap_err,Theta,newGamma,Omega,newPureStack,curPure,pureState,checkPure);
   delete newGamma[myChannel];
-  return result;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsNu::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)

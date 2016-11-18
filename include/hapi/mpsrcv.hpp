@@ -23,13 +23,6 @@ class MpsRcv : public MpsTerm // {{{
                     const std::string &curPure,
                     PureState pureState,
 				            bool checkPure=true);
-    bool TypeCheck(const MpsExp &Theta,
-                   const MpsMsgEnv &Gamma,
-                   const MpsProcEnv &Omega,
-                   const std::set<std::pair<std::string,int> > &pureStack,
-                   const std::string &curPure,
-									 PureState pureState,
-									 bool checkPure=true);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyRcv(const std::string &path, const MpsExp *val) const;
     MpsTerm *ReIndex(const std::string &session,
