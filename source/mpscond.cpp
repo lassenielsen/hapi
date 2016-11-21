@@ -16,14 +16,14 @@ MpsCond::~MpsCond() // {{{
   delete myTrueBranch;
   delete myFalseBranch;
 } // }}}
-bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Cond {{{
-{
+void *MpsCond::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Cond {{{
+{ map<string,void*> children;
   PureState trueState=pureState;
   PureState falseState=pureState;
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_INIT_BRANCH)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
 
     if (pureState==CPS_INIT_BRANCH)
     { trueState=CPS_INIT_BRANCH2_CALL;
@@ -36,20 +36,21 @@ bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   bool condtypematch = booltype.Equal(Theta,*condtype);
   delete condtype;
   if (!condtypematch)
-    return PrintTypeError("Condition not of type Bool",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError("Condition not of type Bool",*this,Theta,Gamma,Omega));
   // Make new Thetas
   MpsExp *trueTheta = new MpsBinOpExp("and",Theta,*myCond,MpsBoolMsgType(),MpsBoolMsgType());
   MpsExp *notCond = new MpsUnOpExp("not",*myCond);
   MpsExp *falseTheta = new MpsBinOpExp("and",Theta,*notCond,MpsBoolMsgType(),MpsBoolMsgType());
   delete notCond;
   
-  bool result = myTrueBranch->TypeCheck(*trueTheta,Gamma,Omega,pureStack,curPure, trueState, checkPure)
-             && myFalseBranch->TypeCheck(*falseTheta,Gamma,Omega,pureStack,curPure, falseState, checkPure);
+  children["true"] = myTrueBranch->TDCompile(wrap,wrap_err,*trueTheta,Gamma,Omega,pureStack,curPure, trueState, checkPure);
+  children["false"] = myFalseBranch->TDCompile(wrap,wrap_err,*falseTheta,Gamma,Omega,pureStack,curPure, falseState, checkPure);
   // Clean Up
   delete trueTheta;
   delete falseTheta;
 
-  return result;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsCond::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)

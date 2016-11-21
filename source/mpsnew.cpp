@@ -16,19 +16,19 @@ MpsNew::~MpsNew() // {{{
   delete mySucc;
   delete myType;
 } // }}}
-bool MpsNew::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
-{
+void *MpsNew::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
+{ map<string,void*> children;
   // Check purity constraints
   if (checkPure)
-	{ if (pureStack.size()>0)
-      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+  { if (pureStack.size()>0)
+      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega));
      if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
   }
 
   // Check correct number of participants
   if (myNames.size()!=myType->GetMaxPid())
-    return PrintTypeError((string)"Number of participants mismatch",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Number of participants mismatch",*this,Theta,Gamma,Omega));
   // Check that only completed sessions are hidden
   MpsMsgEnv newGamma = Gamma;
   for (int i=0; i<myNames.size(); ++i)
@@ -37,7 +37,7 @@ bool MpsNew::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
     { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
       if (session!=NULL &&
           !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-        return PrintTypeError((string)"Hiding uncompleted session:" + myNames[i],*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError((string)"Hiding uncompleted session:" + myNames[i],*this,Theta,Gamma,Omega));
 
       // Remove hidden variable
       newGamma.erase(var);
@@ -61,12 +61,13 @@ bool MpsNew::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
     newGamma[myNames[i]] = new MpsDelegateLocalMsgType(*newType,i+1,participants);
     delete newType;
   }
-  int result=mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+  children["succ"] = mySucc->TDCompile(wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Cleanup
   for (int i=0; i<myNames.size(); ++i)
   { delete newGamma[myNames[i]];
   }
-  return result;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsNew::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)

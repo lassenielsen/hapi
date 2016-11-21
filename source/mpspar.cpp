@@ -23,29 +23,29 @@ MpsPar::~MpsPar() // {{{
   delete myLeft;
   delete myRight;
 } // }}}
-bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Par {{{
-{ 
+void *MpsPar::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Par {{{
+{ map<string,void*> children;
   // Check purity constraionts
   PureState leftState=pureState;
   PureState rightState=pureState;
   set<pair<string,int> > rightPureStack=pureStack;
   if (checkPure)
   { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_INIT_BRANCH1_FORK && pureState!=CPS_SERVICE_FORK)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
     if (pureStack.size()>0)
     { leftState=CPS_SERVICE_DEF;
       // Check what participant is implemented
       MpsDef *pureDef=dynamic_cast<MpsDef*>(myLeft);
       if (pureDef==NULL)
-        return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega));
 
       // Extract implemented participant
       MpsLink *bodyLink=dynamic_cast<MpsLink*>(pureDef->GetBody());
       if (bodyLink==NULL)
-        return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega));
       set<pair<string,int> >::iterator impl=rightPureStack.find(pair<string,int>(bodyLink->GetChannel(),bodyLink->GetPid()));
       if (impl==rightPureStack.end())
-        return PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega));
       rightPureStack.erase(impl);
 
     }
@@ -89,8 +89,10 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   }
 
   // Check each sub-process with the split Gamma
-  return myLeft->TypeCheck(Theta,leftGamma,Omega,set<pair<string,int> >(),curPure, leftState, checkPure) &&
-         myRight->TypeCheck(Theta,rightGamma,Omega,rightPureStack,curPure, rightState, checkPure);
+  children["left"]=myLeft->TDCompile(wrap,wrap_err,Theta,leftGamma,Omega,set<pair<string,int> >(),curPure, leftState, checkPure);
+  children["right"]=myRight->TDCompile(wrap,wrap_err,Theta,rightGamma,Omega,rightPureStack,curPure, rightState, checkPure);
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsPar::ApplyRcv(const std::string &path, const MpsExp *val) const // {{{
 { if (path.size()==0)

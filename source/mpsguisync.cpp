@@ -46,41 +46,41 @@ MpsGuiSync::~MpsGuiSync() // {{{
     myBranches.erase(myBranches.begin());
   }
 } // }}}
-bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Sync (extended) {{{
-{
+void *MpsGuiSync::TypeCheck(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Sync (extended) {{{
+{ map<string,void*> children;
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
   }
 
   // Verify guisync
   MpsMsgEnv::const_iterator var=Gamma.find(mySession);
   // Check that session exists
   if (var==Gamma.end())
-    return PrintTypeError((string)"Synchonising on unknown session " + mySession,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Synchonising on unknown session " + mySession,*this,Theta,Gamma,Omega));
   // Check if session type
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(var->second);
   if (msgType==NULL)
-    return PrintTypeError((string)"Synchronising on non-session type: " + mySession,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Synchronising on non-session type: " + mySession,*this,Theta,Gamma,Omega));
 
   // Check if unfolding is necessary
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
+    return TypeCheckRec(wrap,wrap_errTheta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
+    return TypeCheckForall(wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
 
   // Check session has sync type
   const MpsLocalSyncType *syncType = dynamic_cast<const MpsLocalSyncType*>(msgType->GetLocalType());
   if (syncType==NULL)
-    return PrintTypeError((string)"Synchronising on non-sync session: " + mySession,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Synchronising on non-sync session: " + mySession,*this,Theta,Gamma,Omega));
   // Check maxpid
   if (myMaxpid != msgType->GetMaxpid())
-    return PrintTypeError((string)"Synchronising with wrong participant count",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Synchronising with wrong participant count",*this,Theta,Gamma,Omega));
   if (myPid != msgType->GetPid())
-    return PrintTypeError((string)"Synchronising with wrong participant ID",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Synchronising with wrong participant ID",*this,Theta,Gamma,Omega));
   // Check if mandatory labels are accepted
   const map<string,MpsLocalType*> &branches=syncType->GetBranches();
   const map<string,MpsExp*> &assertions=syncType->GetAssertions();
@@ -94,7 +94,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
       map<string,inputbranch>::const_iterator myBranch=myBranches.find(branch->first);
       map<string,MpsExp*>::const_iterator assertion=assertions.find(branch->first);
       if (assertion==assertions.end())
-        return PrintTypeError((string)"Synchronisation type has no assertion for branch: " + branch->first,*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError((string)"Synchronisation type has no assertion for branch: " + branch->first,*this,Theta,Gamma,Omega));
       MpsExp *tmpOr = new MpsBinOpExp("or",*mandatoryOr,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
       delete mandatoryOr;
       mandatoryOr=tmpOr;
@@ -104,7 +104,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
         bool inactive = notAssertion->ValidExp(hyps);
         delete notAssertion;
         if (not inactive)
-          return PrintTypeError((string)"Synchronisation missing mandatory branch: " + branch->first,*this,Theta,Gamma,Omega);
+          return wrap_err(this,PrintTypeError((string)"Synchronisation missing mandatory branch: " + branch->first,*this,Theta,Gamma,Omega));
       }
       else
       {
@@ -115,14 +115,14 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
         bool checkImplication=implication->ValidExp(hyps);
         delete implication;
         if (not checkImplication)
-          return PrintTypeError((string)"Synchronisation may not accept mandatory branch: " + branch->first,*this,Theta,Gamma,Omega);
+          return wrap_err(this,PrintTypeError((string)"Synchronisation may not accept mandatory branch: " + branch->first,*this,Theta,Gamma,Omega));
       }
     }
   }
   bool checkMandatory=mandatoryOr->ValidExp(hyps);
   delete mandatoryOr;
   if (not checkMandatory)
-    return PrintTypeError((string)"Synchronisation may have no mandatory branches: " + mySession,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Synchronisation may have no mandatory branches: " + mySession,*this,Theta,Gamma,Omega));
 
   // Check typing of all branches in the process
   for (map<string,inputbranch>::const_iterator myBranch=myBranches.begin();myBranch!=myBranches.end();++myBranch)
@@ -134,29 +134,29 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
       bool branchargtypematch = branchargtype->Equal(Theta,*myBranch->second.types[brancharg]);
       delete branchargtype;
       if (!branchargtypematch)
-        return PrintTypeError((string)"Ill typed argument: " + myBranch->second.args[brancharg] + " in branch: " + myBranch->first,*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError((string)"Ill typed argument: " + myBranch->second.args[brancharg] + " in branch: " + myBranch->first,*this,Theta,Gamma,Omega));
     }
     // Check Label Inclusion
     map<string,MpsLocalType*>::const_iterator type=branches.find(myBranch->first);
     if (type==branches.end())
-      return PrintTypeError((string)"Synchronisation accepts untyped label: " + myBranch->first,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Synchronisation accepts untyped label: " + myBranch->first,*this,Theta,Gamma,Omega));
     // TypeCheck Assertion
     MpsMsgType *assertionType=myBranch->second.assertion->TypeCheck(Gamma);
     bool checkAssertionType = dynamic_cast<MpsBoolMsgType*>(assertionType)!=NULL;
     delete assertionType;
     if (not checkAssertionType)
-      return PrintTypeError((string)"Synchronisation has untyped assertion for branch: " + myBranch->first,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Synchronisation has untyped assertion for branch: " + myBranch->first,*this,Theta,Gamma,Omega));
     // Check Assertion Implication
     map<string,MpsExp*>::const_iterator assertion=assertions.find(myBranch->first);
     if (assertion==assertions.end())
-        return PrintTypeError((string)"Synchronisation type has no assertion for branch: " + myBranch->first,*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError((string)"Synchronisation type has no assertion for branch: " + myBranch->first,*this,Theta,Gamma,Omega));
     MpsExp *notAssertion = new MpsUnOpExp("not",*myBranch->second.assertion);
     MpsExp *implication = new MpsBinOpExp("or",*notAssertion,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     delete notAssertion;
     bool checkImplication = implication->ValidExp(hyps);
     delete implication;
     if (not checkImplication)
-        return PrintTypeError((string)"Synchronisation may accept inactive branch: " + myBranch->first,*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError((string)"Synchronisation may accept inactive branch: " + myBranch->first,*this,Theta,Gamma,Omega));
     // Make new Gamma
     // Prepare renaming
     map<string,string> renaming;
@@ -187,7 +187,7 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
     // Check argument cont
     if (myBranch->second.args.size() != myBranch->second.types.size() ||
         myBranch->second.args.size() != myBranch->second.names.size())
-      return PrintTypeError((string)"Number of arguments, types and names inconsistent in branch: " + myBranch->first,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Number of arguments, types and names inconsistent in branch: " + myBranch->first,*this,Theta,Gamma,Omega));
     // Add argument types
     for (int i=0; i<myBranch->second.args.size(); ++i)
       newGamma[myBranch->second.args[i] ] = myBranch->second.types[i]; // Only simple types
@@ -211,8 +211,8 @@ bool MpsGuiSync::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mp
     if (not checkBranch)
       return false;
   }
-  // All checks passed
-  return true;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsGuiSync::ApplySync(const std::vector<std::string> &paths, const std::string &label) const // {{{
 { if (paths.size()==0)

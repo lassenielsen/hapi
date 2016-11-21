@@ -28,32 +28,33 @@ MpsCall::~MpsCall() // {{{
   DeleteVector(myTypes);
   DeleteVector(myStateTypes);
 } // }}}
-bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Var {{{
-{ if (checkPure)
-	{ // Check purity constraints
+void *MpsCall::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Var {{{
+{ map<string,void*> children;
+  if (checkPure)
+  { // Check purity constraints
     if (pureStack.size()>0)
-      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega));
 
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_CALL && pureState!=CPS_INIT_BRANCH1_CALL1 && pureState!=CPS_INIT_BRANCH1_CALL2 && pureState!=CPS_INIT_BRANCH2_CALL && pureState!=CPS_INIT_CALL)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
   }
 
   // Verify call
   // Check variable is defined
   MpsProcEnv::const_iterator omega = Omega.find(myName);
   if (omega == Omega.end())
-    return PrintTypeError((string)"Process Variable not defined: " + myName,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Process Variable not defined: " + myName,*this,Theta,Gamma,Omega));
 
   if (checkPure)
   { // Verify purity constraint
     if (pureState!=CPS_IMPURE && !omega->second.pure)
-      return PrintTypeError("Calling impure method " + myName + " from a pure setting.",*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Calling impure method " + myName + " from a pure setting.",*this,Theta,Gamma,Omega));
   }
   // Check correct number of arguments
   if (omega->second.stypes.size() != myState.size() ||
       omega->second.stypes.size() != myState.size() ||
       omega->second.types.size() != myArgs.size())
-    return PrintTypeError((string)"Process Variable wrong argument-count: " + myName,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Process Variable wrong argument-count: " + myName,*this,Theta,Gamma,Omega));
   // Check argument-types and remove used sessions from endGamma
   MpsMsgEnv endGamma=Gamma;
   DeleteVector(myStateTypes);
@@ -63,7 +64,7 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     bool statetypematch = statetype->Equal(Theta,*omega->second.stypes[i]);
     delete statetype;    
     if (!statetypematch)
-      return PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString("!!!!                                      "),*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString("!!!!                                      "),*this,Theta,Gamma,Omega));
     // Store type for compilation
     myStateTypes.push_back(omega->second.stypes[i]->Copy());
   }
@@ -86,17 +87,17 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
     delete argType;
     delete callType;
     if (not argtypematch)
-      return PrintTypeError((string)"Argument does not have type: " + callTypeString,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Argument does not have type: " + callTypeString,*this,Theta,Gamma,Omega));
     if (dynamic_cast<MpsDelegateMsgType*>(omega->second.types[i]) != NULL)
     {
       if (typeid(*myArgs[i]) != typeid(MpsVarExp))
-        return PrintTypeError((string)"Argument must be session: " + myArgs[i]->ToString(),*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError((string)"Argument must be session: " + myArgs[i]->ToString(),*this,Theta,Gamma,Omega));
       else
       {
         MpsVarExp *var=(MpsVarExp*)myArgs[i];
         MpsMsgEnv::iterator session=endGamma.find(var->ToString());
         if (session == endGamma.end())
-          return PrintTypeError((string)"Argument session not defined or used more than once: " + var->ToString(),*this,Theta,Gamma,Omega);
+          return wrap_err(this,PrintTypeError((string)"Argument session not defined or used more than once: " + var->ToString(),*this,Theta,Gamma,Omega));
         // Remove the used session (linearity)
         endGamma.erase(session);
       }
@@ -107,9 +108,10 @@ bool MpsCall::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
     if (session!=NULL &&
         !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega));
   }
-  return true;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsCall::ApplyCall(const std::string &path, const std::vector<MpsFunction> &funs) const // {{{
 { if (path.size()!=0)
