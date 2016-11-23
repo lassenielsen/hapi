@@ -46,7 +46,7 @@ MpsGuiSync::~MpsGuiSync() // {{{
     myBranches.erase(myBranches.begin());
   }
 } // }}}
-void *MpsGuiSync::TypeCheck(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Sync (extended) {{{
+void *MpsGuiSync::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Sync (extended) {{{
 { map<string,void*> children;
   if (checkPure)
 	{ // Check purity constraints
@@ -67,7 +67,7 @@ void *MpsGuiSync::TypeCheck(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp
   // Check if unfolding is necessary
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   if (recType!=NULL)
-    return TypeCheckRec(wrap,wrap_errTheta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
+    return TypeCheckRec(wrap, wrap_err, Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
     return TypeCheckForall(wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
@@ -200,7 +200,7 @@ void *MpsGuiSync::TypeCheck(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp
       newTheta=tmpTheta;
     }
     // Check Branch
-    bool checkBranch=myBranch->second.term->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
+    children[myBranch->first]=myBranch->second.term->TDCompile(wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
     delete newTheta;
     while (newGamma.size()>0)
     { const MpsDelegateMsgType *gammaDel=dynamic_cast<const MpsDelegateMsgType*>(newGamma.begin()->second);
@@ -208,8 +208,6 @@ void *MpsGuiSync::TypeCheck(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp
         delete gammaDel;
       newGamma.erase(newGamma.begin());
     }
-    if (not checkBranch)
-      return false;
   }
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);

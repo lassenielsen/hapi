@@ -535,29 +535,17 @@ inline void *TypeCheckForall(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wra
 
 namespace tdc_wrap
 {
-void *check(MpsTerm *term, // {{{
+void *check(MpsTerm *term,
             const MpsExp &Theta,
             const MpsMsgEnv &Gamma,
             const MpsProcEnv &Omega, 
             const std::set<std::pair<std::string,int> > &pureStack,
             const std::string &curPure,
             MpsTerm::PureState pureState,
-	    bool checkPure,
-            std::map<std::string,void*> &children)
-{ std::vector<std::string> *result=new std::vector<std::string>();
-  // Cleanup
-  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
-  { result->insert(result->end(),((std::vector<std::string>*)child->second)->begin(),((std::vector<std::string>*)child->second)->end());
-    delete ((std::vector<std::string>*)child->second);
-  }
-  return result;
-} // }}}
-void *check_err(MpsTerm *term, // {{{
-                std::string msg)
-{ std::vector<std::string> *result=new std::vector<std::string>();
-  result->push_back(msg);
-  return (void*)result;
-} // }}}
+            bool checkPure,
+            std::map<std::string,void*> &children);
+void *check_err(MpsTerm *term,
+                std::string msg);
 }
 }
 

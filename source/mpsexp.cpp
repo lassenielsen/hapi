@@ -1,6 +1,7 @@
 #include <hapi/mpsexp.hpp>
 #include <sys/timeb.h>
 #include <hapi/common.hpp>
+#include <string.h>
 
 using namespace std;
 using namespace hapi;
@@ -815,11 +816,19 @@ string MpsIntVal::ToString() const // {{{
   return result;
 } // }}}
 string MpsFloatVal::ToString() const // {{{
-{
-  char *str=mpf_get_str(NULL,10,myValue);
-  string result(str);
+{ stringstream dest;
+  
+  mp_exp_t exp;
+  char *str=mpf_get_str(NULL,&exp,10,0,myValue);
+  if (exp+1>=strlen(str))
+    dest << str << string(1+exp-strlen(str),'0');
+  else if (exp>=0)
+    dest << string(str,exp) << "." << string(str+exp);
+  else
+    dest << "0." << string(1-exp,'0') << string(str);
   free(str);
-  return result;
+
+  return dest.str();
 } // }}}
 string MpsStringVal::ToString() const // {{{
 {
@@ -881,9 +890,7 @@ string MpsIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
 } // }}}
 string MpsFloatVal::ToC(stringstream &dest, const string &typeName) const // {{{
 { 
-  char *str=mpf_get_str(NULL,10,myValue);
-  string val(str);
-  free(str);
+  string val=ToString();
   string varName = ToC_Name(MpsExp::NewVar("floatval"));
   dest << "    libpi::FloatValue " << varName << "(\"" << val << "\");" << endl;
   return varName;

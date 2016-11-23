@@ -18,104 +18,24 @@ MpsAssign::~MpsAssign() // {{{
   delete myType;
   delete mySucc;
 } // }}}
-void* MpsAssign::TDCompile(std::function<void *(MpsTerm *term, // {{{
-                                                const MpsExp &Theta,
-                                                const MpsMsgEnv &Gamma,
-                                                const MpsProcEnv &Omega, 
-                                                const std::set<std::pair<std::string,int> > &pureStack,
-                                                const std::string &curPure,
-                                                PureState pureState,
-		                                            bool checkPure,
-                                                std::map<std::string,void*> children)> wrap,
-                           std::function<void *(std::string &msg)> wrap_err,
-                           const MpsExp &Theta,
-                           const MpsMsgEnv &Gamma,
-                           const MpsProcEnv &Omega, 
-                           const std::set<std::pair<std::string,int> > &pureStack,
-                           const std::string &curPure,
-                           PureState pureState,
-		                       bool checkPure=true)
-{ // Verify purity-state
-  if (checkPure)
-	{ string msg;
-    if (!MpsTerm::CheckPure(pureState,{CPS_IMPURE,CPS_PURE},msg))
-      return wrap_err(PRINTTYPEERROR(msg));
-  }
-  MpsMsgType *exptype=myExp->TypeCheck(Gamma);
-  // Is exp typed
-  if (dynamic_cast<const MpsMsgNoType*>(exptype))
-    return wrap_err(PRINTTYPEERROR((string)"Expression does not typecheck");
-  if (dynamic_cast<const MpsMsgNoType*>(myType)==NULL)
-  { // Compare types
-    bool exptypematch = exptype->Equal(Theta,*myType);
-    delete exptype;
-    if (not exptypematch)
-      return PrintTypeError((string)"Expression does not have type: " + myType->ToString(),*this,Theta,Gamma,Omega);
-  }
-  else
-  { // Store type
-    delete myType;
-    myType = exptype->Copy();
-  }
-  // Verify assign
-  if (dynamic_cast<MpsDelegateMsgType*>(myType)!=NULL)
-    return PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega);
-  // Check no session is eclipsed
-  MpsMsgEnv::const_iterator var=Gamma.find(myId);
-  if (var!=Gamma.end() && dynamic_cast<const MpsDelegateMsgType*>(var->second)!=NULL)
-    return PrintTypeError((string)"Session eclipsed by assignment: " + myId,*this,Theta,Gamma,Omega);
-  // Make new environment
-  string newId = MpsExp::NewVar(myId);
-  MpsExp *tmpTheta=Theta.Rename(myId,newId);
-  MpsExp *newTheta;
-  if (myType->ToString()=="Bool")
-  { MpsExp *eq1 = new MpsVarExp(myId,MpsMsgNoType());
-    MpsExp *eq2 = myExp->Rename(myId,newId);
-    MpsExp *neq1=new MpsUnOpExp("not",*eq1);
-    MpsExp *neq2=new MpsUnOpExp("not",*eq2);
-    MpsExp *leftExp=new MpsBinOpExp("or",*eq1,*neq2,MpsMsgNoType(),MpsMsgNoType());
-    MpsExp *rightExp=new MpsBinOpExp("or",*neq1,*eq2,MpsMsgNoType(),MpsMsgNoType());
-    MpsExp *addTheta=new MpsBinOpExp("and",*leftExp,*rightExp,MpsMsgNoType(),MpsMsgNoType());
-    newTheta=new MpsBinOpExp("and",*tmpTheta,*addTheta,MpsMsgNoType(),MpsMsgNoType());
-    delete eq1;
-    delete eq2;
-    delete neq1;
-    delete neq2;
-    delete leftExp;
-    delete rightExp;
-    delete addTheta;
-    delete tmpTheta;
-  }
-  else
-    newTheta=tmpTheta;
-  MpsMsgEnv newGamma;
-  for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
-    if (it->first!=myId)
-      newGamma[it->first]=it->second->ERename(myId,newId);
-  newGamma[myId]=myType->Copy();
-  // Check new Successor
-  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
-  delete newTheta;
-  DeleteMap(newGamma);
-  return result;
-} // }}}
-bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Check exp has correct type, and check succ in updated sigma {{{
-{
+void *MpsAssign::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Check exp has correct type, and check succ in updated sigma {{{
+{ map<string,void*> children;
+ 
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
   }
   MpsMsgType *exptype=myExp->TypeCheck(Gamma);
   // Is exp typed
   if (dynamic_cast<const MpsMsgNoType*>(exptype))
-    return PrintTypeError((string)"Expression does not typecheck",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Expression does not typecheck",*this,Theta,Gamma,Omega));
   if (dynamic_cast<const MpsMsgNoType*>(myType)==NULL)
   { // Compare types
     bool exptypematch = exptype->Equal(Theta,*myType);
     delete exptype;
     if (not exptypematch)
-      return PrintTypeError((string)"Expression does not have type: " + myType->ToString(),*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Expression does not have type: " + myType->ToString(),*this,Theta,Gamma,Omega));
   }
   else
   { // Store type
@@ -124,11 +44,11 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   }
   // Verify assign
   if (dynamic_cast<MpsDelegateMsgType*>(myType)!=NULL)
-    return PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega));
   // Check no session is eclipsed
   MpsMsgEnv::const_iterator var=Gamma.find(myId);
   if (var!=Gamma.end() && dynamic_cast<const MpsDelegateMsgType*>(var->second)!=NULL)
-    return PrintTypeError((string)"Session eclipsed by assignment: " + myId,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Session eclipsed by assignment: " + myId,*this,Theta,Gamma,Omega));
   // Make new environment
   string newId = MpsExp::NewVar(myId);
   MpsExp *tmpTheta=Theta.Rename(myId,newId);
@@ -159,10 +79,11 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
       newGamma[it->first]=it->second->ERename(myId,newId);
   newGamma[myId]=myType->Copy();
   // Check new Successor
-  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
+  children["succ"] = mySucc->TDCompile(wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
   delete newTheta;
   DeleteMap(newGamma);
-  return result;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsAssign::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)

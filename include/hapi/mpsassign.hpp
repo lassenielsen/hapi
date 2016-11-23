@@ -27,13 +27,6 @@ class MpsAssign : public MpsTerm // {{{
                     const std::string &curPure,
                     PureState pureState,
 				            bool checkPure=true);
-    bool TypeCheck(const MpsExp &Theta,
-                   const MpsMsgEnv &Gamma,
-                   const MpsProcEnv &Omega,
-                   const std::set<std::pair<std::string,int> > &pureStack,
-                   const std::string &curPure,
-                   PureState pureState,
-									 bool checkPure=true);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsAssign *ReIndex(const std::string &session,
