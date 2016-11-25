@@ -350,7 +350,16 @@ class MpsTerm // {{{
      */
     // }}}
     //MpsTerm *CloseDefinitions() { return CloseDefinitions(MpsMsgEnv()); }
-    virtual MpsTerm *CloseDefinitions(const MpsMsgEnv &Gamma) const=0;
+    MpsTerm *CloseDefs() const=0;
+    virtual MpsTerm *CloseDefsWrapper(MpsTerm *term,
+                                      const MpsExp &Theta,
+                                      const MpsMsgEnv &Gamma,
+                                      const MpsProcEnv &Omega, 
+                                      const std::set<std::pair<std::string,int> > &pureStack,
+                                      const std::string &curPure,
+                                      MpsTerm::PureState pureState,
+                                      bool checkPure,
+                                      std::map<std::string,void*> &children);
     // DOCUMENTATION: MpsTerm::ExtractDefinitions {{{
     /*!
      * ExtractDefinitions extracts all function definitions from the
@@ -546,6 +555,17 @@ void *check(MpsTerm *term,
             std::map<std::string,void*> &children);
 void *check_err(MpsTerm *term,
                 std::string msg);
+void *closedefs(MpsTerm *term,
+                const MpsExp &Theta,
+                const MpsMsgEnv &Gamma,
+                const MpsProcEnv &Omega, 
+                const std::set<std::pair<std::string,int> > &pureStack,
+                const std::string &curPure,
+                MpsTerm::PureState pureState,
+                bool checkPure,
+                std::map<std::string,void*> &children);
+void *closedefs_err(MpsTerm *term,
+                    std::string msg);
 }
 }
 

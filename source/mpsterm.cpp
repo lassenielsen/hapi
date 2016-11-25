@@ -53,6 +53,16 @@ bool MpsTerm::TypeCheck() // {{{
   delete result;
   return success;
 } // }}}
+MpsTerm *MpsTerm::CloseDefs() // {{{
+{
+  // Create environments
+  MpsBoolVal Theta(true);
+  MpsMsgEnv Gamma;
+  MpsProcEnv Omega;
+  tdc_wrapper wrap=tdc_wrap::closedefs;
+  tdc_wraperr wrap_err=tdc_wrap::closedefs_err;
+  return (MpsTerm*)TDCompile(wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
+} // }}}
 
 /* Create list of possible steps
  */
@@ -289,7 +299,7 @@ string MpsTerm::MakeC() const // {{{
   MpsTerm *step1=RenameAll();
   MpsTerm *step2=step1->FlattenFork(false,true,false);
   delete step1;
-  MpsTerm *step3=step2->CloseDefinitions(MpsMsgEnv());
+  MpsTerm *step3=step2->CloseDefs();
   delete step2;
   MpsFunctionEnv defs;
   // Move definitions to global env
