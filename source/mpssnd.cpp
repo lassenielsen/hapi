@@ -24,21 +24,21 @@ void *MpsSnd::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   // Check purity constraints
   if (checkPure)
 	{ if (pureStack.size()>0)
-      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
 
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
   // Verify snd
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
   if (session==Gamma.end())
-    return wrap_err(this,PrintTypeError((string)"Sending on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Sending on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
   // Check if session type
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
@@ -49,10 +49,10 @@ void *MpsSnd::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   // Check session has send type
   const MpsLocalSendType *sndType = dynamic_cast<const MpsLocalSendType*>(msgType->GetLocalType());
   if (sndType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Sending on session with non-send type: " + myChannel.GetName(),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Sending on session with non-send type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
   // Check channel index is correct
   if (myChannel.GetIndex() != sndType->GetReceiver())
-    return wrap_err(this,PrintTypeError((string)"Sending on wrong index in session: " + myChannel.ToString(),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Sending on wrong index in session: " + myChannel.ToString(),*this,Theta,Gamma,Omega),children);
   // Make new environment
   MpsLocalType *newType=NULL;
   if (sndType->GetAssertionType())
@@ -69,11 +69,11 @@ void *MpsSnd::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   string exptype_str= exptype->ToString("!!");
   delete exptype;
   if (not msgtypematch)
-    return wrap_err(this,PrintTypeError((string)"Message does not have type:\n!!" + sndType->GetMsgType()->ToString("!!") + "\nBut type:\n!!" + exptype_str,*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Message does not have type:\n!!" + sndType->GetMsgType()->ToString("!!") + "\nBut type:\n!!" + exptype_str,*this,Theta,Gamma,Omega),children);
   // Check Assertion is fulfilled
   if (sndType->GetAssertionType())
   { if (sndType->GetMsgType()->ToString()!="Bool")
-      return wrap_err(this,PrintTypeError((string)"Assertions not supported for message-type: " + sndType->GetMsgType()->ToString(),*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError((string)"Assertions not supported for message-type: " + sndType->GetMsgType()->ToString(),*this,Theta,Gamma,Omega),children);
     MpsExp *msgAssertion=sndType->GetAssertion().Subst(sndType->GetAssertionName(),*myExp);
     vector<const MpsExp*> hyps;
     hyps.push_back(&Theta);
@@ -81,7 +81,7 @@ void *MpsSnd::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
     hyps.pop_back();
     delete msgAssertion;
     if (not checkAssertion)
-      return wrap_err(this,PrintTypeError((string)"Assertion not respected",*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError((string)"Assertion not respected",*this,Theta,Gamma,Omega),children);
   }
   // If delegating remove delegated session
   if (dynamic_cast<const MpsDelegateMsgType*>(sndType->GetMsgType())!=NULL)
@@ -319,13 +319,16 @@ MpsTerm *MpsSnd::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsSnd::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsSnd::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                  const MpsMsgEnv &Gamma,
+                                  const MpsProcEnv &Omega, 
+                                  const std::set<std::pair<std::string,int> > &pureStack,
+                                  const std::string &curPure,
+                                  MpsTerm::PureState pureState,
+                                  bool checkPure,
+                                  std::map<std::string,void*> &children)
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions(Gamma);
-  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *myType, GetFinal());
-  delete newSucc;
-
-  return result;
+  return new MpsSnd(myChannel, *myExp, *(MpsTerm*)children["succ"], *myType, GetFinal());
 } // }}}
 MpsTerm *MpsSnd::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

@@ -49,7 +49,14 @@ class MpsRcv : public MpsTerm // {{{
     bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
     void Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &post) const;
-    MpsTerm *CloseDefinitions(const MpsMsgEnv &Gamma) const;
+    MpsTerm *CloseDefsWrapper(const MpsExp &Theta,
+                              const MpsMsgEnv &Gamma,
+                              const MpsProcEnv &Omega, 
+                              const std::set<std::pair<std::string,int> > &pureStack,
+                              const std::string &curPure,
+                              MpsTerm::PureState pureState,
+                              bool checkPure,
+                              std::map<std::string,void*> &children);
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
     std::string ToCHeader() const;

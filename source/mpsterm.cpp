@@ -419,7 +419,7 @@ void *check(MpsTerm *term, // {{{
             const std::set<std::pair<std::string,int> > &pureStack,
             const std::string &curPure,
             MpsTerm::PureState pureState,
-	    bool checkPure,
+            bool checkPure,
             std::map<std::string,void*> &children)
 { std::vector<std::string> *result=new std::vector<std::string>();
   // Cleanup
@@ -430,10 +430,39 @@ void *check(MpsTerm *term, // {{{
   return result;
 } // }}}
 void *check_err(MpsTerm *term, // {{{
-                std::string msg)
+                std::string msg,
+                std::map<std::string,void*> &children)
 { std::vector<std::string> *result=new std::vector<std::string>();
   result->push_back(msg);
+  // Cleanup
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+  { result->insert(result->end(),((std::vector<std::string>*)child->second)->begin(),((std::vector<std::string>*)child->second)->end());
+    delete ((std::vector<std::string>*)child->second);
+  }
   return (void*)result;
+} // }}}
+void *closedefs(MpsTerm *term, // {{{
+                const MpsExp &Theta,
+                const MpsMsgEnv &Gamma,
+                const MpsProcEnv &Omega, 
+                const std::set<std::pair<std::string,int> > &pureStack,
+                const std::string &curPure,
+                MpsTerm::PureState pureState,
+                bool checkPure,
+                std::map<std::string,void*> &children)
+{ MpsTerm *result=term->CloseDefsWrapper(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, children);
+  // Cleanup
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+    delete ((std::vector<std::string>*)child->second);
+  return (void*)result;
+} // }}}
+void *closedefs_err(MpsTerm *term, // {{{
+                    std::string msg,
+                    std::map<std::string,void*> &children)
+{ // Cleanup
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+    delete ((std::vector<std::string>*)child->second);
+  throw msg;
 } // }}}
 }
 }

@@ -52,7 +52,14 @@ class MpsHostStatement : public MpsTerm // {{{
     MpsHostStatement *RenameAll() const;
     bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
-    MpsHostStatement *CloseDefinitions(const MpsMsgEnv &Gamma) const;
+    MpsTerm *CloseDefsWrapper(const MpsExp &Theta,
+                              const MpsMsgEnv &Gamma,
+                              const MpsProcEnv &Omega, 
+                              const std::set<std::pair<std::string,int> > &pureStack,
+                              const std::string &curPure,
+                              MpsTerm::PureState pureState,
+                              bool checkPure,
+                              std::map<std::string,void*> &children);
     MpsHostStatement *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
     std::string ToCHeader() const;

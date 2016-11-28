@@ -178,7 +178,7 @@ class MpsTerm // {{{
                                  PureState pureState,
                                  bool checkPure,
                                  std::map<std::string,void*> &children)> tdc_wrapper;
-    typedef std::function<void *(MpsTerm *term,std::string msg)> tdc_wraperr;
+    typedef std::function<void *(MpsTerm *term,std::string msg,std::map<std::string,void*> &children)> tdc_wraperr;
     /************************************************
      ********** Type Driven Compilation *************
      ************************************************/
@@ -350,16 +350,15 @@ class MpsTerm // {{{
      */
     // }}}
     //MpsTerm *CloseDefinitions() { return CloseDefinitions(MpsMsgEnv()); }
-    MpsTerm *CloseDefs() const=0;
-    virtual MpsTerm *CloseDefsWrapper(MpsTerm *term,
-                                      const MpsExp &Theta,
+    MpsTerm *CloseDefs();
+    virtual MpsTerm *CloseDefsWrapper(const MpsExp &Theta,
                                       const MpsMsgEnv &Gamma,
                                       const MpsProcEnv &Omega, 
                                       const std::set<std::pair<std::string,int> > &pureStack,
                                       const std::string &curPure,
                                       MpsTerm::PureState pureState,
                                       bool checkPure,
-                                      std::map<std::string,void*> &children);
+                                      std::map<std::string,void*> &children)=0;
     // DOCUMENTATION: MpsTerm::ExtractDefinitions {{{
     /*!
      * ExtractDefinitions extracts all function definitions from the
@@ -473,15 +472,15 @@ inline std::string PrintTypeError(const std::string &message, const hapi::MpsTer
   return ss.str();
 } // }}}
 inline void *TypeCheckRec(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
-{
+{ std::map<std::string,void*> children; // Dummy object for passing to wrapper functions
   hapi::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
-  { return wrap_err(&term,PrintTypeError((std::string)"Unfolding closed session: " + session,term,Theta,Gamma,Omega));
+  { return wrap_err(&term,PrintTypeError((std::string)"Unfolding closed session: " + session,term,Theta,Gamma,Omega),children);
   }
   const hapi::MpsDelegateMsgType *delType = dynamic_cast<const hapi::MpsDelegateMsgType*>(it->second);
   const hapi::MpsLocalRecType *type = dynamic_cast<const hapi::MpsLocalRecType*>(delType->GetLocalType());
   if (type==NULL)
-  { return wrap_err(&term,PrintTypeError((std::string)"Unfolding non-rec type: " + it->second->ToString(),term,Theta,Gamma,Omega));
+  { return wrap_err(&term,PrintTypeError((std::string)"Unfolding non-rec type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
   }
   hapi::MpsMsgEnv newGamma = Gamma;
   // Create type for substitution
@@ -509,20 +508,20 @@ inline void *TypeCheckRec(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wrap_e
   if (dynamic_cast<hapi::MpsLocalRecType*>(newType)==NULL)
     result = term.TDCompile(wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   else
-    result = wrap_err(&term,PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega));
+    result = wrap_err(&term,PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
   delete newType;
   delete newMsgType;
   return result;
 } // }}}
 inline void *TypeCheckForall(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule forall {{{
-{
+{ std::map<std::string,void*> children; // Dummy object for passing to wrapper functions
   hapi::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
-    return wrap_err(&term,PrintTypeError((std::string)"Forall on closed session: " + session,term,Theta,Gamma,Omega));
+    return wrap_err(&term,PrintTypeError((std::string)"Forall on closed session: " + session,term,Theta,Gamma,Omega),children);
   const hapi::MpsDelegateMsgType *delType = dynamic_cast<const hapi::MpsDelegateMsgType*>(it->second);
   const hapi::MpsLocalForallType *type = dynamic_cast<const hapi::MpsLocalForallType*>(delType->GetLocalType());
   if (type==NULL)
-    return wrap_err(&term,PrintTypeError((std::string)"Forall on non-forall type: " + it->second->ToString(),term,Theta,Gamma,Omega));
+    return wrap_err(&term,PrintTypeError((std::string)"Forall on non-forall type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
   // Find new name for bound variable
   std::string newName = hapi::MpsExp::NewVar(type->GetName());
   // Create type for substitution
@@ -554,7 +553,8 @@ void *check(MpsTerm *term,
             bool checkPure,
             std::map<std::string,void*> &children);
 void *check_err(MpsTerm *term,
-                std::string msg);
+                std::string msg,
+                std::map<std::string,void*> &children);
 void *closedefs(MpsTerm *term,
                 const MpsExp &Theta,
                 const MpsMsgEnv &Gamma,
@@ -565,7 +565,8 @@ void *closedefs(MpsTerm *term,
                 bool checkPure,
                 std::map<std::string,void*> &children);
 void *closedefs_err(MpsTerm *term,
-                    std::string msg);
+                    std::string msg,
+                    std::map<std::string,void*> &children);
 }
 }
 
