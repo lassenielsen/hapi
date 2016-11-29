@@ -10,7 +10,7 @@ namespace hapi {
 class MpsDef : public MpsTerm // {{{
 {
   public:
-    MpsDef(const std::string &name, const std::vector<std::string> &args, const std::vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const std::vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, const MpsMsgEnv &env, bool pure);
+    MpsDef(const std::string &name, const std::vector<std::string> &args, const std::vector<MpsMsgType*> &types, const std::vector<std::string> &stateargs, const std::vector<MpsMsgType*> &statetypes, const MpsTerm &body, const MpsTerm &succ, bool pure);
     virtual ~MpsDef();
 
     void* TDCompile(tdc_wrapper wrap,
@@ -69,7 +69,6 @@ class MpsDef : public MpsTerm // {{{
     MpsTerm *GetBody() { return myBody; }
     const MpsTerm *GetSucc() const { return mySucc; }
     MpsTerm *GetSucc() { return mySucc; }
-    MpsMsgEnv &GetEnv() { return myEnv; }
     bool IsPure() { return myPure; }
 
   private:
@@ -79,7 +78,6 @@ class MpsDef : public MpsTerm // {{{
     std::vector<MpsMsgType*> myStateTypes;
     std::vector<std::string> myArgs;
     std::vector<MpsMsgType*> myTypes;
-    MpsMsgEnv myEnv;
     MpsTerm *myBody;
     MpsTerm *mySucc;
     bool myPure;

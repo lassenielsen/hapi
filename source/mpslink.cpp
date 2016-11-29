@@ -28,10 +28,10 @@ void *MpsLink::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
   // Check linking on available channel
   MpsMsgEnv::iterator var=newGamma.find(myChannel);
   if (var==newGamma.end())
-    return wrap_err(this,PrintTypeError((string)"Linking on unknown channel:" + myChannel,*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Linking on unknown channel:" + myChannel,*this,Theta,Gamma,Omega),children);
   const MpsChannelMsgType *channel=dynamic_cast<const MpsChannelMsgType*>(var->second);
   if (channel==NULL)
-    return wrap_err(this,PrintTypeError((string)"Linking on non-channel:" + myChannel,*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Linking on non-channel:" + myChannel,*this,Theta,Gamma,Omega),children);
 
   // Store purity of channel
   myPure=true;
@@ -43,29 +43,29 @@ void *MpsLink::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
   PureState nextState=pureState;
   if (checkPure)
   { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_LINK)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n       *   ( global s=new ch(p of n);\n         *     X();\n         *     |\n         *     P\n         *   )\n         *   local StartX(Int i)\n         *   ( if i<=0\n         *     then X();\n         *     else X(); | StartX(i-1);\n         *   )\n         *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n       *   ( global s=new ch(p of n);\n         *     X();\n         *     |\n         *     P\n         *   )\n         *   local StartX(Int i)\n         *   ( if i<=0\n         *     then X();\n         *     else X(); | StartX(i-1);\n         *   )\n         *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
 
     if (pureState==CPS_SERVICE_LINK) // Apply special purity rule
     { nextState=CPS_SERVICE_FORK;
       if (!channel->GetParticipants()[myPid-1].IsPure())
-        return wrap_err(this,PrintTypeError((string)"Linking as impure participant not allowed here",*this,Theta,Gamma,Omega));
+        return wrap_err(this,PrintTypeError((string)"Linking as impure participant not allowed here",*this,Theta,Gamma,Omega),children);
     }
     else
     { // Check if linking breaks purity
       if (pureState==CPS_IMPURE && channel->GetParticipants()[myPid-1].IsPure())
-        return wrap_err(this,PrintTypeError((string)"Linking as pure participant not allowed here",*this,Theta,Gamma,Omega));
+        return wrap_err(this,PrintTypeError((string)"Linking as pure participant not allowed here",*this,Theta,Gamma,Omega),children);
 
       if (pureStack.size()>0)
-        return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega));
+        return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
 
       if (pureState==CPS_PURE && !myPure)
-        return wrap_err(this,PrintTypeError((string)"Unpure link in pure context is not allowed",*this,Theta,Gamma,Omega));
+        return wrap_err(this,PrintTypeError((string)"Unpure link in pure context is not allowed",*this,Theta,Gamma,Omega),children);
     }
   }
 
   // Check correct maxpid
   if (myMaxpid != channel->GetGlobalType()->GetMaxPid())
-    return wrap_err(this,PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega),children);
 
   // Check that only completed sessions are hidden
   var=newGamma.find(mySession);
@@ -73,7 +73,7 @@ void *MpsLink::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
     if (session!=NULL &&
         !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return wrap_err(this,PrintTypeError((string)"Linking on open session:" + mySession,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError((string)"Linking on open session:" + mySession,*this,Theta,Gamma,Omega),children);
 
     newGamma.erase(var);
   }
@@ -329,10 +329,16 @@ MpsTerm *MpsLink::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsLink::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsLink::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                   const MpsMsgEnv &Gamma,
+                                   const MpsProcEnv &Omega, 
+                                   const std::set<std::pair<std::string,int> > &pureStack,
+                                   const std::string &curPure,
+                                   MpsTerm::PureState pureState,
+                                   bool checkPure,
+                                   std::map<std::string,void*> &children)
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions(Gamma);
-  MpsTerm *result= new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
+  return new MpsLink(myChannel, mySession, myPid, myMaxpid, *(MpsTerm*)children["succ"], myPure);
 } // }}}
 MpsTerm *MpsLink::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

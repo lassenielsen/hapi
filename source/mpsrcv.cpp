@@ -25,21 +25,21 @@ void *MpsRcv::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   // Check purity constraints
   if (checkPure)
 	{ if (pureStack.size()>0)
-      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
 
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
  
   // Verify rcv
   MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
   // Check session is open
   if (session==Gamma.end())
-    return wrap_err(this,PrintTypeError((string)"Receiving on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Receiving on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
   // Check if session type
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
   // Check if unfolding is necessary
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   if (recType!=NULL)
@@ -50,10 +50,10 @@ void *MpsRcv::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   // Check session has receive type
   const MpsLocalRcvType *rcvType = dynamic_cast<const MpsLocalRcvType*>(msgType->GetLocalType());
   if (rcvType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Receiving on session: " + myChannel.GetName(),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Receiving on session: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
   // Check channel index is correct
   if (myChannel.GetIndex() != rcvType->GetSender())
-    return wrap_err(this,PrintTypeError((string)"Receiving on session(wrong index): " + myChannel.ToString(),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Receiving on session(wrong index): " + myChannel.ToString(),*this,Theta,Gamma,Omega),children);
   // Is renaming of myDest necessary?
   bool rename = false;
   if (rcvType->GetAssertionType())
@@ -101,25 +101,25 @@ void *MpsRcv::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   MpsDelegateMsgType *newType=dynamic_cast<MpsDelegateMsgType*>(newGamma[myChannel.GetName()]);
   // Check if assertion domain is respected
   if (rcvType->GetAssertionType() && typeid(*rcvType->GetMsgType()) != typeid(MpsBoolMsgType))
-    return wrap_err(this,PrintTypeError((string)"Assertion of non-boolean type: " + rcvType->ToString("!!!!!      "),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Assertion of non-boolean type: " + rcvType->ToString("!!!!!      "),*this,Theta,Gamma,Omega),children);
 
   // Check not overwriting unfinished session
   MpsMsgEnv::const_iterator dstVar=Gamma.find(myDest);
   if (dstVar!=Gamma.end() &&
       dynamic_cast<const MpsDelegateMsgType*>(dstVar->second)!=NULL &&
       !dynamic_cast<const MpsDelegateMsgType*>(dstVar->second)->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-    return wrap_err(this,PrintTypeError((string)"Overwriting open session: " + myDest,*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Overwriting open session: " + myDest,*this,Theta,Gamma,Omega),children);
   // Check specification of pid and maxpid
   const MpsDelegateMsgType *delRcvType=dynamic_cast<const MpsDelegateMsgType*>(rcvType->GetMsgType());
   if (delRcvType!=NULL)
   { if (myPid==-1)
       myPid=delRcvType->GetPid();
     else if (delRcvType->GetPid()!=myPid)
-      return wrap_err(this,PrintTypeError((string)"Receiving session with pid different than specified",*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError((string)"Receiving session with pid different than specified",*this,Theta,Gamma,Omega),children);
     if (myMaxPid==-1)
       myMaxPid=delRcvType->GetMaxpid();
     else if (delRcvType->GetMaxpid()!=myMaxPid)
-      return wrap_err(this,PrintTypeError((string)"Receiving session with maxpid different than specified",*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError((string)"Receiving session with maxpid different than specified",*this,Theta,Gamma,Omega),children);
   }
   newGamma[myDest]=rcvType->GetMsgType()->Copy();
   // Create new Assumptions
@@ -458,13 +458,16 @@ void MpsRcv::Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &pos
     }
   }
 } //}}}
-MpsTerm *MpsRcv::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsRcv::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                  const MpsMsgEnv &Gamma,
+                                  const MpsProcEnv &Omega, 
+                                  const std::set<std::pair<std::string,int> > &pureStack,
+                                  const std::string &curPure,
+                                  MpsTerm::PureState pureState,
+                                  bool checkPure,
+                                  std::map<std::string,void*> &children)
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions(Gamma);
-  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *myType, GetFinal());
-  delete newSucc;
-
-  return result;
+  return new MpsRcv(myChannel, myDest, myPid, myMaxPid, *(MpsTerm*)children["succ"], *myType, GetFinal());
 } // }}}
 MpsTerm *MpsRcv::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

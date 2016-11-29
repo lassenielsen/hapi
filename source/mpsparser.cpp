@@ -129,7 +129,7 @@ MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
     vector<MpsMsgType*> statetypes;
     DArgs(tree->Child(3),stateargs,statetypes);
     bool pure=Mode(tree->Child(1),false);
-    MpsTerm *result = new MpsDef(tree->Child(2)->Token().Content(), args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv(), pure);
+    MpsTerm *result = new MpsDef(tree->Child(2)->Token().Content(), args, types, stateargs, statetypes, *body, *succ, pure);
     // Clean up
     delete succ;
     delete body;
@@ -307,7 +307,7 @@ MpsTerm *MpsParser::PiEAct(const parsetree *tree) // {{{
     vector<MpsMsgType*> statetypes;
     DArgs(tree->Child(3),stateargs,statetypes);
     bool pure=Mode(tree->Child(1),false);
-    MpsTerm *result = new MpsDef(tree->Child(2)->Token().Content(), args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv(), pure);
+    MpsTerm *result = new MpsDef(tree->Child(2)->Token().Content(), args, types, stateargs, statetypes, *body, *succ, pure);
     // Clean up
     delete succ;
     delete body;
@@ -333,7 +333,7 @@ MpsTerm *MpsParser::PiEAct(const parsetree *tree) // {{{
 
 
 
-    MpsTerm *result = new MpsDef(tree->Child(2)->Token().Content(), args, types, stateargs, statetypes, *body, *succ, MpsMsgEnv(), pure);
+    MpsTerm *result = new MpsDef(tree->Child(2)->Token().Content(), args, types, stateargs, statetypes, *body, *succ, pure);
     // Clean up
     delete succ;
     delete body;

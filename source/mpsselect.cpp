@@ -22,10 +22,10 @@ void *MpsSelect::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp 
   // Check purity constraints
   if (checkPure)
 	{ if (pureStack.size()>0)
-      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
 
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
   // Verify select
@@ -33,12 +33,12 @@ void *MpsSelect::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp 
   // Check session is open
   if (session==Gamma.end())
   {
-    return wrap_err(this,PrintTypeError((string)"Typechecking error - Selecting on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Typechecking error - Selecting on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
   }
   // Check if session type
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
@@ -49,22 +49,22 @@ void *MpsSelect::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp 
   // Check session has select type
   const MpsLocalSelectType *selType = dynamic_cast<const MpsLocalSelectType*>(msgType->GetLocalType());
   if (selType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + msgType->GetLocalType()->ToString("           "),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + msgType->GetLocalType()->ToString("           "),*this,Theta,Gamma,Omega),children);
   // Check channel index is correct
   if (myChannel.GetIndex() != selType->GetReceiver())
-    return wrap_err(this,PrintTypeError((string)"Typechecking error - Sending on session: " + myChannel.ToString() + "with type: " + selType->ToString("           "),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Typechecking error - Sending on session: " + myChannel.ToString() + "with type: " + selType->ToString("           "),*this,Theta,Gamma,Omega),children);
   // Check label ok
   map<string,MpsLocalType*>::const_iterator branch=selType->GetBranches().find(myLabel);
   if (branch==selType->GetBranches().end())
-    return wrap_err(this,PrintTypeError((string)"Typechecking error - Sending label: " + myLabel + "on session: " + myChannel.ToString() + "with type: " + selType->ToString("           "),*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Typechecking error - Sending label: " + myLabel + "on session: " + myChannel.ToString() + "with type: " + selType->ToString("           "),*this,Theta,Gamma,Omega),children);
   // Check label is active (assertion valid)
   vector<const MpsExp*> hyps;
   hyps.push_back(&Theta);
   map<string,MpsExp*>::const_iterator assertion=selType->GetAssertions().find(myLabel);
   if (assertion==selType->GetAssertions().end())
-    return wrap_err(this,PrintTypeError((string)"Label has no assertion",*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Label has no assertion",*this,Theta,Gamma,Omega),children);
   if (not assertion->second->ValidExp(hyps))
-    return wrap_err(this,PrintTypeError((string)"Assertion not respected",*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Assertion not respected",*this,Theta,Gamma,Omega),children);
   
   // Make new environment
   MpsMsgEnv newGamma = Gamma;
@@ -275,13 +275,16 @@ MpsTerm *MpsSelect::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsSelect::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsSelect::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                  const MpsMsgEnv &Gamma,
+                                  const MpsProcEnv &Omega, 
+                                  const std::set<std::pair<std::string,int> > &pureStack,
+                                  const std::string &curPure,
+                                  MpsTerm::PureState pureState,
+                                  bool checkPure,
+                                  std::map<std::string,void*> &children)
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions(Gamma);
-  MpsTerm *result=new MpsSelect(myChannel,myLabel,*newSucc, GetFinal());
-  delete newSucc;
-
-  return result;
+  return new MpsSelect(myChannel, myLabel, *(MpsTerm*)children["succ"], GetFinal());
 } // }}}
 MpsTerm *MpsSelect::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

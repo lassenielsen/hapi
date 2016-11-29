@@ -21,7 +21,7 @@ void *MpsNu::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &The
   // Check purity constraints
   if (checkPure)
 	{ if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
   // Verify new channel
@@ -32,7 +32,7 @@ void *MpsNu::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &The
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
     if (session!=NULL &&
         !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return wrap_err(this,PrintTypeError((string)"Hiding uncompleted session:" + myChannel,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError((string)"Hiding uncompleted session:" + myChannel,*this,Theta,Gamma,Omega),children);
 
     // Remove hidden variable
     newGamma.erase(var);
@@ -274,18 +274,16 @@ MpsTerm *MpsNu::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsNu::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsNu::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                  const MpsMsgEnv &Gamma,
+                                  const MpsProcEnv &Omega, 
+                                  const std::set<std::pair<std::string,int> > &pureStack,
+                                  const std::string &curPure,
+                                  MpsTerm::PureState pureState,
+                                  bool checkPure,
+                                  std::map<std::string,void*> &children)
 {
-  // Create new Gamma
-  MpsMsgEnv newGamma = Gamma;
-  newGamma[myChannel] = new MpsChannelMsgType(*myType,myParticipants);
-
-  MpsTerm *newSucc = mySucc->CloseDefinitions(newGamma);
-  MpsTerm *result= new MpsNu(myParticipants, myChannel, *newSucc, *myType);
-  delete newSucc;
-  delete newGamma[myChannel];
-
-  return result;
+  return new MpsNu(myParticipants, myChannel, *(MpsTerm*)children["succ"], *myType);
 } // }}}
 MpsTerm *MpsNu::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

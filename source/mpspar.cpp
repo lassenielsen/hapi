@@ -31,21 +31,21 @@ void *MpsPar::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   set<pair<string,int> > rightPureStack=pureStack;
   if (checkPure)
   { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_INIT_BRANCH1_FORK && pureState!=CPS_SERVICE_FORK)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
     if (pureStack.size()>0)
     { leftState=CPS_SERVICE_DEF;
       // Check what participant is implemented
       MpsDef *pureDef=dynamic_cast<MpsDef*>(myLeft);
       if (pureDef==NULL)
-        return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega));
+        return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
 
       // Extract implemented participant
       MpsLink *bodyLink=dynamic_cast<MpsLink*>(pureDef->GetBody());
       if (bodyLink==NULL)
-        return wrap_err(this,PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega));
+        return wrap_err(this,PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega),children);
       set<pair<string,int> >::iterator impl=rightPureStack.find(pair<string,int>(bodyLink->GetChannel(),bodyLink->GetPid()));
       if (impl==rightPureStack.end())
-        return wrap_err(this,PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega));
+        return wrap_err(this,PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega),children);
       rightPureStack.erase(impl);
 
     }
@@ -500,7 +500,7 @@ MpsTerm *MpsPar::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const //
   if (normLhs && !isCall(newLeft))
   { string defName=MpsTerm::NewName("FlatLeft");
     MpsTerm *succ=new MpsCall(defName,vector<MpsExp*>(),vector<MpsExp*>(),vector<MpsMsgType*>(),vector<MpsMsgType*>());
-    MpsTerm *flatLeft=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(),*newLeft, *succ, MpsMsgEnv(),pureMode);
+    MpsTerm *flatLeft=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(), *newLeft, *succ, pureMode);
     delete succ;
     delete newLeft;
     newLeft=flatLeft;
@@ -509,7 +509,7 @@ MpsTerm *MpsPar::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const //
   if (normRhs && !isCall(newRight))
   { string defName=MpsTerm::NewName("FlatRight");
     MpsTerm *succ=new MpsCall(defName,vector<MpsExp*>(),vector<MpsExp*>(),vector<MpsMsgType*>(),vector<MpsMsgType*>());
-    MpsTerm *flatRight=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(),*newRight, *succ, MpsMsgEnv(),pureMode);
+    MpsTerm *flatRight=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(), *newRight, *succ, pureMode);
     delete succ;
     delete newRight;
     newRight=flatRight;
@@ -542,17 +542,16 @@ bool MpsPar::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &p
 MpsTerm *MpsPar::Append(const MpsTerm &term) const // {{{
 { throw (string)"Error: Appending to parallell terms not implemented";
 } // }}}
-MpsTerm *MpsPar::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsPar::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                  const MpsMsgEnv &Gamma,
+                                  const MpsProcEnv &Omega, 
+                                  const std::set<std::pair<std::string,int> > &pureStack,
+                                  const std::string &curPure,
+                                  MpsTerm::PureState pureState,
+                                  bool checkPure,
+                                  std::map<std::string,void*> &children)
 {
-  MpsTerm *newLeft = myLeft->CloseDefinitions(Gamma);
-  MpsTerm *newRight = myRight->CloseDefinitions(Gamma);
-
-  MpsTerm *result=new MpsPar(*newLeft,*newRight, GetLeftFinal(), GetRightFinal());
-
-  delete newLeft;
-  delete newRight;
-
-  return result;
+  return new MpsPar(*(MpsTerm*)children["left"], *(MpsTerm*)children["right"], GetLeftFinal(), GetRightFinal());
 } // }}}
 MpsTerm *MpsPar::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newLeft=myLeft->ExtractDefinitions(env);

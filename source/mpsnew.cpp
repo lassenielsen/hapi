@@ -21,14 +21,14 @@ void *MpsNew::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   // Check purity constraints
   if (checkPure)
   { if (pureStack.size()>0)
-      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
      if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
   // Check correct number of participants
   if (myNames.size()!=myType->GetMaxPid())
-    return wrap_err(this,PrintTypeError((string)"Number of participants mismatch",*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Number of participants mismatch",*this,Theta,Gamma,Omega),children);
   // Check that only completed sessions are hidden
   MpsMsgEnv newGamma = Gamma;
   for (int i=0; i<myNames.size(); ++i)
@@ -37,7 +37,7 @@ void *MpsNew::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
     { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
       if (session!=NULL &&
           !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-        return wrap_err(this,PrintTypeError((string)"Hiding uncompleted session:" + myNames[i],*this,Theta,Gamma,Omega));
+        return wrap_err(this,PrintTypeError((string)"Hiding uncompleted session:" + myNames[i],*this,Theta,Gamma,Omega),children);
 
       // Remove hidden variable
       newGamma.erase(var);
@@ -352,30 +352,16 @@ MpsTerm *MpsNew::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsNew::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsNew::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                  const MpsMsgEnv &Gamma,
+                                  const MpsProcEnv &Omega, 
+                                  const std::set<std::pair<std::string,int> > &pureStack,
+                                  const std::string &curPure,
+                                  MpsTerm::PureState pureState,
+                                  bool checkPure,
+                                  std::map<std::string,void*> &children)
 {
-  // Create new Gamma
-  MpsMsgEnv newGamma;
-  for (int i=0; i<myNames.size(); ++i)
-  { // Create local type
-    MpsLocalType *newType=myType->Project(i+1);
-    set<string> fv = newType->FEV();
-    // Create Gamma with new session
-    vector<MpsParticipant> participants;
-    for (int i=0; i<myNames.size(); ++i)
-      participants.push_back(MpsParticipant(i+1,to_string(i+1),false));
-    newGamma[myNames[i]] = new MpsDelegateLocalMsgType(*newType,i+1,participants);
-    delete newType;
-  }
-
-  MpsTerm *newSucc = mySucc->CloseDefinitions(newGamma);
-  MpsTerm *result= new MpsNew(myNames, *myType, *newSucc);
-  delete newSucc;
-
-  for (int i=0; i<myNames.size(); ++i)
-    delete newGamma[myNames[i]];
-
-  return result;
+  return new MpsNew(myNames, *myType, *(MpsTerm*)children["succ"]);
 } // }}}
 MpsTerm *MpsNew::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
