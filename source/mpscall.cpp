@@ -33,28 +33,28 @@ void *MpsCall::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
   if (checkPure)
   { // Check purity constraints
     if (pureStack.size()>0)
-      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
 
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_SERVICE_CALL && pureState!=CPS_INIT_BRANCH1_CALL1 && pureState!=CPS_INIT_BRANCH1_CALL2 && pureState!=CPS_INIT_BRANCH2_CALL && pureState!=CPS_INIT_CALL)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
   // Verify call
   // Check variable is defined
   MpsProcEnv::const_iterator omega = Omega.find(myName);
   if (omega == Omega.end())
-    return wrap_err(this,PrintTypeError((string)"Process Variable not defined: " + myName,*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Process Variable not defined: " + myName,*this,Theta,Gamma,Omega),children);
 
   if (checkPure)
   { // Verify purity constraint
     if (pureState!=CPS_IMPURE && !omega->second.pure)
-      return wrap_err(this,PrintTypeError("Calling impure method " + myName + " from a pure setting.",*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Calling impure method " + myName + " from a pure setting.",*this,Theta,Gamma,Omega),children);
   }
   // Check correct number of arguments
   if (omega->second.stypes.size() != myState.size() ||
       omega->second.stypes.size() != myState.size() ||
       omega->second.types.size() != myArgs.size())
-    return wrap_err(this,PrintTypeError((string)"Process Variable wrong argument-count: " + myName,*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Process Variable wrong argument-count: " + myName,*this,Theta,Gamma,Omega),children);
   // Check argument-types and remove used sessions from endGamma
   MpsMsgEnv endGamma=Gamma;
   DeleteVector(myStateTypes);
@@ -64,7 +64,7 @@ void *MpsCall::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
     bool statetypematch = statetype->Equal(Theta,*omega->second.stypes[i]);
     delete statetype;    
     if (!statetypematch)
-      return wrap_err(this,PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString("!!!!                                      "),*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError((string)"State argument does not have type: " + omega->second.stypes[i]->ToString("!!!!                                      "),*this,Theta,Gamma,Omega),children);
     // Store type for compilation
     myStateTypes.push_back(omega->second.stypes[i]->Copy());
   }
@@ -87,17 +87,17 @@ void *MpsCall::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
     delete argType;
     delete callType;
     if (not argtypematch)
-      return wrap_err(this,PrintTypeError((string)"Argument does not have type: " + callTypeString,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError((string)"Argument does not have type: " + callTypeString,*this,Theta,Gamma,Omega),children);
     if (dynamic_cast<MpsDelegateMsgType*>(omega->second.types[i]) != NULL)
     {
       if (typeid(*myArgs[i]) != typeid(MpsVarExp))
-        return wrap_err(this,PrintTypeError((string)"Argument must be session: " + myArgs[i]->ToString(),*this,Theta,Gamma,Omega));
+        return wrap_err(this,PrintTypeError((string)"Argument must be session: " + myArgs[i]->ToString(),*this,Theta,Gamma,Omega),children);
       else
       {
         MpsVarExp *var=(MpsVarExp*)myArgs[i];
         MpsMsgEnv::iterator session=endGamma.find(var->ToString());
         if (session == endGamma.end())
-          return wrap_err(this,PrintTypeError((string)"Argument session not defined or used more than once: " + var->ToString(),*this,Theta,Gamma,Omega));
+          return wrap_err(this,PrintTypeError((string)"Argument session not defined or used more than once: " + var->ToString(),*this,Theta,Gamma,Omega),children);
         // Remove the used session (linearity)
         endGamma.erase(session);
       }
@@ -108,7 +108,7 @@ void *MpsCall::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
     if (session!=NULL &&
         !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return wrap_err(this,PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega),children);
   }
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
@@ -398,8 +398,16 @@ bool MpsCall::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &
 MpsTerm *MpsCall::Append(const MpsTerm &term) const // {{{
 { throw (string)"Append applied to call term - not implemented";
 } // }}}
-MpsTerm *MpsCall::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
-{ return Copy();
+MpsTerm *MpsCall::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                   const MpsMsgEnv &Gamma,
+                                   const MpsProcEnv &Omega, 
+                                   const std::set<std::pair<std::string,int> > &pureStack,
+                                   const std::string &curPure,
+                                   MpsTerm::PureState pureState,
+                                   bool checkPure,
+                                   std::map<std::string,void*> &children)
+{
+  return Copy();
 } // }}}
 MpsTerm *MpsCall::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { return Copy();

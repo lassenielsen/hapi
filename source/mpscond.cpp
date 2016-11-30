@@ -23,7 +23,7 @@ void *MpsCond::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_INIT_BRANCH)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
 
     if (pureState==CPS_INIT_BRANCH)
     { trueState=CPS_INIT_BRANCH2_CALL;
@@ -36,7 +36,7 @@ void *MpsCond::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
   bool condtypematch = booltype.Equal(Theta,*condtype);
   delete condtype;
   if (!condtypematch)
-    return wrap_err(this,PrintTypeError("Condition not of type Bool",*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError("Condition not of type Bool",*this,Theta,Gamma,Omega),children);
   // Make new Thetas
   MpsExp *trueTheta = new MpsBinOpExp("and",Theta,*myCond,MpsBoolMsgType(),MpsBoolMsgType());
   MpsExp *notCond = new MpsUnOpExp("not",*myCond);
@@ -273,17 +273,16 @@ MpsTerm *MpsCond::Append(const MpsTerm &term) const // {{{
   delete newFalseBranch;
   return result;
 } // }}}
-MpsTerm *MpsCond::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsCond::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                   const MpsMsgEnv &Gamma,
+                                   const MpsProcEnv &Omega, 
+                                   const std::set<std::pair<std::string,int> > &pureStack,
+                                   const std::string &curPure,
+                                   MpsTerm::PureState pureState,
+                                   bool checkPure,
+                                   std::map<std::string,void*> &children)
 {
-  MpsTerm *newTrueBranch=myTrueBranch->CloseDefinitions(Gamma);
-  MpsTerm *newFalseBranch=myFalseBranch->CloseDefinitions(Gamma);
-
-  MpsTerm *result=new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
-
-  delete newTrueBranch;
-  delete newFalseBranch;
-
-  return result;
+  return new MpsCond(*myCond, *(MpsTerm*)children["true"], *(MpsTerm*)children["false"]);
 } // }}}
 MpsTerm *MpsCond::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newTrueBranch=myTrueBranch->ExtractDefinitions(env);
