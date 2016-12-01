@@ -24,18 +24,18 @@ void *MpsAssign::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp 
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
   MpsMsgType *exptype=myExp->TypeCheck(Gamma);
   // Is exp typed
   if (dynamic_cast<const MpsMsgNoType*>(exptype))
-    return wrap_err(this,PrintTypeError((string)"Expression does not typecheck",*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Expression does not typecheck",*this,Theta,Gamma,Omega),children);
   if (dynamic_cast<const MpsMsgNoType*>(myType)==NULL)
   { // Compare types
     bool exptypematch = exptype->Equal(Theta,*myType);
     delete exptype;
     if (not exptypematch)
-      return wrap_err(this,PrintTypeError((string)"Expression does not have type: " + myType->ToString(),*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError((string)"Expression does not have type: " + myType->ToString(),*this,Theta,Gamma,Omega),children);
   }
   else
   { // Store type
@@ -44,11 +44,11 @@ void *MpsAssign::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp 
   }
   // Verify assign
   if (dynamic_cast<MpsDelegateMsgType*>(myType)!=NULL)
-    return wrap_err(this,PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega),children);
   // Check no session is eclipsed
   MpsMsgEnv::const_iterator var=Gamma.find(myId);
   if (var!=Gamma.end() && dynamic_cast<const MpsDelegateMsgType*>(var->second)!=NULL)
-    return wrap_err(this,PrintTypeError((string)"Session eclipsed by assignment: " + myId,*this,Theta,Gamma,Omega));
+    return wrap_err(this,PrintTypeError((string)"Session eclipsed by assignment: " + myId,*this,Theta,Gamma,Omega),children);
   // Make new environment
   string newId = MpsExp::NewVar(myId);
   MpsExp *tmpTheta=Theta.Rename(myId,newId);
@@ -275,16 +275,15 @@ MpsTerm *MpsAssign::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsAssign::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
-{
-  // Create newGamma
-  MpsMsgEnv newGamma=Gamma;
-  newGamma[myId]=myType;
-
-  MpsTerm *newSucc = mySucc->CloseDefinitions(newGamma);
-  MpsTerm *result= new MpsAssign(myId, *myExp, *myType, *newSucc);
-  delete newSucc;
-  return result;
+MpsTerm *MpsAssign::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                     const MpsMsgEnv &Gamma,
+                                     const MpsProcEnv &Omega, 
+                                     const std::set<std::pair<std::string,int> > &pureStack,
+                                     const std::string &curPure,
+                                     MpsTerm::PureState pureState,
+                                     bool checkPure,
+                                     std::map<std::string,void*> &children)
+{ return new MpsAssign(myId, *myExp, *myType, *(MpsTerm*)children["succ"]);
 } // }}}
 MpsTerm *MpsAssign::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

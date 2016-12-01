@@ -28,10 +28,10 @@ void *MpsHostStatement::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const 
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
 
     if (pureState==CPS_PURE && !myPure)
-      return wrap_err(this,PrintTypeError("Impure hoststatement in pure setting." ,*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Impure hoststatement in pure setting." ,*this,Theta,Gamma,Omega),children);
   }
 
   // Verify hoststatement
@@ -43,9 +43,9 @@ void *MpsHostStatement::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const 
   { MpsMsgType *partType=(*part)->TypeCheck(Gamma);
     myTypes.push_back(partType);
     if (dynamic_cast<MpsMsgNoType*>(partType)!=NULL)
-      return wrap_err(this,PrintTypeError("Host Language Statement uses untypable expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Host Language Statement uses untypable expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega),children);
     if (dynamic_cast<const MpsDelegateMsgType*>(partType)!=NULL)
-      return wrap_err(this,PrintTypeError("Host Language Statement uses session variable in expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega));
+      return wrap_err(this,PrintTypeError("Host Language Statement uses session variable in expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega),children);
   }
 
   children["succ"] = mySucc->TDCompile(wrap,wrap_err,Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
@@ -279,12 +279,15 @@ MpsTerm *MpsHostStatement::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsHostStatement *MpsHostStatement::CloseDefinitions(const MpsMsgEnv &Gamma) const // {{{
-{
-  MpsTerm *newSucc = mySucc->CloseDefinitions(Gamma);
-  MpsHostStatement *result= new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
-  delete newSucc;
-  return result;
+MpsTerm *MpsHostStatement::CloseDefsWrapper(const MpsExp &Theta, // {{{
+                                            const MpsMsgEnv &Gamma,
+                                            const MpsProcEnv &Omega, 
+                                            const std::set<std::pair<std::string,int> > &pureStack,
+                                            const std::string &curPure,
+                                            MpsTerm::PureState pureState,
+                                            bool checkPure,
+                                            std::map<std::string,void*> &children)
+{ return new MpsHostStatement(myHostParts, myExpParts, *(MpsTerm*)children["succ"], myTypes, myPure);
 } // }}}
 MpsHostStatement *MpsHostStatement::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

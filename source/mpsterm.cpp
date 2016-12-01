@@ -453,7 +453,7 @@ void *closedefs(MpsTerm *term, // {{{
 { MpsTerm *result=term->CloseDefsWrapper(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, children);
   // Cleanup
   for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
-    delete ((std::vector<std::string>*)child->second);
+    delete ((MpsTerm*)child->second);
   return (void*)result;
 } // }}}
 void *closedefs_err(MpsTerm *term, // {{{
