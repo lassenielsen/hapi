@@ -286,23 +286,23 @@ string MpsNew::ToC() const // {{{
 
   result << "  {" << endl;
   string vecName = ToC_Name(MpsExp::NewVar("channels"));
-  result << "    vector<Channel_FIFO*> " << vecName << ";" << endl;
+  result << "    vector<std::shared_ptr<thread::Channel> > " << vecName << ";" << endl;
   // Create all channels
   for (int i=0; i<myNames.size(); ++i)
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << vecName << ".push_back(new Channel_FIFO());" << endl;
+      result << "    " << vecName << ".push_back(new thread::Channel());" << endl;
   // For each participant, create filtered channels vector, and create session
   for (int i=0; i<myNames.size(); ++i)
   { string sesInChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_in"));
     string sesOutChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_out"));
-    result << "    vector<Channel_FIFO*> " << sesInChannels << ";" << endl;
+    result << "    vector<std::shared_ptr<thread::Channel >> " << sesInChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
       result << "    " << sesInChannels << ".push_back(" << vecName << "[" << (j+i*myNames.size()) << "]);" << endl;
-    result << "    vector<Channel_FIFO*> " << sesOutChannels << ";" << endl;
+    result << "    vector<std::shared_ptr<thread::Channel> > " << sesOutChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
       result << "    " << sesOutChannels << ".push_back(" << vecName << "[" << (i+j*myNames.size()) << "]);" << endl;
   
-    result << "    " << ToC_Name(myNames[i]) << "= new Session_FIFO(" << sesInChannels << "," << sesOutChannels << "," << (i+1) << "," << myNames.size() << ");" << endl;
+    result << "    " << ToC_Name(myNames[i]) << "= new Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << ");" << endl;
   }
   result << "  }" << endl;
 

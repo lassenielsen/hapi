@@ -265,9 +265,9 @@ string MpsLink::ToTex(int indent, int sw) const // {{{
 string MpsLink::ToC() const // {{{
 {
   stringstream result;
-  result << "  DecAprocs();" << endl
-         << "  Session*" << ToC_Name(mySession) << "=new Session_FIFO(" << ToC_Name(myChannel) << ".GetValues(), " << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl
-         << "  IncAprocs();" << endl;
+  result << "  _dec_aprocs();" << endl
+         << "  std::shared_ptr<Session> " << ToC_Name(mySession) << " = " << ToC_Name(myChannel) << ".Connect(" << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl
+         << "  _inc_aprocs();" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}

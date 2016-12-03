@@ -228,11 +228,7 @@ string MpsNu::ToTex(int indent, int sw) const // {{{
 string MpsNu::ToC() const // {{{
 {
   stringstream result;
-  string vecName = ToC_Name(MpsExp::NewVar("chvector")); // Create variable name foor the mmessagee to send
-  result << "  vector<Channel*> " << vecName << ";" << endl;
-  for (int i=1;i<myType->GetMaxPid();++i)
-    result << "  " << vecName << ".push_back(new Channel_FIFO());" << endl;
-  result << "  ChannelsValue " << ToC_Name(myChannel) << "(" << vecName << ");" << endl;
+  result << "  std::shared_ptr<thread::Link> " << ToC_Name(myChannel) << "(new thread::Link(" << myType->GetMaxPid() << "));" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}

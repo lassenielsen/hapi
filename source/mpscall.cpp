@@ -375,9 +375,9 @@ string MpsCall::ToC_prepare(const string &dest) const // {{{
 } // }}}
 string MpsCall::ToC() const // {{{
 { stringstream result;
-  result << "  state->values.clear();" << endl;
-  result << ToC_prepare("state");
-  result << "  goto *state->label;" << endl;
+  result << "  _state->values.clear();" << endl;
+  result << ToC_prepare("_state");
+  result << "  goto *_state->label;" << endl;
   return result.str();
 } // }}}
 string MpsCall::ToCHeader() const // {{{

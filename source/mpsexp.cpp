@@ -968,9 +968,9 @@ string MpsSystemExp::ToC(stringstream &dest, const string &typeName) const // {{
 {
   string varName = ToC_Name(MpsExp::NewVar("sysval"));
   if (myField=="aprocs")
-    dest << "    IntValue " << varName << "(*__system_" << myField << ");" << endl;
+    dest << "    IntValue " << varName << "(*_" << myField << ");" << endl;
   else if (myField=="tprocs")
-    dest << "    IntValue " << varName << "(__system_" << myField << ");" << endl;
+    dest << "    IntValue " << varName << "(_" << myField << ");" << endl;
   else
     throw (string)"MpsSystemExp::ToC: Unknown field " + myField;
   return varName;

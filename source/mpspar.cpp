@@ -439,7 +439,7 @@ string MpsPar::ToC() const // {{{
   stringstream result;
   if (myType=="process")
   { string newName = ToC_Name(MpsExp::NewVar("fork")); // Create variable name foor the mmessagee to send
-    result << "  IncAprocs();" << endl
+    result << "  _inc_aprocs();" << endl
            << "  int " << newName << "=fork();" << endl
            << "  if (" << newName << ">0)" << endl
            << "  { // Left process" << endl;
@@ -462,17 +462,18 @@ string MpsPar::ToC() const // {{{
   }
   else if (myType=="thread")
   { const MpsCall *callptr=dynamic_cast<const MpsCall*>(myRight);
+    string newName = ToC_Name(MpsExp::NewVar("state")); // Create variable name foor the new state
     if (callptr==NULL)
       throw string("MpsPar type thread requires rhs to be a direct methodcall.");
-    result << "  IncAprocs();" << endl
-           << "  { State *_arg=new State();" << endl
-           << callptr->ToC_prepare("_arg")
-           << "    _spawn_thread(_arg);" << endl
+    result << "  _inc_aprocs();" << endl
+           << "  { State *" << newName << " = new State();" << endl
+           << callptr->ToC_prepare(newName)
+           << "    _spawn_thread(" << newName << ");" << endl
            << "  }" << endl
            << "  { // Left process" << endl;
     for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it) {
       result << "    " << ToC_Name(*it) << "->Close(false);" << endl
-             << "    delete " << ToC_Name(*it) << ";" << endl;
+             << "    " << ToC_Name(*it) << "=NULL;" << endl;
     }
     result <<  myLeft->ToC()
            << "  }" << endl;

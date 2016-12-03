@@ -174,14 +174,14 @@ string MpsFunction::ToC() const // {{{
      << "  {" << endl;
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<string>::const_iterator it=myStateArgs.begin(); it!=myStateArgs.end(); ++it)
-  { ss << "    " << (*tit)->ToC() << " " << ToC_Name(*it) << "= state->vals.front();" << endl
-       << "    state->vals.pop_front();" << endl;
+  { ss << "    " << (*tit)->ToC() << " " << ToC_Name(*it) << "= _state->vals.front();" << endl
+       << "    _state->vals.pop_front();" << endl;
     ++tit;
   }
   tit=myTypes.begin();
   for (vector<string>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
-  { ss << "    " << (*tit)->ToC() << " " << ToC_Name(*it) << "= state->vals.front();" << endl
-       << "    state->vals.pop_front();" << endl;
+  { ss << "    " << (*tit)->ToC() << " " << ToC_Name(*it) << "= _state->vals.front();" << endl
+       << "    _state->vals.pop_front();" << endl;
     ++tit;
   }
   ss << GetBody().ToC()
