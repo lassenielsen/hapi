@@ -69,7 +69,7 @@ void *MpsSnd::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   string exptype_str= exptype->ToString("!!");
   delete exptype;
   if (not msgtypematch)
-    return wrap_err(this,PrintTypeError((string)"Message does not have type:\n!!" + sndType->GetMsgType()->ToString("!!") + "\nBut type:\n!!" + exptype_str,*this,Theta,Gamma,Omega),children);
+    return wrap_err(this,PrintTypeError((string)"Expression does not have type:\n!!" + sndType->GetMsgType()->ToString("!!") + "\nBut type:\n!!" + exptype_str,*this,Theta,Gamma,Omega),children);
   // Check Assertion is fulfilled
   if (sndType->GetAssertionType())
   { if (sndType->GetMsgType()->ToString()!="Bool")
@@ -246,17 +246,15 @@ string MpsSnd::ToC() const // {{{
   }
   else
   {
-    result << "    Message " << " " << msgName << ";" << endl
-           << "    " << valName << ".ToMessage(" << msgName << ");" << endl;
     result << "    " << ToC_Name(myChannel.GetName()) << "->Send("
                      << int2string(myChannel.GetIndex()-1) << ","
-                     << msgName << ");" << endl; // Send computed value
+                     << "static_pointer_cast<libpi::Value>(" << valName << "));" << endl; // Send computed value
   }
   result << "  }" << endl;
   if (delType!=NULL)
   {
     result << "  " << valName << "->Close(false);" << endl
-           << "  delete " << valName << ";" << endl;
+           << "  " << valName << " = NULL;" << endl;
   }
   if (myFinal)
   {

@@ -347,7 +347,7 @@ string MpsTerm::MakeC() const // {{{
        + "\n"
        + "struct State\n"
        + "{ void *label;\n"
-       + "  vector<std::shared_ptr<libpi::Value> > values;\n"
+       + "  vector<shared_ptr<libpi::Value> > values;\n"
        + "};\n"
        + "\n"
        + "inline void _spawn_thread(State *state)\n"

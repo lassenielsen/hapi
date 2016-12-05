@@ -678,6 +678,7 @@ class MpsMsgType // {{{
     virtual std::string ToString(const std::string &indent="") const = 0;
     virtual std::string ToTex(int indent=0, int sw=2) const = 0;
     virtual std::string ToC() const = 0;
+    virtual std::string ToCPtr() const { return std::string("shared_ptr<" + ToC() + " >"); }
 
     // Grammar
     const static std::string BNF_STYPE;

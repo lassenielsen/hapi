@@ -362,12 +362,12 @@ string MpsCall::ToC_prepare(const string &dest) const // {{{
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
   { string name=(*it)->ToC(result, (*tit)->ToC());
-    result << "  " << dest << "->values.push_back(" << name << ");" << endl;
+    result << "  " << dest << "->values.push_back( static_pointer_cast<libpi::Value>(" << name << "));" << endl;
   }
   tit=myTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it, ++tit)
   { string name=(*it)->ToC(result, (*tit)->ToC());
-    result << "  " << dest << "->values.push_back(" << name << ");" << endl;
+    result << "  " << dest << "->values.push_back( static_pointer_cast<libpi::Value>(" << name << "));" << endl;
   }
   result << "  " << dest << "->label=&&method_" << ToC_Name(myName) << ";" << endl;
 

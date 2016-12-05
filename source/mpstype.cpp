@@ -5145,31 +5145,31 @@ string MpsMsgNoType::ToC() const // {{{
 } // }}}
 string MpsIntMsgType::ToC() const // {{{
 {
-  return "std::shared_ptr<libpi::Int>";
+  return "libpi::Int";
 } // }}}
 string MpsFloatMsgType::ToC() const // {{{
 {
-  return "std::shared_ptr<libpi::Float>";
+  return "libpi::Float";
 } // }}}
 string MpsStringMsgType::ToC() const // {{{
 {
-  return "std::shared_ptr<libpi::String>";
+  return "libpi::String";
 } // }}}
 string MpsBoolMsgType::ToC() const // {{{
 {
-  return "std::shared_ptr<libpi::Bool>";
+  return "libpi::Bool";
 } // }}}
 string MpsTupleMsgType::ToC() const // {{{
 {
-  return "std::shared_ptr<libpi::Tuple>";
+  return "libpi::Tuple";
 } // }}}
 string MpsChannelMsgType::ToC() const // {{{
 {
-  return "std::shared_ptr<libpi::thread::Link>";
+  return "libpi::thread::Link";
 } // }}}
 string MpsDelegateMsgType::ToC() const // {{{
 {
-  return "std::shared_ptr<libpi::Session>";
+  return "libpi::Session";
 } // }}}
 
 // Individual accesors

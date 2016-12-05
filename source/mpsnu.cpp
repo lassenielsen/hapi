@@ -228,7 +228,7 @@ string MpsNu::ToTex(int indent, int sw) const // {{{
 string MpsNu::ToC() const // {{{
 {
   stringstream result;
-  result << "  std::shared_ptr<thread::Link> " << ToC_Name(myChannel) << "(new thread::Link(" << myType->GetMaxPid() << "));" << endl;
+  result << "  shared_ptr<thread::Link> " << ToC_Name(myChannel) << "(new thread::Link(" << myType->GetMaxPid() << "));" << endl;
   result << mySucc->ToC();
   return result.str();
 } // }}}

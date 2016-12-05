@@ -885,32 +885,32 @@ string MpsIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
   string val(str);
   free(str);
   string varName = ToC_Name(MpsExp::NewVar("intval"));
-  dest << "    IntValue " << varName << "(\"" << val << "\");" << endl;
+  dest << "    libpi::Int " << varName << "(\"" << val << "\");" << endl;
   return varName;
 } // }}}
 string MpsFloatVal::ToC(stringstream &dest, const string &typeName) const // {{{
 { 
   string val=ToString();
   string varName = ToC_Name(MpsExp::NewVar("floatval"));
-  dest << "    libpi::FloatValue " << varName << "(\"" << val << "\");" << endl;
+  dest << "    libpi::Float " << varName << "(\"" << val << "\");" << endl;
   return varName;
 } // }}}
 string MpsStringVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("stringval"));
-  dest << "    StringValue " << varName << "(\"" << stuff_string(myValue) << "\");" << endl;
+  dest << "    libpi::String " << varName << "(\"" << stuff_string(myValue) << "\");" << endl;
   return varName;
 } // }}}
 string MpsBoolVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("boolval"));
-  dest << "    BoolValue " << varName << "(" << (myValue?(string)"true":(string)"false") << ");" << endl;
+  dest << "    libpi::Bool " << varName << "(" << (myValue?(string)"true":(string)"false") << ");" << endl;
   return varName;
 } // }}}
 string MpsCondExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("ifval"));
-  string condVar = myCond->ToC(dest, "BoolValue");
+  string condVar = myCond->ToC(dest, "libpi::Bool");
   dest << "    " << typeName << " " << varName << ";" << endl
        << "    if (" << condVar << ".GetValue())" << endl
        << "    {" << endl;
@@ -968,9 +968,9 @@ string MpsSystemExp::ToC(stringstream &dest, const string &typeName) const // {{
 {
   string varName = ToC_Name(MpsExp::NewVar("sysval"));
   if (myField=="aprocs")
-    dest << "    IntValue " << varName << "(*_" << myField << ");" << endl;
+    dest << "    libpi::Int " << varName << "(*_" << myField << ");" << endl;
   else if (myField=="tprocs")
-    dest << "    IntValue " << varName << "(_" << myField << ");" << endl;
+    dest << "    pibpi::Int " << varName << "(_" << myField << ");" << endl;
   else
     throw (string)"MpsSystemExp::ToC: Unknown field " + myField;
   return varName;

@@ -266,7 +266,7 @@ string MpsLink::ToC() const // {{{
 {
   stringstream result;
   result << "  _dec_aprocs();" << endl
-         << "  std::shared_ptr<Session> " << ToC_Name(mySession) << " = " << ToC_Name(myChannel) << ".Connect(" << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl
+         << "  shared_ptr<Session> " << ToC_Name(mySession) << " = " << ToC_Name(myChannel) << ".Connect(" << int2string(myPid-1) << ", " << int2string(myMaxpid) << ");" << endl
          << "  _inc_aprocs();" << endl;
   result << mySucc->ToC();
   return result.str();

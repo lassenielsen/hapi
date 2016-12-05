@@ -352,24 +352,10 @@ string MpsRcv::ToTex(int indent, int sw) const // {{{
 string MpsRcv::ToC() const // {{{
 {
   stringstream result;
-  const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(&GetMsgType());
-  result << "  " << GetMsgType().ToC() << " " << ToC_Name(myDest) << ";" << endl; // Declare variable
-  if (delType!=NULL)
-  {
-    result << "    _dec_aprocs();" << endl
-           << "    " << ToC_Name(myDest) << "=" << ToC_Name(myChannel.GetName()) << "->ReceiveSession(" << int2string(myChannel.GetIndex()-1) << ");" << endl
-           << "    _inc_aprocs();" << endl;
-  }
-  else
-  {
-    string msgName = ToC_Name(MpsExp::NewVar("receive")); // Create variable name foor the mmessagee to send
-    result << "  { Message " << msgName << ";" << endl  // Declare message variable
-           << "    _dec_aprocs();" << endl
-           << "    " << ToC_Name(myChannel.GetName()) << "->Receive(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl // Receive value
-           << "    _inc_aprocs();" << endl
-           << "    " << msgName << ".GetValue(" << ToC_Name(myDest) << ");" << endl
-           << "  }" << endl;
-  }
+  result << "  " << GetMsgType().ToCPtr() << " " << ToC_Name(myDest) << ";" << endl; // Declare variable
+  result << "  _dec_aprocs();" << endl
+         << "  " << ToC_Name(myDest) << " = static_pointer_cast<" << GetMsgType().ToC() << " >(" << ToC_Name(myChannel.GetName()) << "->Receive(" << int2string(myChannel.GetIndex()-1) << "));" << endl // Receive value
+         << "  _inc_aprocs();" << endl;
   if (myFinal)
   {
     result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl

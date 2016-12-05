@@ -311,29 +311,24 @@ string MpsBranch::ToC() const // {{{
 {
   stringstream result;
   string lblName = ToC_Name(MpsExp::NewVar("branch")); // Create variable name for the received value
-  string msgName = ToC_Name(MpsExp::NewVar("branch")); // Create variable name for the received message
-  result << "  StringValue " << lblName << ";" << endl
-         << "  {" << endl
-         << "    Message " << msgName << ";" << endl // Declare message variable
-         << "    _dec_aprocs();" << endl
-         << "    " << ToC_Name(myChannel.GetName()) << "->Receive(" << int2string(myChannel.GetIndex()-1) << ", " << msgName << ");" << endl // Receive message
-         << "    _inc_aprocs();" << endl
-         << "    " << msgName << ".GetValue(" << lblName << ");" << endl
-         << "  }" << endl;
+  result << "  { _dec_aprocs();" << endl
+         << "    shared_ptr<libpi::String> " << lblName << " = static_pointer_cast<libpi::String>(" << ToC_Name(myChannel.GetName()) << "->Receive(" << int2string(myChannel.GetIndex()-1) << "));" << endl
+         << "    _inc_aprocs();" << endl;
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
-      result << "  else ";
-    result << "  if (" << lblName << ".ToString()==\"" << it->first << "\")" << endl
-           << "  {" << endl;
+      result << "    else " << endl;
+    result << "    if (" << lblName << "->GetValue()==\"" << it->first << "\")" << endl
+           << "    {" << endl;
     if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
-      result << "    " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-             << "    delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
+      result << "      " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
+             << "      " << ToC_Name(myChannel.GetName()) << " = NULL;" << endl;
     }
     result << it->second->ToC();
-    result << "  }" << endl;
+    result << "    }" << endl;
   }
-  result << "  else throw (string)\"Unknown branch: " << lblName << "\";" << endl;
+  result << "    else throw (string)\"Unknown branch: " << lblName << "\";" << endl;
+  result << "  }" << endl;
   return result.str();
 } // }}}
 string MpsBranch::ToCHeader() const // {{{

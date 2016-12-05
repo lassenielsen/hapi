@@ -210,12 +210,9 @@ string MpsSelect::ToTex(int indent, int sw) const // {{{
 string MpsSelect::ToC() const // {{{
 {
   stringstream result;
-  string msgName = ToC_Name(MpsExp::NewVar("select")); // Create variable name foor the mmessagee to send
-  result << "  {" << endl
-         << "    Message " << " " << msgName << ";" << endl
-         << "    " << msgName << ".AddData(" << "\"" << myLabel << "\", " << int2string(myLabel.size()+1) << ");" << endl
-         << ToC_Name(myChannel.GetName()) << "->Send(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl
-         << "  }" << endl; // Send label
+  string msgName = ToC_Name(MpsExp::NewVar("select")); // Create variable name for the message to send
+  result << "  shared_ptr<libpi::String> " << msgName << "(new libpi::String(\"" << myLabel << "\"));" << endl
+         << "  " << ToC_Name(myChannel.GetName()) << "->Send(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl;
   if (myFinal)
   {
     result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl

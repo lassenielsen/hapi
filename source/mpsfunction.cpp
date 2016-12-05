@@ -172,16 +172,16 @@ string MpsFunction::ToC() const // {{{
   stringstream ss;
   ss << "  method_" << ToC_Name(GetName()) << ": // {{{" << endl
      << "  {" << endl;
-  vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
-  for (vector<string>::const_iterator it=myStateArgs.begin(); it!=myStateArgs.end(); ++it)
-  { ss << "    " << (*tit)->ToC() << " " << ToC_Name(*it) << "= _state->vals.front();" << endl
-       << "    _state->vals.pop_front();" << endl;
+  vector<MpsMsgType*>::const_reverse_iterator tit=myStateTypes.rbegin();
+  for (vector<string>::const_reverse_iterator it=myStateArgs.rbegin(); it!=myStateArgs.rend(); ++it)
+  { ss << "    " << (*tit)->ToCPtr() << " " << ToC_Name(*it) << " = static_pointer_cast<" << (*tit)->ToC() << ">(_state->values.back());" << endl
+       << "    _state->values.pop_back();" << endl;
     ++tit;
   }
-  tit=myTypes.begin();
-  for (vector<string>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
-  { ss << "    " << (*tit)->ToC() << " " << ToC_Name(*it) << "= _state->vals.front();" << endl
-       << "    _state->vals.pop_front();" << endl;
+  tit=myTypes.rbegin();
+  for (vector<string>::const_reverse_iterator it=myArgs.rbegin(); it!=myArgs.rend(); ++it)
+  { ss << "    " << (*tit)->ToCPtr() << " " << ToC_Name(*it) << " = static_pointer_cast<" << (*tit)->ToC() << ">(_state->values.back());" << endl
+       << "    _state->values.pop_back();" << endl;
     ++tit;
   }
   ss << GetBody().ToC()

@@ -217,7 +217,7 @@ string MpsCond::ToTex(int indent, int sw) const // {{{
 string MpsCond::ToC() const // {{{
 {
   stringstream result;
-  string newName = myCond->ToC(result,"BoolValue");
+  string newName = myCond->ToC(result,"libpi::Bool");
   result << "  if (" << newName << ".GetValue())" << endl
          << "  {" << endl
          << myTrueBranch->ToC()
