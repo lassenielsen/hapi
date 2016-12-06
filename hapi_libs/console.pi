@@ -16,17 +16,17 @@ local Console()
   local ConsoleSession($console(1 of 1,2) s)
   ( s[2]>>
     {^PutString: s[2]>>str;
-                 HOST("std::cout << (", str, ").ToString() << std::endl;");
+                 HOST("std::cout << (", str, ")->GetValue() << std::endl;");
                  ConsoleSession(s);
      ^PutInt:    s[2]>>i;
-                 HOST("std::cout << (", i, ").ToString() << std::endl;");
+                 HOST("std::cout << (", i, ")->ToString() << std::endl;");
                  ConsoleSession(s);
      ^GetString: String val="";
-                 HOST("{ std::string _s; std::cin >> _s; ", val, "=libpi::StringValue(_s); }");
+                 HOST("{ std::string _s; std::cin >> _s; ", val, "=shared_ptr<libpi::String>(new libpi::String(_s)); }");
                  s[2]<<val;
                  ConsoleSession(s);
      ^GetInt:    Int val=0;
-                 HOST("{ long _l; std::cin >> _l; ", val, "=libpi::IntValue(_l); }");
+                 HOST("{ long _l; std::cin >> _l; ", val, "=shared_ptr<libpi::Int>(new libpi::Int(_l)); }");
                  s[2]<<val;
                  ConsoleSession(s);
      ^End:       Console();

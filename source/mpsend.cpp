@@ -99,7 +99,7 @@ string MpsEnd::ToTex(int indent, int sw) const // {{{
 } // }}}
 string MpsEnd::ToC() const // {{{
 {
-  return "  return new Cnt();\n";
+  return "  delete _state;\n  return NULL;\n";
 } // }}}
 string MpsEnd::ToCHeader() const // {{{
 {

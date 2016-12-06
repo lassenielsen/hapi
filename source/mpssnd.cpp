@@ -1,5 +1,5 @@
-#include<hapi/mpssnd.hpp>
-#include<hapi/mpsend.hpp>
+#include <hapi/mpssnd.hpp>
+#include <hapi/mpsend.hpp>
 #include <hapi/common.hpp>
 
 using namespace std;
@@ -259,7 +259,7 @@ string MpsSnd::ToC() const // {{{
   if (myFinal)
   {
     result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-           << "  delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
+           << "  " << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
   }
   result << mySucc->ToC();
   return result.str();

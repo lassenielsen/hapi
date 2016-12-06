@@ -885,34 +885,34 @@ string MpsIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
   string val(str);
   free(str);
   string varName = ToC_Name(MpsExp::NewVar("intval"));
-  dest << "    libpi::Int " << varName << "(\"" << val << "\");" << endl;
+  dest << "    shared_ptr<libpi::Int> " << varName << "(new libpi::Int(\"" << val << "\"));" << endl;
   return varName;
 } // }}}
 string MpsFloatVal::ToC(stringstream &dest, const string &typeName) const // {{{
 { 
   string val=ToString();
   string varName = ToC_Name(MpsExp::NewVar("floatval"));
-  dest << "    libpi::Float " << varName << "(\"" << val << "\");" << endl;
+  dest << "    shared_ptr<libpi::Float> " << varName << "(new libpi::Float(\"" << val << "\"));" << endl;
   return varName;
 } // }}}
 string MpsStringVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("stringval"));
-  dest << "    libpi::String " << varName << "(\"" << stuff_string(myValue) << "\");" << endl;
+  dest << "    shared_ptr<libpi::String> " << varName << "(new libpi::String(\"" << stuff_string(myValue) << "\"));" << endl;
   return varName;
 } // }}}
 string MpsBoolVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("boolval"));
-  dest << "    libpi::Bool " << varName << "(" << (myValue?(string)"true":(string)"false") << ");" << endl;
+  dest << "    shared_ptr<libpi::Bool> " << varName << "(new libpi::Bool(" << (myValue?(string)"true":(string)"false") << "));" << endl;
   return varName;
 } // }}}
 string MpsCondExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("ifval"));
   string condVar = myCond->ToC(dest, "libpi::Bool");
-  dest << "    " << typeName << " " << varName << ";" << endl
-       << "    if (" << condVar << ".GetValue())" << endl
+  dest << "    shared_ptr<" << typeName << "> " << varName << ";" << endl
+       << "    if (" << condVar << "->GetValue())" << endl
        << "    {" << endl;
   string trueVar = myTrueBranch->ToC(dest, typeName);
   dest << "      " << varName << " = " << trueVar << ";" << endl
@@ -929,7 +929,7 @@ string MpsUnOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("unop"));
   if (myName == "not") // {{{
   { string subName = myRight->ToC(dest, typeName);
-    dest << "    " << typeName << " " << varName << "(!" << subName << ".GetValue());" << endl;
+    dest << "    shared_ptr<" << typeName << "> " << varName << "(new " << typeName << "(!" << subName << ".GetValue()));" << endl;
     return varName;
   } // }}}
   else
@@ -940,7 +940,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
-  dest << "    " << typeName << " " << varName << "(" << leftName << " ";
+  dest << "    shared_ptr<" << typeName << "> " << varName << "((*" << leftName << ") ";
   if (myName=="=")
     dest << "==";
   else if (myName=="or")
@@ -949,13 +949,13 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
     dest << "&&";
   else
     dest << myName;
-  dest << " " << rightName << ");" << endl;
+  dest << " (*" << rightName << "));" << endl;
   return varName;
 } // }}}
 string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("tupleval"));
-  dest << "    " << typeName << " " << varName << ";" << endl;
+  dest << "    shared_ptr<" << typeName << "> " << varName << "(new libpi::Tuple());" << endl;
   for (vector<MpsExp*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
   { dest << "    {" << endl;
     string eltName = (*it)->ToC(dest,"Unknown");
@@ -968,9 +968,9 @@ string MpsSystemExp::ToC(stringstream &dest, const string &typeName) const // {{
 {
   string varName = ToC_Name(MpsExp::NewVar("sysval"));
   if (myField=="aprocs")
-    dest << "    libpi::Int " << varName << "(*_" << myField << ");" << endl;
+    dest << "    shared_ptr<libpi::Int> " << varName << "(new libpi::Int(*_" << myField << "));" << endl;
   else if (myField=="tprocs")
-    dest << "    pibpi::Int " << varName << "(_" << myField << ");" << endl;
+    dest << "    shared_ptr<libpi::Int> " << varName << "(new libpi::Int((_" << myField << "));" << endl;
   else
     throw (string)"MpsSystemExp::ToC: Unknown field " + myField;
   return varName;

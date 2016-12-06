@@ -326,6 +326,7 @@ string MpsTerm::MakeC() const // {{{
        + "#include <atomic>\n"
        + "#include <memory>\n"
        + "#include <sys/mman.h>\n"
+       + "#include <signal.h>\n"
        + main->ToCHeader()
        + "using namespace std;\n"
        + "using namespace libpi;\n\n"

@@ -213,7 +213,7 @@ string MpsAssign::ToTex(int indent, int sw) const // {{{
 string MpsAssign::ToC() const // {{{
 {
   stringstream result;
-  result << myType->ToC() << " " << ToC_Name(myId) << ";" << endl;
+  //result << myType->ToCPtr() << " " << ToC_Name(myId) << ";" << endl;
   string varName = myExp->ToC(result,GetExpType().ToC());
   MpsTerm *tmpSucc = mySucc->ERename(myId,varName);
   result << tmpSucc->ToC();

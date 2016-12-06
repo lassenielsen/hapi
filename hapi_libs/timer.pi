@@ -16,18 +16,18 @@ local TimeServer()
 ( t = new timer(1 of 2);
   local TimeSession($timer(1 of 1,2) t, Int start)
   ( t[2]>>
-    {^ResetTimer:   HOST("{ time_t _t=time(0); ", start, "=libpi::IntValue(_t); }");
+    {^ResetTimer:   HOST("{ time_t _t=time(0); ", start, "=libpi::Int(_t); }");
                     TimeSession(t,start);
      ^ReadSeconds:  Int now=0;
-                    HOST("{ time_t _t=time(0); ", now, "=libpi::IntValue(_t); }");
+                    HOST("{ time_t _t=time(0); ", now, "=libpi::Int(_t); }");
                     t[2]<<now-start;
                     TimeSession(t,start);
      ^WaitSeconds:  t[2]>>wait;
-                    HOST("sleep( mpz_get_ui((", wait, ").GetValue()) );");
+                    HOST("sleep( mpz_get_ui((", wait, ")->GetValue()) );");
                     t[2]<<true;
                     TimeSession(t,start);
      ^GetTimestamp: Int now=0;
-                    HOST("{ time_t _t=time(0); ", start, "=libpi::IntValue(_t); }");
+                    HOST("{ time_t _t=time(0); ", start, "=libpi::Int(_t); }");
                     t[2]<<now;
                     TimeSession(t,start);
      ^Require:      t[2]>>wait;
@@ -37,7 +37,7 @@ local TimeServer()
   )
   ( TimeServer();
   | Int start=0;
-    HOST("{ time_t _t=time(0); ", start, "=libpi::IntValue(_t); }");
+    HOST("{ time_t _t=time(0); ", start, "=libpi::Int(_t); }");
     TimeSession(t,start);
   )
 ) TimeServer(); |
