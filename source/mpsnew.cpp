@@ -16,7 +16,7 @@ MpsNew::~MpsNew() // {{{
   delete mySucc;
   delete myType;
 } // }}}
-void *MpsNew::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
+void *MpsNew::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
 { map<string,void*> children;
   // Check purity constraints
   if (checkPure)
@@ -61,7 +61,7 @@ void *MpsNew::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
     newGamma[myNames[i]] = new MpsDelegateLocalMsgType(*newType,i+1,participants);
     delete newType;
   }
-  children["succ"] = mySucc->TDCompile(wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Cleanup
   for (int i=0; i<myNames.size(); ++i)
   { delete newGamma[myNames[i]];

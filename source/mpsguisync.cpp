@@ -46,7 +46,7 @@ MpsGuiSync::~MpsGuiSync() // {{{
     myBranches.erase(myBranches.begin());
   }
 } // }}}
-void *MpsGuiSync::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Sync (extended) {{{
+void *MpsGuiSync::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rule Sync (extended) {{{
 { map<string,void*> children;
   if (checkPure)
 	{ // Check purity constraints
@@ -200,7 +200,7 @@ void *MpsGuiSync::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp
       newTheta=tmpTheta;
     }
     // Check Branch
-    children[myBranch->first]=myBranch->second.term->TDCompile(wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
+    children[myBranch->first]=myBranch->second.term->TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
     delete newTheta;
     while (newGamma.size()>0)
     { const MpsDelegateMsgType *gammaDel=dynamic_cast<const MpsDelegateMsgType*>(newGamma.begin()->second);

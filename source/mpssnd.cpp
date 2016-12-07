@@ -19,7 +19,7 @@ MpsSnd::~MpsSnd() // {{{
   delete mySucc;
   delete myExp;
 } // }}}
-void *MpsSnd::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rules Send and Deleg (and new rule for delegaing the session itself) {{{
+void *MpsSnd::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rules Send and Deleg (and new rule for delegaing the session itself) {{{
 { map<string,void*> children;
   // Check purity constraints
   if (checkPure)
@@ -87,7 +87,7 @@ void *MpsSnd::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   if (dynamic_cast<const MpsDelegateMsgType*>(sndType->GetMsgType())!=NULL)
     newGamma.erase(newGamma.find(myExp->ToString()));
   // Check rest of program
-  children["succ"]=mySucc->TDCompile(wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+  children["succ"]=mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Store if this is final action in session
   myFinal=newMsgType->GetLocalType()->IsDone();
   // Clean Up

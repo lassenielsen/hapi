@@ -169,6 +169,15 @@ class MpsTerm // {{{
                     CPS_INIT_CALL
                    };
 
+    typedef std::function<MpsTerm *(MpsTerm *term,
+                                    const MpsExp &Theta,
+                                    const MpsMsgEnv &Gamma,
+                                    const MpsProcEnv &Omega, 
+                                    const std::set<std::pair<std::string,int> > &pureStack,
+                                    const std::string &curPure,
+                                    PureState pureState,
+                                    bool checkPure,
+                                    std::map<std::string,void*> &children)> tdc_pre;
     typedef std::function<void *(MpsTerm *term,
                                  const MpsExp &Theta,
                                  const MpsMsgEnv &Gamma,
@@ -177,20 +186,31 @@ class MpsTerm // {{{
                                  const std::string &curPure,
                                  PureState pureState,
                                  bool checkPure,
-                                 std::map<std::string,void*> &children)> tdc_wrapper;
-    typedef std::function<void *(MpsTerm *term,std::string msg,std::map<std::string,void*> &children)> tdc_wraperr;
+                                 std::map<std::string,void*> &children)> tdc_post;
+    typedef std::function<void *(MpsTerm *term,std::string msg,std::map<std::string,void*> &children)> tdc_error;
     /************************************************
      ********** Type Driven Compilation *************
      ************************************************/
-    virtual void* TDCompile(tdc_wrapper wrap,
-                            tdc_wraperr wrap_err,
-                            const MpsExp &Theta,
-                            const MpsMsgEnv &Gamma,
-                            const MpsProcEnv &Omega, 
-                            const std::set<std::pair<std::string,int> > &pureStack,
-                            const std::string &curPure,
-                            PureState pureState,
-                            bool checkPure=true) = 0;
+    void* TDCompile(tdc_pre pre,
+                    tdc_post post,
+                    tdc_error error,
+                    const MpsExp &Theta,
+                    const MpsMsgEnv &Gamma,
+                    const MpsProcEnv &Omega, 
+                    const std::set<std::pair<std::string,int> > &pureStack,
+                    const std::string &curPure,
+                    PureState pureState,
+                    bool checkPure=true);
+    virtual void* TDCompileMain(tdc_pre pre,
+                                tdc_post post,
+                                tdc_error error,
+                                const MpsExp &Theta,
+                                const MpsMsgEnv &Gamma,
+                                const MpsProcEnv &Omega, 
+                                const std::set<std::pair<std::string,int> > &pureStack,
+                                const std::string &curPure,
+                                PureState pureState,
+                                bool checkPure=true) = 0;
 
     /************************************************
      *************** Type Checking ******************
@@ -471,7 +491,7 @@ inline std::string PrintTypeError(const std::string &message, const hapi::MpsTer
      << "!!!!Message: " << message << std::endl;
   return ss.str();
 } // }}}
-inline void *TypeCheckRec(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
+inline void *TypeCheckRec(MpsTerm::tdc_pre pre, MpsTerm::tdc_post wrap, MpsTerm::tdc_error wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
 { std::map<std::string,void*> children; // Dummy object for passing to wrapper functions
   hapi::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
@@ -506,14 +526,14 @@ inline void *TypeCheckRec(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wrap_e
   newGamma[session] = newMsgType;
   void *result = NULL;
   if (dynamic_cast<hapi::MpsLocalRecType*>(newType)==NULL)
-    result = term.TDCompile(wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+    result = term.TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   else
     result = wrap_err(&term,PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
   delete newType;
   delete newMsgType;
   return result;
 } // }}}
-inline void *TypeCheckForall(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule forall {{{
+inline void *TypeCheckForall(MpsTerm::tdc_pre pre, MpsTerm::tdc_post wrap, MpsTerm::tdc_error wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule forall {{{
 { std::map<std::string,void*> children; // Dummy object for passing to wrapper functions
   hapi::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
@@ -535,7 +555,7 @@ inline void *TypeCheckForall(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wra
   // Create new Gamma
   hapi::MpsMsgEnv newGamma = Gamma;
   newGamma[session] = newMsgType;
-  void *result = term.TDCompile(wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+  void *result = term.TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Clean Up
   delete newTheta;
   return result;
@@ -543,6 +563,14 @@ inline void *TypeCheckForall(MpsTerm::tdc_wrapper wrap, MpsTerm::tdc_wraperr wra
 
 namespace tdc_wrap
 {
+MpsTerm *pre_void(MpsTerm *term,
+                  const MpsExp &Theta,
+                  const MpsMsgEnv &Gamma,
+                  const MpsProcEnv &Omega, 
+                  const std::set<std::pair<std::string,int> > &pureStack,
+                  const std::string &curPure,
+                  MpsTerm::PureState pureState,
+                  bool checkPure);
 void *check(MpsTerm *term,
             const MpsExp &Theta,
             const MpsMsgEnv &Gamma,

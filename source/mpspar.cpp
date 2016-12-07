@@ -23,7 +23,7 @@ MpsPar::~MpsPar() // {{{
   delete myLeft;
   delete myRight;
 } // }}}
-void *MpsPar::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Par {{{
+void *MpsPar::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Par {{{
 { map<string,void*> children;
   // Check purity constraionts
   PureState leftState=pureState;
@@ -89,8 +89,8 @@ void *MpsPar::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   }
 
   // Check each sub-process with the split Gamma
-  children["left"]=myLeft->TDCompile(wrap,wrap_err,Theta,leftGamma,Omega,set<pair<string,int> >(),curPure, leftState, checkPure);
-  children["right"]=myRight->TDCompile(wrap,wrap_err,Theta,rightGamma,Omega,rightPureStack,curPure, rightState, checkPure);
+  children["left"]=myLeft->TDCompile(pre,wrap,wrap_err,Theta,leftGamma,Omega,set<pair<string,int> >(),curPure, leftState, checkPure);
+  children["right"]=myRight->TDCompile(pre,wrap,wrap_err,Theta,rightGamma,Omega,rightPureStack,curPure, rightState, checkPure);
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}

@@ -14,15 +14,16 @@ class MpsEnd : public MpsTerm // {{{
     MpsEnd();
     virtual ~MpsEnd();
 
-    void* TDCompile(tdc_wrapper wrap,
-                    tdc_wraperr wrap_err,
-                    const MpsExp &Theta,
-                    const MpsMsgEnv &Gamma,
-                    const MpsProcEnv &Omega, 
-                    const std::set<std::pair<std::string,int> > &pureStack,
-                    const std::string &curPure,
-                    PureState pureState,
-		    bool checkPure=true);
+    void* TDCompileMain(tdc_pre pre,
+                        tdc_post wrap,
+                        tdc_error wrap_err,
+                        const MpsExp &Theta,
+                        const MpsMsgEnv &Gamma,
+                        const MpsProcEnv &Omega, 
+                        const std::set<std::pair<std::string,int> > &pureStack,
+                        const std::string &curPure,
+                        PureState pureState,
+                        bool checkPure=true);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ReIndex(const std::string &session,
                      int pid, int maxpid) const;

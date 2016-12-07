@@ -10,7 +10,7 @@ MpsEnd::MpsEnd() // {{{
 MpsEnd::~MpsEnd() // {{{
 {
 } // }}}
-void *MpsEnd::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Inact {{{
+void *MpsEnd::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Inact {{{
 { map<string,void*> children;
   // Check purity constraints
   if (checkPure)

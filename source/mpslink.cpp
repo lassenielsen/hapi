@@ -21,7 +21,7 @@ MpsLink::~MpsLink() // {{{
   // assert mySucc != NULL
   delete mySucc;
 } // }}}
-void *MpsLink::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rules Mcast and Macc {{{
+void *MpsLink::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Use rules Mcast and Macc {{{
 { map<string,void*> children;
   // Verify link
   MpsMsgEnv newGamma = Gamma;
@@ -90,7 +90,7 @@ void *MpsLink::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
   newGamma[mySession] = new MpsDelegateLocalMsgType(*newType,myPid,channel->GetParticipants());
   delete newType;
 
-  children["succ"] = mySucc->TDCompile(wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,nextState,checkPure);
+  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,nextState,checkPure);
 
   // Clean up
   delete newGamma[mySession];

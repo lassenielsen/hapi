@@ -16,7 +16,7 @@ MpsCond::~MpsCond() // {{{
   delete myTrueBranch;
   delete myFalseBranch;
 } // }}}
-void *MpsCond::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Cond {{{
+void *MpsCond::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Cond {{{
 { map<string,void*> children;
   PureState trueState=pureState;
   PureState falseState=pureState;
@@ -43,8 +43,8 @@ void *MpsCond::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
   MpsExp *falseTheta = new MpsBinOpExp("and",Theta,*notCond,MpsBoolMsgType(),MpsBoolMsgType());
   delete notCond;
   
-  children["true"] = myTrueBranch->TDCompile(wrap,wrap_err,*trueTheta,Gamma,Omega,pureStack,curPure, trueState, checkPure);
-  children["false"] = myFalseBranch->TDCompile(wrap,wrap_err,*falseTheta,Gamma,Omega,pureStack,curPure, falseState, checkPure);
+  children["true"] = myTrueBranch->TDCompile(pre,wrap,wrap_err,*trueTheta,Gamma,Omega,pureStack,curPure, trueState, checkPure);
+  children["false"] = myFalseBranch->TDCompile(pre,wrap,wrap_err,*falseTheta,Gamma,Omega,pureStack,curPure, falseState, checkPure);
   // Clean Up
   delete trueTheta;
   delete falseTheta;

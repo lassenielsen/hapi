@@ -25,7 +25,7 @@ MpsBranch::~MpsBranch() // {{{
     myBranches.erase(myBranches.begin());
   }
 } // }}}
-void *MpsBranch::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Branch {{{
+void *MpsBranch::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Branch {{{
 { map<string,void*> children;
   // Check purity constraints
   if (checkPure)
@@ -81,7 +81,7 @@ void *MpsBranch::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp 
       return wrap_err(this,PrintTypeError((string)"Branch has no assertion: " + branch->first,*this,Theta,Gamma,Omega),children);
     MpsExp *newTheta = new MpsBinOpExp("and",Theta,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Typecheck Branch
-    children[branch->first] = succ->second->TDCompile(wrap,wrap_err,*newTheta,newGamma,Omega, pureStack, curPure, pureState, checkPure);
+    children[branch->first] = succ->second->TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega, pureStack, curPure, pureState, checkPure);
 
     // Clean up
     delete newTheta;

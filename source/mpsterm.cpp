@@ -31,6 +31,29 @@ void MpsTerm::FreeLink(const string &name) // {{{
 const vector<string> &MpsTerm::GetFreeLinks() const // {{{
 { return myFreeLinks;
 } // }}}
+void* MpsTerm::TDCompile(tdc_pre pre, // {{{
+                         tdc_post post,
+                         tdc_error error,
+                         const MpsExp &Theta,
+                         const MpsMsgEnv &Gamma,
+                         const MpsProcEnv &Omega, 
+                         const std::set<std::pair<std::string,int> > &pureStack,
+                         const std::string &curPure,
+                         PureState pureState,
+                         bool checkPure)
+{ MpsTerm *tmp=pre(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure);
+  try
+  { void *result=tmp->TDCompileMain(pre,post,error,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure);
+    if (tmp!=NULL && tmp!=this)
+      delete tmp;
+    return result;
+  }
+  catch (...)
+  { if (tmp!=NULL && tmp!=this)
+      delete tmp;
+    throw;
+  }
+} // }}}
 
 /* Static type-checking of deadlock and communication safety
  */
@@ -40,9 +63,10 @@ bool MpsTerm::TypeCheck() // {{{
   MpsBoolVal Theta(true);
   MpsMsgEnv Gamma;
   MpsProcEnv Omega;
-  tdc_wrapper wrap=tdc_wrap::check;
-  tdc_wraperr wrap_err=tdc_wrap::check_err;
-  vector<string> *result=(vector<string>*)TDCompile(wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
+  tdc_pre pre=tdc_wrap::pre_void;
+  tdc_post wrap=tdc_wrap::check;
+  tdc_error wrap_err=tdc_wrap::check_err;
+  vector<string> *result=(vector<string>*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
   bool success=true;
 
   for (size_t i=0; i<result->size(); ++i)
@@ -59,9 +83,9 @@ MpsTerm *MpsTerm::CloseDefs() // {{{
   MpsBoolVal Theta(true);
   MpsMsgEnv Gamma;
   MpsProcEnv Omega;
-  tdc_wrapper wrap=tdc_wrap::closedefs;
-  tdc_wraperr wrap_err=tdc_wrap::closedefs_err;
-  return (MpsTerm*)TDCompile(wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
+  tdc_post wrap=tdc_wrap::closedefs;
+  tdc_error wrap_err=tdc_wrap::closedefs_err;
+  return (MpsTerm*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
 } // }}}
 
 /* Create list of possible steps
@@ -423,6 +447,16 @@ namespace hapi
 {
 namespace tdc_wrap
 {
+MpsTerm *pre_void(MpsTerm *term, // {{{
+                  const MpsExp &Theta,
+                  const MpsMsgEnv &Gamma,
+                  const MpsProcEnv &Omega, 
+                  const std::set<std::pair<std::string,int> > &pureStack,
+                  const std::string &curPure,
+                  MpsTerm::PureState pureState,
+                  bool checkPure)
+{ return term;
+} // }}}
 void *check(MpsTerm *term, // {{{
             const MpsExp &Theta,
             const MpsMsgEnv &Gamma,

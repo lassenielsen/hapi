@@ -14,15 +14,16 @@ class MpsRcv : public MpsTerm // {{{
     MpsRcv(const MpsChannel &channel, const std::string &dest, int pid, int maxpid, const MpsTerm &succ, const MpsMsgType &type, bool final);
     virtual ~MpsRcv();
 
-    void* TDCompile(tdc_wrapper wrap,
-                    tdc_wraperr wrap_err,
-                    const MpsExp &Theta,
-                    const MpsMsgEnv &Gamma,
-                    const MpsProcEnv &Omega, 
-                    const std::set<std::pair<std::string,int> > &pureStack,
-                    const std::string &curPure,
-                    PureState pureState,
-				            bool checkPure=true);
+    void* TDCompileMain(tdc_pre pre,
+                        tdc_post wrap,
+                        tdc_error wrap_err,
+                        const MpsExp &Theta,
+                        const MpsMsgEnv &Gamma,
+                        const MpsProcEnv &Omega, 
+                        const std::set<std::pair<std::string,int> > &pureStack,
+                        const std::string &curPure,
+                        PureState pureState,
+                        bool checkPure=true);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyRcv(const std::string &path, const MpsExp *val) const;
     MpsTerm *ReIndex(const std::string &session,

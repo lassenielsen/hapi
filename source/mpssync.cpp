@@ -20,7 +20,7 @@ MpsSync::~MpsSync() // {{{
   DeleteMap(myBranches);
   DeleteMap(myAssertions);
 } // }}}
-void *MpsSync::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Sync {{{
+void *MpsSync::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Sync {{{
 { map<string,void*> children;
   // Check purity constraints
   if (checkPure)
@@ -132,7 +132,7 @@ void *MpsSync::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &T
     // Make new Theta
     MpsExp *newTheta=new MpsBinOpExp("and",Theta,*myAssertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Check Branch
-    children[branch->first]=branch->second->TDCompile(wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+    children[branch->first]=branch->second->TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
     delete newTheta;
   }
   // Wrap result

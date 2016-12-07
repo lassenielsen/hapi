@@ -15,7 +15,7 @@ name = hello_world
 
 CPP = cpp
 HAPI = hapi
-Copt = -g
+Copt = -O3
 CC = g++ -std=c++11
 
 default: build

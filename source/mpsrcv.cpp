@@ -20,7 +20,7 @@ MpsRcv::~MpsRcv() // {{{
   delete myType;
   delete mySucc;
 } // }}}
-void *MpsRcv::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rules Rcv and Srec {{{
+void *MpsRcv::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rules Rcv and Srec {{{
 { map<string,void*> children;
   // Check purity constraints
   if (checkPure)
@@ -143,7 +143,7 @@ void *MpsRcv::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Th
   else
     newTheta=Theta.Copy();
   // Check rest of program
-  children["succ"] = mySucc->TDCompile(wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Store if this is final action in session
   myFinal=newType->GetLocalType()->IsDone();
   // Clean Up

@@ -14,7 +14,7 @@ MpsHostHeader::~MpsHostHeader() // {{{
 {
   delete mySucc;
 } // }}}
-void *MpsHostHeader::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
+void *MpsHostHeader::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
 { map<string,void*> children;
  
   if (checkPure)
@@ -27,7 +27,7 @@ void *MpsHostHeader::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const Mps
   }
 
   // Verify hostheader
-  children["succ"] = mySucc->TDCompile(wrap,wrap_err,Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
+  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}

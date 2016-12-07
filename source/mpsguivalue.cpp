@@ -21,7 +21,7 @@ MpsGuiValue::~MpsGuiValue() // {{{
   delete myValue;
   delete mySucc;
 } // }}}
-void *MpsGuiValue::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Type check name, value and session {{{
+void *MpsGuiValue::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Type check name, value and session {{{
 { map<string,void*> children;
  
   if (checkPure)
@@ -60,7 +60,7 @@ void *MpsGuiValue::TDCompile(tdc_wrapper wrap, tdc_wraperr wrap_err, const MpsEx
   if (untyped)
     return wrap_err(this,PrintTypeError((string)"guivalue uses untyped expression: " + myValue->ToString(),*this,Theta,Gamma,Omega),children);
 
-  children["succ"]=mySucc->TDCompile(wrap,wrap_err,Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
+  children["succ"]=mySucc->TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
