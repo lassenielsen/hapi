@@ -176,8 +176,7 @@ class MpsTerm // {{{
                                     const std::set<std::pair<std::string,int> > &pureStack,
                                     const std::string &curPure,
                                     PureState pureState,
-                                    bool checkPure,
-                                    std::map<std::string,void*> &children)> tdc_pre;
+                                    bool checkPure)> tdc_pre;
     typedef std::function<void *(MpsTerm *term,
                                  const MpsExp &Theta,
                                  const MpsMsgEnv &Gamma,
@@ -211,8 +210,10 @@ class MpsTerm // {{{
                                 const std::string &curPure,
                                 PureState pureState,
                                 bool checkPure=true) = 0;
+    //!Type Driven Compilation Wrapper creating result term from this pointer and child results
+    virtual MpsTerm *CopyWrapper(std::map<std::string,void*> &children) const = 0;
 
-    /************************************************
+   /************************************************
      *************** Type Checking ******************
      ************************************************/
     // DOCUMENTATION: MpsTerm::TypeCheck {{{
@@ -362,23 +363,15 @@ class MpsTerm // {{{
      */
     // }}}
     virtual MpsTerm *RenameAll() const=0;
-    // DOCUMENTATION: MpsTerm::CloseDefinitions {{{
+    // DOCUMENTATION: MpsTerm::CloseDefs {{{
     /*!
      * CloseDefinitions adds all the free variables of function bodies
      * to the argument list, and adds these arguments to where the
      * function is called.
      */
     // }}}
-    //MpsTerm *CloseDefinitions() { return CloseDefinitions(MpsMsgEnv()); }
     MpsTerm *CloseDefs();
-    virtual MpsTerm *CloseDefsWrapper(const MpsExp &Theta,
-                                      const MpsMsgEnv &Gamma,
-                                      const MpsProcEnv &Omega, 
-                                      const std::set<std::pair<std::string,int> > &pureStack,
-                                      const std::string &curPure,
-                                      MpsTerm::PureState pureState,
-                                      bool checkPure,
-                                      std::map<std::string,void*> &children)=0;
+    virtual MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma) const=0;
     // DOCUMENTATION: MpsTerm::ExtractDefinitions {{{
     /*!
      * ExtractDefinitions extracts all function definitions from the
@@ -571,19 +564,24 @@ MpsTerm *pre_void(MpsTerm *term,
                   const std::string &curPure,
                   MpsTerm::PureState pureState,
                   bool checkPure);
-void *check(MpsTerm *term,
-            const MpsExp &Theta,
-            const MpsMsgEnv &Gamma,
-            const MpsProcEnv &Omega, 
-            const std::set<std::pair<std::string,int> > &pureStack,
-            const std::string &curPure,
-            MpsTerm::PureState pureState,
-            bool checkPure,
-            std::map<std::string,void*> &children);
-void *check_err(MpsTerm *term,
-                std::string msg,
-                std::map<std::string,void*> &children);
-void *closedefs(MpsTerm *term,
+MpsTerm *pre_closedefs(MpsTerm *term,
+                       const MpsExp &Theta,
+                       const MpsMsgEnv &Gamma,
+                       const MpsProcEnv &Omega, 
+                       const std::set<std::pair<std::string,int> > &pureStack,
+                       const std::string &curPure,
+                       MpsTerm::PureState pureState,
+                       bool checkPure);
+void *wrap_vector(MpsTerm *term,
+                  const MpsExp &Theta,
+                  const MpsMsgEnv &Gamma,
+                  const MpsProcEnv &Omega, 
+                  const std::set<std::pair<std::string,int> > &pureStack,
+                  const std::string &curPure,
+                  MpsTerm::PureState pureState,
+                  bool checkPure,
+                  std::map<std::string,void*> &children);
+void *wrap_copy(MpsTerm *term,
                 const MpsExp &Theta,
                 const MpsMsgEnv &Gamma,
                 const MpsProcEnv &Omega, 
@@ -592,9 +590,12 @@ void *closedefs(MpsTerm *term,
                 MpsTerm::PureState pureState,
                 bool checkPure,
                 std::map<std::string,void*> &children);
-void *closedefs_err(MpsTerm *term,
-                    std::string msg,
-                    std::map<std::string,void*> &children);
+void *error_vector(MpsTerm *term,
+                   std::string msg,
+                   std::map<std::string,void*> &children);
+void *error_throw(MpsTerm *term,
+                  std::string msg,
+                  std::map<std::string,void*> &children);
 }
 }
 

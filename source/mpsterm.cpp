@@ -64,14 +64,14 @@ bool MpsTerm::TypeCheck() // {{{
   MpsMsgEnv Gamma;
   MpsProcEnv Omega;
   tdc_pre pre=tdc_wrap::pre_void;
-  tdc_post wrap=tdc_wrap::check;
-  tdc_error wrap_err=tdc_wrap::check_err;
+  tdc_post wrap=tdc_wrap::wrap_vector;
+  tdc_error wrap_err=tdc_wrap::error_vector;
   vector<string> *result=(vector<string>*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
   bool success=true;
 
   for (size_t i=0; i<result->size(); ++i)
   { success=false;
-    cerr << "TypeCheck Error: " << (*result)[i] << endl;
+    cerr << "TypeCheck Error: " << (*result)[i] << endl << endl;
   }
 
   delete result;
@@ -83,8 +83,9 @@ MpsTerm *MpsTerm::CloseDefs() // {{{
   MpsBoolVal Theta(true);
   MpsMsgEnv Gamma;
   MpsProcEnv Omega;
-  tdc_post wrap=tdc_wrap::closedefs;
-  tdc_error wrap_err=tdc_wrap::closedefs_err;
+  tdc_pre pre=tdc_wrap::pre_closedefs;
+  tdc_post wrap=tdc_wrap::wrap_copy;
+  tdc_error wrap_err=tdc_wrap::error_throw;
   return (MpsTerm*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
 } // }}}
 
@@ -457,15 +458,26 @@ MpsTerm *pre_void(MpsTerm *term, // {{{
                   bool checkPure)
 { return term;
 } // }}}
-void *check(MpsTerm *term, // {{{
-            const MpsExp &Theta,
-            const MpsMsgEnv &Gamma,
-            const MpsProcEnv &Omega, 
-            const std::set<std::pair<std::string,int> > &pureStack,
-            const std::string &curPure,
-            MpsTerm::PureState pureState,
-            bool checkPure,
-            std::map<std::string,void*> &children)
+MpsTerm *pre_closedefs(MpsTerm *term, // {{{
+                       const MpsExp &Theta,
+                       const MpsMsgEnv &Gamma,
+                       const MpsProcEnv &Omega, 
+                       const std::set<std::pair<std::string,int> > &pureStack,
+                       const std::string &curPure,
+                       MpsTerm::PureState pureState,
+                       bool checkPure)
+{ MpsTerm *result=term->CloseDefsPre(Gamma);
+  return term;
+} // }}}
+void *wrap_vector(MpsTerm *term, // {{{
+                  const MpsExp &Theta,
+                  const MpsMsgEnv &Gamma,
+                  const MpsProcEnv &Omega, 
+                  const std::set<std::pair<std::string,int> > &pureStack,
+                  const std::string &curPure,
+                  MpsTerm::PureState pureState,
+                  bool checkPure,
+                  std::map<std::string,void*> &children)
 { std::vector<std::string> *result=new std::vector<std::string>();
   // Cleanup
   for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
@@ -474,9 +486,24 @@ void *check(MpsTerm *term, // {{{
   }
   return result;
 } // }}}
-void *check_err(MpsTerm *term, // {{{
-                std::string msg,
+void *wrap_copy(MpsTerm *term, // {{{
+                const MpsExp &Theta,
+                const MpsMsgEnv &Gamma,
+                const MpsProcEnv &Omega, 
+                const std::set<std::pair<std::string,int> > &pureStack,
+                const std::string &curPure,
+                MpsTerm::PureState pureState,
+                bool checkPure,
                 std::map<std::string,void*> &children)
+{ MpsTerm *result=term->CopyWrapper(children);
+  // Cleanup
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+    delete ((MpsTerm*)child->second);
+  return (void*)result;
+} // }}}
+void *error_vector(MpsTerm *term, // {{{
+                   std::string msg,
+                   std::map<std::string,void*> &children)
 { std::vector<std::string> *result=new std::vector<std::string>();
   result->push_back(msg);
   // Cleanup
@@ -486,24 +513,9 @@ void *check_err(MpsTerm *term, // {{{
   }
   return (void*)result;
 } // }}}
-void *closedefs(MpsTerm *term, // {{{
-                const MpsExp &Theta,
-                const MpsMsgEnv &Gamma,
-                const MpsProcEnv &Omega, 
-                const std::set<std::pair<std::string,int> > &pureStack,
-                const std::string &curPure,
-                MpsTerm::PureState pureState,
-                bool checkPure,
-                std::map<std::string,void*> &children)
-{ MpsTerm *result=term->CloseDefsWrapper(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, children);
-  // Cleanup
-  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
-    delete ((MpsTerm*)child->second);
-  return (void*)result;
-} // }}}
-void *closedefs_err(MpsTerm *term, // {{{
-                    std::string msg,
-                    std::map<std::string,void*> &children)
+void *error_throw(MpsTerm *term, // {{{
+                  std::string msg,
+                  std::map<std::string,void*> &children)
 { // Cleanup
   for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
     delete ((std::vector<std::string>*)child->second);
