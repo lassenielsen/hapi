@@ -376,19 +376,16 @@ MpsTerm *MpsBranch::Append(const MpsTerm &term) const // {{{
   DeleteMap(newBranches);
   return result;
 } // }}}
-MpsTerm *MpsBranch::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                  const MpsMsgEnv &Gamma,
-                                  const MpsProcEnv &Omega, 
-                                  const std::set<std::pair<std::string,int> > &pureStack,
-                                  const std::string &curPure,
-                                  MpsTerm::PureState pureState,
-                                  bool checkPure,
-                                  std::map<std::string,void*> &children)
-{ map<string,MpsTerm*> newBranches;
-  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
-    newBranches[it->first]=(MpsTerm*)children[it->first];
+MpsTerm *MpsBranch::CopyWrapper(std::map<std::string,void*> &children) const // {{{
+{
+  map<string,MpsTerm*> branches;
+  for (map<string,void*>::iterator it=children.begin(); it!=children.end(); ++it)
+    branches[it->first]=(MpsTerm*)it->second;
 
-  return new MpsBranch(myChannel, newBranches, GetFinalBranches());
+  return new MpsAssign(myChannel, branches, GetFinalBranches());
+} // }}}
+MpsTerm *MpsBranch::CloseDefsPre(const MpsMsgEnv &Gamma) const // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsBranch::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { map<string,MpsTerm*> newBranches;

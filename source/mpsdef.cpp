@@ -648,14 +648,11 @@ MpsTerm *MpsDef::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsDef::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                  const MpsMsgEnv &Gamma,
-                                  const MpsProcEnv &Omega, 
-                                  const std::set<std::pair<std::string,int> > &pureStack,
-                                  const std::string &curPure,
-                                  MpsTerm::PureState pureState,
-                                  bool checkPure,
-                                  std::map<std::string,void*> &children)
+MpsTerm *MpsDef::CopyWrapper(std::map<std::string,void*> &children) const // {{{
+{
+  return new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *(MpsTerm*)children["body"], *(MpsTerm*)children["succ"], myPure);
+} // }}}
+MpsTerm *MpsDef::CloseDefsPre(const MpsMsgEnv &Gamma) const // {{{
 { // Copy current args and types
   vector<string> newArgs=myArgs;
   vector<MpsMsgType*> newTypes;
@@ -689,10 +686,9 @@ MpsTerm *MpsDef::CloseDefsWrapper(const MpsExp &Theta, // {{{
   DeleteVector(callArgs);
   DeleteVector(callStateArgs);
   // Create new succ
-  MpsTerm *newSucc = ((MpsTerm*)children["succ"])->PSubst(myName,*newCall,myArgs,GetArgPids(),myStateArgs);
+  MpsTerm *newSucc = mySucc->PSubst(myName,*newCall,myArgs,GetArgPids(),myStateArgs);
   // Create new body
-
-  MpsTerm *newBody = ((MpsTerm*)children["body"])->PSubst(myName,*newCall,myArgs,GetArgPids(),myStateArgs);
+  MpsTerm *newBody = myBody->PSubst(myName,*newCall,myArgs,GetArgPids(),myStateArgs);
   // Create result
   MpsTerm *result=new MpsDef(myName,newArgs,newTypes,myStateArgs,myStateTypes,*newBody,*newSucc,myPure);
 

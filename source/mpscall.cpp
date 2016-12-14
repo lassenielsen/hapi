@@ -398,16 +398,12 @@ bool MpsCall::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &
 MpsTerm *MpsCall::Append(const MpsTerm &term) const // {{{
 { throw (string)"Append applied to call term - not implemented";
 } // }}}
-MpsTerm *MpsCall::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                   const MpsMsgEnv &Gamma,
-                                   const MpsProcEnv &Omega, 
-                                   const std::set<std::pair<std::string,int> > &pureStack,
-                                   const std::string &curPure,
-                                   MpsTerm::PureState pureState,
-                                   bool checkPure,
-                                   std::map<std::string,void*> &children)
+MpsTerm *MpsCall::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
   return Copy();
+} // }}}
+MpsTerm *MpsCall::CloseDefsPre(const MpsMsgEnv &Gamma) const // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsCall::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { return Copy();

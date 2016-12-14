@@ -48,14 +48,8 @@ class MpsCall : public MpsTerm // {{{
     MpsTerm *RenameAll() const;
     bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
-    MpsTerm *CloseDefsWrapper(const MpsExp &Theta,
-                              const MpsMsgEnv &Gamma,
-                              const MpsProcEnv &Omega, 
-                              const std::set<std::pair<std::string,int> > &pureStack,
-                              const std::string &curPure,
-                              MpsTerm::PureState pureState,
-                              bool checkPure,
-                              std::map<std::string,void*> &children);
+    MpsTerm *CopyWrapper(std::map<std::string,void*> &children) const;
+    MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma) const;
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
     std::string ToC_prepare(const std::string &dest) const;

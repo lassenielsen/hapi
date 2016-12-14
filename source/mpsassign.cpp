@@ -279,7 +279,7 @@ MpsTerm *MpsAssign::CopyWrapper(std::map<std::string,void*> &children) const // 
 {
   return new MpsAssign(myId, *myExp, *myType, *(MpsTerm*)children["succ"]);
 } // }}}
-MpsTerm *MpsAssign::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+MpsTerm *MpsAssign::CloseDefsPre(const MpsMsgEnv &Gamma) const // {{{
 { return this;
 } // }}}
 MpsTerm *MpsAssign::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
