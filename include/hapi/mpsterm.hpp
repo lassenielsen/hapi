@@ -371,7 +371,7 @@ class MpsTerm // {{{
      */
     // }}}
     MpsTerm *CloseDefs();
-    virtual MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma) const=0;
+    virtual MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma)=0;
     // DOCUMENTATION: MpsTerm::ExtractDefinitions {{{
     /*!
      * ExtractDefinitions extracts all function definitions from the

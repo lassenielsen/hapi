@@ -444,16 +444,13 @@ void MpsRcv::Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &pos
     }
   }
 } //}}}
-MpsTerm *MpsRcv::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                  const MpsMsgEnv &Gamma,
-                                  const MpsProcEnv &Omega, 
-                                  const std::set<std::pair<std::string,int> > &pureStack,
-                                  const std::string &curPure,
-                                  MpsTerm::PureState pureState,
-                                  bool checkPure,
-                                  std::map<std::string,void*> &children)
+MpsTerm *MpsRcv::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
-  return new MpsRcv(myChannel, myDest, myPid, myMaxPid, *(MpsTerm*)children["succ"], *myType, GetFinal());
+  return new MpsRcv(myChannel, myDest, myPid, myMaxPid, *(MpsTerm*)children["succ"], GetMsgType(), GetFinal());
+} // }}}
+MpsTerm *MpsRcv::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{
+  return this;
 } // }}}
 MpsTerm *MpsRcv::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

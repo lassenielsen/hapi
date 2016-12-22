@@ -384,7 +384,7 @@ MpsTerm *MpsBranch::CopyWrapper(std::map<std::string,void*> &children) const // 
 
   return new MpsAssign(myChannel, branches, GetFinalBranches());
 } // }}}
-MpsTerm *MpsBranch::CloseDefsPre(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsBranch::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 { return this;
 } // }}}
 MpsTerm *MpsBranch::ExtractDefinitions(MpsFunctionEnv &env) const // {{{

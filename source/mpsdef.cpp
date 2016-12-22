@@ -652,7 +652,7 @@ MpsTerm *MpsDef::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
   return new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *(MpsTerm*)children["body"], *(MpsTerm*)children["succ"], myPure);
 } // }}}
-MpsTerm *MpsDef::CloseDefsPre(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsDef::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 { // Copy current args and types
   vector<string> newArgs=myArgs;
   vector<MpsMsgType*> newTypes;

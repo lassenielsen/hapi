@@ -51,7 +51,7 @@ class MpsRcv : public MpsTerm // {{{
     MpsTerm *Append(const MpsTerm &term) const;
     void Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* &post) const;
     MpsTerm *CopyWrapper(std::map<std::string,void*> &children) const;
-    MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma) const;
+    MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma);
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
     std::string ToCHeader() const;

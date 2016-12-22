@@ -402,7 +402,7 @@ MpsTerm *MpsCall::CopyWrapper(std::map<std::string,void*> &children) const // {{
 {
   return Copy();
 } // }}}
-MpsTerm *MpsCall::CloseDefsPre(const MpsMsgEnv &Gamma) const // {{{
+MpsTerm *MpsCall::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 { return this;
 } // }}}
 MpsTerm *MpsCall::ExtractDefinitions(MpsFunctionEnv &env) const // {{{

@@ -273,16 +273,13 @@ MpsTerm *MpsCond::Append(const MpsTerm &term) const // {{{
   delete newFalseBranch;
   return result;
 } // }}}
-MpsTerm *MpsCond::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                   const MpsMsgEnv &Gamma,
-                                   const MpsProcEnv &Omega, 
-                                   const std::set<std::pair<std::string,int> > &pureStack,
-                                   const std::string &curPure,
-                                   MpsTerm::PureState pureState,
-                                   bool checkPure,
-                                   std::map<std::string,void*> &children)
+MpsTerm *MpCond::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
   return new MpsCond(*myCond, *(MpsTerm*)children["true"], *(MpsTerm*)children["false"]);
+} // }}}
+MpsTerm *MpsCond::CloseDefsPre(const MpsMsgEnv &Gamma)
+{
+  return this;
 } // }}}
 MpsTerm *MpsCond::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newTrueBranch=myTrueBranch->ExtractDefinitions(env);

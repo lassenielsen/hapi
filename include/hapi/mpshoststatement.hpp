@@ -54,7 +54,7 @@ class MpsHostStatement : public MpsTerm // {{{
     bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
     MpsTerm *CopyWrapper(std::map<std::string,void*> &children) const;
-    MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma) const;
+    MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma);
     MpsHostStatement *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
     std::string ToCHeader() const;
