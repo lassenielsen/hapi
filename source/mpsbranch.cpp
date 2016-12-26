@@ -382,7 +382,7 @@ MpsTerm *MpsBranch::CopyWrapper(std::map<std::string,void*> &children) const // 
   for (map<string,void*>::iterator it=children.begin(); it!=children.end(); ++it)
     branches[it->first]=(MpsTerm*)it->second;
 
-  return new MpsAssign(myChannel, branches, GetFinalBranches());
+  return new MpsBranch(myChannel, branches, GetFinalBranches());
 } // }}}
 MpsTerm *MpsBranch::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 { return this;

@@ -352,16 +352,11 @@ MpsTerm *MpsNew::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsNew::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                  const MpsMsgEnv &Gamma,
-                                  const MpsProcEnv &Omega, 
-                                  const std::set<std::pair<std::string,int> > &pureStack,
-                                  const std::string &curPure,
-                                  MpsTerm::PureState pureState,
-                                  bool checkPure,
-                                  std::map<std::string,void*> &children)
-{
-  return new MpsNew(myNames, *myType, *(MpsTerm*)children["succ"]);
+MpsTerm *MpsNew::CopyWrapper(std::map<std::string,void*> &children) const // {{{
+{ return new MpsNew(myNames, *myType, *(MpsTerm*)children["succ"]);
+} // }}}
+MpsTerm *MpsNew::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsNew::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

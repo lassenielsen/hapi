@@ -269,15 +269,11 @@ MpsTerm *MpsGuiValue::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsGuiValue::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                       const MpsMsgEnv &Gamma,
-                                       const MpsProcEnv &Omega, 
-                                       const std::set<std::pair<std::string,int> > &pureStack,
-                                       const std::string &curPure,
-                                       MpsTerm::PureState pureState,
-                                       bool checkPure,
-                                       std::map<std::string,void*> &children)
+MpsTerm *MpsGuiValue::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 { return new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *(MpsTerm*)children["succ"]);
+} // }}}
+MpsTerm *MpsGuiValue::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsGuiValue::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

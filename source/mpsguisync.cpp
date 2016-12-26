@@ -905,14 +905,7 @@ MpsTerm *MpsGuiSync::Append(const MpsTerm &term) const // {{{
 
   return result;
 } // }}}
-MpsTerm *MpsGuiSync::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                      const MpsMsgEnv &Gamma,
-                                      const MpsProcEnv &Omega, 
-                                      const std::set<std::pair<std::string,int> > &pureStack,
-                                      const std::string &curPure,
-                                      MpsTerm::PureState pureState,
-                                      bool checkPure,
-                                      std::map<std::string,void*> &children)
+MpsTerm *MpsGuiSync::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 { // Create new branches
   map<string,inputbranch> newBranches;
   for (map<string,inputbranch>::const_iterator br=myBranches.begin(); br!=myBranches.end(); ++br)
@@ -940,6 +933,9 @@ MpsTerm *MpsGuiSync::CloseDefsWrapper(const MpsExp &Theta, // {{{
   }
   // return
   return result;
+} // }}}
+MpsTerm *MpsGuiSync::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsGuiSync::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { map<string,inputbranch> newBranches;

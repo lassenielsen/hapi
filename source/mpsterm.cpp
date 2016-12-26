@@ -42,17 +42,17 @@ void* MpsTerm::TDCompile(tdc_pre pre, // {{{
                          PureState pureState,
                          bool checkPure)
 { MpsTerm *tmp=pre(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure);
-  try
+  //try
   { void *result=tmp->TDCompileMain(pre,post,error,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure);
     if (tmp!=NULL && tmp!=this)
       delete tmp;
     return result;
   }
-  catch (...)
-  { if (tmp!=NULL && tmp!=this)
-      delete tmp;
-    throw;
-  }
+  //catch (...)
+  //{ if (tmp!=NULL && tmp!=this)
+  //    delete tmp;
+  //  throw;
+  //}
 } // }}}
 
 /* Static type-checking of deadlock and communication safety
@@ -321,107 +321,112 @@ int _compile_id=0;
  */
 string MpsTerm::MakeC() const // {{{
 { _compile_id=1;
+  stringstream result;
+  result << "/* ==== ORIGINAL ====\n" << ToString() << "\n*/\n";
   MpsTerm *step1=RenameAll();
+  result << "/* ==== RENAMED ====\n" << step1->ToString() << "\n*/\n";
   MpsTerm *step2=step1->FlattenFork(false,true,false);
   delete step1;
+  result << "/* ==== FLATTENFORKED ====\n" << step2->ToString() << "\n*/\n";
   MpsTerm *step3=step2->CloseDefs();
   delete step2;
+  result << "/* ==== CLOSEDEFED ====\n" << step3->ToString() << "\n*/\n";
   MpsFunctionEnv defs;
   // Move definitions to global env
   MpsTerm *main=step3->ExtractDefinitions(defs);
   delete step3;
-  string result = (string)
-       + "#include <iostream>\n"
-       + "#include <thread>\n"
-       + "#include <cstdlib>\n"
-       + "#include <pthread.h>\n"
-       + "#include <libpi/value.hpp>\n"
-       + "#include <libpi/bool.hpp>\n"
-       + "#include <libpi/int.hpp>\n"
-       + "#include <libpi/float.hpp>\n"
-       + "#include <libpi/quotient.hpp>\n"
-       + "#include <libpi/string.hpp>\n"
-       + "#include <libpi/tuple.hpp>\n"
-       + "#include <libpi/session.hpp>\n"
-       + "#include <libpi/thread/channel.hpp>\n"
-       + "#include <libpi/thread/link.hpp>\n"
-       + "#include <vector>\n"
-       + "#include <queue>\n"
-       + "#include <sstream>\n"
-       + "#include <atomic>\n"
-       + "#include <memory>\n"
-       + "#include <sys/mman.h>\n"
-       + "#include <signal.h>\n"
-       + main->ToCHeader()
-       + "using namespace std;\n"
-       + "using namespace libpi;\n\n"
-       + "inline atomic<int> *_new_shared_int()\n"
-       + "{ return (std::atomic<int>*)mmap(NULL, sizeof(atomic<int>), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); // Actual number of active processes\n"
-       + "}\n"
-       + "std::atomic<int> *_aprocs=_new_shared_int(); // Actual number of active processes\n"
-       + "inline void _inc_aprocs() // {{{\n"
-       + "{ ++(*_aprocs);\n"
-       + "} // }}}\n"
-       + "inline void _dec_aprocs() // {{{\n"
-       + "{ --(*_aprocs);\n"
-       + "} // }}}\n"
-       + "int _tprocs=std::thread::hardware_concurrency(); // Target number of active processes\n"
-       + "std::vector<char*> _args;   // Store args for use in processes\n"
-       + "\n"
-       + "// Declare implementation\n"
-       + "void *_methods(void *arg);\n"
-       + "\n"
-       + "struct State\n"
-       + "{ void *label;\n"
-       + "  vector<shared_ptr<libpi::Value> > values;\n"
-       + "};\n"
-       + "\n"
-       + "inline void _spawn_thread(State *state)\n"
-       + "{ pthread_t x;\n"
-       + "  pthread_attr_t y;\n"
-       + "  pthread_attr_init(&y);\n"
-       + "  pthread_attr_setstacksize(&y,16384);\n"
-       + "  pthread_attr_setdetachstate(&y,PTHREAD_CREATE_DETACHED);\n"
-       + "  pthread_create(&x,&y,_methods,(void*)state);\n"
-       + "}\n"
-       + "\n\n/* All methods */\n"
-       + "#define _state ((State*)(_arg))\n"
-       + "void *_methods(void *_arg)\n"
-       + "{\n"
-       + "  if (_state==NULL) // Error\n"
-       + "  { std::cerr << \"Error in call to all_methods: null state provided\" << endl;\n"
-       + "    return NULL;\n"
-       + "  }  \n"
-       + "  if (_state->label!=NULL)\n"
-       + "    goto *_state->label;\n"
-       + "  // Main\n"
-       + main->ToC()
-       + DefEnvToC(defs)
-       + "}\n"
-       + "\n\n/*Start process, and its continuations */\n"
-       + "int main(int argc, char **argv) // {{{\n"
-       + "{ // PARSE ARGS!!\n"
-       + "  for (int i=0; i<argc; ++i)\n"
-       + "  { if (string(argv[i])==\"-pi_tprocs\" && i+1<argc)\n"
-       + "      _tprocs=atoi(argv[++i]);\n"
-       + "    else\n"
-       + "      _args.push_back(argv[i]);\n"
-       + "  }\n"
-       + "  (*_aprocs)=1;\n"
-       + "  try\n"
-       + "  { signal(SIGCHLD, SIG_IGN); // Fork optimization\n"
-       + "    State *s0=new State();\n"
-       + "    s0->label=NULL;\n"
-       + "    _methods(s0);\n"
-       + "    //munmap(_aprocs,sizeof(int));\n"
-       + "  } catch (const string &error)\n"
-       + "  { cerr << \"Error: \" << error << endl;\n"
-       + "    return 1;\n"
-       + "  }\n"
-       + "  return 0;\n"
-       + "} // }}}";
+  result
+    << "#include <iostream>\n"
+    << "#include <thread>\n"
+    << "#include <cstdlib>\n"
+    << "#include <pthread.h>\n"
+    << "#include <libpi/value.hpp>\n"
+    << "#include <libpi/bool.hpp>\n"
+    << "#include <libpi/int.hpp>\n"
+    << "#include <libpi/float.hpp>\n"
+    << "#include <libpi/quotient.hpp>\n"
+    << "#include <libpi/string.hpp>\n"
+    << "#include <libpi/tuple.hpp>\n"
+    << "#include <libpi/session.hpp>\n"
+    << "#include <libpi/thread/channel.hpp>\n"
+    << "#include <libpi/thread/link.hpp>\n"
+    << "#include <vector>\n"
+    << "#include <queue>\n"
+    << "#include <sstream>\n"
+    << "#include <atomic>\n"
+    << "#include <memory>\n"
+    << "#include <sys/mman.h>\n"
+    << "#include <signal.h>\n"
+    << main->ToCHeader()
+    << "using namespace std;\n"
+    << "using namespace libpi;\n\n"
+    << "inline atomic<int> *_new_shared_int()\n"
+    << "{ return (std::atomic<int>*)mmap(NULL, sizeof(atomic<int>), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); // Actual number of active processes\n"
+    << "}\n"
+    << "std::atomic<int> *_aprocs=_new_shared_int(); // Actual number of active processes\n"
+    << "inline void _inc_aprocs() // {{{\n"
+    << "{ ++(*_aprocs);\n"
+    << "} // }}}\n"
+    << "inline void _dec_aprocs() // {{{\n"
+    << "{ --(*_aprocs);\n"
+    << "} // }}}\n"
+    << "int _tprocs=std::thread::hardware_concurrency(); // Target number of active processes\n"
+    << "std::vector<char*> _args;   // Store args for use in processes\n"
+    << "\n"
+    << "// Declare implementation\n"
+    << "void *_methods(void *arg);\n"
+    << "\n"
+    << "struct State\n"
+    << "{ void *label;\n"
+    << "  vector<shared_ptr<libpi::Value> > values;\n"
+    << "};\n"
+    << "\n"
+    << "inline void _spawn_thread(State *state)\n"
+    << "{ pthread_t x;\n"
+    << "  pthread_attr_t y;\n"
+    << "  pthread_attr_init(&y);\n"
+    << "  pthread_attr_setstacksize(&y,16384);\n"
+    << "  pthread_attr_setdetachstate(&y,PTHREAD_CREATE_DETACHED);\n"
+    << "  pthread_create(&x,&y,_methods,(void*)state);\n"
+    << "}\n"
+    << "\n\n/* All methods */\n"
+    << "#define _state ((State*)(_arg))\n"
+    << "void *_methods(void *_arg)\n"
+    << "{\n"
+    << "  if (_state==NULL) // Error\n"
+    << "  { std::cerr << \"Error in call to all_methods: null state provided\" << endl;\n"
+    << "    return NULL;\n"
+    << "  }  \n"
+    << "  if (_state->label!=NULL)\n"
+    << "    goto *_state->label;\n"
+    << "  // Main\n"
+    << main->ToC()
+    << DefEnvToC(defs)
+    << "}\n"
+    << "\n\n/*Start process, and its continuations */\n"
+    << "int main(int argc, char **argv) // {{{\n"
+    << "{ // PARSE ARGS!!\n"
+    << "  for (int i=0; i<argc; ++i)\n"
+    << "  { if (string(argv[i])==\"-pi_tprocs\" && i+1<argc)\n"
+    << "      _tprocs=atoi(argv[++i]);\n"
+    << "    else\n"
+    << "      _args.push_back(argv[i]);\n"
+    << "  }\n"
+    << "  (*_aprocs)=1;\n"
+    << "  try\n"
+    << "  { signal(SIGCHLD, SIG_IGN); // Fork optimization\n"
+    << "    State *s0=new State();\n"
+    << "    s0->label=NULL;\n"
+    << "    _methods(s0);\n"
+    << "    //munmap(_aprocs,sizeof(int));\n"
+    << "  } catch (const string &error)\n"
+    << "  { cerr << \"Error: \" << error << endl;\n"
+    << "    return 1;\n"
+    << "  }\n"
+    << "  return 0;\n"
+    << "} // }}}";
   delete main;
-  return result;
+  return result.str();
 } // }}}
 MpsTerm *MpsTerm::Parallelize() const // {{{
 { MpsTerm *seqTerm;
@@ -466,8 +471,7 @@ MpsTerm *pre_closedefs(MpsTerm *term, // {{{
                        const std::string &curPure,
                        MpsTerm::PureState pureState,
                        bool checkPure)
-{ MpsTerm *result=term->CloseDefsPre(Gamma);
-  return term;
+{ return term->CloseDefsPre(Gamma);
 } // }}}
 void *wrap_vector(MpsTerm *term, // {{{
                   const MpsExp &Theta,

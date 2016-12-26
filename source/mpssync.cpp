@@ -449,22 +449,15 @@ MpsTerm *MpsSync::Append(const MpsTerm &term) const // {{{
   DeleteMap(newBranches);
   return result;
 } // }}}
-MpsTerm *MpsSync::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                   const MpsMsgEnv &Gamma,
-                                   const MpsProcEnv &Omega, 
-                                   const std::set<std::pair<std::string,int> > &pureStack,
-                                   const std::string &curPure,
-                                   MpsTerm::PureState pureState,
-                                   bool checkPure,
-                                   std::map<std::string,void*> &children)
-{
-  map<string,MpsTerm*> newBranches;
+MpsTerm *MpsSync::CopyWrapper(std::map<std::string,void*> &children) const // {{{
+{ map<string,MpsTerm*> newBranches;
   for (map<string,MpsTerm*>::const_iterator br=myBranches.begin(); br!=myBranches.end(); ++br)
     newBranches[br->first]=(MpsTerm*)children[br->first];
 
-  MpsTerm *result=new MpsSync(myMaxpid, mySession, newBranches, myAssertions);
-
-  return result;
+  return new MpsSync(myMaxpid, mySession, newBranches, myAssertions);
+} // }}}
+MpsTerm *MpsSync::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsSync::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { map<string,MpsTerm*> newBranches;

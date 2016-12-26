@@ -270,16 +270,12 @@ MpsTerm *MpsNu::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsNu::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                  const MpsMsgEnv &Gamma,
-                                  const MpsProcEnv &Omega, 
-                                  const std::set<std::pair<std::string,int> > &pureStack,
-                                  const std::string &curPure,
-                                  MpsTerm::PureState pureState,
-                                  bool checkPure,
-                                  std::map<std::string,void*> &children)
+MpsTerm *MpsNu::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
   return new MpsNu(myParticipants, myChannel, *(MpsTerm*)children["succ"], *myType);
+} // }}}
+MpsTerm *MpsNu::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsNu::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

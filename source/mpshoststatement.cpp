@@ -279,15 +279,11 @@ MpsTerm *MpsHostStatement::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsHostStatement::CloseDefsWrapper(const MpsExp &Theta, // {{{
-                                            const MpsMsgEnv &Gamma,
-                                            const MpsProcEnv &Omega, 
-                                            const std::set<std::pair<std::string,int> > &pureStack,
-                                            const std::string &curPure,
-                                            MpsTerm::PureState pureState,
-                                            bool checkPure,
-                                            std::map<std::string,void*> &children)
+MpsTerm *MpsHostStatement::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 { return new MpsHostStatement(myHostParts, myExpParts, *(MpsTerm*)children["succ"], myTypes, myPure);
+} // }}}
+MpsTerm *MpsHostStatement::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsHostStatement *MpsHostStatement::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

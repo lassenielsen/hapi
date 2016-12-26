@@ -246,10 +246,10 @@ bool MpsGlobalBranchType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) c
       return false;
   }
   // Check label in rhs means label in lhs
-  for (map<string,MpsGlobalType*>::const_iterator it2=rhsptr->myBranches.begin();it2!=rhsptr->myBranches.end();++it2)
+  for (map<string,MpsGlobalType*>::const_iterator it=rhsptr->myBranches.begin();it!=rhsptr->myBranches.end();++it)
   {
-    map<string,MpsGlobalType*>::const_iterator it=myBranches.find(it->first);
-    if (it == myBranches.end())
+    map<string,MpsGlobalType*>::const_iterator it2=myBranches.find(it->first);
+    if (it2 == myBranches.end())
       return ERROR_GLOBALEQ(Theta,*this,rhs,(string)"No RHS branch for label: " + it->first);
   }
 

@@ -273,7 +273,7 @@ MpsTerm *MpsCond::Append(const MpsTerm &term) const // {{{
   delete newFalseBranch;
   return result;
 } // }}}
-MpsTerm *MpCond::CopyWrapper(std::map<std::string,void*> &children) const // {{{
+MpsTerm *MpsCond::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
   return new MpsCond(*myCond, *(MpsTerm*)children["true"], *(MpsTerm*)children["false"]);
 } // }}}
