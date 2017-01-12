@@ -218,7 +218,7 @@ string MpsCond::ToC() const // {{{
 {
   stringstream result;
   string newName = myCond->ToC(result,"libpi::Bool");
-  result << "  if (" << newName << ".GetValue())" << endl
+  result << "  if (" << newName << "->GetValue())" << endl
          << "  {" << endl
          << myTrueBranch->ToC()
          << "  }" << endl

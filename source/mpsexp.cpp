@@ -940,7 +940,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
-  dest << "    shared_ptr<" << typeName << "> " << varName << "((*" << leftName << ") ";
+  dest << "    shared_ptr<" << typeName << "> " << varName << "(new " << typeName << "(*((*" << leftName << ") ";
   if (myName=="=")
     dest << "==";
   else if (myName=="or")
@@ -949,7 +949,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
     dest << "&&";
   else
     dest << myName;
-  dest << " (*" << rightName << "));" << endl;
+  dest << " (*" << rightName << "))));" << endl;
   return varName;
 } // }}}
 string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
@@ -970,7 +970,7 @@ string MpsSystemExp::ToC(stringstream &dest, const string &typeName) const // {{
   if (myField=="aprocs")
     dest << "    shared_ptr<libpi::Int> " << varName << "(new libpi::Int(*_" << myField << "));" << endl;
   else if (myField=="tprocs")
-    dest << "    shared_ptr<libpi::Int> " << varName << "(new libpi::Int((_" << myField << "));" << endl;
+    dest << "    shared_ptr<libpi::Int> " << varName << "(new libpi::Int(_" << myField << "));" << endl;
   else
     throw (string)"MpsSystemExp::ToC: Unknown field " + myField;
   return varName;

@@ -86,7 +86,7 @@ MpsTerm *MpsTerm::CloseDefs() // {{{
   tdc_pre pre=tdc_wrap::pre_closedefs;
   tdc_post wrap=tdc_wrap::wrap_copy;
   tdc_error wrap_err=tdc_wrap::error_throw;
-  return (MpsTerm*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
+  return (MpsTerm*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,false);
 } // }}}
 
 /* Create list of possible steps
