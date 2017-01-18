@@ -65,6 +65,8 @@ void *MpsPar::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
   MpsMsgEnv leftGamma;
   MpsMsgEnv rightGamma;
   set<string> leftSessions = myLeft->FEV();
+  myLeftFinal.clear();
+  myRightFinal.clear();
   for (MpsMsgEnv::const_iterator var=Gamma.begin(); var!=Gamma.end(); ++var)
   {
     const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(var->second);
@@ -471,10 +473,11 @@ string MpsPar::ToC() const // {{{
            << "    _spawn_thread(" << newName << ");" << endl
            << "  }" << endl
            << "  { // Left process" << endl;
-    for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it) {
-      result << "    " << ToC_Name(*it) << "->Close(false);" << endl
-             << "    " << ToC_Name(*it) << "=NULL;" << endl;
-    }
+// DO NOT CLOSE THREAD CHANNELS
+//    for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it)
+//    { result << "    " << ToC_Name(*it) << "->Close(false);" << endl
+//             << "    " << ToC_Name(*it) << "=NULL;" << endl;
+//    }
     result <<  myLeft->ToC()
            << "  }" << endl;
   }
