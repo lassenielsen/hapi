@@ -79,7 +79,10 @@ void *MpsCall::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, con
       delete callType;
       callType=tmpType;
     }
+    cerr << "ARGTYPE: " << argType->ToString() << endl;
+    cerr << "CALLTYPE: " << callType->ToString() << endl;
     bool argtypematch = argType->Equal(Theta,*callType);
+    cerr << "EQUAL RETURNS: " << (argtypematch?string("true"):string("false")) << endl;
     string callTypeString = callType->ToString("!!!!                                      ");
 
     // Store type for compilation
