@@ -651,12 +651,10 @@ MpsTerm *MpsDef::Append(const MpsTerm &term) const // {{{
 MpsTerm *MpsDef::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
   MpsTerm *result=new MpsDef(myName, myArgs, myTypes, myStateArgs, myStateTypes, *(MpsTerm*)children["body"], *(MpsTerm*)children["succ"], myPure);
-  cerr << "MpsDef::CopyWrapper returns: " << result->ToString() << endl;
   return result;
 } // }}}
 MpsTerm *MpsDef::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
-{ cerr << "CloseDefsPre: " << ToString() << endl;
-  // Copy current args and types
+{ // Copy current args and types
   vector<string> newArgs=myArgs;
   vector<MpsMsgType*> newTypes;
   for (vector<MpsMsgType*>::const_iterator t=myTypes.begin(); t!=myTypes.end(); ++t)
@@ -698,7 +696,6 @@ MpsTerm *MpsDef::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
   delete newBody;
   delete newSucc;
   DeleteVector(newTypes);
-  cerr << "MpsDef::CloseDefsPre returns: " << result->ToString() << endl;
   
   return result;
 } // }}}

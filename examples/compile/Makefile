@@ -13,7 +13,7 @@
 SHELL = /bin/bash
 CPP = cpp
 HAPI = hapi
-Copt = -g -std=c++11
+Copt = -O3 -std=c++11
 CC = g++
 
 OK_PI_FILES = $(shell ls *.pi)
@@ -37,7 +37,7 @@ $(OK_CPP_FILES): %.cpp : %.pip
 
 $(OK_EXE_FILES): % : %.cpp
 	@echo "=== Building executable from C++ code in $@.cpp"
-	@($(CC) $(Copt) $@.cpp -o $@ -lpi_debug -lpthread) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
+	@($(CC) $(Copt) $@.cpp -o $@ -lpi -lpthread) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
 
 autoclean:
 	touch $(OK_PIP_FILES)

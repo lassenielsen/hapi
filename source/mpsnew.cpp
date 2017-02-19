@@ -282,27 +282,27 @@ string MpsNew::ToC() const // {{{
   stringstream result;
   // Declare new sessions
   for (int i=0; i<myNames.size(); ++i)
-    result << "  Session *" << ToC_Name(myNames[i]) << ";" << endl;
+    result << "  std::shared_ptr<libpi::Session> " << ToC_Name(myNames[i]) << ";" << endl;
 
   result << "  {" << endl;
   string vecName = ToC_Name(MpsExp::NewVar("channels"));
-  result << "    vector<shared_ptr<thread::Channel> > " << vecName << ";" << endl;
+  result << "    vector<shared_ptr<libpi::Channel> > " << vecName << ";" << endl;
   // Create all channels
   for (int i=0; i<myNames.size(); ++i)
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << vecName << ".push_back(new thread::Channel());" << endl;
+      result << "    " << vecName << ".push_back(std::shared_ptr<libpi::Channel>(new thread::Channel()));" << endl;
   // For each participant, create filtered channels vector, and create session
   for (int i=0; i<myNames.size(); ++i)
   { string sesInChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_in"));
     string sesOutChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_out"));
-    result << "    vector<shared_ptr<thread::Channel >> " << sesInChannels << ";" << endl;
+    result << "    vector<shared_ptr<libpi::Channel >> " << sesInChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
       result << "    " << sesInChannels << ".push_back(" << vecName << "[" << (j+i*myNames.size()) << "]);" << endl;
-    result << "    vector<shared_ptr<thread::Channel> > " << sesOutChannels << ";" << endl;
+    result << "    vector<shared_ptr<libpi::Channel> > " << sesOutChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
       result << "    " << sesOutChannels << ".push_back(" << vecName << "[" << (i+j*myNames.size()) << "]);" << endl;
   
-    result << "    " << ToC_Name(myNames[i]) << "= new Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << ");" << endl;
+    result << "    " << ToC_Name(myNames[i]) << "= std::shared_ptr<libpi::Session>(new Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
   }
   result << "  }" << endl;
 

@@ -59,8 +59,8 @@
 #define DelOFP(p) "delete ((ofstream*)mpz_get_ui((", p, ")->GetValue()));"
 #define CloseIFP(p) "((ofstream*)mpz_get_ui((", p, ")->GetValue()))->close();"
 #define DelIFP(p) "delete ((ifstream*)mpz_get_ui((", p, ")->GetValue()));"
-#define EOF(b,p) "", b, " = libpi::Bool( ((ifstream*)mpz_get_ui((", p, ")->GetValue()))->eof() );"
-#define GetError(s) "", s, " = libpi::String(strerror(errno));"
+#define EOF(b,p) "", b, " = libpi::Bool::GetInstance( ((ifstream*)mpz_get_ui((", p, ")->GetValue()))->eof() );"
+#define GetError(s) "", s, " = std::shared_ptr<libpi::String>(new libpi::String(strerror(errno)));"
 global $file file(1,2);
 HOSTHEADER("#include <fstream>");
 HOSTHEADER("#include <errno.h>");
@@ -85,7 +85,7 @@ local FileServer()
              HOST("{ char *buf = new char[ mpz_get_ui((", chunksize, ")->GetValue()) +1 ];");
              HOST("  ((ifstream*)mpz_get_ui((", fptr, ")->GetValue()))->read(buf, mpz_get_ui((", chunksize, ")->GetValue()));");
              HOST("  buf[ mpz_get_ui((", chunksize, ")->GetValue()) ] = 0;");
-             HOST("  ", chunk, " = libpi::String(std::string(buf));");
+             HOST("  ", chunk, " = std::shared_ptr<libpi::String>(new libpi::String(std::string(buf)));");
              HOST("  delete [] buf;");
              HOST("}");
              f[2]<<chunk;
@@ -101,7 +101,7 @@ local FileServer()
              String chunk="";
              HOST("{ std::string line;");
              HOST("  std::getline(*((ifstream*)mpz_get_ui((", fptr, ")->GetValue())), line);");
-             HOST("  ", chunk, " = libpi::String(line);");
+             HOST("  ", chunk, " = std::shared_ptr<libpi::String>(new String(line));");
              HOST("}");
              f[2]<<chunk;
              InFileSession(f,fptr,chunksize);
@@ -120,7 +120,7 @@ local FileServer()
              HOST("  ((ifstream*)mpz_get_ui((", fptr, ")->GetValue()))->seekg(pos);");
              HOST("  str.reserve(size-pos+1);");
              HOST("  str.assign((std::istreambuf_iterator<char>(*((ifstream*)mpz_get_ui((", fptr, ")->GetValue())))),std::istreambuf_iterator<char>());");
-             HOST("  ", chunk, " = libpi::String(str);");
+             HOST("  ", chunk, " = std::shared_ptr<libpi::String>(new libpi::String(str));");
              HOST("}");
              f[2]<<chunk;
              HOST( CloseIFP(fptr) );
@@ -132,9 +132,9 @@ local FileServer()
     )
     f[2]>>path;
     Int fptr=0;
-    HOST("", fptr, " = libpi::Int( (unsigned long)(new ifstream( (", path, ")->ToString().c_str() ) ) );");
+    HOST("", fptr, " = std::shared_ptr<libpi::Int>( new libpi::Int((unsigned long)(new ifstream( (", path, ")->ToString().c_str()))));");
     Bool t=true;
-    HOST("", t, " = libpi::Bool(((ifstream*)mpz_get_ui((", fptr, ")->GetValue()))->is_open());");
+    HOST("", t, " = libpi::Bool::GetInstance(((ifstream*)mpz_get_ui((", fptr, ")->GetValue()))->is_open());");
     if t
     then f[2]<<^OK;
          InFileSession(f, fptr, 1024*4);
@@ -157,9 +157,9 @@ local FileServer()
     )
     f[2]>>path;
     Int fptr=0;
-    HOST("", fptr, " = libpi::Int( (unsigned long)(new ofstream( (", path, ")->ToString().c_str() ) ) );");
+    HOST("", fptr, " = shared_ptr<libpi::Int>( new libpi::Int((unsigned long)(new ofstream( (", path, ")->ToString().c_str()))));");
     Bool t=true;
-    HOST("", t, " = libpi::Bool(((ofstream*)mpz_get_ui((", fptr, ")->GetValue()))->is_open());");
+    HOST("", t, " = libpi::Bool::GetInstance(((ofstream*)mpz_get_ui((", fptr, ")->GetValue()))->is_open());");
     if t
     then f[2]<<^OK;
          OutFileSession(f, fptr);

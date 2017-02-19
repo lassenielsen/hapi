@@ -399,8 +399,9 @@ string MpsTerm::MakeC() const // {{{
     << "  }  \n"
     << "  if (_state->label!=NULL)\n"
     << "    goto *_state->label;\n"
-    << "  // Main\n"
+    << "  { // Main\n"
     << main->ToC()
+    << "  }\n"
     << DefEnvToC(defs)
     << "}\n"
     << "\n\n/*Start process, and its continuations */\n"

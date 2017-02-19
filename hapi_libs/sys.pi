@@ -5,8 +5,8 @@
    ^GetArg: 2->1:Int; 1->2{^Some: 1->2:String; $sys; ^None: $sys;} \
    ^End: $end; \
   }
-#define __ARGC(x) HOST("  ", x, "=libpi::Int(__system_args.size());") pure
-#define __ARGV(x,i) HOST("  ", x, "=libpi::String(__system_args[ mpz_get_ui(", i, "->GetValue())]);") pure
+#define __ARGC(x) HOST("  ", x, "=std::shared_ptr<libpi::Int>(new libpi::Int(_args.size()));") pure
+#define __ARGV(x,i) HOST("  ", x, "=std::shared_ptr<libpi::String>(new libpi::String(_args[ mpz_get_ui(", i, "->GetValue())]));") pure
 Int argc=0;
 __ARGC(argc);
 global $sys sys(1 pure, 2);

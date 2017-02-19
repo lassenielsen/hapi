@@ -1,25 +1,21 @@
 #include <iostream>
 #include <pthread.h>
-#include <libpi/value.hpp>
+#include <libpi/int.hpp>
+#include <libpi/bool.hpp>
 #include <libpi/thread/channel.hpp>
 #include <vector>
 #include <queue>
 #include <sstream>
 #include <atomic>
+#include <memory>
 
 using namespace std;
 //using namespace pi;
 
 class State
 { public:
-    virtual ~State()
-    { while (values.size()>0)
-      { delete values.back();
-        values.pop_back();
-      }
-    }
     void *label;
-    vector<libpi::Value*> values;
+    vector<shared_ptr<libpi::Value> > values;
 };
 
 // Declare implementation
@@ -36,6 +32,8 @@ inline void spawn(State *state)
 }
 
 size_t val=0;
+shared_ptr<libpi::Int> one(new libpi::Int(1));
+shared_ptr<libpi::Int> two(new libpi::Int(2));
 
 //void *args;
 #define state ((State*)(arg))
@@ -49,51 +47,47 @@ void *all_methods(void *arg)
   // Main
   delete state;
   State *s1=new State();
-  libpi::thread::Channel *f(new libpi::thread::Channel());
+  shared_ptr<libpi::thread::Channel> f(new libpi::thread::Channel());
   s1->label=&&method_fib;
-  s1->values.push_back(new libpi::IntValue(val));
-  s1->values.push_back(f->Copy());
+  s1->values.push_back(shared_ptr<libpi::Int>(new libpi::Int(val)));
+  s1->values.push_back(f);
   spawn(s1);
-  libpi::Value *r=f->Rcv();
+  shared_ptr<libpi::Value> r=f->Receive();
   cout << "Result: " << r->ToString() << endl;
   pthread_exit(0);
 
   // fib
   method_fib:
-  libpi::IntValue *x=dynamic_cast<libpi::IntValue*>(state->values[0]);
-  libpi::thread::Channel *f0=dynamic_cast<libpi::thread::Channel*>(state->values[1]);
-  if (*x <= libpi::IntValue(1))
-  { f0->Snd(new libpi::IntValue(1));
+  shared_ptr<libpi::Int> x=dynamic_pointer_cast<libpi::Int>(state->values[0]);
+  //cout << "fib(" << x->ToString() << ")" << endl;
+  shared_ptr<libpi::thread::Channel> f0=dynamic_pointer_cast<libpi::thread::Channel>(state->values[1]);
+  if (((*x) <= (*one))->GetValue())
+  { f0->Send(one);
     delete state;
     pthread_exit(0);
   }
   else
-  { libpi::thread::Channel *f1(new libpi::thread::Channel());
-    libpi::IntValue *n1(new libpi::IntValue((*x)-libpi::IntValue(1)));
+  { shared_ptr<libpi::thread::Channel> f1(new libpi::thread::Channel());
+    shared_ptr<libpi::Int> n1=(*x)-(*one);
     State *s2=new State();
     s2->label=&&method_fib;
     s2->values.push_back(n1);
-    s2->values.push_back(f1->Copy());
+    s2->values.push_back(f1);
     spawn(s2);
-    libpi::Value *r1=f1->Rcv();
-    delete f1;
-    libpi::IntValue *r1ptr=dynamic_cast<libpi::IntValue*>(r1);
+    shared_ptr<libpi::Value> r1=f1->Receive();
+    shared_ptr<libpi::Int> r1ptr=dynamic_pointer_cast<libpi::Int>(r1);
 
-    libpi::thread::Channel *f2(new libpi::thread::Channel());
-    libpi::IntValue *n2(new libpi::IntValue((*x)-libpi::IntValue(2)));
+    shared_ptr<libpi::thread::Channel> f2(new libpi::thread::Channel());
+    shared_ptr<libpi::Int> n2=(*x)-(*two);
     State *s3=new State();
     s3->label=&&method_fib;
-    s3->values.push_back(dynamic_cast<libpi::Value*>(n2));
-    s3->values.push_back(f2->Copy());
+    s3->values.push_back(dynamic_pointer_cast<libpi::Value>(n2));
+    s3->values.push_back(f2);
     spawn(s3);
-    libpi::Value *r2=f2->Rcv();
-    delete f2;
-    libpi::IntValue *r2ptr=dynamic_cast<libpi::IntValue*>(r2);
+    shared_ptr<libpi::Value> r2=f2->Receive();
+    shared_ptr<libpi::Int> r2ptr=dynamic_pointer_cast<libpi::Int>(r2);
 
-    f0->Snd(new libpi::IntValue((*r1ptr)+(*r2ptr)));
-    delete r1;
-    delete r2;
-    delete state;
+    f0->Send((*r1ptr)+(*r2ptr));
     pthread_exit(0);
   }
 }

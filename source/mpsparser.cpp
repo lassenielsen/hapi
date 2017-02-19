@@ -11,7 +11,20 @@ using namespace hapi;
  */
 MpsTerm *MpsParser::Pi(const parsetree *tree) // {{{
 {
- if (tree->Case() == "pi_par") // PiActs par Pi {{{
+  if (tree->Case() == "pi_lvl") // Pi<number> {{{
+  {
+    return Pi(tree->Child(0));
+  } // }}}
+  else if (tree->Case() == "pi_ppar") // Pi2 ppar Pi {{{
+  {
+    MpsTerm *left = Pi(tree->Child(0));
+    MpsTerm *right = Pi(tree->Child(2));
+    MpsTerm *result = new MpsPar(*left, *right,vector<string>(),vector<string>());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
+  else if (tree->Case() == "pi_par") // PiActs par Pi2 {{{
   {
     MpsTerm *left = PiActs(tree->Child(0));
     MpsTerm *right = Pi(tree->Child(2));
