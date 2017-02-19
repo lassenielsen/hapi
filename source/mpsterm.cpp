@@ -357,7 +357,10 @@ string MpsTerm::MakeC() const // {{{
     << "#include <memory>\n"
     << "#include <sys/mman.h>\n"
     << "#include <signal.h>\n"
-    << main->ToCHeader()
+    << main->ToCHeader();
+  for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
+    result << def->GetBody().ToCHeader();
+  result
     << "using namespace std;\n"
     << "using namespace libpi;\n\n"
     << "inline atomic<int> *_new_shared_int()\n"
