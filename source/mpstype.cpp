@@ -300,6 +300,8 @@ bool MpsGlobalRecType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) cons
   // Clean Up
   delete newlhs;
   delete newrhs;
+
+  return result;
 } // }}}
 bool MpsGlobalVarType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const // {{{
 {
