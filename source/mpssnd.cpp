@@ -268,6 +268,10 @@ string MpsSnd::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+void MpsSnd::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ myExp->ToCConsts(dest,existing);
+  mySucc->ToCConsts(dest,existing);
+} // }}}
 MpsTerm *MpsSnd::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);

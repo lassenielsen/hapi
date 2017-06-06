@@ -219,6 +219,9 @@ string MpsGuiValue::ToCHeader() const // {{{
 {
   throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
 } // }}}
+void MpsGuiValue::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
+} // }}}
 MpsTerm *MpsGuiValue::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);

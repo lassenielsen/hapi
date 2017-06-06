@@ -357,11 +357,21 @@ string MpsTerm::MakeC() const // {{{
     << "#include <memory>\n"
     << "#include <sys/mman.h>\n"
     << "#include <signal.h>\n"
-    << main->ToCHeader();
+    << main->ToCHeader()
+    << "using namespace std;\n";
   for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
     result << def->GetBody().ToCHeader();
+  std::unordered_set<std::string> existing;
+  std::vector<std::string> consts;
+  // Create const definitions without duplicates
+  main->ToCConsts(consts,existing);
+  for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
+    def->GetBody().ToCConsts(consts,existing);
+  // Add const defs to result
+  for (std::vector<std::string>::const_iterator c=consts.begin(); c!=consts.end(); ++c)
+    result << *c;
+  // Add framework to result
   result
-    << "using namespace std;\n"
     << "using namespace libpi;\n\n"
     << "inline atomic<int> *_new_shared_int()\n"
     << "{ return (std::atomic<int>*)mmap(NULL, sizeof(atomic<int>), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); // Actual number of active processes\n"
@@ -394,6 +404,7 @@ string MpsTerm::MakeC() const // {{{
     << "}\n"
     << "\n\n/* All methods */\n"
     << "#define _state ((State*)(_arg))\n"
+  // Add implementation of all methods
     << "void *_methods(void *_arg)\n"
     << "{\n"
     << "  if (_state==NULL) // Error\n"

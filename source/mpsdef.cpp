@@ -571,6 +571,11 @@ string MpsDef::ToCHeader() const // {{{
   result << mySucc->ToCHeader();
   return result.str();
 } // }}}
+void MpsDef::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{
+  myBody->ToCConsts(dest,existing);
+  mySucc->ToCConsts(dest,existing);
+} // }}}
 MpsTerm *MpsDef::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 { MpsTerm *flatSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
   MpsTerm *flatBody = myBody->FlattenFork(normLhs,normRhs,pureMode||myPure);

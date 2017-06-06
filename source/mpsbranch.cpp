@@ -340,6 +340,11 @@ string MpsBranch::ToCHeader() const // {{{
   }
   return result.str();
 } // }}}
+void MpsBranch::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+    it->second->ToCConsts(dest,existing);
+} // }}}
 MpsTerm *MpsBranch::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   map<string,MpsTerm*> newBranches;

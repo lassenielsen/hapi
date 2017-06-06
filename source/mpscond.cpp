@@ -235,6 +235,12 @@ string MpsCond::ToCHeader() const // {{{
   result << myFalseBranch->ToCHeader();
   return result.str();
 } // }}}
+void MpsCond::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{
+  myCond->ToCConsts(dest,existing);
+  myTrueBranch->ToCConsts(dest,existing);
+  myFalseBranch->ToCConsts(dest,existing);
+} // }}}
 MpsTerm *MpsCond::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   MpsTerm *newTrueBranch=myTrueBranch->FlattenFork(normLhs,normRhs,pureMode);
@@ -277,7 +283,7 @@ MpsTerm *MpsCond::CopyWrapper(std::map<std::string,void*> &children) const // {{
 {
   return new MpsCond(*myCond, *(MpsTerm*)children["true"], *(MpsTerm*)children["false"]);
 } // }}}
-MpsTerm *MpsCond::CloseDefsPre(const MpsMsgEnv &Gamma)
+MpsTerm *MpsCond::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 {
   return this;
 } // }}}

@@ -105,6 +105,10 @@ string MpsEnd::ToCHeader() const // {{{
 {
   return "";
 } // }}}
+void MpsEnd::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{
+  return;
+} // }}}
 MpsTerm *MpsEnd::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   return Copy();
@@ -113,7 +117,7 @@ MpsTerm *MpsEnd::RenameAll() const // {{{
 {
   return Copy();
 } // }}}
-MpsTerm *MpsEnd::CloseDefsPre(const MpsMsgEnv &Gamma)
+MpsTerm *MpsEnd::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 {
   return this;
 } // }}}

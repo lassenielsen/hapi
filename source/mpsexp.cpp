@@ -1,7 +1,9 @@
 #include <hapi/mpsexp.hpp>
+#include <hapi/md5.hpp>
 #include <sys/timeb.h>
 #include <hapi/common.hpp>
 #include <string.h>
+#include <algorithm>
 
 using namespace std;
 using namespace hapi;
@@ -881,31 +883,20 @@ string MpsVarExp::ToC(stringstream &dest, const string &typeName) const // {{{
 } // }}}
 string MpsIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
 { 
-  char *str=mpz_get_str(NULL,10,myValue);
-  string val(str);
-  free(str);
-  string varName = ToC_Name(MpsExp::NewVar("intval"));
-  dest << "    shared_ptr<libpi::Int> " << varName << "(new libpi::Int(\"" << val << "\"));" << endl;
-  return varName;
+  string val=ToString();
+  return string("intval_")+val;
 } // }}}
 string MpsFloatVal::ToC(stringstream &dest, const string &typeName) const // {{{
 { 
-  string val=ToString();
-  string varName = ToC_Name(MpsExp::NewVar("floatval"));
-  dest << "    shared_ptr<libpi::Float> " << varName << "(new libpi::Float(\"" << val << "\"));" << endl;
-  return varName;
+  return string("floatval_")+md5(ToString());
 } // }}}
 string MpsStringVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  string varName = ToC_Name(MpsExp::NewVar("stringval"));
-  dest << "    shared_ptr<libpi::String> " << varName << "(new libpi::String(\"" << stuff_string(myValue) << "\"));" << endl;
-  return varName;
+  return string("stringval_")+md5(myValue);
 } // }}}
 string MpsBoolVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  string varName = ToC_Name(MpsExp::NewVar("boolval"));
-  dest << "    shared_ptr<libpi::Bool> " << varName << "(new libpi::Bool(" << (myValue?(string)"true":(string)"false") << "));" << endl;
-  return varName;
+  return string("libpi::Bool::GetInstance(")+ToString()+")";
 } // }}}
 string MpsCondExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
@@ -954,6 +945,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
 } // }}}
 string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
+  // FIXME: Test if const, and return name if it is
   string varName = ToC_Name(MpsExp::NewVar("tupleval"));
   dest << "    shared_ptr<" << typeName << "> " << varName << "(new libpi::Tuple());" << endl;
   for (vector<MpsExp*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
@@ -974,6 +966,62 @@ string MpsSystemExp::ToC(stringstream &dest, const string &typeName) const // {{
   else
     throw (string)"MpsSystemExp::ToC: Unknown field " + myField;
   return varName;
+} // }}}
+
+#define AddConstDef(def) if (existing.find(def)==existing.end()) {dest.push_back(def); existing.insert(def);}
+void MpsVarExp::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // No constants used
+} // }}}
+void MpsIntVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // Add int const with name including value
+  string val=ToString();
+  stringstream ss;
+  ss << "shared_ptr<libpi::Int> intval_" << val << "(new libpi::Int(\"" << val << "\"));" << endl;
+  string def= ss.str();
+  AddConstDef(def);
+} // }}}
+void MpsFloatVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // Add float const with name including md5 of value
+  string val=ToString();
+  stringstream ss;
+  ss << "shared_ptr<libpi::Float> floatval_" << md5(val) << "(new libpi::Float(\"" << val << "\"));" << endl;
+  string def=ss.str();
+  AddConstDef(def);
+} // }}}
+void MpsStringVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // Add string const with name including md5 of value
+  stringstream ss;
+  ss << "shared_ptr<libpi::String> stringval_" << md5(myValue) << "(new libpi::String(\"" << stuff_string(myValue) << "\"));" << endl;
+  string def=ss.str();
+  AddConstDef(def);
+} // }}}
+void MpsBoolVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // Consts are hardcoded in libpi
+} // }}}
+void MpsCondExp::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // Add consts from subexps
+  myCond->ToCConsts(dest,existing);
+  myTrueBranch->ToCConsts(dest,existing);
+  myFalseBranch->ToCConsts(dest,existing);
+} // }}}
+void MpsUnOpExp::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // Add consts from subexps
+  myRight->ToCConsts(dest,existing);
+} // }}}
+void MpsBinOpExp::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // Add consts from subexps
+  myLeft->ToCConsts(dest,existing);
+  myRight->ToCConsts(dest,existing);
+} // }}}
+void MpsTupleExp::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // Add consts from subexps
+  for (vector<MpsExp*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
+  { (*it)->ToCConsts(dest,existing);
+  }
+  // FIXME: Test if tuple is const, and add to dest if it is
+} // }}}
+void MpsSystemExp::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // No constants used
 } // }}}
 
 /* Decide if Valid

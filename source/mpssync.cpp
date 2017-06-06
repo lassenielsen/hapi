@@ -409,6 +409,9 @@ string MpsSync::ToCHeader() const // {{{
 {
   throw (string)"MpsSync::ToC(): Symmetric synchronization is not supported yet!";
 } // }}}
+void MpsSync::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ throw (string)"MpsSync::ToC(): Symmetric synchronization is not supported yet!";
+} // }}}
 MpsTerm *MpsSync::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   map<string,MpsTerm*> newBranches;

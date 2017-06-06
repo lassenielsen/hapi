@@ -56,6 +56,7 @@ library_objects = \
   objects/mpstype.o \
   objects/mpsgui_http.o \
   objects/mpsgui.o \
+  objects/md5.o \
 
 default:
 	@echo "Use make config, make build, sudo make install, make clean and if you don't like it sudo make uninstall."

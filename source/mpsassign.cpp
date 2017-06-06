@@ -224,6 +224,11 @@ string MpsAssign::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+void MpsAssign::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{
+  myExp->ToCConsts(dest,existing);
+  mySucc->ToCConsts(dest,existing);
+} // }}}
 MpsTerm *MpsAssign::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   MpsTerm *newSucc = mySucc->FlattenFork(normLhs, normRhs, pureMode);

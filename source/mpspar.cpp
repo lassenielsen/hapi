@@ -492,6 +492,10 @@ string MpsPar::ToCHeader() const // {{{
   result << myRight->ToCHeader();
   return result.str();
 } // }}}
+void MpsPar::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ myLeft->ToCConsts(dest,existing);
+  myRight->ToCConsts(dest,existing);
+} // }}}
 bool isCall(const MpsTerm *term) // {{{
 { if (dynamic_cast<const MpsCall*>(term)!=NULL)
     return true;
