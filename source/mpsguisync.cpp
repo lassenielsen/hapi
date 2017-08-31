@@ -788,6 +788,9 @@ string MpsGuiSync::ToCHeader() const // {{{
 {
   throw (string)"MpsGuiSync::ToC(): guisync is not implemented yet!";
 } // }}}
+void MpsGuiSync::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ throw (string)"MpsGuiSync::ToC(): guisync is not implemented yet!";
+} // }}}
 MpsTerm *MpsGuiSync::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   // Create new branches

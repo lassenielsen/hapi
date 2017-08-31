@@ -213,16 +213,21 @@ string MpsAssign::ToTex(int indent, int sw) const // {{{
 string MpsAssign::ToC() const // {{{
 {
   stringstream result;
-  //result << myType->ToCPtr() << " " << ToC_Name(myId) << ";" << endl;
   string varName = myExp->ToC(result,GetExpType().ToC());
-  MpsTerm *tmpSucc = mySucc->ERename(myId,varName);
-  result << tmpSucc->ToC();
-  delete tmpSucc;
+  result << GetExpType().ToCPtr() << " " << ToC_Name(myId) << "(" << varName << ");" << endl;
+  //MpsTerm *tmpSucc = mySucc->ERename(myId,varName);
+  result << mySucc->ToC();
+  //delete tmpSucc;
   return result.str();
 } // }}}
 string MpsAssign::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
+} // }}}
+void MpsAssign::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{
+  myExp->ToCConsts(dest,existing);
+  mySucc->ToCConsts(dest,existing);
 } // }}}
 MpsTerm *MpsAssign::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {

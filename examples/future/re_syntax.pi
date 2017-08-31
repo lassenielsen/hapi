@@ -12,8 +12,8 @@ local As()
   s[2]>>str;
   local A(r"(a+b)*" abs, $a_res(2 of 2) s)
   ( match abs
-    { r"b*" x => s[2]<<nil;end,
-      r"(b*a)(a+b)*" ((bs,a),abs2) => s[1]<<cons; A(abs2,s);
+    { r"b*" x: s[2]<<nil;
+      r"(b*a)(a+b)*" ((bs,a),abs2): s[1]<<cons; A(abs2,s);
     }
   ) A(str,s);
 ) As();

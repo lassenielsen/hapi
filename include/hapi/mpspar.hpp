@@ -61,6 +61,7 @@ class MpsPar : public MpsTerm // {{{
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
     std::string ToCHeader() const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
 
     const MpsTerm *GetLeft() const { return myLeft; }
     const MpsTerm *GetRight() const { return myRight; }

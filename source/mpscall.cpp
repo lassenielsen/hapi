@@ -384,6 +384,12 @@ string MpsCall::ToCHeader() const // {{{
 {
   return "";
 } // }}}
+void MpsCall::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it)
+    (*it)->ToCConsts(dest,existing);
+  for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+    (*it)->ToCConsts(dest,existing);
+} // }}}
 MpsTerm *MpsCall::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 { return Copy();
 } // }}}

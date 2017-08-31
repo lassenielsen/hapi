@@ -53,6 +53,7 @@ class MpsDef : public MpsTerm // {{{
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
     std::string ToC() const;
     std::string ToCHeader() const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
 
     std::vector<std::pair<int,int> > GetArgPids() const;
     const std::vector<std::string> &GetArgs() const { return myArgs; }

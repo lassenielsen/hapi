@@ -54,6 +54,7 @@ class MpsCall : public MpsTerm // {{{
     std::string ToC() const;
     std::string ToC_prepare(const std::string &dest) const;
     std::string ToCHeader() const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
 
     const std::string &GetName() const { return myName; }
     const std::vector<MpsExp*> &GetArgs() const { return myArgs; }

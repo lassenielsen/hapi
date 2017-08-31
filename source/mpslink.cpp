@@ -275,6 +275,9 @@ string MpsLink::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+void MpsLink::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ mySucc->ToCConsts(dest,existing);
+} // }}}
 MpsTerm *MpsLink::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);

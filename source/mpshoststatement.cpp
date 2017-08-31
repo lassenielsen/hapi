@@ -225,6 +225,11 @@ string MpsHostStatement::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+void MpsHostStatement::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ for (vector<MpsExp*>::const_iterator part=myExpParts.begin(); part!=myExpParts.end(); ++part)
+    (*part)->ToCConsts(dest,existing);
+  mySucc->ToCConsts(dest,existing);
+} // }}}
 MpsTerm *MpsHostStatement::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);

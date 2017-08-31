@@ -1,0 +1,968 @@
+p=1
+  n=1:
+What is n?
+Fib(n) is
+1
+0.00user 0.00system 0:00.00elapsed 50%CPU (0avgtext+0avgdata 3944maxresident)k
+0inputs+0outputs (0major+174minor)pagefaults 0swaps
+  n=2:
+What is n?
+Fib(n) is
+2
+0.00user 0.00system 0:00.00elapsed 57%CPU (0avgtext+0avgdata 3812maxresident)k
+0inputs+0outputs (0major+177minor)pagefaults 0swaps
+  n=3:
+What is n?
+Fib(n) is
+3
+0.00user 0.00system 0:00.00elapsed 66%CPU (0avgtext+0avgdata 3940maxresident)k
+0inputs+0outputs (0major+187minor)pagefaults 0swaps
+  n=4:
+What is n?
+Fib(n) is
+5
+0.00user 0.00system 0:00.00elapsed 100%CPU (0avgtext+0avgdata 4056maxresident)k
+0inputs+0outputs (0major+195minor)pagefaults 0swaps
+  n=5:
+What is n?
+Fib(n) is
+8
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 3912maxresident)k
+0inputs+0outputs (0major+199minor)pagefaults 0swaps
+  n=6:
+What is n?
+Fib(n) is
+13
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 4156maxresident)k
+0inputs+0outputs (0major+212minor)pagefaults 0swaps
+  n=7:
+What is n?
+Fib(n) is
+21
+0.00user 0.00system 0:00.00elapsed 100%CPU (0avgtext+0avgdata 4092maxresident)k
+0inputs+0outputs (0major+225minor)pagefaults 0swaps
+  n=8:
+What is n?
+Fib(n) is
+34
+0.00user 0.00system 0:00.00elapsed 100%CPU (0avgtext+0avgdata 4304maxresident)k
+0inputs+0outputs (0major+247minor)pagefaults 0swaps
+  n=9:
+What is n?
+Fib(n) is
+55
+0.00user 0.00system 0:00.00elapsed 100%CPU (0avgtext+0avgdata 4300maxresident)k
+0inputs+0outputs (0major+274minor)pagefaults 0swaps
+  n=10:
+What is n?
+Fib(n) is
+89
+0.00user 0.00system 0:00.00elapsed 100%CPU (0avgtext+0avgdata 4504maxresident)k
+0inputs+0outputs (0major+328minor)pagefaults 0swaps
+  n=11:
+What is n?
+Fib(n) is
+144
+0.00user 0.01system 0:00.01elapsed 114%CPU (0avgtext+0avgdata 4956maxresident)k
+0inputs+0outputs (0major+403minor)pagefaults 0swaps
+  n=12:
+What is n?
+Fib(n) is
+233
+0.00user 0.00system 0:00.01elapsed 123%CPU (0avgtext+0avgdata 5308maxresident)k
+0inputs+0outputs (0major+524minor)pagefaults 0swaps
+  n=13:
+What is n?
+Fib(n) is
+377
+0.00user 0.02system 0:00.02elapsed 140%CPU (0avgtext+0avgdata 6124maxresident)k
+0inputs+0outputs (0major+716minor)pagefaults 0swaps
+  n=14:
+What is n?
+Fib(n) is
+610
+0.01user 0.02system 0:00.03elapsed 137%CPU (0avgtext+0avgdata 7324maxresident)k
+0inputs+0outputs (0major+1028minor)pagefaults 0swaps
+  n=15:
+What is n?
+Fib(n) is
+987
+0.03user 0.04system 0:00.05elapsed 138%CPU (0avgtext+0avgdata 9352maxresident)k
+0inputs+0outputs (0major+1530minor)pagefaults 0swaps
+  n=16:
+What is n?
+Fib(n) is
+1597
+0.03user 0.08system 0:00.08elapsed 145%CPU (0avgtext+0avgdata 12620maxresident)k
+0inputs+0outputs (0major+2341minor)pagefaults 0swaps
+  n=17:
+What is n?
+Fib(n) is
+2584
+0.07user 0.11system 0:00.12elapsed 145%CPU (0avgtext+0avgdata 17796maxresident)k
+0inputs+0outputs (0major+3650minor)pagefaults 0swaps
+  n=18:
+What is n?
+Fib(n) is
+4181
+0.12user 0.18system 0:00.21elapsed 140%CPU (0avgtext+0avgdata 26292maxresident)k
+0inputs+0outputs (0major+5761minor)pagefaults 0swaps
+  n=19:
+What is n?
+Fib(n) is
+6765
+0.20user 0.27system 0:00.29elapsed 157%CPU (0avgtext+0avgdata 40048maxresident)k
+0inputs+0outputs (0major+9185minor)pagefaults 0swaps
+  n=20:
+What is n?
+Fib(n) is
+10946
+0.34user 0.42system 0:00.48elapsed 157%CPU (0avgtext+0avgdata 62084maxresident)k
+0inputs+0outputs (0major+14709minor)pagefaults 0swaps
+p=2
+  n=1:
+What is n?
+Fib(n) is
+1
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3960maxresident)k
+0inputs+0outputs (0major+178minor)pagefaults 0swaps
+  n=2:
+What is n?
+Fib(n) is
+2
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4000maxresident)k
+0inputs+0outputs (0major+187minor)pagefaults 0swaps
+  n=3:
+What is n?
+Fib(n) is
+3
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3996maxresident)k
+0inputs+0outputs (0major+190minor)pagefaults 0swaps
+  n=4:
+What is n?
+Fib(n) is
+5
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4124maxresident)k
+0inputs+0outputs (0major+205minor)pagefaults 0swaps
+  n=5:
+What is n?
+Fib(n) is
+8
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4088maxresident)k
+0inputs+0outputs (0major+217minor)pagefaults 0swaps
+  n=6:
+What is n?
+Fib(n) is
+13
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4012maxresident)k
+0inputs+0outputs (0major+231minor)pagefaults 0swaps
+  n=7:
+What is n?
+Fib(n) is
+21
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4176maxresident)k
+0inputs+0outputs (0major+250minor)pagefaults 0swaps
+  n=8:
+What is n?
+Fib(n) is
+34
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 4456maxresident)k
+0inputs+0outputs (0major+290minor)pagefaults 0swaps
+  n=9:
+What is n?
+Fib(n) is
+55
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 4532maxresident)k
+0inputs+0outputs (0major+325minor)pagefaults 0swaps
+  n=10:
+What is n?
+Fib(n) is
+89
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 4704maxresident)k
+0inputs+0outputs (0major+384minor)pagefaults 0swaps
+  n=11:
+What is n?
+Fib(n) is
+144
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 5092maxresident)k
+0inputs+0outputs (0major+478minor)pagefaults 0swaps
+  n=12:
+What is n?
+Fib(n) is
+233
+0.00user 0.01system 0:00.00elapsed 222%CPU (0avgtext+0avgdata 5824maxresident)k
+0inputs+0outputs (0major+648minor)pagefaults 0swaps
+  n=13:
+What is n?
+Fib(n) is
+377
+0.00user 0.02system 0:00.01elapsed 228%CPU (0avgtext+0avgdata 6408maxresident)k
+0inputs+0outputs (0major+809minor)pagefaults 0swaps
+  n=14:
+What is n?
+Fib(n) is
+610
+0.02user 0.02system 0:00.02elapsed 254%CPU (0avgtext+0avgdata 7704maxresident)k
+0inputs+0outputs (0major+1121minor)pagefaults 0swaps
+  n=15:
+What is n?
+Fib(n) is
+987
+0.03user 0.05system 0:00.03elapsed 258%CPU (0avgtext+0avgdata 9968maxresident)k
+0inputs+0outputs (0major+1680minor)pagefaults 0swaps
+  n=16:
+What is n?
+Fib(n) is
+1597
+0.06user 0.07system 0:00.05elapsed 257%CPU (0avgtext+0avgdata 12828maxresident)k
+0inputs+0outputs (0major+2452minor)pagefaults 0swaps
+  n=17:
+What is n?
+Fib(n) is
+2584
+0.06user 0.17system 0:00.09elapsed 256%CPU (0avgtext+0avgdata 18176maxresident)k
+0inputs+0outputs (0major+3786minor)pagefaults 0swaps
+  n=18:
+What is n?
+Fib(n) is
+4181
+0.14user 0.24system 0:00.15elapsed 253%CPU (0avgtext+0avgdata 26868maxresident)k
+0inputs+0outputs (0major+5923minor)pagefaults 0swaps
+  n=19:
+What is n?
+Fib(n) is
+6765
+0.22user 0.41system 0:00.24elapsed 261%CPU (0avgtext+0avgdata 41636maxresident)k
+0inputs+0outputs (0major+9617minor)pagefaults 0swaps
+  n=20:
+What is n?
+Fib(n) is
+10946
+0.38user 0.65system 0:00.38elapsed 271%CPU (0avgtext+0avgdata 62748maxresident)k
+0inputs+0outputs (0major+14888minor)pagefaults 0swaps
+p=3
+  n=1:
+What is n?
+Fib(n) is
+1
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4080maxresident)k
+0inputs+0outputs (0major+184minor)pagefaults 0swaps
+  n=2:
+What is n?
+Fib(n) is
+2
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4100maxresident)k
+0inputs+0outputs (0major+192minor)pagefaults 0swaps
+  n=3:
+What is n?
+Fib(n) is
+3
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4108maxresident)k
+0inputs+0outputs (0major+199minor)pagefaults 0swaps
+  n=4:
+What is n?
+Fib(n) is
+5
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3976maxresident)k
+0inputs+0outputs (0major+202minor)pagefaults 0swaps
+  n=5:
+What is n?
+Fib(n) is
+8
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3980maxresident)k
+0inputs+0outputs (0major+223minor)pagefaults 0swaps
+  n=6:
+What is n?
+Fib(n) is
+13
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4004maxresident)k
+0inputs+0outputs (0major+243minor)pagefaults 0swaps
+  n=7:
+What is n?
+Fib(n) is
+21
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4380maxresident)k
+0inputs+0outputs (0major+260minor)pagefaults 0swaps
+  n=8:
+What is n?
+Fib(n) is
+34
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 4324maxresident)k
+0inputs+0outputs (0major+290minor)pagefaults 0swaps
+  n=9:
+What is n?
+Fib(n) is
+55
+0.00user 0.00system 0:00.00elapsed 114%CPU (0avgtext+0avgdata 4568maxresident)k
+0inputs+0outputs (0major+343minor)pagefaults 0swaps
+  n=10:
+What is n?
+Fib(n) is
+89
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 4872maxresident)k
+0inputs+0outputs (0major+405minor)pagefaults 0swaps
+  n=11:
+What is n?
+Fib(n) is
+144
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 5164maxresident)k
+0inputs+0outputs (0major+500minor)pagefaults 0swaps
+  n=12:
+What is n?
+Fib(n) is
+233
+0.01user 0.00system 0:00.00elapsed 222%CPU (0avgtext+0avgdata 5636maxresident)k
+0inputs+0outputs (0major+616minor)pagefaults 0swaps
+  n=13:
+What is n?
+Fib(n) is
+377
+0.01user 0.01system 0:00.01elapsed 213%CPU (0avgtext+0avgdata 6552maxresident)k
+0inputs+0outputs (0major+830minor)pagefaults 0swaps
+  n=14:
+What is n?
+Fib(n) is
+610
+0.02user 0.02system 0:00.02elapsed 233%CPU (0avgtext+0avgdata 7768maxresident)k
+0inputs+0outputs (0major+1149minor)pagefaults 0swaps
+  n=15:
+What is n?
+Fib(n) is
+987
+0.04user 0.05system 0:00.03elapsed 255%CPU (0avgtext+0avgdata 9812maxresident)k
+0inputs+0outputs (0major+1680minor)pagefaults 0swaps
+  n=16:
+What is n?
+Fib(n) is
+1597
+0.04user 0.10system 0:00.05elapsed 266%CPU (0avgtext+0avgdata 13296maxresident)k
+0inputs+0outputs (0major+2520minor)pagefaults 0swaps
+  n=17:
+What is n?
+Fib(n) is
+2584
+0.10user 0.13system 0:00.08elapsed 269%CPU (0avgtext+0avgdata 18436maxresident)k
+0inputs+0outputs (0major+3817minor)pagefaults 0swaps
+  n=18:
+What is n?
+Fib(n) is
+4181
+0.13user 0.27system 0:00.14elapsed 275%CPU (0avgtext+0avgdata 26808maxresident)k
+0inputs+0outputs (0major+5946minor)pagefaults 0swaps
+  n=19:
+What is n?
+Fib(n) is
+6765
+0.23user 0.43system 0:00.24elapsed 276%CPU (0avgtext+0avgdata 40856maxresident)k
+0inputs+0outputs (0major+9433minor)pagefaults 0swaps
+  n=20:
+What is n?
+Fib(n) is
+10946
+0.38user 0.69system 0:00.38elapsed 280%CPU (0avgtext+0avgdata 62976maxresident)k
+0inputs+0outputs (0major+14932minor)pagefaults 0swaps
+p=4
+  n=1:
+What is n?
+Fib(n) is
+1
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3960maxresident)k
+0inputs+0outputs (0major+181minor)pagefaults 0swaps
+  n=2:
+What is n?
+Fib(n) is
+2
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3860maxresident)k
+0inputs+0outputs (0major+191minor)pagefaults 0swaps
+  n=3:
+What is n?
+Fib(n) is
+3
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3972maxresident)k
+0inputs+0outputs (0major+202minor)pagefaults 0swaps
+  n=4:
+What is n?
+Fib(n) is
+5
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3856maxresident)k
+0inputs+0outputs (0major+206minor)pagefaults 0swaps
+  n=5:
+What is n?
+Fib(n) is
+8
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4036maxresident)k
+0inputs+0outputs (0major+233minor)pagefaults 0swaps
+  n=6:
+What is n?
+Fib(n) is
+13
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4220maxresident)k
+0inputs+0outputs (0major+250minor)pagefaults 0swaps
+  n=7:
+What is n?
+Fib(n) is
+21
+0.00user 0.00system 0:00.00elapsed 66%CPU (0avgtext+0avgdata 4180maxresident)k
+0inputs+0outputs (0major+267minor)pagefaults 0swaps
+  n=8:
+What is n?
+Fib(n) is
+34
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 4348maxresident)k
+0inputs+0outputs (0major+305minor)pagefaults 0swaps
+  n=9:
+What is n?
+Fib(n) is
+55
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 4712maxresident)k
+0inputs+0outputs (0major+364minor)pagefaults 0swaps
+  n=10:
+What is n?
+Fib(n) is
+89
+0.00user 0.00system 0:00.00elapsed 160%CPU (0avgtext+0avgdata 4816maxresident)k
+0inputs+0outputs (0major+411minor)pagefaults 0swaps
+  n=11:
+What is n?
+Fib(n) is
+144
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 5320maxresident)k
+0inputs+0outputs (0major+517minor)pagefaults 0swaps
+  n=12:
+What is n?
+Fib(n) is
+233
+0.00user 0.01system 0:00.00elapsed 222%CPU (0avgtext+0avgdata 6060maxresident)k
+0inputs+0outputs (0major+706minor)pagefaults 0swaps
+  n=13:
+What is n?
+Fib(n) is
+377
+0.01user 0.02system 0:00.01elapsed 246%CPU (0avgtext+0avgdata 6772maxresident)k
+0inputs+0outputs (0major+859minor)pagefaults 0swaps
+  n=14:
+What is n?
+Fib(n) is
+610
+0.03user 0.02system 0:00.02elapsed 266%CPU (0avgtext+0avgdata 8124maxresident)k
+0inputs+0outputs (0major+1223minor)pagefaults 0swaps
+  n=15:
+What is n?
+Fib(n) is
+987
+0.02user 0.06system 0:00.03elapsed 258%CPU (0avgtext+0avgdata 10204maxresident)k
+0inputs+0outputs (0major+1717minor)pagefaults 0swaps
+  n=16:
+What is n?
+Fib(n) is
+1597
+0.06user 0.09system 0:00.05elapsed 273%CPU (0avgtext+0avgdata 13192maxresident)k
+0inputs+0outputs (0major+2517minor)pagefaults 0swaps
+  n=17:
+What is n?
+Fib(n) is
+2584
+0.09user 0.14system 0:00.08elapsed 269%CPU (0avgtext+0avgdata 18676maxresident)k
+0inputs+0outputs (0major+3871minor)pagefaults 0swaps
+  n=18:
+What is n?
+Fib(n) is
+4181
+0.16user 0.22system 0:00.14elapsed 271%CPU (0avgtext+0avgdata 27644maxresident)k
+0inputs+0outputs (0major+6099minor)pagefaults 0swaps
+  n=19:
+What is n?
+Fib(n) is
+6765
+0.21user 0.42system 0:00.23elapsed 269%CPU (0avgtext+0avgdata 41036maxresident)k
+0inputs+0outputs (0major+9424minor)pagefaults 0swaps
+  n=20:
+What is n?
+Fib(n) is
+10946
+0.37user 0.72system 0:00.44elapsed 247%CPU (0avgtext+0avgdata 63296maxresident)k
+0inputs+0outputs (0major+15071minor)pagefaults 0swaps
+p=5
+  n=1:
+What is n?
+Fib(n) is
+1
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3992maxresident)k
+0inputs+0outputs (0major+184minor)pagefaults 0swaps
+  n=2:
+What is n?
+Fib(n) is
+2
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3900maxresident)k
+0inputs+0outputs (0major+195minor)pagefaults 0swaps
+  n=3:
+What is n?
+Fib(n) is
+3
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4024maxresident)k
+0inputs+0outputs (0major+200minor)pagefaults 0swaps
+  n=4:
+What is n?
+Fib(n) is
+5
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4152maxresident)k
+0inputs+0outputs (0major+218minor)pagefaults 0swaps
+  n=5:
+What is n?
+Fib(n) is
+8
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3964maxresident)k
+0inputs+0outputs (0major+230minor)pagefaults 0swaps
+  n=6:
+What is n?
+Fib(n) is
+13
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4216maxresident)k
+0inputs+0outputs (0major+253minor)pagefaults 0swaps
+  n=7:
+What is n?
+Fib(n) is
+21
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 4444maxresident)k
+0inputs+0outputs (0major+277minor)pagefaults 0swaps
+  n=8:
+What is n?
+Fib(n) is
+34
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 4560maxresident)k
+0inputs+0outputs (0major+343minor)pagefaults 0swaps
+  n=9:
+What is n?
+Fib(n) is
+55
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 4644maxresident)k
+0inputs+0outputs (0major+380minor)pagefaults 0swaps
+  n=10:
+What is n?
+Fib(n) is
+89
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 5012maxresident)k
+0inputs+0outputs (0major+422minor)pagefaults 0swaps
+  n=11:
+What is n?
+Fib(n) is
+144
+0.00user 0.01system 0:00.01elapsed 153%CPU (0avgtext+0avgdata 5288maxresident)k
+0inputs+0outputs (0major+530minor)pagefaults 0swaps
+  n=12:
+What is n?
+Fib(n) is
+233
+0.00user 0.01system 0:00.01elapsed 200%CPU (0avgtext+0avgdata 5748maxresident)k
+0inputs+0outputs (0major+657minor)pagefaults 0swaps
+  n=13:
+What is n?
+Fib(n) is
+377
+0.00user 0.02system 0:00.01elapsed 246%CPU (0avgtext+0avgdata 6456maxresident)k
+0inputs+0outputs (0major+858minor)pagefaults 0swaps
+  n=14:
+What is n?
+Fib(n) is
+610
+0.02user 0.03system 0:00.02elapsed 260%CPU (0avgtext+0avgdata 8024maxresident)k
+0inputs+0outputs (0major+1194minor)pagefaults 0swaps
+  n=15:
+What is n?
+Fib(n) is
+987
+0.03user 0.07system 0:00.04elapsed 266%CPU (0avgtext+0avgdata 10000maxresident)k
+0inputs+0outputs (0major+1710minor)pagefaults 0swaps
+  n=16:
+What is n?
+Fib(n) is
+1597
+0.05user 0.14system 0:00.07elapsed 272%CPU (0avgtext+0avgdata 13544maxresident)k
+0inputs+0outputs (0major+2559minor)pagefaults 0swaps
+  n=17:
+What is n?
+Fib(n) is
+2584
+0.08user 0.26system 0:00.12elapsed 277%CPU (0avgtext+0avgdata 18928maxresident)k
+0inputs+0outputs (0major+3915minor)pagefaults 0swaps
+  n=18:
+What is n?
+Fib(n) is
+4181
+0.16user 0.37system 0:00.19elapsed 274%CPU (0avgtext+0avgdata 27304maxresident)k
+0inputs+0outputs (0major+6008minor)pagefaults 0swaps
+  n=19:
+What is n?
+Fib(n) is
+6765
+0.28user 0.61system 0:00.33elapsed 269%CPU (0avgtext+0avgdata 41420maxresident)k
+0inputs+0outputs (0major+9522minor)pagefaults 0swaps
+  n=20:
+What is n?
+Fib(n) is
+10946
+0.55user 0.92system 0:00.58elapsed 250%CPU (0avgtext+0avgdata 63100maxresident)k
+0inputs+0outputs (0major+15018minor)pagefaults 0swaps
+p=6
+  n=1:
+What is n?
+Fib(n) is
+1
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4032maxresident)k
+0inputs+0outputs (0major+184minor)pagefaults 0swaps
+  n=2:
+What is n?
+Fib(n) is
+2
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3804maxresident)k
+0inputs+0outputs (0major+191minor)pagefaults 0swaps
+  n=3:
+What is n?
+Fib(n) is
+3
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3836maxresident)k
+0inputs+0outputs (0major+204minor)pagefaults 0swaps
+  n=4:
+What is n?
+Fib(n) is
+5
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4132maxresident)k
+0inputs+0outputs (0major+220minor)pagefaults 0swaps
+  n=5:
+What is n?
+Fib(n) is
+8
+0.00user 0.00system 0:00.00elapsed 80%CPU (0avgtext+0avgdata 4112maxresident)k
+0inputs+0outputs (0major+236minor)pagefaults 0swaps
+  n=6:
+What is n?
+Fib(n) is
+13
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 4304maxresident)k
+0inputs+0outputs (0major+262minor)pagefaults 0swaps
+  n=7:
+What is n?
+Fib(n) is
+21
+0.00user 0.00system 0:00.01elapsed 120%CPU (0avgtext+0avgdata 4292maxresident)k
+0inputs+0outputs (0major+283minor)pagefaults 0swaps
+  n=8:
+What is n?
+Fib(n) is
+34
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 4680maxresident)k
+0inputs+0outputs (0major+335minor)pagefaults 0swaps
+  n=9:
+What is n?
+Fib(n) is
+55
+0.00user 0.00system 0:00.00elapsed 114%CPU (0avgtext+0avgdata 4632maxresident)k
+0inputs+0outputs (0major+377minor)pagefaults 0swaps
+  n=10:
+What is n?
+Fib(n) is
+89
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 4960maxresident)k
+0inputs+0outputs (0major+435minor)pagefaults 0swaps
+  n=11:
+What is n?
+Fib(n) is
+144
+0.00user 0.01system 0:00.01elapsed 200%CPU (0avgtext+0avgdata 5356maxresident)k
+0inputs+0outputs (0major+525minor)pagefaults 0swaps
+  n=12:
+What is n?
+Fib(n) is
+233
+0.01user 0.01system 0:00.01elapsed 200%CPU (0avgtext+0avgdata 5896maxresident)k
+0inputs+0outputs (0major+682minor)pagefaults 0swaps
+  n=13:
+What is n?
+Fib(n) is
+377
+0.01user 0.03system 0:00.02elapsed 240%CPU (0avgtext+0avgdata 6592maxresident)k
+0inputs+0outputs (0major+868minor)pagefaults 0swaps
+  n=14:
+What is n?
+Fib(n) is
+610
+0.02user 0.05system 0:00.03elapsed 223%CPU (0avgtext+0avgdata 7972maxresident)k
+0inputs+0outputs (0major+1212minor)pagefaults 0swaps
+  n=15:
+What is n?
+Fib(n) is
+987
+0.05user 0.08system 0:00.05elapsed 240%CPU (0avgtext+0avgdata 10372maxresident)k
+0inputs+0outputs (0major+1784minor)pagefaults 0swaps
+  n=16:
+What is n?
+Fib(n) is
+1597
+0.05user 0.15system 0:00.09elapsed 231%CPU (0avgtext+0avgdata 13532maxresident)k
+0inputs+0outputs (0major+2572minor)pagefaults 0swaps
+  n=17:
+What is n?
+Fib(n) is
+2584
+0.11user 0.22system 0:00.14elapsed 243%CPU (0avgtext+0avgdata 19016maxresident)k
+0inputs+0outputs (0major+3920minor)pagefaults 0swaps
+  n=18:
+What is n?
+Fib(n) is
+4181
+0.16user 0.38system 0:00.19elapsed 276%CPU (0avgtext+0avgdata 27328maxresident)k
+0inputs+0outputs (0major+6034minor)pagefaults 0swaps
+  n=19:
+What is n?
+Fib(n) is
+6765
+0.34user 0.54system 0:00.32elapsed 278%CPU (0avgtext+0avgdata 41152maxresident)k
+0inputs+0outputs (0major+9508minor)pagefaults 0swaps
+  n=20:
+What is n?
+Fib(n) is
+10946
+0.52user 0.92system 0:00.53elapsed 274%CPU (0avgtext+0avgdata 63440maxresident)k
+0inputs+0outputs (0major+15068minor)pagefaults 0swaps
+p=7
+  n=1:
+What is n?
+Fib(n) is
+1
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3728maxresident)k
+0inputs+0outputs (0major+178minor)pagefaults 0swaps
+  n=2:
+What is n?
+Fib(n) is
+2
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3856maxresident)k
+0inputs+0outputs (0major+189minor)pagefaults 0swaps
+  n=3:
+What is n?
+Fib(n) is
+3
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4012maxresident)k
+0inputs+0outputs (0major+212minor)pagefaults 0swaps
+  n=4:
+What is n?
+Fib(n) is
+5
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4092maxresident)k
+0inputs+0outputs (0major+225minor)pagefaults 0swaps
+  n=5:
+What is n?
+Fib(n) is
+8
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 3976maxresident)k
+0inputs+0outputs (0major+237minor)pagefaults 0swaps
+  n=6:
+What is n?
+Fib(n) is
+13
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 4152maxresident)k
+0inputs+0outputs (0major+264minor)pagefaults 0swaps
+  n=7:
+What is n?
+Fib(n) is
+21
+0.00user 0.00system 0:00.00elapsed 80%CPU (0avgtext+0avgdata 4400maxresident)k
+0inputs+0outputs (0major+301minor)pagefaults 0swaps
+  n=8:
+What is n?
+Fib(n) is
+34
+0.00user 0.00system 0:00.00elapsed 80%CPU (0avgtext+0avgdata 4400maxresident)k
+0inputs+0outputs (0major+325minor)pagefaults 0swaps
+  n=9:
+What is n?
+Fib(n) is
+55
+0.00user 0.00system 0:00.00elapsed 160%CPU (0avgtext+0avgdata 4680maxresident)k
+0inputs+0outputs (0major+389minor)pagefaults 0swaps
+  n=10:
+What is n?
+Fib(n) is
+89
+0.01user 0.00system 0:00.01elapsed 160%CPU (0avgtext+0avgdata 5044maxresident)k
+0inputs+0outputs (0major+453minor)pagefaults 0swaps
+  n=11:
+What is n?
+Fib(n) is
+144
+0.01user 0.00system 0:00.00elapsed 222%CPU (0avgtext+0avgdata 5532maxresident)k
+0inputs+0outputs (0major+552minor)pagefaults 0swaps
+  n=12:
+What is n?
+Fib(n) is
+233
+0.01user 0.01system 0:00.01elapsed 215%CPU (0avgtext+0avgdata 5996maxresident)k
+0inputs+0outputs (0major+687minor)pagefaults 0swaps
+  n=13:
+What is n?
+Fib(n) is
+377
+0.02user 0.02system 0:00.02elapsed 228%CPU (0avgtext+0avgdata 6708maxresident)k
+0inputs+0outputs (0major+898minor)pagefaults 0swaps
+  n=14:
+What is n?
+Fib(n) is
+610
+0.02user 0.05system 0:00.03elapsed 245%CPU (0avgtext+0avgdata 8252maxresident)k
+0inputs+0outputs (0major+1244minor)pagefaults 0swaps
+  n=15:
+What is n?
+Fib(n) is
+987
+0.04user 0.08system 0:00.04elapsed 258%CPU (0avgtext+0avgdata 10412maxresident)k
+0inputs+0outputs (0major+1778minor)pagefaults 0swaps
+  n=16:
+What is n?
+Fib(n) is
+1597
+0.05user 0.11system 0:00.06elapsed 268%CPU (0avgtext+0avgdata 13584maxresident)k
+0inputs+0outputs (0major+2620minor)pagefaults 0swaps
+  n=17:
+What is n?
+Fib(n) is
+2584
+0.09user 0.15system 0:00.09elapsed 265%CPU (0avgtext+0avgdata 18792maxresident)k
+0inputs+0outputs (0major+3889minor)pagefaults 0swaps
+  n=18:
+What is n?
+Fib(n) is
+4181
+0.16user 0.22system 0:00.15elapsed 256%CPU (0avgtext+0avgdata 27232maxresident)k
+0inputs+0outputs (0major+6052minor)pagefaults 0swaps
+  n=19:
+What is n?
+Fib(n) is
+6765
+0.22user 0.41system 0:00.23elapsed 276%CPU (0avgtext+0avgdata 41660maxresident)k
+0inputs+0outputs (0major+9589minor)pagefaults 0swaps
+  n=20:
+What is n?
+Fib(n) is
+10946
+0.36user 0.66system 0:00.38elapsed 271%CPU (0avgtext+0avgdata 63448maxresident)k
+0inputs+0outputs (0major+15048minor)pagefaults 0swaps
+p=8
+  n=1:
+What is n?
+Fib(n) is
+1
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3856maxresident)k
+0inputs+0outputs (0major+184minor)pagefaults 0swaps
+  n=2:
+What is n?
+Fib(n) is
+2
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3884maxresident)k
+0inputs+0outputs (0major+198minor)pagefaults 0swaps
+  n=3:
+What is n?
+Fib(n) is
+3
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4040maxresident)k
+0inputs+0outputs (0major+205minor)pagefaults 0swaps
+  n=4:
+What is n?
+Fib(n) is
+5
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4136maxresident)k
+0inputs+0outputs (0major+223minor)pagefaults 0swaps
+  n=5:
+What is n?
+Fib(n) is
+8
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 3976maxresident)k
+0inputs+0outputs (0major+237minor)pagefaults 0swaps
+  n=6:
+What is n?
+Fib(n) is
+13
+0.00user 0.00system 0:00.00elapsed 0%CPU (0avgtext+0avgdata 4316maxresident)k
+0inputs+0outputs (0major+281minor)pagefaults 0swaps
+  n=7:
+What is n?
+Fib(n) is
+21
+0.00user 0.00system 0:00.00elapsed 200%CPU (0avgtext+0avgdata 4416maxresident)k
+0inputs+0outputs (0major+306minor)pagefaults 0swaps
+  n=8:
+What is n?
+Fib(n) is
+34
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 4732maxresident)k
+0inputs+0outputs (0major+348minor)pagefaults 0swaps
+  n=9:
+What is n?
+Fib(n) is
+55
+0.00user 0.00system 0:00.00elapsed 133%CPU (0avgtext+0avgdata 4816maxresident)k
+0inputs+0outputs (0major+390minor)pagefaults 0swaps
+  n=10:
+What is n?
+Fib(n) is
+89
+0.00user 0.00system 0:00.00elapsed 160%CPU (0avgtext+0avgdata 5180maxresident)k
+0inputs+0outputs (0major+470minor)pagefaults 0swaps
+  n=11:
+What is n?
+Fib(n) is
+144
+0.00user 0.01system 0:00.00elapsed 150%CPU (0avgtext+0avgdata 5276maxresident)k
+0inputs+0outputs (0major+539minor)pagefaults 0swaps
+  n=12:
+What is n?
+Fib(n) is
+233
+0.00user 0.02system 0:00.01elapsed 200%CPU (0avgtext+0avgdata 6172maxresident)k
+0inputs+0outputs (0major+716minor)pagefaults 0swaps
+  n=13:
+What is n?
+Fib(n) is
+377
+0.01user 0.02system 0:00.01elapsed 228%CPU (0avgtext+0avgdata 6804maxresident)k
+0inputs+0outputs (0major+908minor)pagefaults 0swaps
+  n=14:
+What is n?
+Fib(n) is
+610
+0.01user 0.04system 0:00.02elapsed 230%CPU (0avgtext+0avgdata 8432maxresident)k
+0inputs+0outputs (0major+1293minor)pagefaults 0swaps
+  n=15:
+What is n?
+Fib(n) is
+987
+0.04user 0.04system 0:00.03elapsed 275%CPU (0avgtext+0avgdata 10356maxresident)k
+0inputs+0outputs (0major+1776minor)pagefaults 0swaps
+  n=16:
+What is n?
+Fib(n) is
+1597
+0.04user 0.09system 0:00.05elapsed 269%CPU (0avgtext+0avgdata 13760maxresident)k
+0inputs+0outputs (0major+2632minor)pagefaults 0swaps
+  n=17:
+What is n?
+Fib(n) is
+2584
+0.09user 0.14system 0:00.08elapsed 272%CPU (0avgtext+0avgdata 18972maxresident)k
+0inputs+0outputs (0major+3949minor)pagefaults 0swaps
+  n=18:
+What is n?
+Fib(n) is
+4181
+0.16user 0.22system 0:00.13elapsed 282%CPU (0avgtext+0avgdata 27756maxresident)k
+0inputs+0outputs (0major+6109minor)pagefaults 0swaps
+  n=19:
+What is n?
+Fib(n) is
+6765
+0.21user 0.41system 0:00.22elapsed 277%CPU (0avgtext+0avgdata 41224maxresident)k
+0inputs+0outputs (0major+9547minor)pagefaults 0swaps
+  n=20:
+What is n?
+Fib(n) is
+10946
+0.42user 0.63system 0:00.39elapsed 270%CPU (0avgtext+0avgdata 63924maxresident)k
+0inputs+0outputs (0major+15169minor)pagefaults 0swaps

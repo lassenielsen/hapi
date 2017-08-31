@@ -157,6 +157,9 @@ string MpsHostHeader::ToCHeader() const // {{{
 {
   return unwrap_string(myHeader) + "\n" + mySucc->ToCHeader();
 } // }}}
+void MpsHostHeader::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ mySucc->ToCConsts(dest,existing);
+} // }}}
 MpsTerm *MpsHostHeader::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);

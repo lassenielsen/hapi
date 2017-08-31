@@ -10,9 +10,8 @@
  * stepping and compiling capabilities for the <em>hapi</em> language.
  *
  * \section hapi What is hapi?
- * <em>hapi</em> is an abreviation of Asynchronous PI-calculus with Multiparty
- * session types and Symmetric synchronization. It is a language based on the
- * pi-calculus.
+ * <em>hapi</em> is an abreviation of the Happy Asynchronous PI-calculus.
+ * It is a language based on the pi-calculus.
  *
  * \section why Why hapi?
  * In programming there are four fundamental classes of programming languages.
@@ -84,6 +83,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <unordered_set>
 #include <functional>
 #include <algorithm>
 
@@ -336,11 +336,12 @@ class MpsTerm // {{{
      * Compilation to C++ code is perfomed in 4 steps:
      * 1. Rename all variables, so no name is introduced more than once
      *    (avoid things like s>>x;t>>x;...)
-     * 2. Add all free variables in function bodies to the function
+     * 2. Flatten thread based forks (to enable pthread_create)
+     * 3. Add all free variables in function bodies to the function
      *    argument list and call agruments where it is used.
-     * 3. Move all functions to the global function environment, also
+     * 4. Move all functions to the global function environment, also
      *    functions defined in function bodies
-     * 4. Translate each function separately, and translate the main
+     * 5. Translate each function separately, and translate the main
      *    process as the function 'main'.
      */
     // }}}
@@ -391,6 +392,7 @@ class MpsTerm // {{{
     // }}}
     virtual std::string ToC() const=0;
     virtual std::string ToCHeader() const=0;
+    virtual void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const=0;
     void FreeLink(const std::string &name);
     const std::vector<std::string> &GetFreeLinks() const;
 

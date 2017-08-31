@@ -236,6 +236,9 @@ string MpsNu::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
 } // }}}
+void MpsNu::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ mySucc->ToCConsts(dest,existing);
+} // }}}
 MpsTerm *MpsNu::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
