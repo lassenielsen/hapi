@@ -231,7 +231,7 @@ class MpsTerm // {{{
      * @result Returns true if the process is well typed, and false otherwise.
      */
     // }}}
-    bool TypeCheck();
+    bool TypeCheck(bool checkPurity=true);
 
     /************************************************
      ***************** Interpreter ******************

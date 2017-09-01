@@ -57,7 +57,7 @@ void* MpsTerm::TDCompile(tdc_pre pre, // {{{
 
 /* Static type-checking of deadlock and communication safety
  */
-bool MpsTerm::TypeCheck() // {{{
+bool MpsTerm::TypeCheck(bool checkPurity) // {{{
 {
   // Create environments
   MpsBoolVal Theta(true);
@@ -66,7 +66,7 @@ bool MpsTerm::TypeCheck() // {{{
   tdc_pre pre=tdc_wrap::pre_void;
   tdc_post wrap=tdc_wrap::wrap_vector;
   tdc_error wrap_err=tdc_wrap::error_vector;
-  vector<string> *result=(vector<string>*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
+  vector<string> *result=(vector<string>*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,checkPurity);
   bool success=true;
 
   for (size_t i=0; i<result->size(); ++i)
