@@ -123,7 +123,7 @@ PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi2
          | ::pieact_a_ass global id = Exp ; Pi2
          | ::pieact_def   global Mode pvar Dargs ( Args ) ( Pi ) Pi2
          | ::pieact_sdef  global Mode ::mode service pvar ::name ( id ::channel ( int ::pid of int ::pids ) id ::session ) ( Pi ::body ) Pi2 ::succ
-          :-> :"global ::mode ::name ( ) ( global ::session = new ::channel ( ::pid of ::pids ); ::name (); | ::body ) local ::mode StartService(Int i) (if i<=0 then ::name (); else ( ::name (); | StartService(i-1); ) ) StartService(SYSTEM&\"tprocs\"); | ::succ"
+          :-> :"global ::mode ::name ( ) ( global ::session = new ::channel ( ::pid of ::pids ); ::name (); | ( ::body ) ) local ::mode StartService(Int i) (if i<=0 then ::name (); else ( ::name (); | StartService(i-1); ) ) StartService(SYSTEM&\"tprocs\"); | ::succ"
 
 # Non-sequential process constructions (branching termination etc.
 PiTerm ::= ::piterm_pi   ( Pi )
