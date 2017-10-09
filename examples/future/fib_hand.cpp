@@ -25,7 +25,8 @@ class Task_Main : public libpi::task::Task // {{{
 { public:
     shared_ptr<libpi::Value> var_fib;
     shared_ptr<libpi::Value> var_tmp;
-    shared_ptr<libpi::Valus> var_s;
+    shared_ptr<libpi::Value> var_s;
+    shared_ptr<libpi::Value> var_f;
 }; // }}}
 class Task_FibService : public libpi::task::Task // {{{
 { public:
@@ -53,33 +54,32 @@ inline void *_methods(shared_ptr<libpi::task::Task> &_state) // {{{
   { // Main {{{
     ((Task_Main*)_state.get())->var_fib.reset(new libpi::task::Link(2)); // Idx 0=fib
     for (size_t x=0; x<libpi::task::Task::TargetTasks; ++x)
-    { libpi::task::Task *newstate = new libpi::task::Task();
-      newstate->Values().push_back(_state->Values()[0]); // Idx 0=fib
+    { Task_FibService *newstate = new Task_FibService();
+      newstate->var_fib=((Task_Main*)_state.get())->var_fib; // Idx 0=fib
       newstate->SetLabel(&&method_FibService);
       ++(*libpi::task::Task::ActiveTasks);
       libpi::task::Task::Tasks.Send(shared_ptr<libpi::task::Task>(newstate));
     }
     { // Left process
       // s = new fib(2 of 2)
-      _state->Values()[1]=shared_ptr<libpi::Value>(new libpi::task::Channel()); // Idx 1=c
+      ((Task_Main*)_state.get())->var_tmp.reset(new libpi::task::Channel()); // Idx 1=c
       _state->SetLabel(&&checkpoint_main_100);
-      ((libpi::task::Link*)_state->Values()[0].get())->GetChannels()[0]->Send(_state->Values()[1]);
+      ((libpi::task::Link*)((Task_Main*)_state.get())->var_fib.get())->GetChannels()[0]->Send(((Task_Main*)_state.get())->var_tmp);
       checkpoint_main_100:
       _state->SetLabel(&&checkpoint_main_101);
-      ((libpi::Channel*)_state->Values()[1].get())->Receive(_state,2); // Idx2=s
+      ((libpi::Channel*)((Task_Main*)_state.get())->var_tmp.get())->Receive(_state,((Task_Main*)_state.get())->var_s); // Idx2=s
       checkpoint_main_101:
-      _state->Values()[1].reset(); // Erase c, now 0=fib, 2=s
+      ((Task_Main*)_state.get())->var_tmp.reset(); // Erase c, now 0=fib, 2=s
       // s[1] << 5
       _state->SetLabel(&&checkpoint_main_1);
-      ((libpi::Session*)_state->Values()[2].get())->Send(0,intval_25);
+      ((libpi::Session*)((Task_Main*)_state.get())->var_s.get())->Send(0,intval_25);
       checkpoint_main_1:
       // s[1] >> f1
       _state->SetLabel(&&checkpoint_main_10);
-      _state->Values().push_back(NULL); // Idx 2=f
-      ((libpi::Session*)_state->Values()[2].get())->Receive(0,_state,2);
+      ((libpi::Session*)((Task_Main*)_state.get())->var_s.get())->Receive(0,_state,((Task_Main*)_state.get())->var_f);
       checkpoint_main_10:
       // Print result
-      cout << _state->Values()[2]->ToString() << endl;
+      cout << ((Task_Main*)_state.get())->var_f->ToString() << endl;
       exit(0);
       throw libpi::task::TaskPauseEvent();
     }
@@ -87,95 +87,92 @@ inline void *_methods(shared_ptr<libpi::task::Task> &_state) // {{{
 
 /* Procedure implementations */
   method_FibService: // {{{
-  { _state->Values().resize(3);
-    // Wait for connection
+  { // Wait for connection
     // s = new fib(1 of 2);
     _state->SetLabel(&&checkpoint_FibService_100);
-    ((libpi::task::Link*)_state->Values()[0].get())->GetChannels()[0]->Receive(_state,1); // Idx 1=c
+    ((libpi::task::Link*)((Task_FibService*)_state.get())->var_fib.get())->GetChannels()[0]->Receive(_state,((Task_FibService*)_state.get())->var_tmp); // Idx 1=c
     checkpoint_FibService_100:
     // Create both sides of session
     { vector<shared_ptr<libpi::Channel> > p0InChannels(2), p0OutChannels(2), p1InChannels(2), p1OutChannels(2);
       p0InChannels[0].reset(new libpi::task::Channel());
       p0InChannels[1].reset(new libpi::task::Channel());
       p0OutChannels[0]=p0InChannels[0];
-      p0OutChannels[1]=dynamic_pointer_cast<libpi::Channel>(_state->Values()[1]);
+      p0OutChannels[1]=dynamic_pointer_cast<libpi::Channel>(((Task_FibService*)_state.get())->var_tmp);
       p1InChannels[0]=p0OutChannels[1];
       p1InChannels[1].reset(new libpi::task::Channel());
       p1OutChannels[0]=p0InChannels[1];
       p1OutChannels[1]=p1InChannels[1];
-      _state->Values()[2].reset(new libpi::Session(0,2,p0InChannels,p0OutChannels)); // Idx 2=s
+      ((Task_FibService*)_state.get())->var_s.reset(new libpi::Session(0,2,p0InChannels,p0OutChannels)); // Idx 2=s
       shared_ptr<libpi::Value> s2(new libpi::Session(1,2,p1InChannels,p1OutChannels));
       _state->SetLabel(&&checkpoint_FibService_101);
-      dynamic_pointer_cast<libpi::Channel>(_state->Values()[1])->Send(s2);
+      dynamic_pointer_cast<libpi::Channel>(((Task_FibService*)_state.get())->var_tmp)->Send(s2);
     }
     checkpoint_FibService_101:
-    _state->Values()[1].reset(); // Erase c, now 0=fib, 2=s
+    ((Task_FibService*)_state.get())->var_tmp.reset(); // Erase c, now 0=fib, 2=s
     // Link complete
-    // Create new task (thread) handling connection
-    shared_ptr<libpi::task::Task> task2(new libpi::task::Task());
-    task2->SetLabel(&&method_Fib);
-    task2->Values().resize(2);
-    task2->Values()[0]=_state->Values()[0];
-    task2->Values()[1]=_state->Values()[2];
-    // Call FibService
-    _state->Values()[2].reset(); // Erase s, now 0=fib
+    // Create new task handling connection
+    { Task_Fib *_task2 = new Task_Fib();
+      _task2->var_fib=((Task_FibService*)_state.get())->var_fib;
+      _task2->var_s=((Task_FibService*)_state.get())->var_s;
+      _task2->SetLabel(&&method_Fib);
+      ++(*libpi::task::Task::ActiveTasks);
+      libpi::task::Task::Tasks.Send(shared_ptr<libpi::task::Task>(_task2));
+    }
+    ((Task_FibService*)_state.get())->var_s.reset(); // Erase s, now 0=fib
     _state->SetLabel(&&method_FibService);
-    ++(*libpi::task::Task::ActiveTasks);
-    libpi::task::Task::Tasks.Send(task2);
     goto method_FibService;
   } // }}}
   method_Fib: // {{{
-  { _state->Values().resize(8);
-    // Idx: 0=fib,1=s
+  { // Idx: 0=fib,1=s
     _state->SetLabel(&&checkpoint_Fib_10);
-    ((libpi::Session*)_state->Values()[1].get())->Receive(1,_state,((Task_Fib*)_state.get())->var_n); // Idx 2=n
+    ((libpi::Session*)((Task_Fib*)_state.get())->var_s.get())->Receive(1,_state,((Task_Fib*)_state.get())->var_n); // Idx 2=n
     checkpoint_Fib_10:
-    if (((*((libpi::Int*)_state->Values()[2].get()))<=(*intval_1))->GetValue())
+    if (((*((libpi::Int*)((Task_Fib*)_state.get())->var_n.get()))<=(*intval_1))->GetValue())
     { _state->SetLabel(&&checkpoint_Fib_1);
-      ((libpi::Session*)_state->Values()[1].get())->Send(1,intval_1);
+      ((libpi::Session*)((Task_Fib*)_state.get())->var_s.get())->Send(1,intval_1);
       checkpoint_Fib_1:
       throw libpi::task::TaskPauseEvent(); // end
     }
     // s1 = new fib(2 of 2)
-    _state->Values()[3].reset(new libpi::task::Channel()); // Idx 3=c
+    ((Task_Fib*)_state.get())->var_tmp.reset(new libpi::task::Channel()); // Idx 3=c
     _state->SetLabel(&&checkpoint_Fib_100);
-    ((libpi::task::Link*)_state->Values()[0].get())->GetChannels()[0]->Send(_state->Values()[3]);
+    ((libpi::task::Link*)((Task_Fib*)_state.get())->var_fib.get())->GetChannels()[0]->Send(((Task_Fib*)_state.get())->var_tmp);
     checkpoint_Fib_100:
     _state->SetLabel(&&checkpoint_Fib_101);
-    ((libpi::Channel*)_state->Values()[3].get())->Receive(_state,4); // Idx 4=s1
+    ((libpi::Channel*)((Task_Fib*)_state.get())->var_tmp.get())->Receive(_state,((Task_Fib*)_state.get())->var_s1); // Idx 4=s1
     checkpoint_Fib_101:
-    _state->Values()[3].reset(); // Erase c, now 0=fib, 1=s, 2=n, 4=s1
+    ((Task_Fib*)_state.get())->var_tmp.reset(); // Erase c, now 0=fib, 1=s, 2=n, 4=s1
     // s1[1] << n-1
     _state->SetLabel(&&checkpoint_Fib_2);
-    ((libpi::Session*)_state->Values()[4].get())->Send(0,*((libpi::Int*)_state->Values()[2].get())-*intval_1);
+    ((libpi::Session*)((Task_Fib*)_state.get())->var_s1.get())->Send(0,*((libpi::Int*)((Task_Fib*)_state.get())->var_n.get())-*intval_1);
     checkpoint_Fib_2:
     // Test if parallel or sequential
     if ((*libpi::task::Task::ActiveTasks)<libpi::task::Task::TargetTasks)
     { // Parallel
     // s2 = new fib(2 of 2)
-    _state->Values()[3].reset(new libpi::task::Channel()); // Idx 3=c
+    ((Task_Fib*)_state.get())->var_tmp.reset(new libpi::task::Channel()); // Idx 3=c
     _state->SetLabel(&&checkpoint_Fib_102);
-    ((libpi::task::Link*)_state->Values()[0].get())->GetChannels()[0]->Send(_state->Values()[3]);
+    ((libpi::task::Link*)((Task_Fib*)_state.get())->var_fib.get())->GetChannels()[0]->Send(((Task_Fib*)_state.get())->var_tmp);
     checkpoint_Fib_102:
     _state->SetLabel(&&checkpoint_Fib_103);
-    ((libpi::Channel*)_state->Values()[3].get())->Receive(_state,5); // Idx 5=s2
+    ((libpi::Channel*)((Task_Fib*)_state.get())->var_tmp.get())->Receive(_state,((Task_Fib*)_state.get())->var_s2); // Idx 5=s2
     checkpoint_Fib_103:
-    _state->Values()[3].reset(); // Erase c, now 0=fib, 1=s, 2=n, 4=s1, 5=s2
+    ((Task_Fib*)_state.get())->var_tmp.reset(); // Erase c, now 0=fib, 1=s, 2=n, 4=s1, 5=s2
     // s2[1] << n-2
     _state->SetLabel(&&checkpoint_Fib_3);
-    ((libpi::Session*)_state->Values()[5].get())->Send(0,*((libpi::Int*)_state->Values()[2].get())-*intval_2);
+    ((libpi::Session*)((Task_Fib*)_state.get())->var_s2.get())->Send(0,*((libpi::Int*)((Task_Fib*)_state.get())->var_n.get())-*intval_2);
     checkpoint_Fib_3:
     // s1[1] >> f1
     _state->SetLabel(&&checkpoint_Fib_11);
-    ((libpi::Session*)_state->Values()[4].get())->Receive(0,_state,6); // 6=f1
+    ((libpi::Session*)((Task_Fib*)_state.get())->var_s1.get())->Receive(0,_state,((Task_Fib*)_state.get())->var_f1); // 6=f1
     checkpoint_Fib_11:
     // s2[1] >> f2
     _state->SetLabel(&&checkpoint_Fib_12);
-    ((libpi::Session*)_state->Values()[5].get())->Receive(0,_state,7); // 7=f2
+    ((libpi::Session*)((Task_Fib*)_state.get())->var_s2.get())->Receive(0,_state,((Task_Fib*)_state.get())->var_f2); // 7=f2
     checkpoint_Fib_12:
     // s[2]<<f1+f2
     _state->SetLabel(&&checkpoint_Fib_4);
-    ((libpi::Session*)_state->Values()[1].get())->Send(1,(*((libpi::Int*)_state->Values()[6].get()))+(*((libpi::Int*)_state->Values()[7].get())));
+    ((libpi::Session*)((Task_Fib*)_state.get())->var_s.get())->Send(1,(*((libpi::Int*)((Task_Fib*)_state.get())->var_f1.get()))+(*((libpi::Int*)((Task_Fib*)_state.get())->var_f2.get())));
     checkpoint_Fib_4:
     // end
     throw libpi::task::TaskPauseEvent();
@@ -184,28 +181,28 @@ inline void *_methods(shared_ptr<libpi::task::Task> &_state) // {{{
     { // Sequential, remember 0=fib, 1=s, 2=n, 4=s1
     // s1[1] >> f1
     _state->SetLabel(&&checkpoint_Fib_13);
-    ((libpi::Session*)_state->Values()[4].get())->Receive(0,_state,5); // Idx 5=f1
+    ((libpi::Session*)((Task_Fib*)_state.get())->var_s1.get())->Receive(0,_state,((Task_Fib*)_state.get())->var_f1); // Idx 5=f1
     checkpoint_Fib_13:
     // s2 = new fib(2 of 2)
-    _state->Values()[3].reset(new libpi::task::Channel()); // Idx 3=c
+    ((Task_Fib*)_state.get())->var_tmp.reset(new libpi::task::Channel()); // Idx 3=c
     _state->SetLabel(&&checkpoint_Fib_104);
-    ((libpi::task::Link*)_state->Values()[0].get())->GetChannels()[0]->Send(_state->Values()[3]);
+    ((libpi::task::Link*)((Task_Fib*)_state.get())->var_fib.get())->GetChannels()[0]->Send(((Task_Fib*)_state.get())->var_tmp);
     checkpoint_Fib_104:
     _state->SetLabel(&&checkpoint_Fib_105);
-    ((libpi::Channel*)_state->Values()[3].get())->Receive(_state,6); // Idx 6=s2
+    ((libpi::Channel*)((Task_Fib*)_state.get())->var_tmp.get())->Receive(_state,((Task_Fib*)_state.get())->var_s2); // Idx 6=s2
     checkpoint_Fib_105:
-    _state->Values()[3].reset(); // Erase c, now 0=fib, 1=s, 2=n, 4=s1, 5=f1, 6=s2
+    ((Task_Fib*)_state.get())->var_tmp.reset(); // Erase c, now 0=fib, 1=s, 2=n, 4=s1, 5=f1, 6=s2
     // s2[1] << n-2
     _state->SetLabel(&&checkpoint_Fib_5);
-    ((libpi::Session*)_state->Values()[6].get())->Send(0,*((libpi::Int*)_state->Values()[2].get())-*intval_2);
+    ((libpi::Session*)((Task_Fib*)_state.get())->var_s2.get())->Send(0,*((libpi::Int*)((Task_Fib*)_state.get())->var_n.get())-*intval_2);
     checkpoint_Fib_5:
     // s2[1] >> f2
     _state->SetLabel(&&checkpoint_Fib_14);
-    ((libpi::Session*)_state->Values()[6].get())->Receive(0,_state,7); // Idx 7=f2
+    ((libpi::Session*)((Task_Fib*)_state.get())->var_s2.get())->Receive(0,_state,((Task_Fib*)_state.get())->var_f2); // Idx 7=f2
     checkpoint_Fib_14:
     // s[2]<<f1+f2
     _state->SetLabel(&&checkpoint_Fib_6);
-    ((libpi::Session*)_state->Values()[1].get())->Send(1,(*((libpi::Int*)_state->Values()[5].get()))+(*((libpi::Int*)_state->Values()[7].get())));
+    ((libpi::Session*)((Task_Fib*)_state.get())->var_s.get())->Send(1,(*((libpi::Int*)((Task_Fib*)_state.get())->var_f1.get()))+(*((libpi::Int*)((Task_Fib*)_state.get())->var_f2.get())));
     checkpoint_Fib_6:
     // end
     throw libpi::task::TaskPauseEvent();
@@ -255,7 +252,7 @@ int main(int argc, char **argv) // {{{
   try
   { signal(SIGCHLD, SIG_IGN); // Fork optimization
     // Create main task
-    shared_ptr<libpi::task::Task> s0(new libpi::task::Task());
+    shared_ptr<libpi::task::Task> s0(new Task_Main());
     s0->SetLabel(NULL);
     ++(*libpi::task::Task::ActiveTasks);
     libpi::task::Task::Tasks.Send(s0);
