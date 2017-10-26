@@ -88,7 +88,7 @@ local pure service NIL(list (1 of 2) this) // {{{
 //( this[2]>>next;
 //  this[2]>>v;
 //  Cons(this,next,v);
-//)
+//) // }}}
 | // Test application
   myList = new list(2 of 2); // Create myList as nil list
   myList[1]<<^Insert << 5;  // myList = [0:5]
