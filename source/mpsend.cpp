@@ -97,9 +97,9 @@ string MpsEnd::ToTex(int indent, int sw) const // {{{
 {
   return ToTex_KW("end");
 } // }}}
-string MpsEnd::ToC() const // {{{
+string MpsEnd::ToC(const string &taskType) const // {{{
 {
-  return "  _dec_aprocs();\n  delete _state;\n  return NULL;\n";
+  return "    return false;";
 } // }}}
 string MpsEnd::ToCHeader() const // {{{
 {

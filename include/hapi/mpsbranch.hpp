@@ -51,7 +51,9 @@ class MpsBranch : public MpsTerm // {{{
     MpsTerm *CopyWrapper(std::map<std::string,void*> &children) const;
     MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma);
     MpsTerm *ExtractDefinitions(MpsFunctionEnv &env) const;
-    std::string ToC() const;
+    std::string GenerateC(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const;
+    std::string GetConsts(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const;
+    std::string ToC(const std::string &taskType) const;
     std::string ToCHeader() const;
     void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
 

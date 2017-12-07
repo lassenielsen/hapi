@@ -17,6 +17,7 @@ shared_ptr<libpi::Int> intval_5(new libpi::Int("5"));
 shared_ptr<libpi::Int> intval_10(new libpi::Int("10"));
 shared_ptr<libpi::Int> intval_20(new libpi::Int("20"));
 shared_ptr<libpi::Int> intval_25(new libpi::Int("25"));
+shared_ptr<libpi::Int> intval_30(new libpi::Int("30"));
 // }}}
 std::vector<char*> _args;                        // Store args for use in processes
 
@@ -73,7 +74,7 @@ inline bool _methods(shared_ptr<libpi::task::Task> &_state) // {{{
       ((Task_Main*)_state.get())->var_tmp.reset(); // Erase c, now 0=fib, 2=s
       // s[1] << 5
       _state->SetLabel(&&checkpoint_main_1);
-      ((libpi::Session*)((Task_Main*)_state.get())->var_s.get())->Send(0,intval_25);
+      ((libpi::Session*)((Task_Main*)_state.get())->var_s.get())->Send(0,intval_30);
       checkpoint_main_1:
       // s[1] >> f1
       _state->SetLabel(&&checkpoint_main_10);
@@ -225,11 +226,15 @@ void *_workerthread(void *_arg) // {{{
 { try
   { while (true) // Continue until termination
     { // Wait for task
+      resume_task:
       shared_ptr<libpi::task::Task> task=dynamic_pointer_cast<libpi::task::Task>(libpi::task::Task::Tasks.Receive());
       if (!task)
         break;
       if (_methods(task))
-        libpi::task::Task::Tasks.Send(task);
+        if (libpi::task::Task::Tasks.Empty())
+          goto resume_task;
+        else
+          libpi::task::Task::Tasks.Send(task);
       else
         --(*libpi::task::Task::ActiveTasks);
     }
@@ -243,8 +248,13 @@ inline void _workers() // {{{
   pthread_attr_init(&y);
   pthread_attr_setstacksize(&y,16384);
   pthread_attr_setdetachstate(&y,PTHREAD_CREATE_DETACHED);
-  for (size_t wc=0; wc+1<libpi::task::Task::TargetTasks; ++wc)
+  for (size_t wc=0; wc+1<4/*libpi::task::Task::TargetTasks*/; ++wc)
+  { cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(wc,&cpuset);
+    pthread_attr_setaffinity_np(&y,sizeof(cpu_set_t),&cpuset);
     pthread_create(&x,&y,_workerthread,NULL);
+  }
   _workerthread(NULL); // FIXME: Start and monitor instead
 } // }}}
 

@@ -307,28 +307,35 @@ string MpsBranch::ToTex(int indent, int sw) const // {{{
   result += ToTex_Hspace(indent,sw) + "\\}";
   return result;
 } // }}}
-string MpsBranch::ToC() const // {{{
+string MpsBranch::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  string lblName = ToC_Name(MpsExp::NewVar("branch")); // Create variable name for the received value
-  result << "  { _dec_aprocs();" << endl
-         << "    shared_ptr<libpi::String> " << lblName << " = static_pointer_cast<libpi::String>(" << ToC_Name(myChannel.GetName()) << "->Receive(" << int2string(myChannel.GetIndex()-1) << "));" << endl
-         << "    _inc_aprocs();" << endl;
+  string lblRcvName = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
+  string lblName = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
+  result
+    << "    _task->SetLabel(&&" << lblRcvName << ");" << endl
+    << "    if (!((libpi::Session*)((" << taskType << "*)_state.get())->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << int2string(myChannel.GetIndex()-1) << ",_task,_state->tmp)) // Receive label to tmp" << endl
+    << "      return false;" << endl
+    << "    " << lblRcvName << ":" << endl
+    << "    _task->SetLabel(&&" << lblName << ");" << endl
+    << "    if (++_steps>=libpi::task::Task::MaxSteps) return true;" << endl
+    << "    " << lblName << ":" << endl
+    << "    _task->tmp.reset();" << endl;
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
       result << "    else " << endl;
-    result << "    if (" << lblName << "->GetValue()==\"" << it->first << "\")" << endl
+    // Fixme: Use goto *branchmap[((libpi::String*)_task->tmp.get())->GetValue()];
+    result << "    if (((libpi::String*)_task->tmp.get())->GetValue()==\"" << it->first << "\")" << endl
            << "    {" << endl;
     if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
-      result << "      " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-             << "      " << ToC_Name(myChannel.GetName()) << " = NULL;" << endl;
+      result << "    ((" << taskType << "*)_task.get())->" << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
+             << "    ((" << taskType << "*)_task.get())->" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
     }
-    result << it->second->ToC();
+    result << it->second->ToC(taskType);
     result << "    }" << endl;
   }
-  result << "    else throw (string)\"Unknown branch: " << lblName << "\";" << endl;
-  result << "  }" << endl;
+  result << "    else throw string(\"Unknown branch: \")+((libpi::String*)_task->tmp.get())->GetValue()+\" at " << lblName << "\";" << endl;
   return result.str();
 } // }}}
 string MpsBranch::ToCHeader() const // {{{

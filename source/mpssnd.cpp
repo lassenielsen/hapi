@@ -240,15 +240,9 @@ string MpsSnd::ToC() const // {{{
   // Declare variable
   result << "  { " << endl;
   string valName=myExp->ToC(result, GetMsgType().ToC()); // Compute message and store in variable valName
-  if (delType!=NULL)
-  {
-    result << "    " << ToC_Name(myChannel.GetName()) << "->Delegate(" << int2string(myChannel.GetIndex()-1) << ", *" << valName << ");" << endl;
-  }
-  else
-  {
-    result << "    " << ToC_Name(myChannel.GetName()) << "->Send("
+  result << "    " << ToC_Name(myChannel.GetName()) << "->Send("
                      << int2string(myChannel.GetIndex()-1) << ","
-                     << "static_pointer_cast<libpi::Value>(" << valName << "));" << endl; // Send computed value
+                     << "((TaskFIXME*)_state)vaalName << "));" << endl; // Send computed value
   }
   result << "  }" << endl;
   if (delType!=NULL)

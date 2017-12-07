@@ -88,6 +88,26 @@ MpsTerm *MpsTerm::CloseDefs() // {{{
   tdc_error wrap_err=tdc_wrap::error_throw;
   return (MpsTerm*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,false);
 } // }}}
+string MpsTerm::GenerateC() // {{{
+{
+  // Create environments
+  MpsBoolVal Theta(true);
+  MpsMsgEnv Gamma;
+  MpsProcEnv Omega;
+  tdc_pre pre=tdc_wrap::pre_void;
+  tdc_post wrap=tdc_wrap::wrap_vector;
+  tdc_error wrap_err=tdc_wrap::error_vector;
+  vector<string> *result=(vector<string>*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,checkPurity);
+  bool success=true;
+
+  for (size_t i=0; i<result->size(); ++i)
+  { success=false;
+    cerr << "TypeCheck Error: " << (*result)[i] << endl << endl;
+  }
+
+  delete result;
+  return success;
+} // }}}
 
 /* Create list of possible steps
  */
@@ -335,32 +355,26 @@ string MpsTerm::MakeC() const // {{{
   // Move definitions to global env
   MpsTerm *main=step3->ExtractDefinitions(defs);
   delete step3;
+  // Ready to generate code
+  string mainTask="TaskMain";
   result
-    << "#include <iostream>\n"
-    << "#include <thread>\n"
-    << "#include <cstdlib>\n"
-    << "#include <pthread.h>\n"
     << "#include <libpi/value.hpp>\n"
     << "#include <libpi/bool.hpp>\n"
     << "#include <libpi/int.hpp>\n"
-    << "#include <libpi/float.hpp>\n"
-    << "#include <libpi/quotient.hpp>\n"
     << "#include <libpi/string.hpp>\n"
-    << "#include <libpi/tuple.hpp>\n"
     << "#include <libpi/session.hpp>\n"
+    << "#include <libpi/task/link.hpp>\n"
     << "#include <libpi/thread/channel.hpp>\n"
-    << "#include <libpi/thread/link.hpp>\n"
-    << "#include <vector>\n"
-    << "#include <queue>\n"
-    << "#include <sstream>\n"
-    << "#include <atomic>\n"
-    << "#include <memory>\n"
-    << "#include <sys/mman.h>\n"
+    << "#include <thread>\n"
     << "#include <signal.h>\n"
-    << main->ToCHeader()
-    << "using namespace std;\n";
+    << "using namespace std;\n"
+    << "// HEADERS {{{\n"
+    << main->ToCHeader();
   for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
     result << def->GetBody().ToCHeader();
+  result
+    << "// }}}\n"
+    << "// Value declerations {{{\n";
   std::unordered_set<std::string> existing;
   std::vector<std::string> consts;
   // Create const definitions without duplicates
@@ -372,67 +386,69 @@ string MpsTerm::MakeC() const // {{{
     result << *c;
   // Add framework to result
   result
-    << "using namespace libpi;\n\n"
-    << "inline atomic<int> *_new_shared_int()\n"
-    << "{ return (std::atomic<int>*)mmap(NULL, sizeof(atomic<int>), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); // Actual number of active processes\n"
-    << "}\n"
-    << "std::atomic<int> *_aprocs=_new_shared_int(); // Actual number of active processes\n"
-    << "inline void _inc_aprocs() // {{{\n"
-    << "{ ++(*_aprocs);\n"
+    << "// }}}\n"
+    << "// Task Types {{{\n"
+    << "// FIXME TASK TYPES\n"
+    << "// }}}\n"
+    << "// All Methods {{{\n"
+    << "inline bool _methods(shared_ptr<libpi::task::Task> &_task)\n"
+    << "{ "//\n"
+    << "{ size_t _steps=0;\n"
+    << "  void *_label=_state->GetLabel();\n"
+    << "  if (_label!=NULL)\n"
+    << "    goto *_label;\n"
+    << "  method_Main:\n"
+    << "  { // Main {{{\n"
+    << main->ToC(mainTask) <<
+    << "  } // }}}\n"
+    << DefEnvToC(defs)
+    << "} // }}}\n\n"
+    << "\n"
+    << "void *_workerthread(void *_arg) // {{{\n"
+    << "{ try\n"
+    << "  { while (true) // Continue until termination\n"
+    << "    { // Wait for task\n"
+    << "      shared_ptr<libpi::task::Task> task=dynamic_pointer_cast<libpi::task::Task>(libpi::task::Task::Tasks.Receive());\n"
+    << "      if (!task)\n"
+    << "        break;\n"
+    << "      if (_methods(task))\n"
+    << "        libpi::task::Task::Tasks.Send(task);\n"
+    << "      else\n"
+    << "        --(*libpi::task::Task::ActiveTasks);\n"
+    << "    }\n"
+    << "  } catch (const string &error)\n"
+    << "  { cerr << \"Error: \" << error << endl;\n"
+    << "  }\n"
     << "} // }}}\n"
-    << "inline void _dec_aprocs() // {{{\n"
-    << "{ --(*_aprocs);\n"
-    << "} // }}}\n"
-    << "int _tprocs=std::thread::hardware_concurrency(); // Target number of active processes\n"
-    << "std::vector<char*> _args;   // Store args for use in processes\n"
-    << "\n"
-    << "// Declare implementation\n"
-    << "void *_methods(void *arg);\n"
-    << "\n"
-    << "struct State\n"
-    << "{ void *label;\n"
-    << "  vector<shared_ptr<libpi::Value> > values;\n"
-    << "};\n"
-    << "\n"
-    << "inline void _spawn_thread(State *state)\n"
+    << "inline void _workers() // {{{\n"
     << "{ pthread_t x;\n"
     << "  pthread_attr_t y;\n"
     << "  pthread_attr_init(&y);\n"
     << "  pthread_attr_setstacksize(&y,16384);\n"
     << "  pthread_attr_setdetachstate(&y,PTHREAD_CREATE_DETACHED);\n"
-    << "  pthread_create(&x,&y,_methods,(void*)state);\n"
-    << "}\n"
-    << "\n\n/* All methods */\n"
-    << "#define _state ((State*)(_arg))\n"
-  // Add implementation of all methods
-    << "void *_methods(void *_arg)\n"
-    << "{\n"
-    << "  if (_state==NULL) // Error\n"
-    << "  { std::cerr << \"Error in call to all_methods: null state provided\" << endl;\n"
-    << "    return NULL;\n"
-    << "  }  \n"
-    << "  if (_state->label!=NULL)\n"
-    << "    goto *_state->label;\n"
-    << "  { // Main\n"
-    << main->ToC()
-    << "  }\n"
-    << DefEnvToC(defs)
-    << "}\n"
-    << "\n\n/*Start process, and its continuations */\n"
+    << "  for (size_t wc=0; wc+1<libpi::task::Task::TargetTasks; ++wc)\n"
+    << "    pthread_create(&x,&y,_workerthread,NULL);\n"
+    << "  _workerthread(NULL); // FIXME: Start and monitor instead\n"
+    << "} // }}}\n"
+    << "\n"
+    << "/*Start process, and its continuations */\n"
     << "int main(int argc, char **argv) // {{{\n"
     << "{ // PARSE ARGS!!\n"
     << "  for (int i=0; i<argc; ++i)\n"
     << "  { if (string(argv[i])==\"-pi_tprocs\" && i+1<argc)\n"
-    << "      _tprocs=atoi(argv[++i]);\n"
+    << "    libpi::task::Task::TargetTasks=atoi(argv[++i]);\n"
     << "    else\n"
     << "      _args.push_back(argv[i]);\n"
     << "  }\n"
-    << "  (*_aprocs)=1;\n"
     << "  try\n"
     << "  { signal(SIGCHLD, SIG_IGN); // Fork optimization\n"
-    << "    State *s0=new State();\n"
-    << "    s0->label=NULL;\n"
-    << "    _methods(s0);\n"
+    << "    // Create main task\n"
+    << "    shared_ptr<libpi::task::Task> s0(new Task_Main());\n"
+    << "    s0->SetLabel(NULL);\n"
+    << "    ++(*libpi::task::Task::ActiveTasks);\n"
+    << "    libpi::task::Task::Tasks.Send(s0);\n"
+    << "    // Start workers\n"
+    << "    _workers();\n"
     << "    //munmap(_aprocs,sizeof(int));\n"
     << "  } catch (const string &error)\n"
     << "  { cerr << \"Error: \" << error << endl;\n"
@@ -520,6 +536,36 @@ void *wrap_copy(MpsTerm *term, // {{{
     delete ((MpsTerm*)child->second);
   return (void*)result;
 } // }}}
+//void *wrap_consts(MpsTerm *term, // {{{
+//                  const MpsExp &Theta,
+//                  const MpsMsgEnv &Gamma,
+//                  const MpsProcEnv &Omega, 
+//                  const std::set<std::pair<std::string,int> > &pureStack,
+//                  const std::string &curPure,
+//                  MpsTerm::PureState pureState,
+//                  bool checkPure,
+//                  std::map<std::string,void*> &children)
+//{ std::map<string,MpsMsgType> *result=term->GetConsts(Gamma,Omega,children);
+//  // Cleanup
+//  for (map<string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+//    delete ((map<string,MpsMsgType>*)child->second);
+//  return (void*)result;
+//} // }}}
+//void *wrap_genc(MpsTerm *term, // {{{
+//                const MpsExp &Theta,
+//                const MpsMsgEnv &Gamma,
+//                const MpsProcEnv &Omega, 
+//                const std::set<std::pair<std::string,int> > &pureStack,
+//                const std::string &curPure,
+//                MpsTerm::PureState pureState,
+//                bool checkPure,
+//                std::map<std::string,void*> &children)
+//{ std::string *result=term->GenerateC(Gamma,Omega,children);
+//  // Cleanup
+//  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+//    delete ((string*)child->second);
+//  return (void*)result;
+//} // }}}
 void *error_vector(MpsTerm *term, // {{{
                    std::string msg,
                    std::map<std::string,void*> &children)

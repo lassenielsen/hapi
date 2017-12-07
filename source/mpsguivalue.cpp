@@ -211,7 +211,7 @@ string MpsGuiValue::ToTex(int indent, int sw) const // {{{
        + myValue->ToString() + ");\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsGuiValue::ToC() const // {{{
+string MpsGuiValue::ToC(const string &taskType) const // {{{
 {
   throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
 } // }}}

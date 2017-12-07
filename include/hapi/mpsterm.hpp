@@ -388,9 +388,14 @@ class MpsTerm // {{{
      * This assumes that there are no function definition in term, and
      * these should be moved to a global environment beforehand using
      * ExtractDefinitions before calling ToC.
+     *
+     * @taskType is the name of the task subclass used - which is derived from
+     * the method name.
      */
     // }}}
-    virtual std::string ToC() const=0;
+    virtual std::string GenerateC(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const=0;
+    virtual std::string GetConsts(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const=0;
+    virtual std::string ToC(const std::string &taskType) const=0;
     virtual std::string ToCHeader() const=0;
     virtual void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const=0;
     void FreeLink(const std::string &name);
@@ -556,49 +561,42 @@ inline void *TypeCheckForall(MpsTerm::tdc_pre pre, MpsTerm::tdc_post wrap, MpsTe
   return result;
 } // }}}
 
-namespace tdc_wrap
+namespace tdc_wrap // {{{
 {
-MpsTerm *pre_void(MpsTerm *term,
-                  const MpsExp &Theta,
-                  const MpsMsgEnv &Gamma,
-                  const MpsProcEnv &Omega, 
-                  const std::set<std::pair<std::string,int> > &pureStack,
-                  const std::string &curPure,
-                  MpsTerm::PureState pureState,
-                  bool checkPure);
-MpsTerm *pre_closedefs(MpsTerm *term,
-                       const MpsExp &Theta,
-                       const MpsMsgEnv &Gamma,
-                       const MpsProcEnv &Omega, 
-                       const std::set<std::pair<std::string,int> > &pureStack,
-                       const std::string &curPure,
-                       MpsTerm::PureState pureState,
-                       bool checkPure);
-void *wrap_vector(MpsTerm *term,
-                  const MpsExp &Theta,
-                  const MpsMsgEnv &Gamma,
-                  const MpsProcEnv &Omega, 
-                  const std::set<std::pair<std::string,int> > &pureStack,
-                  const std::string &curPure,
-                  MpsTerm::PureState pureState,
-                  bool checkPure,
-                  std::map<std::string,void*> &children);
-void *wrap_copy(MpsTerm *term,
-                const MpsExp &Theta,
-                const MpsMsgEnv &Gamma,
-                const MpsProcEnv &Omega, 
-                const std::set<std::pair<std::string,int> > &pureStack,
-                const std::string &curPure,
-                MpsTerm::PureState pureState,
-                bool checkPure,
-                std::map<std::string,void*> &children);
+typedef MpsTerm *(*pretype)(
+  MpsTerm *term,
+  const MpsExp &Theta,
+  const MpsMsgEnv &Gamma,
+  const MpsProcEnv &Omega, 
+  const std::set<std::pair<std::string,int> > &pureStack,
+  const std::string &curPure,
+  MpsTerm::PureState pureState,
+  bool checkPure);
+typedef MpsTerm *(*wraptype)(
+  MpsTerm *term,
+  const MpsExp &Theta,
+  const MpsMsgEnv &Gamma,
+  const MpsProcEnv &Omega, 
+  const std::set<std::pair<std::string,int> > &pureStack,
+  const std::string &curPure,
+  MpsTerm::PureState pureState,
+  bool checkPure,
+  std::map<std::string,void*> &children);
+#define predecl(name) MpsTerm *name(MpsTerm *term,const MpsExp &Theta,const MpsMsgEnv &Gamma,const MpsProcEnv &Omega,const std::set<std::pair<std::string,int> > &pureStack,const std::string &curPure,MpsTerm::PureState pureState,bool checkPure)
+#define wrapdecl(name) MpsTerm *name(MpsTerm *term,const MpsExp &Theta,const MpsMsgEnv &Gamma,const MpsProcEnv &Omega,const std::set<std::pair<std::string,int> > &pureStack,const std::string &curPure,MpsTerm::PureState pureState,bool checkPure,std::map<std::string,void*> &children)
+predecl(pre_void);
+predecl(pre_closedefs);
+wrapdecl(wrap_vector);
+wrapdecl(wrap_copy);
+//wrapdecl(wrap_consts);
+//wrapdecl(wrap_genc);
 void *error_vector(MpsTerm *term,
                    std::string msg,
                    std::map<std::string,void*> &children);
 void *error_throw(MpsTerm *term,
                   std::string msg,
                   std::map<std::string,void*> &children);
-}
+} // }}}
 }
 
 #endif

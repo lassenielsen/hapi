@@ -208,7 +208,7 @@ string MpsHostStatement::ToTex(int indent, int sw) const // {{{
          << ToTex_Hspace(indent,sw) << mySucc->ToTex(indent,sw);
   return result.str();
 } // }}}
-string MpsHostStatement::ToC() const // {{{
+string MpsHostStatement::ToC(const string &taskType) const // {{{
 {
   stringstream prestmt;
   stringstream stmt;
