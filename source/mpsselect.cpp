@@ -1,6 +1,7 @@
 #include<hapi/mpsselect.hpp>
 #include<hapi/mpsend.hpp>
 #include <hapi/common.hpp>
+#include <hapi/md5.hpp>
 
 using namespace std;
 using namespace hapi;
@@ -207,18 +208,19 @@ string MpsSelect::ToTex(int indent, int sw) const // {{{
        + ToTex_Label(myLabel) + ";\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsSelect::ToC() const // {{{
+string MpsSelect::ToC(const std::string &taskType) const // {{{
 {
   stringstream result;
   string msgName = ToC_Name(MpsExp::NewVar("select")); // Create variable name for the message to send
-  result << "  shared_ptr<libpi::String> " << msgName << "(new libpi::String(\"" << myLabel << "\"));" << endl
-         << "  " << ToC_Name(myChannel.GetName()) << "->Send(" << int2string(myChannel.GetIndex()-1) << "," << msgName << ");" << endl;
+  result << "    ((libpi::Session*)((" << taskType << "*)_state)->" << ToC_Name(myChannel.GetName()) << ".get())->Send("
+         << int2string(myChannel.GetIndex()-1) << ","
+         << "label_" << md5(myLabel) << ");" << endl;
   if (myFinal)
   {
     result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
            << "  " << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
   }
-  result << mySucc->ToC();
+  result << mySucc->ToC(taskType);
   return result.str();
 } // }}}
 string MpsSelect::ToCHeader() const // {{{
@@ -227,6 +229,13 @@ string MpsSelect::ToCHeader() const // {{{
 } // }}}
 void MpsSelect::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
 { mySucc->ToCConsts(dest,existing);
+  stringstream ss;
+  ss << "shared_ptr<libpi::String> label_" << md5(myLabel) << "(new libpi::String(\"" << stuff_string(myLabel) << "\"));" << endl;
+  string def=ss.str();
+  if (existing.find(def)==existing.end())
+  { dest.push_back(def);
+    existing.insert(def);
+  }
 } // }}}
 MpsTerm *MpsSelect::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {

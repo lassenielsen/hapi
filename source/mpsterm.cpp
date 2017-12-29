@@ -88,26 +88,26 @@ MpsTerm *MpsTerm::CloseDefs() // {{{
   tdc_error wrap_err=tdc_wrap::error_throw;
   return (MpsTerm*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,false);
 } // }}}
-string MpsTerm::GenerateC() // {{{
-{
-  // Create environments
-  MpsBoolVal Theta(true);
-  MpsMsgEnv Gamma;
-  MpsProcEnv Omega;
-  tdc_pre pre=tdc_wrap::pre_void;
-  tdc_post wrap=tdc_wrap::wrap_vector;
-  tdc_error wrap_err=tdc_wrap::error_vector;
-  vector<string> *result=(vector<string>*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,checkPurity);
-  bool success=true;
-
-  for (size_t i=0; i<result->size(); ++i)
-  { success=false;
-    cerr << "TypeCheck Error: " << (*result)[i] << endl << endl;
-  }
-
-  delete result;
-  return success;
-} // }}}
+// TODO: Type Driven Compilation: string MpsTerm::GenerateC() // {{{
+// TODO: Type Driven Compilation: {
+// TODO: Type Driven Compilation:   // Create environments
+// TODO: Type Driven Compilation:   MpsBoolVal Theta(true);
+// TODO: Type Driven Compilation:   MpsMsgEnv Gamma;
+// TODO: Type Driven Compilation:   MpsProcEnv Omega;
+// TODO: Type Driven Compilation:   tdc_pre pre=tdc_wrap::pre_void;
+// TODO: Type Driven Compilation:   tdc_post wrap=tdc_wrap::wrap_vector;
+// TODO: Type Driven Compilation:   tdc_error wrap_err=tdc_wrap::error_vector;
+// TODO: Type Driven Compilation:   vector<string> *result=(vector<string>*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,checkPurity);
+// TODO: Type Driven Compilation:   bool success=true;
+// TODO: Type Driven Compilation: 
+// TODO: Type Driven Compilation:   for (size_t i=0; i<result->size(); ++i)
+// TODO: Type Driven Compilation:   { success=false;
+// TODO: Type Driven Compilation:     cerr << "TypeCheck Error: " << (*result)[i] << endl << endl;
+// TODO: Type Driven Compilation:   }
+// TODO: Type Driven Compilation: 
+// TODO: Type Driven Compilation:   delete result;
+// TODO: Type Driven Compilation:   return success;
+// TODO: Type Driven Compilation: } // }}}
 
 /* Create list of possible steps
  */
@@ -399,7 +399,7 @@ string MpsTerm::MakeC() const // {{{
     << "    goto *_label;\n"
     << "  method_Main:\n"
     << "  { // Main {{{\n"
-    << main->ToC(mainTask) <<
+    << main->ToC(mainTask)
     << "  } // }}}\n"
     << DefEnvToC(defs)
     << "} // }}}\n\n"

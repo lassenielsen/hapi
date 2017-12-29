@@ -393,8 +393,8 @@ class MpsTerm // {{{
      * the method name.
      */
     // }}}
-    virtual std::string GenerateC(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const=0;
-    virtual std::string GetConsts(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const=0;
+    // TODO: Type Driven Compilation: virtual std::string GenerateC(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const=0;
+    // -- virtual std::string GetConsts(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const=0;
     virtual std::string ToC(const std::string &taskType) const=0;
     virtual std::string ToCHeader() const=0;
     virtual void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const=0;
@@ -583,7 +583,7 @@ typedef MpsTerm *(*wraptype)(
   bool checkPure,
   std::map<std::string,void*> &children);
 #define predecl(name) MpsTerm *name(MpsTerm *term,const MpsExp &Theta,const MpsMsgEnv &Gamma,const MpsProcEnv &Omega,const std::set<std::pair<std::string,int> > &pureStack,const std::string &curPure,MpsTerm::PureState pureState,bool checkPure)
-#define wrapdecl(name) MpsTerm *name(MpsTerm *term,const MpsExp &Theta,const MpsMsgEnv &Gamma,const MpsProcEnv &Omega,const std::set<std::pair<std::string,int> > &pureStack,const std::string &curPure,MpsTerm::PureState pureState,bool checkPure,std::map<std::string,void*> &children)
+#define wrapdecl(name) void *name(MpsTerm *term,const MpsExp &Theta,const MpsMsgEnv &Gamma,const MpsProcEnv &Omega,const std::set<std::pair<std::string,int> > &pureStack,const std::string &curPure,MpsTerm::PureState pureState,bool checkPure,std::map<std::string,void*> &children)
 predecl(pre_void);
 predecl(pre_closedefs);
 wrapdecl(wrap_vector);
