@@ -355,16 +355,16 @@ string MpsRcv::ToC(const std::string &taskType) const // {{{
   stringstream result;
   result
     << "    // " << myChannel.GetName() << "[" << myChannel.GetIndex() << "] >> " << myDest << ";" << endl
-    << "    _state->SetLabel(&&" << rcvLabel << ");" << endl
-    << "    if (!((libpi::Session*)((" << taskType << "*)_state.get())->" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex() << ",_state,((" << taskType << "*)_state.get())->" << ToC_Name(myDest) << "))" << endl
+    << "    _task->SetLabel(&&" << rcvLabel << ");" << endl
+    << "    if (!((libpi::Session*)((" << taskType << "*)_task.get())->" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex() << ",_task,((" << taskType << "*)_task.get())->" << ToC_Name(myDest) << "))" << endl
     << "      return false;" << endl
     << "    " << rcvLabel << ":" << endl;
   if (myFinal)
   {
     result
       << "    // Session complete" << endl
-      << "    ((libpi::Session*)((" << taskType << "*)_state.get())->" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
-      << "    ((" << taskType << "*)_state.get())->" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
+      << "    ((libpi::Session*)((" << taskType << "*)_task.get())->" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
+      << "    ((" << taskType << "*)_task.get())->" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
   }
   result << mySucc->ToC(taskType);
   return result.str();

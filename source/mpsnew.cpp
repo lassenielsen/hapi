@@ -298,7 +298,7 @@ string MpsNew::ToC(const string &taskType) const // {{{
     for (int j=0; j<myNames.size(); ++j)
       result << "    " << sesOutChannels << ".push_back(" << vecName << "[" << (i+j*myNames.size()) << "]);" << endl;
   
-    result << "    ((" << taskType << "*)_state)->" << ToC_Name(myNames[i]) << ".reset(new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
+    result << "    ((" << taskType << "*)_task)->" << ToC_Name(myNames[i]) << ".reset(new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
   }
   result << "  }" << endl;
 

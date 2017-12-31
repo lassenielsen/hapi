@@ -219,7 +219,7 @@ string MpsHostStatement::ToC(const string &taskType) const // {{{
       stmt << " " << newName << " ";
     }
   }
-  return prestmt.str() + stmt.str() + mySucc->ToC();
+  return prestmt.str() + stmt.str() + mySucc->ToC(taskType);
 } // }}}
 string MpsHostStatement::ToCHeader() const // {{{
 {

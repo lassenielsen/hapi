@@ -170,21 +170,10 @@ string MpsFunction::ToCDecl() const // {{{
 string MpsFunction::ToC() const // {{{
 {
   stringstream ss;
-  ss << "  method_" << ToC_Name(GetName()) << ": // {{{" << endl
+  string taskType=ToC_Name(GetName());
+  ss << "  method_" << taskType << ": // {{{" << endl
      << "  {" << endl;
-  vector<MpsMsgType*>::const_reverse_iterator tit=myStateTypes.rbegin();
-  for (vector<string>::const_reverse_iterator it=myStateArgs.rbegin(); it!=myStateArgs.rend(); ++it)
-  { ss << "    " << (*tit)->ToCPtr() << " " << ToC_Name(*it) << " = static_pointer_cast<" << (*tit)->ToC() << ">(_state->values.back());" << endl
-       << "    _state->values.pop_back();" << endl;
-    ++tit;
-  }
-  tit=myTypes.rbegin();
-  for (vector<string>::const_reverse_iterator it=myArgs.rbegin(); it!=myArgs.rend(); ++it)
-  { ss << "    " << (*tit)->ToCPtr() << " " << ToC_Name(*it) << " = static_pointer_cast<" << (*tit)->ToC() << ">(_state->values.back());" << endl
-       << "    _state->values.pop_back();" << endl;
-    ++tit;
-  }
-  ss << GetBody().ToC()
+  ss << GetBody().ToC(taskType)
      << "  } // }}}";
   return ss.str();
 } // }}}

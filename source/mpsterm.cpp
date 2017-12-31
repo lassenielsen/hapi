@@ -394,7 +394,7 @@ string MpsTerm::MakeC() const // {{{
     << "inline bool _methods(shared_ptr<libpi::task::Task> &_task)\n"
     << "{ "//\n"
     << "{ size_t _steps=0;\n"
-    << "  void *_label=_state->GetLabel();\n"
+    << "  void *_label=_task->GetLabel();\n"
     << "  if (_label!=NULL)\n"
     << "    goto *_label;\n"
     << "  method_Main:\n"

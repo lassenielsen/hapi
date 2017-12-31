@@ -221,7 +221,7 @@ string MpsCond::ToC(const string &taskType) const // {{{
   string newName = myCond->ToC(result,"libpi::Bool");
   string trueLabel = ToC_Name(MpsExp::NewVar(taskType+"_true"));
   string falseLabel = ToC_Name(MpsExp::NewVar(taskType+"_false"));
-  result << "      _task->SetLabel(((libpi:Bool*)" << newName << ".get())->GetValue()?" << trueLabel << ":" falseLabel << ");" << endl
+  result << "      _task->SetLabel(((libpi:Bool*)" << newName << ".get())->GetValue()?" << trueLabel << ":" << falseLabel << ");" << endl
          << "    }" << endl
          << "    goto _task->GetLabel();" << endl
          << "    " << trueLabel << ":" << endl

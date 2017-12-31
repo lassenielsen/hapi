@@ -273,11 +273,11 @@ string MpsLink::ToC(const string &taskType) const // {{{
     << "    { // link" << endl
     << "      for (size_t i=0; i<" << myMaxpid-1 << "; ++i)" << endl
     << "      {" << endl
-    << "        _state->SetLabel(&&" << lblRcv << ");" << endl
-    << "        if (!((libpi::Link*)((" << taskType << "*)_state.get())->" << ToC_Name(myChannel) << " ->get())->GetChannels()[i]->Receive(_state,_state->tmp))"
+    << "        _task->SetLabel(&&" << lblRcv << ");" << endl
+    << "        if (!((libpi::Link*)((" << taskType << "*)_task.get())->" << ToC_Name(myChannel) << " ->get())->GetChannels()[i]->Receive(_task,_task->tmp))"
     << "          return false;" << endl
     << "        " << lblRcv << ":" << endl
-    << "        _state->tmps.push_back(((" << taskType << "*)_state.get())->var_tmp);" << endl
+    << "        _task->tmps.push_back(((" << taskType << "*)_task.get())->var_tmp);" << endl
     << "      }" << endl
     << "      vector<vector<shared_ptr<libpi::Channel> > > inChannels(" << myMaxpid << ");" << endl
     << "      vector<vector<shared_ptr<libpi::Channel> > > outChannels(" << myMaxpid << ");" << endl
@@ -292,7 +292,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
     for (size_t i=0; i<myMaxpid; ++i)
       for (size_t j=0; j<myMaxpid; ++j)
         if (i>0 && j==0)
-          result << "      inChannels[" << i << "][j]=_state->tmps[i-1];" << endl;
+          result << "      inChannels[" << i << "][j]=_task->tmps[i-1];" << endl;
         else
           result << "      inChannels[" << i << "][j].reset(new libpi::task::Channel());" << endl;
     for (size_t i=0; i<myMaxpid; ++i)
@@ -303,20 +303,20 @@ string MpsLink::ToC(const string &taskType) const // {{{
     for (size_t i=0; i<myMaxpid-1; ++i)
       result
       << "      shared_ptr<libpi::Session> _s(new libpi::Session(i," << myMaxpid << ", inChannels[" << i+1 << "], outChannels[" << i+1 << "]));" << endl
-      << "        _state->tmps[i]->Send(_s);" << endl;
+      << "        _task->tmps[i]->Send(_s);" << endl;
     result
     << "      // Create local session" << endl
-    << "      (" << taskType << "*)_state.get())->" << ToC_Name(mySession) << ".reset(new libpi::Session(0," << myMaxpid << ",inChannels[0],outChannels[0]));" << endl
+    << "      (" << taskType << "*)_task.get())->" << ToC_Name(mySession) << ".reset(new libpi::Session(0," << myMaxpid << ",inChannels[0],outChannels[0]));" << endl
     << "    }" << endl;
   }
   else // Send Channel and receive session
   { result
-    << "    { _state->tmp.reset(new libpi::task::Channel);" << endl
-    << "      ((libpi::task::Link*)((" << taskType << "*)_state.get())->" << ToC_Name(myChannel) << ".get())->GetChannels()[" << myPid << "]->Send(_state->tmp);" << endl
-    << "      _state->SetLabel(&&" << lblRcv << ");" << endl
-    << "      ((libpi::task::Channel*)_state->tmp.get())->Receive(_state,((" << taskType << "*)_state.get())->" << ToC_Name(mySession) << ");" << endl
+    << "    { _task->tmp.reset(new libpi::task::Channel);" << endl
+    << "      ((libpi::task::Link*)((" << taskType << "*)_task.get())->" << ToC_Name(myChannel) << ".get())->GetChannels()[" << myPid << "]->Send(_task->tmp);" << endl
+    << "      _task->SetLabel(&&" << lblRcv << ");" << endl
+    << "      ((libpi::task::Channel*)_task->tmp.get())->Receive(_task,((" << taskType << "*)_task.get())->" << ToC_Name(mySession) << ");" << endl
     << "      " << lblRcv << ":" << endl
-    << "      _state->tmp.reset();" << endl
+    << "      _task->tmp.reset();" << endl
     << "    }" << endl;
   }
   result << mySucc->ToC(taskType);
