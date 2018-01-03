@@ -149,9 +149,9 @@ string MpsHostHeader::ToTex(int indent, int sw) const // {{{
          << ToTex_Hspace(indent,sw) << mySucc->ToTex(indent,sw);
   return result.str();
 } // }}}
-string MpsHostHeader::ToC() const // {{{
+string MpsHostHeader::ToC(const string &taskType) const // {{{
 {
-  return mySucc->ToC();
+  return mySucc->ToC(taskType);
 } // }}}
 string MpsHostHeader::ToCHeader() const // {{{
 {

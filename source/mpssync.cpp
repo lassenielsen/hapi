@@ -401,7 +401,7 @@ string MpsSync::ToTex(int indent, int sw) const // {{{
           + ToTex_Hspace(indent,sw) + "\\}";
   return result;
 } // }}}
-string MpsSync::ToC() const // {{{
+string MpsSync::ToC(const string &taskType) const // {{{
 {
   throw (string)"MpsSync::ToC(): Symmetric synchronization is not supported yet!";
 } // }}}

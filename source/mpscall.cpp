@@ -362,22 +362,25 @@ string MpsCall::ToC_prepare(const string &dest) const // {{{
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
   { string name=(*it)->ToC(result, (*tit)->ToC());
-    result << "  " << dest << "->values.push_back( static_pointer_cast<libpi::Value>(" << name << "));" << endl;
+    result << "      " << dest << "->SetValue(" << distance(myState.begin(),it) << ", " << name << ");" << endl;
   }
   tit=myTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it, ++tit)
   { string name=(*it)->ToC(result, (*tit)->ToC());
-    result << "  " << dest << "->values.push_back( static_pointer_cast<libpi::Value>(" << name << "));" << endl;
+    result << "      " << dest << "->SetValue(" << myState.size()+distance(myArgs.begin(),it) << ", " << name << ");" << endl;
   }
-  result << "  " << dest << "->label=&&method_" << ToC_Name(myName) << ";" << endl;
+  result << "      " << dest << "->label=&&method_" << ToC_Name(myName) << ";" << endl;
 
   return result.str();
 } // }}}
-string MpsCall::ToC() const // {{{
-{ stringstream result;
-  result << "  _state->values.clear();" << endl;
-  result << ToC_prepare("_state");
-  result << "  goto *_state->label;" << endl;
+string MpsCall::ToC(const string &taskType) const // {{{
+{ string newName = ToC_Name(MpsExp::NewVar("task")); // Create variable name foor the new state
+  stringstream result;
+  result << "    { Task_" << ToC_Name(myName) << " *" << newName << " = new Task_" << ToC_Name(myName) << "();" << endl
+         << ToC_prepare(newName)
+         << "      _task.reset(" << newName << ");" << endl
+         << "    }" << endl
+         << "    goto &&method_" << ToC_Name(myName) << ";" << endl;
   return result.str();
 } // }}}
 string MpsCall::ToCHeader() const // {{{

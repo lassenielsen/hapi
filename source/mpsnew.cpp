@@ -277,20 +277,16 @@ string MpsNew::ToTex(int indent, int sw) const // {{{
   result << ";\\newline\n" + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
   return result.str();
 } // }}}
-string MpsNew::ToC() const // {{{
+string MpsNew::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  // Declare new sessions
-  for (int i=0; i<myNames.size(); ++i)
-    result << "  std::shared_ptr<libpi::Session> " << ToC_Name(myNames[i]) << ";" << endl;
-
-  result << "  {" << endl;
+  result << "    {" << endl;
   string vecName = ToC_Name(MpsExp::NewVar("channels"));
-  result << "    vector<shared_ptr<libpi::Channel> > " << vecName << ";" << endl;
+  result << "      vector<shared_ptr<libpi::Channel> > " << vecName << ";" << endl;
   // Create all channels
   for (int i=0; i<myNames.size(); ++i)
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << vecName << ".push_back(std::shared_ptr<libpi::Channel>(new thread::Channel()));" << endl;
+      result << "    " << vecName << ".push_back(std::shared_ptr<libpi::Channel>(new libpi::task::Channel()));" << endl;
   // For each participant, create filtered channels vector, and create session
   for (int i=0; i<myNames.size(); ++i)
   { string sesInChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_in"));
@@ -302,11 +298,11 @@ string MpsNew::ToC() const // {{{
     for (int j=0; j<myNames.size(); ++j)
       result << "    " << sesOutChannels << ".push_back(" << vecName << "[" << (i+j*myNames.size()) << "]);" << endl;
   
-    result << "    " << ToC_Name(myNames[i]) << "= std::shared_ptr<libpi::Session>(new Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
+    result << "    ((" << taskType << "*)_task)->" << ToC_Name(myNames[i]) << ".reset(new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
   }
   result << "  }" << endl;
 
-  result << mySucc->ToC();
+  result << mySucc->ToC(taskType);
   return result.str();
 } // }}}
 string MpsNew::ToCHeader() const // {{{

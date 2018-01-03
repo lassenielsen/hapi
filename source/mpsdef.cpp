@@ -560,7 +560,7 @@ string MpsDef::ToTex(int indent, int sw) const // {{{
           + ToTex_Hspace(indent,sw) + ToTex_KW("in") + " " + mySucc->ToTex(indent+3,sw);
   return result;
 } // }}}
-string MpsDef::ToC() const // {{{
+string MpsDef::ToC(const string &taskType) const // {{{
 {
   throw (string)"MpsDef::ToC(): Local definitions not supported in compilation, must be moved to global procedure";
 } // }}}

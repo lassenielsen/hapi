@@ -214,18 +214,20 @@ string MpsCond::ToTex(int indent, int sw) const // {{{
                 + ToTex_Hspace(indent,sw) + ToTex_KW("else") + " " + myFalseBranch->ToTex(indent + 5,sw);
   return result;
 } // }}}
-string MpsCond::ToC() const // {{{
+string MpsCond::ToC(const string &taskType) const // {{{
 {
   stringstream result;
+  result << "    { // Evaluate condition" << endl;
   string newName = myCond->ToC(result,"libpi::Bool");
-  result << "  if (" << newName << "->GetValue())" << endl
-         << "  {" << endl
-         << myTrueBranch->ToC()
-         << "  }" << endl
-         << "  else" << endl
-         << "  {" << endl
-         << myFalseBranch->ToC()
-         << "  }" << endl;
+  string trueLabel = ToC_Name(MpsExp::NewVar(taskType+"_true"));
+  string falseLabel = ToC_Name(MpsExp::NewVar(taskType+"_false"));
+  result << "      _task->SetLabel(((libpi:Bool*)" << newName << ".get())->GetValue()?" << trueLabel << ":" << falseLabel << ");" << endl
+         << "    }" << endl
+         << "    goto _task->GetLabel();" << endl
+         << "    " << trueLabel << ":" << endl
+         << myTrueBranch->ToC(taskType)
+         << "    " << falseLabel << ":" << endl
+         << myFalseBranch->ToC(taskType);
   return result.str();
 } // }}}
 string MpsCond::ToCHeader() const // {{{

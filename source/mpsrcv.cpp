@@ -349,19 +349,24 @@ string MpsRcv::ToTex(int indent, int sw) const // {{{
           + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
   return result;
 } // }}}
-string MpsRcv::ToC() const // {{{
+string MpsRcv::ToC(const std::string &taskType) const // {{{
 {
+  string rcvLabel = ToC_Name(MpsExp::NewVar("receive"));
   stringstream result;
-  result << "  " << GetMsgType().ToCPtr() << " " << ToC_Name(myDest) << ";" << endl; // Declare variable
-  result << "  _dec_aprocs();" << endl
-         << "  " << ToC_Name(myDest) << " = static_pointer_cast<" << GetMsgType().ToC() << " >(" << ToC_Name(myChannel.GetName()) << "->Receive(" << int2string(myChannel.GetIndex()-1) << "));" << endl // Receive value
-         << "  _inc_aprocs();" << endl;
+  result
+    << "    // " << myChannel.GetName() << "[" << myChannel.GetIndex() << "] >> " << myDest << ";" << endl
+    << "    _task->SetLabel(&&" << rcvLabel << ");" << endl
+    << "    if (!((libpi::Session*)((" << taskType << "*)_task.get())->" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex() << ",_task,((" << taskType << "*)_task.get())->" << ToC_Name(myDest) << "))" << endl
+    << "      return false;" << endl
+    << "    " << rcvLabel << ":" << endl;
   if (myFinal)
   {
-    result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-           << "  " << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
+    result
+      << "    // Session complete" << endl
+      << "    ((libpi::Session*)((" << taskType << "*)_task.get())->" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
+      << "    ((" << taskType << "*)_task.get())->" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
   }
-  result << mySucc->ToC();
+  result << mySucc->ToC(taskType);
   return result.str();
 } // }}}
 string MpsRcv::ToCHeader() const // {{{

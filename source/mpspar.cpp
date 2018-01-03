@@ -10,7 +10,7 @@ using namespace hapi;
 MpsPar::MpsPar(const MpsTerm &left, const MpsTerm &right, const vector<string> &leftFinal, const vector<string> &rightFinal) // {{{
 : myLeftFinal(leftFinal)
 , myRightFinal(rightFinal)
-, myType("thread")
+, myType("task")
 {
   // Assert left != NULL
   // Assert right != NULL
@@ -436,50 +436,67 @@ string MpsPar::ToTex(int indent, int sw) const // {{{
        + ToTex_Hspace(indent,sw) + "| " + myRight->ToTex(indent+2,sw) + "\\newline\n"
        + ToTex_Hspace(indent,sw) + ")";
 } // }}}
-string MpsPar::ToC() const // {{{
+string MpsPar::ToC(const string &taskType) const // {{{
 {
   stringstream result;
   if (myType=="process")
   { string newName = ToC_Name(MpsExp::NewVar("fork")); // Create variable name foor the mmessagee to send
-    result << "  _inc_aprocs();" << endl
-           << "  int " << newName << "=fork();" << endl
-           << "  if (" << newName << ">0)" << endl
-           << "  { // Left process" << endl;
+    result
+    << "    { ++(*libpi::task::Task::ActiveTasks);" << endl
+    << "      int " << newName << "=fork();" << endl
+    << "      if (" << newName << ">0)" << endl
+    << "      { // Left process" << endl;
     for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it) {
       result << "    " << ToC_Name(*it) << "->Close(false);" << endl
              << "    delete " << ToC_Name(*it) << ";" << endl;
     }
-    result <<  myLeft->ToC()
-           << "  }" << endl
-           << "  else if (" << newName << "==0)" << endl
-           << "  { // Right process" << endl;
+    result
+    <<  myLeft->ToC(taskType)
+    << "      }" << endl
+    << "      else if (" << newName << "==0)" << endl
+    << "      { // Right process" << endl;
     for (vector<string>::const_iterator it=myRightFinal.begin(); it!=myRightFinal.end(); ++it) {
       result << "    " << ToC_Name(*it) << "->Close(false);" << endl
              << "    delete " << ToC_Name(*it) << ";" << endl;
     }
-    result <<  myRight->ToC()
-           << "  }" << endl
-           << "else throw (string)\"Error during fork!\";" << endl
-           << "return new Cnt();" << endl;
+    result
+    <<  myRight->ToC(taskType)
+    << "      }" << endl
+    << "      else throw (string)\"Error during fork!\";" << endl
+    << "      return new Cnt();" << endl
+    << "    }" << endl;
   }
   else if (myType=="thread")
   { const MpsCall *callptr=dynamic_cast<const MpsCall*>(myRight);
     string newName = ToC_Name(MpsExp::NewVar("state")); // Create variable name foor the new state
     if (callptr==NULL)
       throw string("MpsPar type thread requires rhs to be a direct methodcall.");
-    result << "  _inc_aprocs();" << endl
-           << "  { State *" << newName << " = new State();" << endl
-           << callptr->ToC_prepare(newName)
-           << "    _spawn_thread(" << newName << ");" << endl
-           << "  }" << endl
-           << "  { // Left process" << endl;
+    result
+    << "    { Task_" << ToC_Name(callptr->GetName()) << " *" << newName << " = new Task_" << ToC_Name(callptr->GetName()) << ";" << endl
+    << callptr->ToC_prepare(newName)
+    << "      ++(*libpi::task::Task::ActiveTasks);" << endl
+    << "      _spawn_thread(" << newName << ");" << endl
+    << "    }" << endl;
 // DO NOT CLOSE THREAD CHANNELS
 //    for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it)
 //    { result << "    " << ToC_Name(*it) << "->Close(false);" << endl
 //             << "    " << ToC_Name(*it) << "=NULL;" << endl;
 //    }
-    result <<  myLeft->ToC()
-           << "  }" << endl;
+    result <<  myLeft->ToC(taskType);
+  }
+  else if (myType=="task")
+  { const MpsCall *callptr=dynamic_cast<const MpsCall*>(myRight);
+    string newName = ToC_Name(MpsExp::NewVar("task")); // Create variable name foor the new state
+    if (callptr==NULL)
+      throw string("MpsPar type thread requires rhs to be a direct methodcall.");
+    result
+    << "    { Task_" << ToC_Name(callptr->GetName()) << " *" << newName << " = new Task_" << ToC_Name(callptr->GetName()) << ";" << endl
+    << callptr->ToC_prepare(newName)
+    << "      " << newName << "->SetLabel(&&method_" << ToC_Name(callptr->GetName()) << ";" << endl
+    << "      ++(*libpi::task::Task::ActiveTasks);" << endl
+    << "      libpi::task::Task::Tasks.Send(shared_ptr<libpi::task::Task>(newstate));" << endl
+    << "    }" << endl
+    << myLeft->ToC(taskType);
   }
   else
     throw string("Error, unknown par type ")+myType;

@@ -225,11 +225,11 @@ string MpsNu::ToTex(int indent, int sw) const // {{{
   return "(" + ToTex_KW("nu") + " " + ToTex_Session(myChannel) + ":" + myType->ToTex(typeIndent,sw) + ")\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsNu::ToC() const // {{{
+string MpsNu::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  result << "  shared_ptr<thread::Link> " << ToC_Name(myChannel) << "(new thread::Link(" << myType->GetMaxPid() << "));" << endl;
-  result << mySucc->ToC();
+  result << "    ((" << taskType << "*)_task)->" << ToC_Name(myChannel) << ".reset(new libpi::task::Link(" << myType->GetMaxPid() << "));" << endl;
+  result << mySucc->ToC(taskType);
   return result.str();
 } // }}}
 string MpsNu::ToCHeader() const // {{{

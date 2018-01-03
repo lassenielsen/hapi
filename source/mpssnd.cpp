@@ -231,7 +231,7 @@ string MpsSnd::ToTex(int indent, int sw) const // {{{
   return myChannel.ToTex() + "$\\ll$" + myExp->ToString() + ";\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsSnd::ToC() const // {{{
+string MpsSnd::ToC(const string &taskType) const // {{{
 {
   stringstream result;
   // Create variable name foor the message to send
@@ -240,20 +240,13 @@ string MpsSnd::ToC() const // {{{
   // Declare variable
   result << "  { " << endl;
   string valName=myExp->ToC(result, GetMsgType().ToC()); // Compute message and store in variable valName
+  result << "    ((libpi::Session*)((" << taskType << "*)_task)->" << ToC_Name(myChannel.GetName()) << ".get())->Send("
+           << int2string(myChannel.GetIndex()-1) << ","
+           << "((" << taskType << "*)_task)->" << valName << "));" << endl // Send computed value
+         << "  }" << endl;
   if (delType!=NULL)
   {
-    result << "    " << ToC_Name(myChannel.GetName()) << "->Delegate(" << int2string(myChannel.GetIndex()-1) << ", *" << valName << ");" << endl;
-  }
-  else
-  {
-    result << "    " << ToC_Name(myChannel.GetName()) << "->Send("
-                     << int2string(myChannel.GetIndex()-1) << ","
-                     << "static_pointer_cast<libpi::Value>(" << valName << "));" << endl; // Send computed value
-  }
-  result << "  }" << endl;
-  if (delType!=NULL)
-  {
-    result << "  " << valName << "->Close(false);" << endl
+    result << "  ((libpi::Session*)((" << taskType << "*)_task)->" << valName << "->Close(false);" << endl
            << "  " << valName << " = NULL;" << endl;
   }
   if (myFinal)
@@ -261,7 +254,7 @@ string MpsSnd::ToC() const // {{{
     result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
            << "  " << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
   }
-  result << mySucc->ToC();
+  result << mySucc->ToC(taskType);
   return result.str();
 } // }}}
 string MpsSnd::ToCHeader() const // {{{

@@ -780,7 +780,7 @@ string MpsGuiSync::ToTex(int indent, int sw) const // {{{
           + ToTex_Hspace(indent,sw) + "\\}";
   return result;
 } // }}}
-string MpsGuiSync::ToC() const // {{{
+string MpsGuiSync::ToC(const string &taskType) const // {{{
 {
   throw (string)"MpsGuiSync::ToC(): guisync is not implemented yet!";
 } // }}}
