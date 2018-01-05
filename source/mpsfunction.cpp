@@ -152,7 +152,7 @@ string MpsFunction::ToC() const // {{{
   return ss.str();
 } // }}}
 string MpsFunction::ToCTaskType() const // {{{
-{ set<string> ids=GetBody().FEV();
+{ set<string> ids=GetBody().EV();
   ids.insert(GetStateArgs().begin(),GetStateArgs().end());
   ids.insert(GetStateArgs().begin(),GetStateArgs().end());
 
