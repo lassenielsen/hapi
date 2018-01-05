@@ -387,8 +387,18 @@ string MpsTerm::MakeC() const // {{{
   // Add framework to result
   result
     << "// }}}\n"
-    << "// Task Types {{{\n"
-    << "// FIXME TASK TYPES\n"
+    << "// Task Types {{{\n";
+  set<string> ids=main->FEV();
+  result
+  << "class Task_Main : public libpi::task::Task" << endl
+  << "{ public:" << endl;
+  for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+    result << "    shared_ptr<libpi::Value> var_" << ToC_Name(*id) << ";" << endl;
+  result
+  << "};" << endl;
+  for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
+    result << def->ToCTaskType();
+  result
     << "// }}}\n"
     << "// All Methods {{{\n"
     << "inline bool _methods(shared_ptr<libpi::task::Task> &_task)\n"
