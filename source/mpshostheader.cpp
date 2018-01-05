@@ -111,6 +111,10 @@ set<string> MpsHostHeader::FPV() const // {{{
 {
   return mySucc->FPV();
 } // }}}
+set<string> MpsHostHeader::EV() const // {{{
+{
+  return mySucc->EV();
+} // }}}
 set<string> MpsHostHeader::FEV() const // {{{
 {
   return mySucc->FEV();

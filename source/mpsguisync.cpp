@@ -672,6 +672,20 @@ set<string> MpsGuiSync::FPV() const // {{{
   }
   return result;
 } // }}}
+set<string> MpsGuiSync::EV() const // {{{
+{
+  set<string> result;
+  result.clear();
+  for (map<string,inputbranch>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    set<string> sub = it->second.term->EV();
+    result.insert(sub.begin(), sub.end());
+    for (vector<string>::const_iterator arg=it->second.args.begin(); arg!=it->second.args.end(); ++arg)
+      result.insert(*arg);
+  }
+  result.insert(mySession);
+  return result;
+} // }}}
 set<string> MpsGuiSync::FEV() const // {{{
 {
   set<string> result;

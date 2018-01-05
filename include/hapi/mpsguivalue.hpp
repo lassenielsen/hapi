@@ -38,6 +38,7 @@ class MpsGuiValue : public MpsTerm // {{{
     MpsGuiValue *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGuiValue *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     std::set<std::string> FPV() const;
+    std::set<std::string> EV() const;
     std::set<std::string> FEV() const;
     MpsGuiValue *Copy() const;
     bool Terminated() const;

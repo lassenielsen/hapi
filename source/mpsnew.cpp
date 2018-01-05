@@ -227,6 +227,15 @@ set<string> MpsNew::FPV() const // {{{
   set<string> result = mySucc->FPV();
   return result;
 } // }}}
+set<string> MpsNew::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  set<string> result2 = myType->FEV();
+  result.insert(result2.begin(),result2.end());
+  for (vector<string>::const_iterator name=myNames.begin(); name!=myNames.end(); ++name)
+    result.insert(*name);
+  return result;
+} // }}}
 set<string> MpsNew::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();

@@ -395,6 +395,13 @@ set<string> MpsPar::FPV() const // {{{
   result.insert(sub.begin(),sub.end());
   return result;
 } // }}}
+set<string> MpsPar::EV() const // {{{
+{
+  set<string> result = myLeft->EV();
+  set<string> sub = myRight->EV();
+  result.insert(sub.begin(),sub.end());
+  return result;
+} // }}}
 set<string> MpsPar::FEV() const // {{{
 {
   set<string> result = myLeft->FEV();

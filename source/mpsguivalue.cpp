@@ -171,6 +171,16 @@ set<string> MpsGuiValue::FPV() const // {{{
   set<string> result = mySucc->FPV();
   return result;
 } // }}}
+set<string> MpsGuiValue::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  result.insert(mySession);
+  set<string> fv=myName->FV();
+  result.insert(fv.begin(),fv.end());
+  fv=myValue->FV();
+  result.insert(fv.begin(),fv.end());
+  return result;
+} // }}}
 set<string> MpsGuiValue::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();

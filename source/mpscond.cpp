@@ -171,6 +171,18 @@ set<string> MpsCond::FPV() const // {{{
   result.insert(ffpv.begin(), ffpv.end());
   return result;
 } // }}}
+set<string> MpsCond::EV() const // {{{
+{
+  set<string> result;
+  result.clear();
+  set<string> cfv=myCond->FV();
+  set<string> tfev=myTrueBranch->EV();
+  set<string> ffev=myFalseBranch->EV();
+  result.insert(cfv.begin(), cfv.end());
+  result.insert(tfev.begin(), tfev.end());
+  result.insert(ffev.begin(), ffev.end());
+  return result;
+} // }}}
 set<string> MpsCond::FEV() const // {{{
 {
   set<string> result;

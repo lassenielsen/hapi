@@ -197,6 +197,14 @@ set<string> MpsSnd::FPV() const // {{{
   set<string> result = mySucc->FPV();
   return result;
 } // }}}
+set<string> MpsSnd::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  result.insert(myChannel.GetName());
+  set<string> fv=myExp->FV();
+  result.insert(fv.begin(),fv.end());
+  return result;
+} // }}}
 set<string> MpsSnd::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();

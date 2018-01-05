@@ -158,6 +158,15 @@ set<string> MpsHostStatement::FPV() const // {{{
 {
   return mySucc->FPV();
 } // }}}
+set<string> MpsHostStatement::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  for (vector<MpsExp*>::const_iterator exp=myExpParts.begin(); exp!=myExpParts.end(); ++exp)
+  { set<string> fv = (*exp)->FV();
+    result.insert(fv.begin(),fv.end());
+  }
+  return result;
+} // }}}
 set<string> MpsHostStatement::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();

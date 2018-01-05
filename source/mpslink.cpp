@@ -229,6 +229,13 @@ set<string> MpsLink::FPV() const // {{{
   set<string> result = mySucc->FPV();
   return result;
 } // }}}
+set<string> MpsLink::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  result.insert(mySession);
+  result.insert(myChannel);
+  return result;
+} // }}}
 set<string> MpsLink::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();

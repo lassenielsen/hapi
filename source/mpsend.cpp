@@ -71,6 +71,9 @@ set<string> MpsEnd::FPV() const // {{{
   result.clear();
   return result;
 } // }}}
+set<string> MpsEnd::EV() const // {{{
+{ return FEV();
+} // }}}
 set<string> MpsEnd::FEV() const // {{{
 {
   set<string> result;

@@ -242,6 +242,18 @@ set<string> MpsBranch::FPV() const // {{{
   }
   return result;
 } // }}}
+set<string> MpsBranch::EV() const // {{{
+{
+  set<string> result;
+  result.clear();
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    set<string> sub = it->second->EV();
+    result.insert(sub.begin(), sub.end());
+  }
+  result.insert(myChannel.GetName());
+  return result;
+} // }}}
 set<string> MpsBranch::FEV() const // {{{
 {
   set<string> result;

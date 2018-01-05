@@ -328,6 +328,18 @@ set<string> MpsSync::FPV() const // {{{
   }
   return result;
 } // }}}
+set<string> MpsSync::EV() const // {{{
+{
+  set<string> result;
+  result.clear();
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    set<string> sub = it->second->EV();
+    result.insert(sub.begin(), sub.end());
+  }
+  result.insert(mySession);
+  return result;
+} // }}}
 set<string> MpsSync::FEV() const // {{{
 {
   set<string> result;

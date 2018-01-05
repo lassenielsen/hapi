@@ -175,6 +175,12 @@ set<string> MpsSelect::FPV() const // {{{
   set<string> result = mySucc->FPV();
   return result;
 } // }}}
+set<string> MpsSelect::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  result.insert(myChannel.GetName());
+  return result;
+} // }}}
 set<string> MpsSelect::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();

@@ -321,6 +321,8 @@ class MpsTerm // {{{
     virtual MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const = 0;
     //! Free process variables
     virtual std::set<std::string> FPV() const = 0;
+    //! Expression variables -- includes bound variables
+    virtual std::set<std::string> EV() const = 0;
     //! Free expression variables
     virtual std::set<std::string> FEV() const = 0;
 

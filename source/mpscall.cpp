@@ -285,6 +285,17 @@ set<string> MpsCall::FPV() const // {{{
   result.insert(myName);
   return result;
 } // }}}
+set<string> MpsCall::EV() const // {{{
+{
+  set<string> result;
+  result.clear();
+  for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+  {
+    set<string> fv=(*it)->FV();
+    result.insert(fv.begin(),fv.end());
+  }
+  return result;
+} // }}}
 set<string> MpsCall::FEV() const // {{{
 {
   set<string> result;

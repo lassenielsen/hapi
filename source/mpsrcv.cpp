@@ -308,6 +308,13 @@ set<string> MpsRcv::FPV() const // {{{
   set<string> result = mySucc->FPV();
   return result;
 } // }}}
+set<string> MpsRcv::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  result.insert(myDest);
+  result.insert(myChannel.GetName());
+  return result;
+} // }}}
 set<string> MpsRcv::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();

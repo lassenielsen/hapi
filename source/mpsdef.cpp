@@ -465,6 +465,15 @@ set<string> MpsDef::FPV() const // {{{
   result.erase(myName);
   return result;
 } // }}}
+set<string> MpsDef::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  set<string> result2 = myBody->EV();
+  result.insert(result2.begin(),result2.end());
+  for (vector<string>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+    result.insert(*it);
+  return result;
+} // }}}
 set<string> MpsDef::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();

@@ -178,6 +178,14 @@ set<string> MpsAssign::FPV() const // {{{
 {
   return mySucc->FPV();
 } // }}}
+set<string> MpsAssign::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  result.insert(myId);
+  set<string> fv=myExp->FV();
+  result.insert(fv.begin(),fv.end());
+  return result;
+} // }}}
 set<string> MpsAssign::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();

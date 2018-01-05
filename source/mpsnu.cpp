@@ -184,6 +184,12 @@ set<string> MpsNu::FPV() const // {{{
   set<string> result = mySucc->FPV();
   return result;
 } // }}}
+set<string> MpsNu::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  result.insert(myChannel);
+  return result;
+} // }}}
 set<string> MpsNu::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();
