@@ -388,9 +388,9 @@ string MpsTerm::MakeC() const // {{{
   result
     << "// }}}\n"
     << "// Task Types {{{\n";
-  set<string> ids=main->FEV();
+  set<string> ids=main->EV();
   result
-  << "class Task_Main : public libpi::task::Task" << endl
+  << "class " << mainTask << " : public libpi::task::Task" << endl
   << "{ public:" << endl;
   for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
     result << "    shared_ptr<libpi::Value> var_" << ToC_Name(*id) << ";" << endl;
