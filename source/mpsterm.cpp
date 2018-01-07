@@ -408,6 +408,7 @@ string MpsTerm::MakeC() const // {{{
     << "  if (_label!=NULL)\n"
     << "    goto *_label;\n"
     << "  method_Main:\n"
+    << "  #define _this ((" << mainTask << "*)_task.get())" << endl
     << "  { // Main {{{\n"
     << main->ToC(mainTask)
     << "  } // }}}\n"

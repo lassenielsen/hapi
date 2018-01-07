@@ -879,7 +879,7 @@ string MpsSystemExp::ToString() const // {{{
 string MpsVarExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   // No evaluation necessary
-  return ToC_Name(myName);
+  return string("_this->var_")+ToC_Name(myName);
 } // }}}
 string MpsIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
 { 

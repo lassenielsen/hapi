@@ -146,6 +146,8 @@ string MpsFunction::ToC() const // {{{
   stringstream ss;
   string taskType=ToC_Name(GetName());
   ss << "  method_" << taskType << ": // {{{" << endl
+     << "  #undef _this" << endl
+     << "  #define _this ((Task_" << taskType << "*)_task.get())" << endl
      << "  {" << endl;
   ss << GetBody().ToC(taskType)
      << "  } // }}}";

@@ -499,9 +499,8 @@ string MpsPar::ToC(const string &taskType) const // {{{
     result
     << "    { Task_" << ToC_Name(callptr->GetName()) << " *" << newName << " = new Task_" << ToC_Name(callptr->GetName()) << ";" << endl
     << callptr->ToC_prepare(newName)
-    << "      " << newName << "->SetLabel(&&method_" << ToC_Name(callptr->GetName()) << ";" << endl
     << "      ++(*libpi::task::Task::ActiveTasks);" << endl
-    << "      libpi::task::Task::Tasks.Send(shared_ptr<libpi::task::Task>(newstate));" << endl
+    << "      libpi::task::Task::Tasks.Send(shared_ptr<libpi::task::Task>(" << newName << "));" << endl
     << "    }" << endl
     << myLeft->ToC(taskType);
   }

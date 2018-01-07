@@ -326,7 +326,7 @@ string MpsBranch::ToC(const string &taskType) const // {{{
   string lblName = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
   result
     << "    _task->SetLabel(&&" << lblRcvName << ");" << endl
-    << "    if (!((libpi::Session*)((" << taskType << "*)_task.get())->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << int2string(myChannel.GetIndex()-1) << ",_task,_task->tmp)) // Receive label to tmp" << endl
+    << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << int2string(myChannel.GetIndex()-1) << ",_task,_task->tmp)) // Receive label to tmp" << endl
     << "      return false;" << endl
     << "    " << lblRcvName << ":" << endl
     << "    _task->SetLabel(&&" << lblName << ");" << endl
@@ -341,8 +341,8 @@ string MpsBranch::ToC(const string &taskType) const // {{{
     result << "    if (((libpi::String*)_task->tmp.get())->GetValue()==\"" << it->first << "\")" << endl
            << "    {" << endl;
     if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
-      result << "    ((" << taskType << "*)_task.get())->" << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-             << "    ((" << taskType << "*)_task.get())->" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
+      result << "    _this->" << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
+             << "    _this->" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
     }
     result << it->second->ToC(taskType);
     result << "    }" << endl;
