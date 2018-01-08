@@ -341,8 +341,8 @@ string MpsBranch::ToC(const string &taskType) const // {{{
     result << "    if (((libpi::String*)_task->tmp.get())->GetValue()==\"" << it->first << "\")" << endl
            << "    {" << endl;
     if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
-      result << "    _this->" << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-             << "    _this->" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
+      result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
+             << "    _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
     }
     result << it->second->ToC(taskType);
     result << "    }" << endl;

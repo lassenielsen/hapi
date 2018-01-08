@@ -363,7 +363,7 @@ string MpsRcv::ToC(const std::string &taskType) const // {{{
   result
     << "    // " << myChannel.GetName() << "[" << myChannel.GetIndex() << "] >> " << myDest << ";" << endl
     << "    _task->SetLabel(&&" << rcvLabel << ");" << endl
-    << "    if (!((libpi::Session*)(_this->" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex() << ",_task,((" << taskType << "*)_task.get())->" << ToC_Name(myDest) << "))" << endl
+    << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex() << ",_task,_this->var_" << ToC_Name(myDest) << "))" << endl
     << "      return false;" << endl
     << "    " << rcvLabel << ":" << endl;
   if (myFinal)

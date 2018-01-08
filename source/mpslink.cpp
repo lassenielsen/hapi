@@ -281,7 +281,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
     << "      for (size_t i=0; i<" << myMaxpid-1 << "; ++i)" << endl
     << "      {" << endl
     << "        _task->SetLabel(&&" << lblRcv << ");" << endl
-    << "        if (!((libpi::Link*)(_this->var_" << ToC_Name(myChannel) << "->get())->GetChannels()[i]->Receive(_task,_task->tmp))"
+    << "        if (!((libpi::Link*)(_this->var_" << ToC_Name(myChannel) << ".get())->GetChannels()[i]->Receive(_task,_task->tmp))"
     << "          return false;" << endl
     << "        " << lblRcv << ":" << endl
     << "        _task->tmps.push_back(((" << taskType << "*)_task.get())->var_tmp);" << endl

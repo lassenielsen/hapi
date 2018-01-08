@@ -212,9 +212,9 @@ $(libname)$(libversion): $(library_objects)
 #OS_MAC	$(compiler) -dynamiclib -o $(libname) $(library_objects) $(libs)
 
 objects/%.o: source/%.cpp include/$(name)/*.hpp  include/$(name)/config.hpp include/$(name)/hapi_bnf.hpp
-	mkdir -p objects
+	@mkdir -p objects
 	$(compiler) -c source/$*.cpp $(args) -o objects/$*.o
 
-tags: $(name)/*.hpp $(name)/*.cpp
+tags: include/$(name)/*.hpp source/*.cpp
 	$(ctags) -a -o ~/.ctags $(PWD)/include/$(name)/*.hpp $(PWD)/source/*.cpp
 

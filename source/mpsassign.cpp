@@ -223,14 +223,12 @@ string MpsAssign::ToC(const string &taskType) const // {{{
   stringstream result;
   string lblName = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
   string varName = myExp->ToC(result,GetExpType().ToC());
-  result << "    ((*" << taskType << ")_task.get())." << ToC_Name(myId) << ".reset(new " << GetExpType().ToCPtr() << "(" << varName << "));" << endl
+  result << "    _this->var_" << ToC_Name(myId) << "=" << varName << ";" << endl
          << "    _task->SetLabel(&&" << lblName << ");" << endl
          << "    ++_steps;" << endl
          << "    if (_steps>=libpi::task::Task::MaxSteps) return true;" << endl
          << "    " << lblName << ":" << endl;
-  //MpsTerm *tmpSucc = mySucc->ERename(myId,varName); // FIXME: May reference other value
   result << mySucc->ToC(taskType);
-  //delete tmpSucc;
   return result.str();
 } // }}}
 string MpsAssign::ToCHeader() const // {{{

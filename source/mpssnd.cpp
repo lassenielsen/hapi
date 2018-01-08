@@ -248,19 +248,19 @@ string MpsSnd::ToC(const string &taskType) const // {{{
   // Declare variable
   result << "  { " << endl;
   string valName=myExp->ToC(result, GetMsgType().ToC()); // Compute message and store in variable valName
-  result << "    ((libpi::Session*)((" << taskType << "*)_task)->" << ToC_Name(myChannel.GetName()) << ".get())->Send("
+  result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Send("
            << int2string(myChannel.GetIndex()-1) << ","
-           << "((" << taskType << "*)_task)->" << valName << "));" << endl // Send computed value
+           << "(" << valName << "));" << endl // Send computed value
          << "  }" << endl;
   if (delType!=NULL)
   {
-    result << "  ((libpi::Session*)((" << taskType << "*)_task)->" << valName << "->Close(false);" << endl
-           << "  " << valName << " = NULL;" << endl;
+    result << "  ((libpi::Session*)_this->var_" << ToC_Name(valName) << "->Close(false);" << endl
+           << "  _this->var_" << ToC_Name(valName) << ".reset();" << endl;
   }
   if (myFinal)
   {
-    result << "  " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-           << "  " << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
+    result << "  ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
+           << "  _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
   }
   result << mySucc->ToC(taskType);
   return result.str();
