@@ -370,8 +370,8 @@ string MpsRcv::ToC(const std::string &taskType) const // {{{
   {
     result
       << "    // Session complete" << endl
-      << "    _this->" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
-      << "    _this->" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
+      << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
+      << "    _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
   }
   result << mySucc->ToC(taskType);
   return result.str();

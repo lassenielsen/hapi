@@ -234,7 +234,7 @@ string MpsNu::ToTex(int indent, int sw) const // {{{
 string MpsNu::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  result << "    ((" << taskType << "*)_task.get())->var_" << ToC_Name(myChannel) << ".reset(new libpi::task::Link(" << myType->GetMaxPid() << "));" << endl;
+  result << "    _this->var_" << ToC_Name(myChannel) << ".reset(new libpi::task::Link(" << myType->GetMaxPid() << "));" << endl;
   result << mySucc->ToC(taskType);
   return result.str();
 } // }}}

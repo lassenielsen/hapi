@@ -374,7 +374,8 @@ string MpsTerm::MakeC() const // {{{
     result << def->GetBody().ToCHeader();
   result
     << "// }}}\n"
-    << "// Value declerations {{{\n";
+    << "// Value declerations {{{\n"
+    << "std::vector<char*> _args;\n";
   std::unordered_set<std::string> existing;
   std::vector<std::string> consts;
   // Create const definitions without duplicates
@@ -402,7 +403,6 @@ string MpsTerm::MakeC() const // {{{
     << "// }}}\n"
     << "// All Methods {{{\n"
     << "inline bool _methods(shared_ptr<libpi::task::Task> &_task)\n"
-    << "{ "//\n"
     << "{ size_t _steps=0;\n"
     << "  void *_label=_task->GetLabel();\n"
     << "  if (_label!=NULL)\n"
@@ -454,7 +454,7 @@ string MpsTerm::MakeC() const // {{{
     << "  try\n"
     << "  { signal(SIGCHLD, SIG_IGN); // Fork optimization\n"
     << "    // Create main task\n"
-    << "    shared_ptr<libpi::task::Task> s0(new Task_Main());\n"
+    << "    shared_ptr<libpi::task::Task> s0(new " << mainTask << "());\n"
     << "    s0->SetLabel(NULL);\n"
     << "    ++(*libpi::task::Task::ActiveTasks);\n"
     << "    libpi::task::Task::Tasks.Send(s0);\n"

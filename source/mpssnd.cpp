@@ -254,12 +254,12 @@ string MpsSnd::ToC(const string &taskType) const // {{{
          << "  }" << endl;
   if (delType!=NULL)
   {
-    result << "  ((libpi::Session*)_this->var_" << ToC_Name(valName) << "->Close(false);" << endl
+    result << "  ((libpi::Session*)_this->var_" << ToC_Name(valName) << ".get())->Close(false);" << endl
            << "  _this->var_" << ToC_Name(valName) << ".reset();" << endl;
   }
   if (myFinal)
   {
-    result << "  ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
+    result << "  ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
            << "  _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
   }
   result << mySucc->ToC(taskType);

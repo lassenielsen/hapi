@@ -16,10 +16,10 @@ local Console()
   local ConsoleSession($console(1 of 1,2) s)
   ( s[2]>>
     {^PutString: s[2]>>str;
-                 HOST("std::cout << (", str, ")->GetValue() << std::endl;");
+                 HOST("std::cout << ((libpi::String*)", str, ".get())->GetValue() << std::endl;");
                  ConsoleSession(s);
      ^PutInt:    s[2]>>i;
-                 HOST("std::cout << (", i, ")->ToString() << std::endl;");
+                 HOST("std::cout << ((libpi::Int*)", i, ".get())->ToString() << std::endl;");
                  ConsoleSession(s);
      ^GetString: String val="";
                  HOST("{ std::string _s; std::cin >> _s; ", val, "=shared_ptr<libpi::String>(new libpi::String(_s)); }");
