@@ -249,7 +249,7 @@ string MpsSnd::ToC(const string &taskType) const // {{{
   result << "  { " << endl;
   string valName=myExp->ToC(result, GetMsgType().ToC()); // Compute message and store in variable valName
   result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Send("
-           << int2string(myChannel.GetIndex()-1) << ","
+           << myChannel.GetIndex()-1 << ","
            << "(" << valName << "));" << endl // Send computed value
          << "  }" << endl;
   if (delType!=NULL)

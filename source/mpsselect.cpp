@@ -219,7 +219,7 @@ string MpsSelect::ToC(const std::string &taskType) const // {{{
   stringstream result;
   string msgName = ToC_Name(MpsExp::NewVar("select")); // Create variable name for the message to send
   result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Send("
-         << int2string(myChannel.GetIndex()-1) << ","
+         << myChannel.GetIndex()-1 << ","
          << "label_" << md5(myLabel) << ");" << endl;
   if (myFinal)
   {

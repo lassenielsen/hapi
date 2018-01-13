@@ -326,20 +326,20 @@ string MpsBranch::ToC(const string &taskType) const // {{{
   string lblName = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
   result
     << "    _task->SetLabel(&&" << lblRcvName << ");" << endl
-    << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << int2string(myChannel.GetIndex()-1) << ",_task,_task->tmp)) // Receive label to tmp" << endl
+    << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex()-1 << ",_task,_task->tmp)) // Receive label to tmp" << endl
     << "      return false;" << endl
     << "    " << lblRcvName << ":" << endl
     << "    _task->SetLabel(&&" << lblName << ");" << endl
     << "    if (++_steps>=libpi::task::Task::MaxSteps) return true;" << endl
-    << "    " << lblName << ":" << endl
-    << "    _task->tmp.reset();" << endl;
+    << "    " << lblName << ":" << endl;
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
       result << "    else " << endl;
     // Fixme: Use goto *branchmap[((libpi::String*)_task->tmp.get())->GetValue()];
     result << "    if (((libpi::String*)_task->tmp.get())->GetValue()==\"" << it->first << "\")" << endl
-           << "    {" << endl;
+           << "    {" << endl
+           << "      _task->tmp.reset();" << endl;
     if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
       result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
              << "    _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
