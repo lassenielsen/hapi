@@ -323,15 +323,12 @@ string MpsBranch::ToC(const string &taskType) const // {{{
 {
   stringstream result;
   string lblRcvName = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
-  string lblName = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
   result
+    << ToC_Yield()
     << "    _task->SetLabel(&&" << lblRcvName << ");" << endl
     << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex()-1 << ",_task,_task->tmp)) // Receive label to tmp" << endl
     << "      return false;" << endl
-    << "    " << lblRcvName << ":" << endl
-    << "    _task->SetLabel(&&" << lblName << ");" << endl
-    << "    if (++_steps>=libpi::task::Task::MaxSteps) return true;" << endl
-    << "    " << lblName << ":" << endl;
+    << "    " << lblRcvName << ":" << endl;
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
@@ -347,7 +344,7 @@ string MpsBranch::ToC(const string &taskType) const // {{{
     result << it->second->ToC(taskType);
     result << "    }" << endl;
   }
-  result << "    else throw string(\"Unknown branch: \")+((libpi::String*)_task->tmp.get())->GetValue()+\" at " << lblName << "\";" << endl;
+  result << "    else throw string(\"Unknown branch: \")+((libpi::String*)_task->tmp.get())->GetValue();" << endl;
   return result.str();
 } // }}}
 string MpsBranch::ToCHeader() const // {{{

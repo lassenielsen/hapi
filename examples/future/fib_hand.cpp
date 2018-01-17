@@ -226,8 +226,8 @@ void *_workerthread(void *_arg) // {{{
 { try
   { while (true) // Continue until termination
     { // Wait for task
-      resume_task:
       shared_ptr<libpi::task::Task> task=dynamic_pointer_cast<libpi::task::Task>(libpi::task::Task::Tasks.Receive());
+      resume_task:
       if (!task)
         break;
       if (_methods(task))

@@ -221,14 +221,12 @@ string MpsAssign::ToTex(int indent, int sw) const // {{{
 string MpsAssign::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  string lblName = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
+  result << ToC_Yield()
+         << "    {" << endl;
   string varName = myExp->ToC(result,GetExpType().ToC());
-  result << "    _this->var_" << ToC_Name(myId) << "=" << varName << ";" << endl
-         << "    _task->SetLabel(&&" << lblName << ");" << endl
-         << "    ++_steps;" << endl
-         << "    if (_steps>=libpi::task::Task::MaxSteps) return true;" << endl
-         << "    " << lblName << ":" << endl;
-  result << mySucc->ToC(taskType);
+  result << "      _this->var_" << ToC_Name(myId) << "=" << varName << ";" << endl
+         << "    }" << endl
+         << mySucc->ToC(taskType);
   return result.str();
 } // }}}
 string MpsAssign::ToCHeader() const // {{{

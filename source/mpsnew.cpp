@@ -289,27 +289,28 @@ string MpsNew::ToTex(int indent, int sw) const // {{{
 string MpsNew::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  result << "    {" << endl;
-  string vecName = ToC_Name(MpsExp::NewVar("channels"));
-  result << "      vector<shared_ptr<libpi::Channel> > " << vecName << ";" << endl;
+  result << ToC_Yield()
+         << "    {" << endl;
+  result << "      _task->tmps.clear();" << endl;
   // Create all channels
   for (int i=0; i<myNames.size(); ++i)
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << vecName << ".push_back(std::shared_ptr<libpi::Channel>(new libpi::task::Channel()));" << endl;
+      result << "      _task->tmps.push_back(std::shared_ptr<libpi::Value>(new libpi::task::Channel()));" << endl;
   // For each participant, create filtered channels vector, and create session
   for (int i=0; i<myNames.size(); ++i)
   { string sesInChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_in"));
     string sesOutChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_out"));
     result << "    vector<shared_ptr<libpi::Channel >> " << sesInChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << sesInChannels << ".push_back(" << vecName << "[" << (j+i*myNames.size()) << "]);" << endl;
+      result << "    " << sesInChannels << ".push_back(dynamic_pointer_cast<libpi::Channel>(_task->tmps[" << (j+i*myNames.size()) << "]));" << endl;
     result << "    vector<shared_ptr<libpi::Channel> > " << sesOutChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << sesOutChannels << ".push_back(" << vecName << "[" << (i+j*myNames.size()) << "]);" << endl;
+      result << "    " << sesOutChannels << ".push_back(dynamic_pointer_cast<libpi::Channel>(_task->tmps[" << (i+j*myNames.size()) << "]));" << endl;
   
-    result << "    ((" << taskType << "*)_task)->" << ToC_Name(myNames[i]) << ".reset(new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
+    result << "      _this->tmps.clear();" << endl
+           << "      _this->var_" << ToC_Name(myNames[i]) << ".reset(new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
   }
-  result << "  }" << endl;
+  result << "    }" << endl;
 
   result << mySucc->ToC(taskType);
   return result.str();

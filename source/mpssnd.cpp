@@ -246,16 +246,18 @@ string MpsSnd::ToC(const string &taskType) const // {{{
   const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(&GetMsgType());
   string msgName = ToC_Name(MpsExp::NewVar("send"));
   // Declare variable
-  result << "  { " << endl;
+  result << ToC_Yield()
+         << "    // " << myChannel.GetName() << "[" << myChannel.GetIndex() << "] << " << myExp->ToString() << ";" << endl
+         << "    { " << endl;
   string valName=myExp->ToC(result, GetMsgType().ToC()); // Compute message and store in variable valName
-  result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Send("
+  result << "      ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Send("
            << myChannel.GetIndex()-1 << ","
-           << "(" << valName << "));" << endl // Send computed value
-         << "  }" << endl;
+           << valName << ");" << endl // Send computed value
+         << "    }" << endl;
   if (delType!=NULL)
-  {
-    result << "  ((libpi::Session*)_this->var_" << ToC_Name(valName) << ".get())->Close(false);" << endl
-           << "  _this->var_" << ToC_Name(valName) << ".reset();" << endl;
+  { // Assume task or thread level
+    // Otherwise need to close session
+    result << "  " << ToC_Name(valName) << ".reset();" << endl;
   }
   if (myFinal)
   {

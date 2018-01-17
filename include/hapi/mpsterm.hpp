@@ -398,6 +398,13 @@ class MpsTerm // {{{
     // TODO: Type Driven Compilation: virtual std::string GenerateC(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const=0;
     // -- virtual std::string GetConsts(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const=0;
     virtual std::string ToC(const std::string &taskType) const=0;
+    std::string ToC_Yield() const // {{{
+    { std::string yieldLabel = ToC_Name(MpsExp::NewVar("checkpoint_"));
+      return std::string("\n")
+      + "    _task->SetLabel(&&" + yieldLabel + ");\n"
+      + "    if (++_steps>=libpi::task::Task::MaxSteps) return true;\n"
+      + "    " + yieldLabel + ":\n\n";
+    } // }}}
     virtual std::string ToCHeader() const=0;
     virtual void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const=0;
     void FreeLink(const std::string &name);

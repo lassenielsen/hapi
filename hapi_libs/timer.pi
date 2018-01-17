@@ -23,7 +23,7 @@ local TimeServer()
                     t[2]<<now-start;
                     TimeSession(t,start);
      ^WaitSeconds:  t[2]>>wait;
-                    HOST("sleep( mpz_get_ui((", wait, ")->GetValue()) );");
+                    HOST("sleep( mpz_get_ui(((libpi::Int*)", wait, ".get())->GetValue()) );");
                     t[2]<<true;
                     TimeSession(t,start);
      ^GetTimestamp: Int now=0;

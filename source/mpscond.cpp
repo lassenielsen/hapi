@@ -229,14 +229,17 @@ string MpsCond::ToTex(int indent, int sw) const // {{{
 string MpsCond::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  string newName = myCond->ToC(result,"libpi::Bool");
   string trueLabel = ToC_Name(MpsExp::NewVar(taskType+"_true"));
   string falseLabel = ToC_Name(MpsExp::NewVar(taskType+"_false"));
+  result << ToC_Yield()
+         << "    {" << endl;
+  string newName = myCond->ToC(result,"libpi::Bool");
   result << "      if (((libpi::Bool*)" << newName << ".get())->GetValue())" << endl
          << "        goto " << trueLabel << ";" << endl
          << "      else" << endl
          << "        goto " << falseLabel << ";" << endl
-         << "    " << trueLabel << ":" << endl
+         << "    }" << endl;
+  result << "    " << trueLabel << ":" << endl
          << myTrueBranch->ToC(taskType)
          << "    " << falseLabel << ":" << endl
          << myFalseBranch->ToC(taskType);

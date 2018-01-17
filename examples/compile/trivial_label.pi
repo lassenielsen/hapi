@@ -11,6 +11,6 @@ s=new a(2 of 2);
 c=new console(2 of 2);
 c[1]<<^PutString;
 s[1]>>
-{ ^X: c[1]<<"Received X"<<^End;
-  ^Y: c[1]<<"Received Y"<<^End;
+{ ^X: c[1]<<"Received X"<<^Stop;
+  ^Y: c[1]<<"Received Y"<<^Stop;
 }

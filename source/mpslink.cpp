@@ -272,7 +272,8 @@ string MpsLink::ToTex(int indent, int sw) const // {{{
 string MpsLink::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  string lblRcv = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
+  result << ToC_Yield();
+  string lblRcv = ToC_Name(MpsExp::NewVar(string("receive_")+taskType));
   if (myPid==1) // Orchestrate linking
   {
     result

@@ -387,7 +387,8 @@ string MpsCall::ToC_prepare(const string &dest) const // {{{
 string MpsCall::ToC(const string &taskType) const // {{{
 { string newName = ToC_Name(MpsExp::NewVar("task")); // Create variable name foor the new state
   stringstream result;
-  result << "    { Task_" << ToC_Name(myName) << " *" << newName << " = new Task_" << ToC_Name(myName) << "();" << endl
+  result << ToC_Yield()
+         << "    { Task_" << ToC_Name(myName) << " *" << newName << " = new Task_" << ToC_Name(myName) << "();" << endl
          << ToC_prepare(newName)
          << "      _task.reset(" << newName << ");" << endl
          << "    }" << endl

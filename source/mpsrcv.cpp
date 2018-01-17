@@ -361,6 +361,7 @@ string MpsRcv::ToC(const std::string &taskType) const // {{{
   string rcvLabel = ToC_Name(MpsExp::NewVar("receive"));
   stringstream result;
   result
+    << ToC_Yield()
     << "    // " << myChannel.GetName() << "[" << myChannel.GetIndex() << "] >> " << myDest << ";" << endl
     << "    _task->SetLabel(&&" << rcvLabel << ");" << endl
     << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex()-1 << ",_task,_this->var_" << ToC_Name(myDest) << "))" << endl
