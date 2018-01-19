@@ -902,14 +902,14 @@ string MpsCondExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("ifval"));
   string condVar = myCond->ToC(dest, "libpi::Bool");
-  dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl
-       << "      if (" << condVar << "->GetValue())" << endl
+  dest << "      shared_ptr<libpi::Value> " << varName << ";" << endl
+       << "      if (((libpi::Bool*)" << condVar << ".get())->GetValue())" << endl
        << "      {" << endl;
   string trueVar = myTrueBranch->ToC(dest, typeName);
   dest << "      " << varName << " = " << trueVar << ";" << endl
-       << "      }"
-       << "      else"
-       << "      {";
+       << "      }" << endl
+       << "      else" << endl
+       << "      {" << endl;
   string falseVar = myFalseBranch->ToC(dest, typeName);
   dest << "      " << varName << " = " << falseVar << ";" << endl
        << "      }" << endl;

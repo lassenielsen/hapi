@@ -221,8 +221,6 @@ string MpsHostStatement::ToC(const string &taskType) const // {{{
 {
   stringstream prestmt;
   stringstream stmt;
-  prestmt << ToC_Yield()
-          << "    {" << endl;
   for (int i=0; i<myHostParts.size(); ++i)
   { stmt << myHostParts[i];
     if (i<myExpParts.size())
@@ -230,8 +228,7 @@ string MpsHostStatement::ToC(const string &taskType) const // {{{
       stmt << " " << newName << " ";
     }
   }
-  prestmt << "    }" << endl;
-  return string("  { // HOST STATEMENT BEGIN\n    ") + prestmt.str() + stmt.str() + "\n  } // HOST STATEMENT END\n" + mySucc->ToC(taskType);
+  return ToC_Yield() + string("  // HOST STATEMENT BEGIN\n    ") + prestmt.str() + stmt.str() + "  // HOST STATEMENT END\n" + mySucc->ToC(taskType);
 } // }}}
 string MpsHostStatement::ToCHeader() const // {{{
 {

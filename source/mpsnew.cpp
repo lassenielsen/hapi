@@ -307,10 +307,10 @@ string MpsNew::ToC(const string &taskType) const // {{{
     for (int j=0; j<myNames.size(); ++j)
       result << "    " << sesOutChannels << ".push_back(dynamic_pointer_cast<libpi::Channel>(_task->tmps[" << (i+j*myNames.size()) << "]));" << endl;
   
-    result << "      _this->tmps.clear();" << endl
-           << "      _this->var_" << ToC_Name(myNames[i]) << ".reset(new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
+    result << "      _this->var_" << ToC_Name(myNames[i]) << ".reset(new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
   }
-  result << "    }" << endl;
+  result << "      _this->tmps.clear();" << endl
+         << "    }" << endl;
 
   result << mySucc->ToC(taskType);
   return result.str();
