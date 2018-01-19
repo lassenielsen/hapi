@@ -273,20 +273,22 @@ string MpsLink::ToC(const string &taskType) const // {{{
 {
   stringstream result;
   result << ToC_Yield();
-  string lblRcv = ToC_Name(MpsExp::NewVar(string("receive_")+taskType));
   if (myPid==1) // Orchestrate linking
   {
+    vector<string> rcvLabels;
+    for (size_t i=0; i<myMaxpid-1; ++i)
+      rcvLabels.push_back(ToC_Name(MpsExp::NewVar(string("receive_")+taskType)));
     result
     << "    { // link" << endl
-    << "      _task->tmps.clear();" << endl
-    << "      for (size_t i=0; i<" << myMaxpid-1 << "; ++i)" << endl
-    << "      {" << endl
-    << "        _task->SetLabel(&&" << lblRcv << ");" << endl
-    << "        if (!((libpi::task::Link*)_this->var_" << ToC_Name(myChannel) << ".get())->GetChannels()[i]->Receive(_task,_task->tmp))" << endl
-    << "          return false;" << endl
-    << "        " << lblRcv << ":" << endl
-    << "        _task->tmps.push_back(_task->tmp);" << endl
-    << "      }" << endl
+    << "      _task->tmps.clear();" << endl;
+    for (size_t i=0; i<myMaxpid-1; ++i)
+      result
+      << "        _task->SetLabel(&&" << rcvLabels[i] << ");" << endl
+      << "        if (!((libpi::task::Link*)_this->var_" << ToC_Name(myChannel) << ".get())->GetChannels()[" << i << "]->Receive(_task,_task->tmp))" << endl
+      << "          return false;" << endl
+      << "        " << rcvLabels[i] << ":" << endl
+      << "        _task->tmps.push_back(_task->tmp);" << endl;
+    result
     << "      vector<vector<shared_ptr<libpi::Channel> > > inChannels(" << myMaxpid << ");" << endl
     << "      vector<vector<shared_ptr<libpi::Channel> > > outChannels(" << myMaxpid << ");" << endl
     << "      // Optimize vector inserts" << endl;
@@ -319,7 +321,9 @@ string MpsLink::ToC(const string &taskType) const // {{{
     << "    }" << endl;
   }
   else // Send Channel and receive session
-  { result
+  {
+    string lblRcv(ToC_Name(MpsExp::NewVar(string("receive_")+taskType)));
+    result
     << "    { _task->tmp.reset(new libpi::task::Channel);" << endl
     << "      ((libpi::task::Link*)(_this->var_" << ToC_Name(myChannel) << ".get()))->GetChannels()[" << myPid-2 << "]->Send(_task->tmp);" << endl
     << "      _task->SetLabel(&&" << lblRcv << ");" << endl
