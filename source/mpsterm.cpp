@@ -431,6 +431,7 @@ string MpsTerm::MakeC() const // {{{
     << "    { // Create main task\n"
     << "      shared_ptr<libpi::task::Task> _main(new " << mainTask << "());\n"
     << "      _main->SetLabel(NULL);\n"
+    << "      _main->SetWorker(_worker);\n"
     << "      _worker->AddTask(_main);\n"
     << "    }\n"
     << "    pthread_create(&(x[wc]),&y,_start_worker,(void*)_worker);\n"

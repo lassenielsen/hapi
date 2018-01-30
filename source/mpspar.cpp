@@ -482,6 +482,7 @@ string MpsPar::ToC(const string &taskType) const // {{{
       throw string("MpsPar type thread requires rhs to be a direct methodcall.");
     result
     << "    { Task_" << ToC_Name(callptr->GetName()) << " *" << newName << " = new Task_" << ToC_Name(callptr->GetName()) << ";" << endl
+    << "      " << newName << "->SetWorker(&_task->GetWorker());" << endl
     << callptr->ToC_prepare(newName)
     << "      ++(*libpi::task::Task::ActiveTasks);" << endl
     << "      _spawn_thread(" << newName << ");" << endl
@@ -496,6 +497,7 @@ string MpsPar::ToC(const string &taskType) const // {{{
       throw string("MpsPar type thread requires rhs to be a direct methodcall.");
     result
     << "    { Task_" << ToC_Name(callptr->GetName()) << " *" << newName << "(new Task_" << ToC_Name(callptr->GetName()) << "());" << endl
+    << "      " << newName << "->SetWorker(&_task->GetWorker());" << endl
     << callptr->ToC_prepare(newName)
     << "      shared_ptr<libpi::task::Task> " << newName2 << "(" << newName << ");" << endl
     << "      _task->GetWorker().AddTask(" << newName2 << ");" << endl
