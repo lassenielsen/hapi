@@ -221,7 +221,7 @@ string MpsSelect::ToC(const std::string &taskType) const // {{{
   result << ToC_Yield()
          << "    // " << myChannel.GetName() << "[" << myChannel.GetIndex() << "] << " << myLabel << ";" << endl
          << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Send("
-         << myChannel.GetIndex()-1 << ","
+         << myChannel.GetIndex()-1 << ",_task,"
          << "label_" << md5(myLabel) << ");" << endl;
   if (myFinal)
   {
