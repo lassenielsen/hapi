@@ -960,9 +960,9 @@ string MpsSystemExp::ToC(stringstream &dest, const string &typeName) const // {{
 {
   string varName = ToC_Name(MpsExp::NewVar("systemexp"));
   if (myField=="aprocs")
-    dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(*libpi::task::Task::ActiveTasks));" << endl;
+    dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(libpi::task::Worker::ActiveTasks));" << endl;
   else if (myField=="tprocs")
-    dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(libpi::task::Task::TargetTasks));" << endl;
+    dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(libpi::task::Worker::TargetTasks));" << endl;
   else
     throw (string)"MpsSystemExp::ToC: Unknown field " + myField;
   return varName;

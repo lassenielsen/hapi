@@ -389,6 +389,7 @@ string MpsCall::ToC(const string &taskType) const // {{{
   stringstream result;
   result << ToC_Yield()
          << "    { Task_" << ToC_Name(myName) << " *" << newName << " = new Task_" << ToC_Name(myName) << "();" << endl
+         << "      " << newName << "->SetWorker(&_task->GetWorker());" << endl
          << ToC_prepare(newName)
          << "      _task.reset(" << newName << ");" << endl
          << "    }" << endl

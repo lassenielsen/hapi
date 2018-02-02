@@ -313,7 +313,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
     for (size_t i=1; i<myMaxpid; ++i)
       result
       << "      { shared_ptr<libpi::Session> _s(new libpi::Session(" << i << "," << myMaxpid << ", inChannels[" << i << "], outChannels[" << i << "]));" << endl
-      << "        ((libpi::Channel*)_task->tmps[" << i-1 << "].get())->Send(_s);" << endl
+      << "        ((libpi::Channel*)_task->tmps[" << i-1 << "].get())->Send(_task,_s);" << endl
       << "      }" << endl;
     result
     << "      // Create local session" << endl
@@ -325,7 +325,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
     string lblRcv(ToC_Name(MpsExp::NewVar(string("receive_")+taskType)));
     result
     << "    { _task->tmp.reset(new libpi::task::Channel);" << endl
-    << "      ((libpi::task::Link*)(_this->var_" << ToC_Name(myChannel) << ".get()))->GetChannels()[" << myPid-2 << "]->Send(_task->tmp);" << endl
+    << "      ((libpi::task::Link*)(_this->var_" << ToC_Name(myChannel) << ".get()))->GetChannels()[" << myPid-2 << "]->Send(_task,_task->tmp);" << endl
     << "      _task->SetLabel(&&" << lblRcv << ");" << endl
     << "      if (!((libpi::task::Channel*)_task->tmp.get())->Receive(_task,_this->var_" << ToC_Name(mySession) << "))" << endl
     << "        return false;" << endl
