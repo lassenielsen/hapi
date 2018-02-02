@@ -301,9 +301,9 @@ string MpsLink::ToC(const string &taskType) const // {{{
     << "      // Create channels" << endl;
     for (size_t i=0; i<myMaxpid; ++i)
       for (size_t j=0; j<myMaxpid; ++j)
-        //if (i>0 && j==0)
-        //  result << "      inChannels[" << i << "][" << j << "]=dynamic_pointer_cast<libpi::Channel>(_task->tmps[" << i-1 << "]);" << endl;
-        //else
+        if (i>0 && j==0)
+          result << "      inChannels[" << i << "][" << j << "]=dynamic_pointer_cast<libpi::Channel>(_task->tmps[" << i-1 << "]);" << endl;
+        else
           result << "      inChannels[" << i << "][" << j<< "].reset(new libpi::task::Channel());" << endl;
     for (size_t i=0; i<myMaxpid; ++i)
       for (size_t j=0; j<myMaxpid; ++j)
