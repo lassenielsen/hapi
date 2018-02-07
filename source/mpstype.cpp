@@ -1135,7 +1135,7 @@ MpsGlobalMsgType *MpsGlobalMsgType::RenameAll() const // {{{
   // Renaming in assertion
   MpsExp *newAssertion=myAssertion->Rename(myId,newId);
   // Renaminf in succ
-  MpsGlobalType *tmpSucc=mySucc->LRename(myId,newId);
+  MpsGlobalType *tmpSucc=mySucc->ERename(myId,newId);
   MpsGlobalType *newSucc=tmpSucc->RenameAll();
   delete tmpSucc;
   

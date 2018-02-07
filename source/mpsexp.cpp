@@ -920,7 +920,7 @@ string MpsUnOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("unop"));
   if (myName == "not") // {{{
   { string subName = myRight->ToC(dest, typeName);
-    dest << "      shared_ptr<" << typeName << "> " << varName << "libpi::Bool::GetInstance(!" << subName << ".GetValue());" << endl;
+    dest << "      shared_ptr<" << typeName << "> " << varName << "=libpi::Bool::GetInstance(!((libpi::Bool*)" << subName << ".get())->GetValue());" << endl;
     return varName;
   } // }}}
   else
@@ -1637,15 +1637,15 @@ MpsExp *MpsVarExp::MakeNNF(bool negate) const// {{{
     return Copy();
 } // }}}
 MpsExp *MpsIntVal::MakeNNF(bool negate) const// {{{
-{ cerr << (string)"WARNING: MakeNNF applied to Integer Value: " + ToString() + " - approximating as false!" << endl;
+{ //cerr << (string)"WARNING: MakeNNF applied to Integer Value: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *MpsFloatVal::MakeNNF(bool negate) const// {{{
-{ cerr << (string)"WARNING: MakeNNF applied to Float Value: " + ToString() + " - approximating as false!" << endl;
+{ //cerr << (string)"WARNING: MakeNNF applied to Float Value: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *MpsStringVal::MakeNNF(bool negate) const// {{{
-{ cerr << (string)"ERROR: MakeNNF applied to String Value: " + ToString() + " - approximating as false!" << endl;
+{ //cerr << (string)"ERROR: MakeNNF applied to String Value: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *MpsBoolVal::MakeNNF(bool negate) const// {{{
@@ -1655,7 +1655,7 @@ MpsExp *MpsBoolVal::MakeNNF(bool negate) const// {{{
     return Copy();
 } // }}}
 MpsExp *MpsCondExp::MakeNNF(bool negate) const// {{{
-{ cerr << "WARNING: MakeNNF applied to CondExp - NOT IMPLEMENTED - approximating as false!" << endl;
+{ //cerr << "WARNING: MakeNNF applied to CondExp - NOT IMPLEMENTED - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *MpsUnOpExp::MakeNNF(bool negate) const// {{{
@@ -1663,7 +1663,7 @@ MpsExp *MpsUnOpExp::MakeNNF(bool negate) const// {{{
   if (GetOp()=="not")
     return myRight->MakeNNF(not negate);
   else
-  { cerr << "WARNING: MakeNNF applied to unary operator: "+GetOp() << " - approximating as false!" << endl;
+  { //cerr << "WARNING: MakeNNF applied to unary operator: "+GetOp() << " - approximating as false!" << endl;
     return new MpsBoolVal(false);
   }
 } // }}}
@@ -1685,16 +1685,16 @@ MpsExp *MpsBinOpExp::MakeNNF(bool negate) const// {{{
     return result;
   }
   else
-  { cerr << "WARNING: MakeNNF applied to binary operator: "+GetOp() << " - approximating as false!" << endl;
+  { //cerr << "WARNING: MakeNNF applied to binary operator: "+GetOp() << " - approximating as false!" << endl;
     return new MpsBoolVal(false);
   }
 } // }}}
 MpsExp *MpsTupleExp::MakeNNF(bool negate) const// {{{
-{ cerr << (string)"ERROR: MakeNNF applied to tuple: " + ToString() + " - approximating as false!" << endl;
+{ //cerr << (string)"WARNING: MakeNNF applied to tuple: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 MpsExp *MpsSystemExp::MakeNNF(bool negate) const// {{{
-{ cerr << (string)"ERROR: MakeNNF applied to system expression: " + ToString() + " - approximating as false!" << endl;
+{ //cerr << (string)"WARNING: MakeNNF applied to system expression: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
 

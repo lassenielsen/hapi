@@ -1,79 +1,92 @@
 // Adding type values to enable parametricaly polymorfic types
+// Syntax in global type:
+// k:&x; G // Specify type (can be any type except global types and local types
+// k:$x; // Specify type (can be any global type)
+// k:%x; // Specify type (can be any local type)
+// Syntax in local type: forall %x; T (for participant k)
+// Syntax in local type: exists %x; T (for other participants)
+// Syntax in terms: session<<S; Pi (for participant k)
 // Showing example of polymorphic ordered lists
-define $list= // The interface of a list {{{
-  1=>2:1<Type x>; // Specify type (can be any type except sesstion types)
-  1=>2:1<1=>2:1<x>;1=>2:1<x>;2=>1:2<bool>;Gend>; // Specify leq service
-  rec $list. 
-  1=>2:1
-  {^Insert: 1=>2:1<x>;
-            $list,
-   ^Lookup: 1=>2:1<Int>;
-            2=>1:2
-            {^NONE: $list,
-             ^SOME: 2=>1:2<x>;
-                    $list
-            },
-   ^Delete: Gend
+// The interface of a list {{{
+#define $leq(x) \
+  2->1:x; \
+  2->1:x; \
+  1->2:Bool; \
+  $end
+#define $list(x) \
+  rec $l; \
+  1->2: \
+  {^Insert: 1->2:x; \
+            $l; \
+   ^Lookup: 1->2:Int; \
+            2->1: \
+            {^NONE: $l; \
+             ^SOME: 2->1:x; \
+                    $l; \
+            } \
+   ^Delete: $end; \
   }
-in // }}}
+
+#define $pollist \
+  1:&x; \
+  1->2:$leq(&x); \
+  $list(&x);
+
 // Declare channel (constructor) {{{
-(nu list: $list) // }}}
+$list(1,2 pure) list; // }}}
 // Implement list {{{
-( def List() =
-    link(2,list,s,2);
-    ( List()
-    | s[1]>>type;
-      s[1]>>type_leq;
-      def NIL(this: $list@(2 of 2)) = // {{{
+local pure service List($list (2 of 1, 2 pure) s)
+( s[1]>>type_leq;
+  global pure NIL($list(2 of 1,2) this) = // {{{
+    this[1]>>
+    {^Insert:
+      this[1]>>val;
+      link(2,list,s,1);
+      global pure CONS($list(2 of 1, 2 pure) this, $list(1 of 1, 2 pure) next) = // {{{
         this[1]>>
         {^Insert:
-          this[1]>>val;
-          link(2,list,s,1);
-          def CONS(this: $list@(2 of 2), next: $list@(1 of 2), v: type) = // {{{
-            this[1]>>
-            {^Insert:
-              next[1]<<^Insert;
-              this[1]>>newVal;
-              link(2,type_leq,leq,1);
-              leq[1]<<v;
-              leq[1]<<newVal;
-              leq[2]>>is_leq;
-              if (is_leq)
-              then next[1]<<newVal; CONS(this,next,v),
-              else next[1]<<v; CONS(this,next,newVal),
-             ^Lookup:
-              this[1]>>pos;
-              if pos<=0
-              then this[2]<<^SOME;
-                   this[2]<<v;
-                   CONS(this,next,v)
-              else next[1]<<^Lookup;
-                   next[1]<<pos-1;
-                   next[2]>>
-                   {^SOME:
-                     this[2]<<^SOME;
-                     next[2]>>val;
-                     this[2]<<val;
-                     CONS(this,next,v),
-                    ^NONE:
-                     this[2]<<^NONE;
-                     CONS(this,next,v)
-                   },
-             ^Delete:
-              next[1]<<^Delete;
-              end
-            } // }}}
-          in CONS(this,s,val),
+          next[1]<<^Insert;
+          this[1]>>newVal;
+          cmp=new type_leq(2 of 1 pure, 2);
+          leq[1]<<v;
+          leq[1]<<newVal;
+          leq[2]>>is_leq;
+          if (is_leq)
+          then next[1]<<newVal; CONS(this,next,v),
+          else next[1]<<v; // !!! WOW
+               CONS(this,next,newVal),
          ^Lookup:
           this[1]>>pos;
-          this[2]<<^NONE;
-          NIL(this),
+          if pos<=0
+          then this[2]<<^SOME;
+               this[2]<<v;
+               CONS(this,next,v)
+          else next[1]<<^Lookup;
+               next[1]<<pos-1;
+               next[2]>>
+               {^SOME:
+                 this[2]<<^SOME;
+                 next[2]>>val;
+                 this[2]<<val;
+                 CONS(this,next,v),
+                ^NONE:
+                 this[2]<<^NONE;
+                 CONS(this,next,v)
+               },
          ^Delete:
+          next[1]<<^Delete;
           end
         } // }}}
-      in NIL(s)
-    )
-  in List() // }}}
+      in CONS(this,s,val),
+     ^Lookup:
+      this[1]>>pos;
+      this[2]<<^NONE;
+      NIL(this),
+     ^Delete:
+      end
+    } // }}}
+  in NIL(s)
+) // }}}
 | (nu int_leq : 1=>2:1<Int>;1=>2:1<Int>;2=>1:2<Bool>;Gend)
 ( def IntLEQ() = // {{{
     link(2,int_leq,s,2);
@@ -91,7 +104,7 @@ in // }}}
     IntLEQ();
   in StringLEQ() | // }}}
   link(2,list,myIntList,1); // Create Int list
-  myIntList[1]<<Int;
+  myIntList<Int>;
   myIntList[1]<<int_leq;
   myIntList[1]<<^Insert;
   myIntList[1]<<3;          // myIntList = [0:3]
