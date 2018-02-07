@@ -22,7 +22,7 @@ local Counter(Int i)
 Counter(1);
 |
 // Example 2: Random service
-// Not pure, because different connections may get different answers from service
+// Not pure, because different connections may get different "version" of service
 #define $rand \
   1->2:Bool; \
   $end;
@@ -44,7 +44,7 @@ local Random2()
 Random2();
 |
 // Example 3: Inherited impurity and host language impurity
-// Not pure, because using unpure services
+// Not pure, because using impure services
 #define $fun \
   2->1:Int; \
   1->2:Int; \
@@ -58,14 +58,14 @@ local Fun()
   s[2]>>x;
   c=new counter(2 of 2); //! Inharited impurity
   c[1]>>val;
-  HOST("std::cout << ", val, ".ToString() << std::endl;"); // HOST impurity
+  HOST("std::cout << ((libpi::String*)", val, ".get())->ToString() << std::endl;"); // HOST impurity
   s[2]<<5*x*x-3*x;
 )
 Fun();
 |
 // Example 4: Pure service
 global $fun fact(1 pure,2); // Notice pure declaration of 1st participant
-local pure Fact()              // Notice pure declaration of method
+local pure Fact()           // Notice pure declaration of method
 ( global s=new fact(1 of 2);
   Fact();
   |
