@@ -17,6 +17,7 @@ int main(int argc, char **argv)
     bool cfgBuffers=false;
     bool cfgChoices=false;
     bool cfgTypecheck=true;
+    bool cfgCheckPurity=true;
     bool cfgEval=true;
     bool cfgCompile=false;
     bool cfgOptimizeParallelism=false;
@@ -48,6 +49,8 @@ int main(int argc, char **argv)
         cfgChoices=true;
       else if ((string)argv[i]=="-nocheck")
         cfgTypecheck=false;
+      else if ((string)argv[i]=="-nopuritycheck")
+        cfgCheckPurity=false;
       else if ((string)argv[i]=="-noeval")
         cfgEval=false;
       else if ((string)argv[i]=="-eval")
@@ -98,6 +101,7 @@ int main(int argc, char **argv)
            << " -choices: Print the step choices" << endl
            << " -check: Perform typecheck but not evaluation" << endl
            << " -nocheck: Perform evaluation without typechecking" << endl
+           << " -nopuritycheck: If typechecking, do not check purity" << endl
            << " -compile: Create equivalent C-code" << endl
            << " -o <file>: Save output to <file>" << endl
            << " -f <file>: Read program source from <file>" << endl
@@ -124,7 +128,7 @@ int main(int argc, char **argv)
     { // Typecheck program
       (*out) << "************ Type Checking Program ************" << endl;
       try
-      { if (not current->TypeCheck())
+      { if (not current->TypeCheck(cfgCheckPurity))
         { (*out) << "ERROR: Typecheck failed" << endl;
           return 1;
         }

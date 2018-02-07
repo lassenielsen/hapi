@@ -22,13 +22,16 @@ class MpsHostHeader : public MpsTerm // {{{
     MpsHostHeader(const std::string header, const MpsTerm &succ); //
     virtual ~MpsHostHeader();
 
-    bool TypeCheck(const MpsExp &Theta,
-                   const MpsMsgEnv &Gamma,
-                   const MpsProcEnv &Omega,
-                   const std::set<std::pair<std::string,int> > &pureStack,
-                   const std::string &curPure,
-									 PureState pureState,
-									 bool checkPure=true);
+    void* TDCompileMain(tdc_pre pre,
+                        tdc_post wrap,
+                        tdc_error wrap_err,
+                        const MpsExp &Theta,
+                        const MpsMsgEnv &Gamma,
+                        const MpsProcEnv &Omega, 
+                        const std::set<std::pair<std::string,int> > &pureStack,
+                        const std::string &curPure,
+                        PureState pureState,
+				                bool checkPure=true);
     bool SubSteps(std::vector<MpsStep> &dest);
     MpsTerm *ApplyOther(const std::string &path) const;
     MpsHostHeader *ReIndex(const std::string &session,
@@ -44,19 +47,23 @@ class MpsHostHeader : public MpsTerm // {{{
     MpsHostHeader *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsHostHeader *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     std::set<std::string> FPV() const;
+    std::set<std::string> EV() const;
     std::set<std::string> FEV() const;
     MpsHostHeader *Copy() const;
     bool Terminated() const;
     MpsHostHeader *Simplify() const;
     std::string ToString(std::string indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
+    MpsTerm *FlattenFork(bool normLhs, bool normRhs, bool pureMode) const;
     MpsHostHeader *RenameAll() const;
     bool Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const;
     MpsTerm *Append(const MpsTerm &term) const;
-    MpsHostHeader *CloseDefinitions() const;
+    MpsTerm *CopyWrapper(std::map<std::string,void*> &children) const;
+    MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma);
     MpsHostHeader *ExtractDefinitions(MpsFunctionEnv &env) const;
-    std::string ToC() const;
+    std::string ToC(const std::string &taskType) const;
     std::string ToCHeader() const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
 
   private:
     std::string myHeader;

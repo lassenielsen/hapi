@@ -33,6 +33,7 @@
 Bool := "Bool"
 $end := "$end"
 Int := "Int"
+Float := "Float"
 %end := "%end"
 String := "String"
 [ :=_1 "\["
@@ -46,6 +47,7 @@ guisync := "guisync"
 guivalue := "guivalue"
 if := "if"
 impure := "impure"
+service := "service"
 in := "in"
 new := "new"
 not := "not"
@@ -63,6 +65,7 @@ where := "where"
 # NON-KEYWORD tokens
 # Expression value domains
 int := "(~)?[0-9][0-9]*"
+float := "(~)?[0-9][0-9]*[.][0-9][0-9]*"
 string := "\"[^\"]*\""
 
 # Names
@@ -74,6 +77,7 @@ pvar :=_1 "[A-Z][a-zA-Z0-9_]*"
 
 # Term tokens
 par := "\|"
+ppar :=_1 "\|\|"
 COLON := ":"
 host := "HOST"
 hostheader := "HOSTHEADER"
@@ -82,14 +86,20 @@ global := "public+global"
 local := "private+local"
 
 # Processes (Main / Root production)
-Pi ::= ::pi_par   PiActs par Pi
-     | ::pi_acts  PiActs
-     | ::pi_eacts PiEActs
+Pi ::= ::pi_ppar  Pi2 ppar Pi
+     | ::pi_lvl   Pi2
+
+Pi2 ::= ::pi_par   PiActs par Pi2
+      | ::pi_acts  PiActs
+      | ::pi_eacts PiEActs
+
 # Statement sequence
 PiActs ::= ::piacts_end PiTerm
          | ::piacts_act PiAct PiActs
+
 PiEActs ::= ::pieacts_end PiEAct
           | ::pieacts_act PiAct PiEActs
+
 # Process Statements
 PiAct ::= ::piact_sends Ch Sends ;
         | ::piact_recvs Ch Recvs ;
@@ -99,16 +109,22 @@ PiAct ::= ::piact_sends Ch Sends ;
         | ::piact_ass   Mtype id = Exp ;
         | ::piact_a_ass id = Exp ;
         | ::piact_def   local Mode pvar Dargs ( Args ) ( Pi )
+        | ::piact_sdef  local Mode ::mode service pvar ::name ( id ::channel ( int ::pid of int ::pids ) id ::session ) ( Pi ::body )
+          :-> :"local ::mode ::name ( ) ( global ::session = new ::channel ( ::pid of ::pids ); ::name (); | ( ::body ) ) local ::mode StartService(Int i) (if i<=0 then ::name (); else ( ::name (); | StartService(i-1); ) ) StartService(SYSTEM&\"tprocs\");"
         | ::piact_gval  guivalue ( Exps ) ;
         | ::piact_hosts host ( Exps ) Mode ;
         | ::piact_hosth hostheader ( Exps ) ;
+
 # Extended statements (for associativity)
-PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi
-         | ::pieact_new   global Gtype Ids ; Pi
-         | ::pieact_ch    global Gtype id ( Participants ) ; Pi
-         | ::pieact_ass   global Mtype id = Exp ; Pi
-         | ::pieact_a_ass global id = Exp ; Pi
-         | ::pieact_def   global Mode pvar Dargs ( Args ) ( Pi ) Pi
+PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi2
+         | ::pieact_new   global Gtype Ids ; Pi2
+         | ::pieact_ch    global Gtype id ( Participants ) ; Pi2
+         | ::pieact_ass   global Mtype id = Exp ; Pi2
+         | ::pieact_a_ass global id = Exp ; Pi2
+         | ::pieact_def   global Mode pvar Dargs ( Args ) ( Pi ) Pi2
+         | ::pieact_sdef  global Mode ::mode service pvar ::name ( id ::channel ( int ::pid of int ::pids ) id ::session ) ( Pi ::body ) Pi2 ::succ
+          :-> :"global ::mode ::name ( ) ( global ::session = new ::channel ( ::pid of ::pids ); ::name (); | ( ::body ) ) local ::mode StartService(Int i) (if i<=0 then ::name (); else ( ::name (); | StartService(i-1); ) ) StartService(SYSTEM&\"tprocs\"); | ::succ"
+
 # Non-sequential process constructions (branching termination etc.
 PiTerm ::= ::piterm_pi   ( Pi )
          | ::piterm_end
@@ -143,7 +159,7 @@ Lterm ::= ::lterm_bsnd int << { Lbranches }
         | ::lterm_end  %end ; 
         | ::lterm_sync { Lbranches } 
 Lbranches ::= ::lbranches_end  bid Assertion COLON Ltype 
-            | ::lbranches_cont bid Assertion COLON Ltype , Lbranches 
+            | ::lbranches_cont bid Assertion COLON Ltype Lbranches 
 
 # Message (value) Types
 Mtype ::= ::mtype_stype Stype 
@@ -151,6 +167,7 @@ Mtype ::= ::mtype_stype Stype
         | ::mtype_ltype Ltype ( int of Participants )
         | ::mtype_ptype Gtype ( int of Participants )
 Stype ::= ::type_int    Int 
+        | ::type_float  Float 
         | ::type_string String 
         | ::type_bool   Bool 
         | ::type_tuple  ( Stypes ) 
@@ -184,6 +201,7 @@ Exp11 ::= ::exp_not    not Exp11
         | ::exp_lvl    Exp12
 Exp12 ::= ::exp_id     id 
         | ::exp_int    int 
+        | ::exp_float  float 
         | ::exp_str    string 
         | ::exp_true   true 
         | ::exp_false  false 

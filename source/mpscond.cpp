@@ -16,14 +16,14 @@ MpsCond::~MpsCond() // {{{
   delete myTrueBranch;
   delete myFalseBranch;
 } // }}}
-bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Cond {{{
-{
+void *MpsCond::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Cond {{{
+{ map<string,void*> children;
   PureState trueState=pureState;
   PureState falseState=pureState;
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_INIT_BRANCH)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
 
     if (pureState==CPS_INIT_BRANCH)
     { trueState=CPS_INIT_BRANCH2_CALL;
@@ -36,20 +36,21 @@ bool MpsCond::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPr
   bool condtypematch = booltype.Equal(Theta,*condtype);
   delete condtype;
   if (!condtypematch)
-    return PrintTypeError("Condition not of type Bool",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError("Condition not of type Bool",*this,Theta,Gamma,Omega),children);
   // Make new Thetas
   MpsExp *trueTheta = new MpsBinOpExp("and",Theta,*myCond,MpsBoolMsgType(),MpsBoolMsgType());
   MpsExp *notCond = new MpsUnOpExp("not",*myCond);
   MpsExp *falseTheta = new MpsBinOpExp("and",Theta,*notCond,MpsBoolMsgType(),MpsBoolMsgType());
   delete notCond;
   
-  bool result = myTrueBranch->TypeCheck(*trueTheta,Gamma,Omega,pureStack,curPure, trueState, checkPure)
-             && myFalseBranch->TypeCheck(*falseTheta,Gamma,Omega,pureStack,curPure, falseState, checkPure);
+  children["true"] = myTrueBranch->TDCompile(pre,wrap,wrap_err,*trueTheta,Gamma,Omega,pureStack,curPure, trueState, checkPure);
+  children["false"] = myFalseBranch->TDCompile(pre,wrap,wrap_err,*falseTheta,Gamma,Omega,pureStack,curPure, falseState, checkPure);
   // Clean Up
   delete trueTheta;
   delete falseTheta;
 
-  return result;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsCond::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)
@@ -170,6 +171,18 @@ set<string> MpsCond::FPV() const // {{{
   result.insert(ffpv.begin(), ffpv.end());
   return result;
 } // }}}
+set<string> MpsCond::EV() const // {{{
+{
+  set<string> result;
+  result.clear();
+  set<string> cfv=myCond->FV();
+  set<string> tfev=myTrueBranch->EV();
+  set<string> ffev=myFalseBranch->EV();
+  result.insert(cfv.begin(), cfv.end());
+  result.insert(tfev.begin(), tfev.end());
+  result.insert(ffev.begin(), ffev.end());
+  return result;
+} // }}}
 set<string> MpsCond::FEV() const // {{{
 {
   set<string> result;
@@ -213,18 +226,23 @@ string MpsCond::ToTex(int indent, int sw) const // {{{
                 + ToTex_Hspace(indent,sw) + ToTex_KW("else") + " " + myFalseBranch->ToTex(indent + 5,sw);
   return result;
 } // }}}
-string MpsCond::ToC() const // {{{
+string MpsCond::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  string newName = myCond->ToC(result,"BoolValue");
-  result << "  if (" << newName << ".GetValue())" << endl
-         << "  {" << endl
-         << myTrueBranch->ToC()
-         << "  }" << endl
-         << "  else" << endl
-         << "  {" << endl
-         << myFalseBranch->ToC()
-         << "  }" << endl;
+  string trueLabel = ToC_Name(MpsExp::NewVar(taskType+"_true"));
+  string falseLabel = ToC_Name(MpsExp::NewVar(taskType+"_false"));
+  result << ToC_Yield()
+         << "    {" << endl;
+  string newName = myCond->ToC(result,"libpi::Bool");
+  result << "      if (((libpi::Bool*)" << newName << ".get())->GetValue())" << endl
+         << "        goto " << trueLabel << ";" << endl
+         << "      else" << endl
+         << "        goto " << falseLabel << ";" << endl
+         << "    }" << endl;
+  result << "    " << trueLabel << ":" << endl
+         << myTrueBranch->ToC(taskType)
+         << "    " << falseLabel << ":" << endl
+         << myFalseBranch->ToC(taskType);
   return result.str();
 } // }}}
 string MpsCond::ToCHeader() const // {{{
@@ -233,6 +251,24 @@ string MpsCond::ToCHeader() const // {{{
   result << myTrueBranch->ToCHeader();
   result << myFalseBranch->ToCHeader();
   return result.str();
+} // }}}
+void MpsCond::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{
+  myCond->ToCConsts(dest,existing);
+  myTrueBranch->ToCConsts(dest,existing);
+  myFalseBranch->ToCConsts(dest,existing);
+} // }}}
+MpsTerm *MpsCond::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
+{
+  MpsTerm *newTrueBranch=myTrueBranch->FlattenFork(normLhs,normRhs,pureMode);
+  MpsTerm *newFalseBranch=myFalseBranch->FlattenFork(normLhs,normRhs,pureMode);
+
+  MpsTerm *result=new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
+
+  delete newTrueBranch;
+  delete newFalseBranch;
+
+  return result;
 } // }}}
 MpsTerm *MpsCond::RenameAll() const // {{{
 { MpsTerm *newTrueBranch=myTrueBranch->RenameAll();
@@ -260,17 +296,13 @@ MpsTerm *MpsCond::Append(const MpsTerm &term) const // {{{
   delete newFalseBranch;
   return result;
 } // }}}
-MpsTerm *MpsCond::CloseDefinitions() const // {{{
+MpsTerm *MpsCond::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
-  MpsTerm *newTrueBranch=myTrueBranch->CloseDefinitions();
-  MpsTerm *newFalseBranch=myFalseBranch->CloseDefinitions();
-
-  MpsTerm *result=new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
-
-  delete newTrueBranch;
-  delete newFalseBranch;
-
-  return result;
+  return new MpsCond(*myCond, *(MpsTerm*)children["true"], *(MpsTerm*)children["false"]);
+} // }}}
+MpsTerm *MpsCond::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{
+  return this;
 } // }}}
 MpsTerm *MpsCond::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newTrueBranch=myTrueBranch->ExtractDefinitions(env);

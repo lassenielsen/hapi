@@ -17,18 +17,18 @@ String x8="8";
 Bool x9=true;
 ( // Simple printing, although be aware the pitfalls of using raw c++ io
   // ie no coordination with other outputting processes.
-  HOST("std::cout << ", x1, ".ToString() << std::flush << ", x2, ".ToString() << std::flush << ", x3, ".ToString() << std::endl;");
-| HOST("std::cout << ", x4, ".ToString() << std::flush << ", x5, ".ToString() << std::flush << ", x6, ".ToString() << std::endl;");
-| HOST("std::cout << ", x7, ".ToString() << std::flush << ", x8, ".ToString() << std::flush << ", x9, ".ToString() << std::endl;");
+  HOST("std::cout << ((libpi::Int*)", x1, ".get())->ToString() << std::flush << ((libpi::String*)", x2, ".get())->GetValue() << std::flush << ((libpi::Bool*)", x3, ".get())->ToString() << std::endl;");
+| HOST("std::cout << ((libpi::Int*)", x4, ".get())->ToString() << std::flush << ((libpi::String*)", x5, ".get())->GetValue() << std::flush << ((libpi::Bool*)", x6, ".get())->ToString() << std::endl;");
+| HOST("std::cout << ((libpi::Int*)", x7, ".get())->ToString() << std::flush << ((libpi::String*)", x8, ".get())->GetValue() << std::flush << ((libpi::Bool*)", x9, ".get())->ToString() << std::endl;");
 | // Use host language (c++) functionality in output
-  HOST("std::cout << (", x3, ".GetValue()?", x1, ".ToString():", x2, ".ToString()) << std::endl;");
-| HOST("std::cout << (", x6, ".GetValue()?", x4, ".ToString():", x5, ".ToString()) << std::endl;");
-| HOST("std::cout << (", x9, ".GetValue()?", x7, ".ToString():", x8, ".ToString()) << std::endl;");
+  HOST("std::cout << (((libpi::Bool*)", x3, ".get())->GetValue()?((libpi::Int*)", x1, ".get())->ToString():((libpi::String*)", x2, ".get())->GetValue()) << std::endl;");
+| HOST("std::cout << (((libpi::Bool*)", x6, ".get())->GetValue()?((libpi::Int*)", x4, ".get())->ToString():((libpi::String*)", x5, ".get())->GetValue()) << std::endl;");
+| HOST("std::cout << (((libpi::Bool*)", x9, ".get())->GetValue()?((libpi::Int*)", x7, ".get())->ToString():((libpi::String*)", x8, ".get())->GetValue()) << std::endl;");
 )
 | // Retrieve/import values from host language to hapi process
   String str1="Hello";
   String space=" ";
   String str2="World";
   String res="";
-  HOST("", res, "=StringValue(", str1, ".GetValue() + ", space, ".GetValue() + ", str2, ".GetValue());");
-  HOST("std::cout << ", res, ".GetValue() << std::endl;"); // Outputs "Hello World"
+  HOST("", res, ".reset(new libpi::String(((libpi::String*)", str1, ".get())->GetValue() + ((libpi::String*)", space, ".get())->GetValue() + ((libpi::String*)", str2, ".get())->GetValue()));");
+  HOST("std::cout << ((libpi::String*)", res, ".get())->GetValue() << std::endl;"); // Outputs "Hello World"

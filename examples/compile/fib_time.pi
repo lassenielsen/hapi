@@ -6,6 +6,12 @@
   1->2:Int; \
   $end;
 
+#define $fibtime \
+  2->1:Int; \
+  1->2:Int; \
+  1->2:Int; \
+  $end;
+
 global $fib fib(1 pure,2);
 local pure Fib()
 ( global s = new fib(1 of 2);
@@ -27,7 +33,7 @@ local pure StartFib(Int c)
   else ( Fib(); | StartFib(c-1); )
 )
 StartFib(SYSTEM&"tprocs"); |
-global $fib timefib(1,2);
+global $fibtime timefib(1,2);
 local TimeFib()
 ( global s = new timefib(1 of 2);
   TimeFib(); |
@@ -40,10 +46,7 @@ local TimeFib()
   t[1] << ^ReadSeconds;
   t[1] >> secs;
   t[1] << ^End;
-  c = new console(2 of 2);
-  c[1] << ^PutString << "used time"
-       << ^PutInt << secs
-       << ^End;
+  s[2] << secs;
 )
 TimeFib(); |
 c = new console(2 of 2);
@@ -53,6 +56,9 @@ c[1] >> v;
 f = new timefib(2 of 2);
 f[1] << v;
 f[1] >> r;
+f[1] >> secs;
 c[1] << ^PutString << "Fib(n) is"
      << ^PutInt << r
-     << ^End;
+     << ^PutString << "Used time"
+     << ^PutInt << secs
+     << ^Stop;

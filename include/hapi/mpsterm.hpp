@@ -10,9 +10,8 @@
  * stepping and compiling capabilities for the <em>hapi</em> language.
  *
  * \section hapi What is hapi?
- * <em>hapi</em> is an abreviation of Asynchronous PI-calculus with Multiparty
- * session types and Symmetric synchronization. It is a language based on the
- * pi-calculus.
+ * <em>hapi</em> is an abreviation of the Happy Asynchronous PI-calculus.
+ * It is a language based on the pi-calculus.
  *
  * \section why Why hapi?
  * In programming there are four fundamental classes of programming languages.
@@ -84,6 +83,9 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <unordered_set>
+#include <functional>
+#include <algorithm>
 
 #include <hapi/mpsexp.hpp>
 #include <hapi/mpschannel.hpp>
@@ -120,16 +122,6 @@ class MpsTerm // {{{
     //! Make a deep copy of the object
     virtual MpsTerm *Copy() const = 0; // Make a deep copy
 
-    /************************************************
-     *************** Type Checking ******************
-     ************************************************/
-    // DOCUMENTATION: MpsTerm::TypeCheck {{{
-    /*!
-     * Static verification of communication safety using explicit types
-     * @result Returns true if the process is well typed, and false otherwise.
-     */
-    // }}}
-    bool TypeCheck();
     // DOCUMENTATION: MpsTerm::PureState {{{
     /*!
 		 * PureState is amended to TypeCheck, to ensure that pure participants have
@@ -176,6 +168,54 @@ class MpsTerm // {{{
                     CPS_INIT_BRANCH2_CALL,
                     CPS_INIT_CALL
                    };
+
+    typedef std::function<MpsTerm *(MpsTerm *term,
+                                    const MpsExp &Theta,
+                                    const MpsMsgEnv &Gamma,
+                                    const MpsProcEnv &Omega, 
+                                    const std::set<std::pair<std::string,int> > &pureStack,
+                                    const std::string &curPure,
+                                    PureState pureState,
+                                    bool checkPure)> tdc_pre;
+    typedef std::function<void *(MpsTerm *term,
+                                 const MpsExp &Theta,
+                                 const MpsMsgEnv &Gamma,
+                                 const MpsProcEnv &Omega, 
+                                 const std::set<std::pair<std::string,int> > &pureStack,
+                                 const std::string &curPure,
+                                 PureState pureState,
+                                 bool checkPure,
+                                 std::map<std::string,void*> &children)> tdc_post;
+    typedef std::function<void *(MpsTerm *term,std::string msg,std::map<std::string,void*> &children)> tdc_error;
+    /************************************************
+     ********** Type Driven Compilation *************
+     ************************************************/
+    void* TDCompile(tdc_pre pre,
+                    tdc_post post,
+                    tdc_error error,
+                    const MpsExp &Theta,
+                    const MpsMsgEnv &Gamma,
+                    const MpsProcEnv &Omega, 
+                    const std::set<std::pair<std::string,int> > &pureStack,
+                    const std::string &curPure,
+                    PureState pureState,
+                    bool checkPure=true);
+    virtual void* TDCompileMain(tdc_pre pre,
+                                tdc_post post,
+                                tdc_error error,
+                                const MpsExp &Theta,
+                                const MpsMsgEnv &Gamma,
+                                const MpsProcEnv &Omega, 
+                                const std::set<std::pair<std::string,int> > &pureStack,
+                                const std::string &curPure,
+                                PureState pureState,
+                                bool checkPure=true) = 0;
+    //!Type Driven Compilation Wrapper creating result term from this pointer and child results
+    virtual MpsTerm *CopyWrapper(std::map<std::string,void*> &children) const = 0;
+
+   /************************************************
+     *************** Type Checking ******************
+     ************************************************/
     // DOCUMENTATION: MpsTerm::TypeCheck {{{
     /*!
      * Static verification of communication safety using explicit types
@@ -188,15 +228,10 @@ class MpsTerm // {{{
      * @param Gamma The type environment
      * @param Omega The process environment
      * @result Returns true if the process is well typed, and false otherwise.
+     * @result Returns true if the process is well typed, and false otherwise.
      */
     // }}}
-    virtual bool TypeCheck(const MpsExp &Theta,
-                           const MpsMsgEnv &Gamma,
-                           const MpsProcEnv &Omega,
-                           const std::set<std::pair<std::string,int> > &pureStack,
-                           const std::string &curPure,
-                           PureState pureState,
-													 bool checkPure=true) = 0;
+    bool TypeCheck(bool checkPurity=true);
 
     /************************************************
      ***************** Interpreter ******************
@@ -286,6 +321,8 @@ class MpsTerm // {{{
     virtual MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const = 0;
     //! Free process variables
     virtual std::set<std::string> FPV() const = 0;
+    //! Expression variables -- includes bound variables
+    virtual std::set<std::string> EV() const = 0;
     //! Free expression variables
     virtual std::set<std::string> FEV() const = 0;
 
@@ -301,15 +338,26 @@ class MpsTerm // {{{
      * Compilation to C++ code is perfomed in 4 steps:
      * 1. Rename all variables, so no name is introduced more than once
      *    (avoid things like s>>x;t>>x;...)
-     * 2. Add all free variables in function bodies to the function
+     * 2. Flatten thread based forks (to enable pthread_create)
+     * 3. Add all free variables in function bodies to the function
      *    argument list and call agruments where it is used.
-     * 3. Move all functions to the global function environment, also
+     * 4. Move all functions to the global function environment, also
      *    functions defined in function bodies
-     * 4. Translate each function separately, and translate the main
+     * 5. Translate each function separately, and translate the main
      *    process as the function 'main'.
      */
     // }}}
     std::string MakeC() const;
+    // DOCUMENTATION: MpsTerm::FlattenFork {{{
+    /*!
+     * FlattenFork rewrites terms like P1 | P2 to P1 | (def X() (P2) X()).
+     * After performing CloseDefinitions and ExtractDefinitions this
+     * will look like P1 | X(...), and can be implemented using
+     * frameworks like pthread_create, with an API significnatly
+     * different from fork.
+     */
+    // }}}
+    virtual MpsTerm *FlattenFork(bool normLhs, bool normRhs, bool pureMode) const=0;
     // DOCUMENTATION: MpsTerm::RenameAll {{{
     /*!
      * RenameAll renames all bound variables (Process, logical and
@@ -318,14 +366,15 @@ class MpsTerm // {{{
      */
     // }}}
     virtual MpsTerm *RenameAll() const=0;
-    // DOCUMENTATION: MpsTerm::CloseDefinitions {{{
+    // DOCUMENTATION: MpsTerm::CloseDefs {{{
     /*!
      * CloseDefinitions adds all the free variables of function bodies
      * to the argument list, and adds these arguments to where the
      * function is called.
      */
     // }}}
-    virtual MpsTerm *CloseDefinitions() const=0;
+    MpsTerm *CloseDefs();
+    virtual MpsTerm *CloseDefsPre(const MpsMsgEnv &Gamma)=0;
     // DOCUMENTATION: MpsTerm::ExtractDefinitions {{{
     /*!
      * ExtractDefinitions extracts all function definitions from the
@@ -341,10 +390,23 @@ class MpsTerm // {{{
      * This assumes that there are no function definition in term, and
      * these should be moved to a global environment beforehand using
      * ExtractDefinitions before calling ToC.
+     *
+     * @taskType is the name of the task subclass used - which is derived from
+     * the method name.
      */
     // }}}
-    virtual std::string ToC() const=0;
+    // TODO: Type Driven Compilation: virtual std::string GenerateC(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const=0;
+    // -- virtual std::string GetConsts(const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const std::map<std::string,void*> &children) const=0;
+    virtual std::string ToC(const std::string &taskType) const=0;
+    std::string ToC_Yield() const // {{{
+    { std::string yieldLabel = ToC_Name(MpsExp::NewVar("checkpoint_"));
+      return std::string("\n")
+      + "    _task->SetLabel(&&" + yieldLabel + ");\n"
+      + "    if (++_steps>=libpi::task::Task::MaxSteps) return true;\n"
+      + "    " + yieldLabel + ":\n\n";
+    } // }}}
     virtual std::string ToCHeader() const=0;
+    virtual void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const=0;
     void FreeLink(const std::string &name);
     const std::vector<std::string> &GetFreeLinks() const;
 
@@ -406,6 +468,10 @@ class MpsTerm // {{{
     virtual MpsTerm *Append(const MpsTerm &term) const=0;
 
   protected:
+    void CheckPure(PureState pureState, std::vector<PureState> allowedStates, std::string curPure, std::vector<std::string> &errors) // {{{
+    { if (std::find(allowedStates.begin(),allowedStates.end(),pureState)==allowedStates.end())
+        errors.push_back("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |");
+    } // }}}
     static int ourNextId;
     std::vector<std::string> myFreeLinks;
 }; // }}}
@@ -422,31 +488,34 @@ class inputbranch // {{{
     std::vector< MpsExp* > values;
 }; // }}}
 
-inline bool PrintTypeError(const std::string &message, const hapi::MpsTerm &term, const hapi::MpsExp &Theta,  const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega) // {{{
+#define PRINTTYPEERROR(_m) PrintTypeError(_m,*this,Theta,Gamma,Omega)
+inline std::string PrintTypeError(const std::string &message, const hapi::MpsTerm &term, const hapi::MpsExp &Theta,  const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega) // {{{
 {
-#if HAPI_DEBUG_LEVEL>1
-  std::cerr << "!!!!!!!!!!!!!!! Type Error: !!!!!!!!!!!!!!!" << std::endl
-            << "!!!!!!!Term: " << term.ToString("!!!!!        ") << std::endl
-            << "!Assertions: " << Theta.ToString() << std::endl
-            << "!!!Type Env: " << PrintGamma(Gamma,"!!!!         ") << std::endl
-            << "!Method Env: " << PrintOmega(Omega,"!!!!         ") << std::endl
-            << "!!!!Message: " << message << std::endl;
-#endif
-  return false;
+  std::stringstream ss;
+  ss << "!!!!!!!!!!!!!!! Type Error: !!!!!!!!!!!!!!!" << std::endl
+     << "!!!!!!!Term: " << term.ToString("!!!!!        ") << std::endl
+     << "!Assertions: " << Theta.ToString() << std::endl
+     << "!!!Type Env: " << PrintGamma(Gamma,"!!!!         ") << std::endl
+     << "!Method Env: " << PrintOmega(Omega,"!!!!         ") << std::endl
+     << "!!!!Message: " << message << std::endl;
+  return ss.str();
 } // }}}
-inline bool TypeCheckRec(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
-{
+inline void *TypeCheckRec(MpsTerm::tdc_pre pre, MpsTerm::tdc_post wrap, MpsTerm::tdc_error wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule unfold (or eq) {{{
+{ std::map<std::string,void*> children; // Dummy object for passing to wrapper functions
   hapi::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
-    return PrintTypeError((std::string)"Unfolding closed session: " + session,term,Theta,Gamma,Omega);
+  { return wrap_err(&term,PrintTypeError((std::string)"Unfolding closed session: " + session,term,Theta,Gamma,Omega),children);
+  }
   const hapi::MpsDelegateMsgType *delType = dynamic_cast<const hapi::MpsDelegateMsgType*>(it->second);
   const hapi::MpsLocalRecType *type = dynamic_cast<const hapi::MpsLocalRecType*>(delType->GetLocalType());
   if (type==NULL)
-    return PrintTypeError((std::string)"Unfolding non-rec type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+  { return wrap_err(&term,PrintTypeError((std::string)"Unfolding non-rec type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
+  }
   hapi::MpsMsgEnv newGamma = Gamma;
   // Create type for substitution
   std::vector<hapi::TypeArg> args;
   std::vector<std::string> argnames;
+  // Create args with (x1=x1,x2=x2,...) for initial substituttion
   for (std::vector<hapi::TypeArg>::const_iterator arg=type->GetArgs().begin(); arg!=type->GetArgs().end(); ++arg)
   { hapi::MpsExp *newValue = new hapi::MpsVarExp(arg->myName, hapi::MpsMsgNoType());
     hapi::TypeArg newArg(arg->myName, *arg->myType,  *newValue);
@@ -464,24 +533,24 @@ inline bool TypeCheckRec(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma
   }
   hapi::MpsDelegateLocalMsgType *newMsgType=new hapi::MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetParticipants());
   newGamma[session] = newMsgType;
-  bool result = false;
+  void *result = NULL;
   if (dynamic_cast<hapi::MpsLocalRecType*>(newType)==NULL)
-    result = term.TypeCheck(Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+    result = term.TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   else
-    result = PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+    result = wrap_err(&term,PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
   delete newType;
   delete newMsgType;
   return result;
 } // }}}
-inline bool TypeCheckForall(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule forall {{{
-{
+inline void *TypeCheckForall(MpsTerm::tdc_pre pre, MpsTerm::tdc_post wrap, MpsTerm::tdc_error wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule forall {{{
+{ std::map<std::string,void*> children; // Dummy object for passing to wrapper functions
   hapi::MpsMsgEnv::const_iterator it=Gamma.find(session);
   if (it==Gamma.end())
-    return PrintTypeError((std::string)"Forall on closed session: " + session,term,Theta,Gamma,Omega);
+    return wrap_err(&term,PrintTypeError((std::string)"Forall on closed session: " + session,term,Theta,Gamma,Omega),children);
   const hapi::MpsDelegateMsgType *delType = dynamic_cast<const hapi::MpsDelegateMsgType*>(it->second);
   const hapi::MpsLocalForallType *type = dynamic_cast<const hapi::MpsLocalForallType*>(delType->GetLocalType());
   if (type==NULL)
-    return PrintTypeError((std::string)"Forall on non-forall type: " + it->second->ToString(),term,Theta,Gamma,Omega);
+    return wrap_err(&term,PrintTypeError((std::string)"Forall on non-forall type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
   // Find new name for bound variable
   std::string newName = hapi::MpsExp::NewVar(type->GetName());
   // Create type for substitution
@@ -495,10 +564,47 @@ inline bool TypeCheckForall(const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Ga
   // Create new Gamma
   hapi::MpsMsgEnv newGamma = Gamma;
   newGamma[session] = newMsgType;
-  bool result = term.TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+  void *result = term.TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Clean Up
   delete newTheta;
   return result;
+} // }}}
+
+namespace tdc_wrap // {{{
+{
+typedef MpsTerm *(*pretype)(
+  MpsTerm *term,
+  const MpsExp &Theta,
+  const MpsMsgEnv &Gamma,
+  const MpsProcEnv &Omega, 
+  const std::set<std::pair<std::string,int> > &pureStack,
+  const std::string &curPure,
+  MpsTerm::PureState pureState,
+  bool checkPure);
+typedef MpsTerm *(*wraptype)(
+  MpsTerm *term,
+  const MpsExp &Theta,
+  const MpsMsgEnv &Gamma,
+  const MpsProcEnv &Omega, 
+  const std::set<std::pair<std::string,int> > &pureStack,
+  const std::string &curPure,
+  MpsTerm::PureState pureState,
+  bool checkPure,
+  std::map<std::string,void*> &children);
+#define predecl(name) MpsTerm *name(MpsTerm *term,const MpsExp &Theta,const MpsMsgEnv &Gamma,const MpsProcEnv &Omega,const std::set<std::pair<std::string,int> > &pureStack,const std::string &curPure,MpsTerm::PureState pureState,bool checkPure)
+#define wrapdecl(name) void *name(MpsTerm *term,const MpsExp &Theta,const MpsMsgEnv &Gamma,const MpsProcEnv &Omega,const std::set<std::pair<std::string,int> > &pureStack,const std::string &curPure,MpsTerm::PureState pureState,bool checkPure,std::map<std::string,void*> &children)
+predecl(pre_void);
+predecl(pre_closedefs);
+wrapdecl(wrap_vector);
+wrapdecl(wrap_copy);
+//wrapdecl(wrap_consts);
+//wrapdecl(wrap_genc);
+void *error_vector(MpsTerm *term,
+                   std::string msg,
+                   std::map<std::string,void*> &children);
+void *error_throw(MpsTerm *term,
+                  std::string msg,
+                  std::map<std::string,void*> &children);
 } // }}}
 }
 

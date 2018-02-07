@@ -31,6 +31,7 @@
 #include <set>
 #include <iostream>
 #include <sstream>
+#include <unordered_set>
 
 namespace hapi
 {
@@ -56,10 +57,11 @@ class MpsExp // {{{
     virtual MpsExp *Rename(const std::string &src, const std::string &dst) const = 0; // Rename variable
     virtual MpsExp *Subst(const std::string &source, const MpsExp &dest) const = 0; // Substitute exp for var
 
-    virtual std::string ToString() const= 0; // Make string representation
+    virtual std::string ToString() const = 0; // Make string representation
     //! Add C++ code that evaluates expression to dest.
     //! Returns the variable name that holds the result
-    virtual std::string ToC(std::stringstream &dest, const std::string &typeName) const= 0;
+    virtual std::string ToC(std::stringstream &dest, const std::string &typeName) const = 0;
+    virtual void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const = 0;
     static std::string NewVar(std::string base="x");
 
     //! Used for dependent types
@@ -99,6 +101,7 @@ class MpsVarExp : public MpsExp // {{{
     MpsExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
     std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
 
     MpsExp *Negate() const;
     MpsExp *MakeNNF(bool negate=false) const;
@@ -124,6 +127,7 @@ class MpsIntVal : public MpsExp // {{{
     MpsIntVal *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
     std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
     const mpz_t &GetValue() const;
 
     MpsExp *Negate() const;
@@ -135,6 +139,34 @@ class MpsIntVal : public MpsExp // {{{
   private:
 //    int myValue;
     mpz_t myValue;
+
+}; // }}}
+class MpsFloatVal : public MpsExp // {{{
+{
+  public:
+    MpsFloatVal(const mpf_t &value);
+    virtual ~MpsFloatVal();
+    MpsFloatVal *Copy() const;
+    MpsFloatVal *Eval() const;
+    MpsMsgType *TypeCheck(const MpsMsgEnv &Gamma);
+    bool operator==(const MpsExp &rhs) const;
+    std::set<std::string> FV() const;
+    MpsFloatVal *Rename(const std::string &src, const std::string &dst) const;
+    MpsFloatVal *Subst(const std::string &source, const MpsExp &dest) const;
+    std::string ToString() const;
+    std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
+    const mpf_t &GetValue() const;
+
+    MpsExp *Negate() const;
+    MpsExp *MakeNNF(bool negate=false) const;
+    MpsExp *MakeCNF() const;
+    bool ValidOR(std::set<std::string> &lits, std::set<std::string> &neglits) const;
+    bool ValidCNF() const;
+
+  private:
+//    int myValue;
+    mpf_t myValue;
 
 }; // }}}
 class MpsStringVal : public MpsExp // {{{
@@ -151,6 +183,7 @@ class MpsStringVal : public MpsExp // {{{
     MpsStringVal *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
     std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
     std::string GetValue() const;
 
     MpsExp *Negate() const;
@@ -177,6 +210,7 @@ class MpsBoolVal : public MpsExp // {{{
     MpsBoolVal *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
     std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
     bool GetValue() const;
 
     MpsExp *Negate() const;
@@ -203,6 +237,7 @@ class MpsCondExp : public MpsExp // {{{
     MpsCondExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
     std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
 
     MpsExp *Negate() const;
     MpsExp *MakeNNF(bool negate=false) const;
@@ -230,6 +265,7 @@ class MpsUnOpExp : public MpsExp // {{{
     MpsUnOpExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
     std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
     std::string GetOp() const;
     const MpsExp &GetRight() const;
     MpsExp &GetRight();
@@ -259,6 +295,7 @@ class MpsBinOpExp : public MpsExp // {{{
     MpsBinOpExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
     std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
     std::string GetOp() const;
     const MpsExp &GetLeft() const;
     const MpsExp &GetRight() const;
@@ -290,6 +327,7 @@ class MpsTupleExp : public MpsExp // {{{
     MpsTupleExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
     std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
     int GetSize() const;
     const MpsExp *GetElement(int index) const;
 
@@ -317,6 +355,7 @@ class MpsSystemExp : public MpsExp // {{{
     MpsSystemExp *Subst(const std::string &source, const MpsExp &dest) const;
     std::string ToString() const;
     std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
 
     MpsExp *Negate() const;
     MpsExp *MakeNNF(bool negate=false) const;

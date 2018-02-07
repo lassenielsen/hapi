@@ -14,19 +14,22 @@ MpsHostHeader::~MpsHostHeader() // {{{
 {
   delete mySucc;
 } // }}}
-bool MpsHostHeader::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
-{
+void *MpsHostHeader::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
+{ map<string,void*> children;
+ 
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
 
     if (pureState==CPS_PURE)
-      return PrintTypeError("HOST statements not allowed in pure context",*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("HOST headers not allowed in pure context",*this,Theta,Gamma,Omega),children);
   }
 
   // Verify hostheader
-  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
+  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsHostHeader::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)
@@ -108,6 +111,10 @@ set<string> MpsHostHeader::FPV() const // {{{
 {
   return mySucc->FPV();
 } // }}}
+set<string> MpsHostHeader::EV() const // {{{
+{
+  return mySucc->EV();
+} // }}}
 set<string> MpsHostHeader::FEV() const // {{{
 {
   return mySucc->FEV();
@@ -146,13 +153,24 @@ string MpsHostHeader::ToTex(int indent, int sw) const // {{{
          << ToTex_Hspace(indent,sw) << mySucc->ToTex(indent,sw);
   return result.str();
 } // }}}
-string MpsHostHeader::ToC() const // {{{
+string MpsHostHeader::ToC(const string &taskType) const // {{{
 {
-  return mySucc->ToC();
+  return mySucc->ToC(taskType);
 } // }}}
 string MpsHostHeader::ToCHeader() const // {{{
 {
   return unwrap_string(myHeader) + "\n" + mySucc->ToCHeader();
+} // }}}
+void MpsHostHeader::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ mySucc->ToCConsts(dest,existing);
+} // }}}
+MpsTerm *MpsHostHeader::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
+  MpsHostHeader *result= new MpsHostHeader(myHeader, *newSucc);
+  // Clean up
+  delete newSucc;
+  return result;
 } // }}}
 MpsHostHeader *MpsHostHeader::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
@@ -189,13 +207,11 @@ MpsTerm *MpsHostHeader::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsHostHeader *MpsHostHeader::CloseDefinitions() const // {{{
-{
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsHostHeader *result= new MpsHostHeader(myHeader, *newSucc);
-  // Clean up
-  delete newSucc;
-  return result;
+MpsTerm *MpsHostHeader::CopyWrapper(std::map<std::string,void*> &children) const // {{{
+{ return new MpsHostHeader(myHeader, *(MpsTerm*)children["succ"]);
+} // }}}
+MpsTerm *MpsHostHeader::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsHostHeader *MpsHostHeader::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

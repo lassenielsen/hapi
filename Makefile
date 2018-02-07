@@ -11,7 +11,7 @@
 # - Lasse Nielsen.                                                    #
 #=====================================================================#
 name = hapi
-version = 2015
+version = 2018
 libname = lib$(name).so
 #OS_LINUXlibname = lib$(name).so
 #OS_MAClibname = lib$(name).dylib
@@ -56,13 +56,14 @@ library_objects = \
   objects/mpstype.o \
   objects/mpsgui_http.o \
   objects/mpsgui.o \
+  objects/md5.o \
 
 default:
 	@echo "Use make config, make build, sudo make install, make clean and if you don't like it sudo make uninstall."
 
 all: config build install clean
 
-phony: default doc config build install install_bnf install_stdlib install_gfx uninstall clean tags package deb
+phony: default doc config build install install_stdlib install_gfx uninstall clean tags package deb
 
 doc: doc/html
 
@@ -104,17 +105,14 @@ include/$(name)/config.hpp:
 #OS_LINUX	@echo "#define OS_LINUX" >> include/$(name)/config.hpp
 	@echo "#endif" >> include/$(name)/config.hpp
 
+include/$(name)/%_bnf.hpp: bnf/%.bnf
+	xxd -i bnf/$*.bnf > include/$(name)/$*_bnf.hpp
+
 install_gfx:
 	@echo "Copying gallery"
 	mkdir -p /opt/hapi
 	mkdir -p /opt/hapi/gfx
 	cp gfx/*.jpg /opt/hapi/gfx/
-
-install_bnf:
-	@echo "Copying grammar"
-	mkdir -p /opt/hapi
-	mkdir -p /opt/hapi/bnf
-	cp bnf/mpsparser.bnf /opt/hapi/bnf/syntax.bnf
 
 install_stdlib:
 	@echo "Copying std-lib"
@@ -122,7 +120,7 @@ install_stdlib:
 	mkdir -p /opt/hapi/include
 	cp hapi_libs/*.pi /opt/hapi/include/
 
-install: $(libname)$(libversion) install_gfx install_bnf install_stdlib
+install: $(libname)$(libversion) install_gfx install_stdlib
 	@echo "Copying library"
 	cp $(libname)$(libversion) /usr/lib/
 #OS_LINUX	ln -f -s /usr/lib/$(libname)$(libversion) /usr/lib/$(libname)
@@ -147,11 +145,13 @@ clean:
 	touch clean~
 	touch packages
 	touch include/$(name)/config.hpp
+	touch include/$(name)/hapi_bnf.hpp
 	touch $(libname)$(libversion)
 	rm *~
 	rm -Rf packages
 	rm -Rf objects
 	rm include/$(name)/config.hpp
+	rm include/$(name)/hapi_bnf.hpp
 	rm $(libname)$(libversion)
 #	rm -Rf doc/html/*
 	rm -Rf doc/latex
@@ -176,9 +176,7 @@ deb: $(libname)$(libversion)
 	cp -R include/$(name) debs/lib$(name)_$(version)_i386/usr/include/$(name)
 	mkdir -p debs/lib$(name)_$(version)_i386/opt
 	mkdir -p debs/lib$(name)_$(version)_i386/opt/$(name)
-	mkdir -p debs/lib$(name)_$(version)_i386/opt/$(name)/bnf
 	cp -R gfx debs/lib$(name)_$(version)_i386/opt/$(name)/gfx
-	cp bnf/mpsparser.bnf debs/lib$(name)_$(version)_i386/opt/$(name)/bnf/syntax.bnf
 	cp -R hapi_libs/ debs/lib$(name)_$(version)_i386/opt/$(name)/include
 	echo "Making control"
 	mkdir -p debs/lib$(name)_$(version)_i386/DEBIAN
@@ -213,10 +211,10 @@ $(libname)$(libversion): $(library_objects)
 #OS_LINUX	$(compiler) -shared -Wl,-soname,$(libname).1 -o $(libname)$(libversion) $(library_objects) $(libs)
 #OS_MAC	$(compiler) -dynamiclib -o $(libname) $(library_objects) $(libs)
 
-objects/%.o: source/%.cpp include/$(name)/*.hpp  include/$(name)/config.hpp
-	mkdir -p objects
+objects/%.o: source/%.cpp include/$(name)/*.hpp  include/$(name)/config.hpp include/$(name)/hapi_bnf.hpp
+	@mkdir -p objects
 	$(compiler) -c source/$*.cpp $(args) -o objects/$*.o
 
-tags: $(name)/*.hpp $(name)/*.cpp
+tags: include/$(name)/*.hpp source/*.cpp
 	$(ctags) -a -o ~/.ctags $(PWD)/include/$(name)/*.hpp $(PWD)/source/*.cpp
 

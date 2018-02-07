@@ -16,12 +16,12 @@ MpsNu::~MpsNu() // {{{
   delete mySucc;
   delete myType;
 } // }}}
-bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
-{
+void *MpsNu::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
+{ map<string,void*> children;
   // Check purity constraints
   if (checkPure)
 	{ if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
   // Verify new channel
@@ -32,7 +32,7 @@ bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProc
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
     if (session!=NULL &&
         !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return PrintTypeError((string)"Hiding uncompleted session:" + myChannel,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Hiding uncompleted session:" + myChannel,*this,Theta,Gamma,Omega),children);
 
     // Remove hidden variable
     newGamma.erase(var);
@@ -44,9 +44,10 @@ bool MpsNu::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProc
   for (vector<MpsParticipant>::const_iterator p=myParticipants.begin(); p!=myParticipants.end(); ++p)
     if (p->IsPure())
       newPureStack.insert(pair<string,int>(myChannel,p->GetId()));
-  int result=mySucc->TypeCheck(Theta,newGamma,Omega,newPureStack,curPure,pureState,checkPure);
+  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,newPureStack,curPure,pureState,checkPure);
   delete newGamma[myChannel];
-  return result;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsNu::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)
@@ -183,6 +184,12 @@ set<string> MpsNu::FPV() const // {{{
   set<string> result = mySucc->FPV();
   return result;
 } // }}}
+set<string> MpsNu::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  result.insert(myChannel);
+  return result;
+} // }}}
 set<string> MpsNu::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();
@@ -224,20 +231,27 @@ string MpsNu::ToTex(int indent, int sw) const // {{{
   return "(" + ToTex_KW("nu") + " " + ToTex_Session(myChannel) + ":" + myType->ToTex(typeIndent,sw) + ")\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsNu::ToC() const // {{{
+string MpsNu::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  string vecName = ToC_Name(MpsExp::NewVar("chvector")); // Create variable name foor the mmessagee to send
-  result << "  vector<Channel*> " << vecName << ";" << endl;
-  for (int i=1;i<myType->GetMaxPid();++i)
-    result << "  " << vecName << ".push_back(new Channel_FIFO());" << endl;
-  result << "  ChannelsValue " << ToC_Name(myChannel) << "(" << vecName << ");" << endl;
-  result << mySucc->ToC();
+  result << ToC_Yield()
+         << "    _this->var_" << ToC_Name(myChannel) << ".reset(new libpi::task::Link(" << myType->GetMaxPid() << "));" << endl;
+  result << mySucc->ToC(taskType);
   return result.str();
 } // }}}
 string MpsNu::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
+} // }}}
+void MpsNu::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ mySucc->ToCConsts(dest,existing);
+} // }}}
+MpsTerm *MpsNu::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
+  MpsTerm *result= new MpsNu(myParticipants, myChannel, *newSucc, *myType);
+  delete newSucc;
+  return result;
 } // }}}
 MpsTerm *MpsNu::RenameAll() const // {{{
 { string newChannel = MpsExp::NewVar(myChannel);
@@ -266,12 +280,12 @@ MpsTerm *MpsNu::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsNu::CloseDefinitions() const // {{{
+MpsTerm *MpsNu::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsTerm *result= new MpsNu(myParticipants, myChannel, *newSucc, *myType);
-  delete newSucc;
-  return result;
+  return new MpsNu(myParticipants, myChannel, *(MpsTerm*)children["succ"], *myType);
+} // }}}
+MpsTerm *MpsNu::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsNu::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

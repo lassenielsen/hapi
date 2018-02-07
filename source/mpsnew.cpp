@@ -16,19 +16,19 @@ MpsNew::~MpsNew() // {{{
   delete mySucc;
   delete myType;
 } // }}}
-bool MpsNew::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
-{
+void *MpsNew::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
+{ map<string,void*> children;
   // Check purity constraints
   if (checkPure)
-	{ if (pureStack.size()>0)
-      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+  { if (pureStack.size()>0)
+      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
      if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
   // Check correct number of participants
   if (myNames.size()!=myType->GetMaxPid())
-    return PrintTypeError((string)"Number of participants mismatch",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Number of participants mismatch",*this,Theta,Gamma,Omega),children);
   // Check that only completed sessions are hidden
   MpsMsgEnv newGamma = Gamma;
   for (int i=0; i<myNames.size(); ++i)
@@ -37,7 +37,7 @@ bool MpsNew::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
     { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
       if (session!=NULL &&
           !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-        return PrintTypeError((string)"Hiding uncompleted session:" + myNames[i],*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError((string)"Hiding uncompleted session:" + myNames[i],*this,Theta,Gamma,Omega),children);
 
       // Remove hidden variable
       newGamma.erase(var);
@@ -61,12 +61,13 @@ bool MpsNew::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
     newGamma[myNames[i]] = new MpsDelegateLocalMsgType(*newType,i+1,participants);
     delete newType;
   }
-  int result=mySucc->TypeCheck(Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Cleanup
   for (int i=0; i<myNames.size(); ++i)
   { delete newGamma[myNames[i]];
   }
-  return result;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsNew::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)
@@ -226,6 +227,15 @@ set<string> MpsNew::FPV() const // {{{
   set<string> result = mySucc->FPV();
   return result;
 } // }}}
+set<string> MpsNew::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  set<string> result2 = myType->FEV();
+  result.insert(result2.begin(),result2.end());
+  for (vector<string>::const_iterator name=myNames.begin(); name!=myNames.end(); ++name)
+    result.insert(*name);
+  return result;
+} // }}}
 set<string> MpsNew::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();
@@ -276,41 +286,48 @@ string MpsNew::ToTex(int indent, int sw) const // {{{
   result << ";\\newline\n" + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
   return result.str();
 } // }}}
-string MpsNew::ToC() const // {{{
+string MpsNew::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  // Declare new sessions
-  for (int i=0; i<myNames.size(); ++i)
-    result << "  Session *" << ToC_Name(myNames[i]) << ";" << endl;
-
-  result << "  {" << endl;
-  string vecName = ToC_Name(MpsExp::NewVar("channels"));
-  result << "    vector<Channel_FIFO*> " << vecName << ";" << endl;
+  result << ToC_Yield()
+         << "    {" << endl;
+  result << "      _task->tmps.clear();" << endl;
   // Create all channels
   for (int i=0; i<myNames.size(); ++i)
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << vecName << ".push_back(new Channel_FIFO());" << endl;
+      result << "      _task->tmps.push_back(std::shared_ptr<libpi::Value>(new libpi::task::Channel()));" << endl;
   // For each participant, create filtered channels vector, and create session
   for (int i=0; i<myNames.size(); ++i)
   { string sesInChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_in"));
     string sesOutChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_out"));
-    result << "    vector<Channel_FIFO*> " << sesInChannels << ";" << endl;
+    result << "    vector<shared_ptr<libpi::Channel >> " << sesInChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << sesInChannels << ".push_back(" << vecName << "[" << (j+i*myNames.size()) << "]);" << endl;
-    result << "    vector<Channel_FIFO*> " << sesOutChannels << ";" << endl;
+      result << "    " << sesInChannels << ".push_back(dynamic_pointer_cast<libpi::Channel>(_task->tmps[" << (j+i*myNames.size()) << "]));" << endl;
+    result << "    vector<shared_ptr<libpi::Channel> > " << sesOutChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << sesOutChannels << ".push_back(" << vecName << "[" << (i+j*myNames.size()) << "]);" << endl;
+      result << "    " << sesOutChannels << ".push_back(dynamic_pointer_cast<libpi::Channel>(_task->tmps[" << (i+j*myNames.size()) << "]));" << endl;
   
-    result << "    " << ToC_Name(myNames[i]) << "= new Session_FIFO(" << sesInChannels << "," << sesOutChannels << "," << (i+1) << "," << myNames.size() << ");" << endl;
+    result << "      _this->var_" << ToC_Name(myNames[i]) << ".reset(new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
   }
-  result << "  }" << endl;
+  result << "      _this->tmps.clear();" << endl
+         << "    }" << endl;
 
-  result << mySucc->ToC();
+  result << mySucc->ToC(taskType);
   return result.str();
 } // }}}
 string MpsNew::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
+} // }}}
+void MpsNew::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ mySucc->ToCConsts(dest,existing);
+} // }}}
+MpsTerm *MpsNew::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
+  MpsTerm *result= new MpsNew(myNames, *myType, *newSucc);
+  delete newSucc;
+  return result;
 } // }}}
 MpsTerm *MpsNew::RenameAll() const // {{{
 { vector<string> newNames;
@@ -344,12 +361,11 @@ MpsTerm *MpsNew::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsNew::CloseDefinitions() const // {{{
-{
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsTerm *result= new MpsNew(myNames, *myType, *newSucc);
-  delete newSucc;
-  return result;
+MpsTerm *MpsNew::CopyWrapper(std::map<std::string,void*> &children) const // {{{
+{ return new MpsNew(myNames, *myType, *(MpsTerm*)children["succ"]);
+} // }}}
+MpsTerm *MpsNew::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsNew::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

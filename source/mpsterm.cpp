@@ -31,17 +31,83 @@ void MpsTerm::FreeLink(const string &name) // {{{
 const vector<string> &MpsTerm::GetFreeLinks() const // {{{
 { return myFreeLinks;
 } // }}}
+void* MpsTerm::TDCompile(tdc_pre pre, // {{{
+                         tdc_post post,
+                         tdc_error error,
+                         const MpsExp &Theta,
+                         const MpsMsgEnv &Gamma,
+                         const MpsProcEnv &Omega, 
+                         const std::set<std::pair<std::string,int> > &pureStack,
+                         const std::string &curPure,
+                         PureState pureState,
+                         bool checkPure)
+{ MpsTerm *tmp=pre(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure);
+  //try
+  { void *result=tmp->TDCompileMain(pre,post,error,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure);
+    if (tmp!=NULL && tmp!=this)
+      delete tmp;
+    return result;
+  }
+  //catch (...)
+  //{ if (tmp!=NULL && tmp!=this)
+  //    delete tmp;
+  //  throw;
+  //}
+} // }}}
 
 /* Static type-checking of deadlock and communication safety
  */
-bool MpsTerm::TypeCheck() // {{{
+bool MpsTerm::TypeCheck(bool checkPurity) // {{{
 {
   // Create environments
   MpsBoolVal Theta(true);
   MpsMsgEnv Gamma;
   MpsProcEnv Omega;
-  return TypeCheck(Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,true);
+  tdc_pre pre=tdc_wrap::pre_void;
+  tdc_post wrap=tdc_wrap::wrap_vector;
+  tdc_error wrap_err=tdc_wrap::error_vector;
+  vector<string> *result=(vector<string>*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,checkPurity);
+  bool success=true;
+
+  for (size_t i=0; i<result->size(); ++i)
+  { success=false;
+    cerr << "TypeCheck Error: " << (*result)[i] << endl << endl;
+  }
+
+  delete result;
+  return success;
 } // }}}
+MpsTerm *MpsTerm::CloseDefs() // {{{
+{
+  // Create environments
+  MpsBoolVal Theta(true);
+  MpsMsgEnv Gamma;
+  MpsProcEnv Omega;
+  tdc_pre pre=tdc_wrap::pre_closedefs;
+  tdc_post wrap=tdc_wrap::wrap_copy;
+  tdc_error wrap_err=tdc_wrap::error_throw;
+  return (MpsTerm*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,false);
+} // }}}
+// TODO: Type Driven Compilation: string MpsTerm::GenerateC() // {{{
+// TODO: Type Driven Compilation: {
+// TODO: Type Driven Compilation:   // Create environments
+// TODO: Type Driven Compilation:   MpsBoolVal Theta(true);
+// TODO: Type Driven Compilation:   MpsMsgEnv Gamma;
+// TODO: Type Driven Compilation:   MpsProcEnv Omega;
+// TODO: Type Driven Compilation:   tdc_pre pre=tdc_wrap::pre_void;
+// TODO: Type Driven Compilation:   tdc_post wrap=tdc_wrap::wrap_vector;
+// TODO: Type Driven Compilation:   tdc_error wrap_err=tdc_wrap::error_vector;
+// TODO: Type Driven Compilation:   vector<string> *result=(vector<string>*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,checkPurity);
+// TODO: Type Driven Compilation:   bool success=true;
+// TODO: Type Driven Compilation: 
+// TODO: Type Driven Compilation:   for (size_t i=0; i<result->size(); ++i)
+// TODO: Type Driven Compilation:   { success=false;
+// TODO: Type Driven Compilation:     cerr << "TypeCheck Error: " << (*result)[i] << endl << endl;
+// TODO: Type Driven Compilation:   }
+// TODO: Type Driven Compilation: 
+// TODO: Type Driven Compilation:   delete result;
+// TODO: Type Driven Compilation:   return success;
+// TODO: Type Driven Compilation: } // }}}
 
 /* Create list of possible steps
  */
@@ -275,108 +341,173 @@ int _compile_id=0;
  */
 string MpsTerm::MakeC() const // {{{
 { _compile_id=1;
+  stringstream result;
+  result << "/* ==== ORIGINAL ====\n" << ToString() << "\n*/\n";
   MpsTerm *step1=RenameAll();
-  MpsTerm *step2=step1->CloseDefinitions();
+  result << "/* ==== RENAMED ====\n" << step1->ToString() << "\n*/\n";
+  MpsTerm *step2=step1->FlattenFork(false,true,false);
   delete step1;
+  result << "/* ==== FLATTENFORKED ====\n" << step2->ToString() << "\n*/\n";
+  MpsTerm *step3=step2->CloseDefs();
+  delete step2;
+  result << "/* ==== CLOSEDEFED ====\n" << step3->ToString() << "\n*/\n";
   MpsFunctionEnv defs;
   // Move definitions to global env
-  MpsTerm *main=step2->ExtractDefinitions(defs);
-  delete step2;
-  string result = (string)
-         "#include <unistd.h>\n"
-       + "#include <signal.h>\n"
-       + "#include <iostream>\n"
-       + "#include <vector>\n"
-       + "#include <sstream>\n"
-       + "#include <algorithm>\n"
-       + "#include <libpi/session_fifo.hpp>\n"
-       + "#include <libpi/value.hpp>\n"
-       + "// shared status\n"
-       + "#include <stdio.h>\n"
-       + "#include <stdlib.h>\n"
-       + "#include <string.h>\n"
-//       + "#include <assert.h>\n"
-       + "#include <sys/types.h>\n"
-       + "#include <sys/stat.h>\n"
-       + "#include <fcntl.h>\n"
-       + "#include <sys/mman.h>\n"
-       + "#include <atomic>\n"
-       + "#include <thread>\n"
-//     + "#include <pthread.h>\n"
-       + main->ToCHeader()
-       + "using namespace std;\n"
-       + "using namespace libpi;\n\n"
-//     + "pthread_mutex_t *shared_mutex()\n"
-//     + "{ // place our shared data in shared memory\n"
-//     + "  int prot = PROT_READ | PROT_WRITE;\n"
-//     + "  int flags = MAP_SHARED | MAP_ANONYMOUS;\n"
-//     + "  pthread_mutex_t *data = (pthread_mutex_t*)mmap(NULL, sizeof(pthread_mutex_t), prot, flags, -1, 0);\n"
-//     + "  assert(data);\n"
-//     + "  // initialise mutex so it works properly in shared memory\n"
-//     + "  pthread_mutexattr_t attr;\n"
-//     + "  pthread_mutexattr_init(&attr);\n"
-//     + "  pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);\n"
-//     + "  pthread_mutex_init(data, &attr);\n"
-//     + "  return data;\n"
-//     + "}\n"
-//     + "pthread_mutex_t *__system_aprocs_mutex=shared_mutex();\n"
-       + "inline atomic<int> *__new_shared_int()\n"
-       + "{ return (std::atomic<int>*)mmap(NULL, sizeof(atomic<int>), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); // Actual number of active processes\n"
-       + "}\n"
-       + "std::atomic<int> *__system_aprocs=__new_shared_int(); // Actual number of active processes\n"
-       + "inline void IncAprocs() // {{{\n"
-       + "{ ++(*__system_aprocs);\n"
-       + "} // }}}\n"
-       + "inline void DecAprocs() // {{{\n"
-       + "{ --(*__system_aprocs);\n"
-       + "} // }}}\n"
-       + "int __system_tprocs=std::thread::hardware_concurrency(); // Target number of active processes\n"
-       + "std::vector<char*> __system_args;   // Store args for use in processes\n"
-       + DefEnvToCHeader(defs)
-       + DefEnvToC(defs)
-       + "\n\n/* Main process */\ninline Cnt *__MAIN__()\n{\n"
-       + main->ToC()
-       + "}\n"
-       + "inline int string2int(std::string s) // {{{\n"
-       + "{\n"
-       + "  // Allow the use of '~' as minus\n"
-       + "  std::replace(s.begin(),s.end(),'~','-');\n"
-       + "  std::stringstream ss;\n"
-       + "  ss.clear();\n"
-       + "  ss << s;\n"
-       + "  int result;\n"
-       + "  ss >> result;\n"
-       + "  return result;\n"
-       + "} // }}}\n"
-       + "\n\n/*Start process, and its continuations */\n"
-       + "int main(int argc, char **argv) // {{{\n"
-       + "{ // PARSE ARGS!!\n"
-       + "  for (int i=0; i<argc; ++i)\n"
-       + "  { if (string(argv[i])==\"-pi_tprocs\" && i+1<argc)\n"
-       + "      __system_tprocs=string2int(string(argv[++i]));\n"
-       + "    else\n"
-       + "      __system_args.push_back(argv[i]);\n"
-       + "  }\n"
-       + "  (*__system_aprocs)=1;\n"
-       + "  try\n"
-       + "  { signal(SIGCHLD, SIG_IGN); // Fork optimization\n"
-       + "    Cnt *cnt = __MAIN__();\n"
-       + "    while (!cnt->IsEmpty())\n"
-       + "    { Cnt *cnt2=cnt->Run();\n"
-       + "      delete cnt;\n"
-       + "      cnt=cnt2;\n"
-       + "    }\n"
-       + "    delete cnt;\n"
-       + "    DecAprocs();\n"
-       + "    munmap(__system_aprocs,sizeof(int));\n"
-       + "  } catch (const string &error)\n"
-       + "  { cerr << \"Error: \" << error << endl;\n"
-       + "    return 1;\n"
-       + "  }\n"
-       + "  return 0;\n"
-       + "} // }}}";
+  MpsTerm *main=step3->ExtractDefinitions(defs);
+  delete step3;
+  // Ready to generate code
+  string mainTask="TaskMain";
+  result
+    << "#include <libpi/value.hpp>\n"
+    << "#include <libpi/bool.hpp>\n"
+    << "#include <libpi/int.hpp>\n"
+    << "#include <libpi/string.hpp>\n"
+    << "#include <libpi/session.hpp>\n"
+    << "#include <libpi/task/link.hpp>\n"
+    << "#include <libpi/task/worker.hpp>\n"
+    << "#include <thread>\n"
+    << "#include <signal.h>\n"
+    << "using namespace std;\n"
+    << "// HEADERS {{{\n"
+    << main->ToCHeader();
+  for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
+    result << def->GetBody().ToCHeader();
+  result
+    << "// }}}\n"
+    << "// Value declerations {{{\n"
+    << "std::vector<char*> _args;\n";
+  std::unordered_set<std::string> existing;
+  std::vector<std::string> consts;
+  // Create const definitions without duplicates
+  main->ToCConsts(consts,existing);
+  for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
+    def->GetBody().ToCConsts(consts,existing);
+  // Add const defs to result
+  for (std::vector<std::string>::const_iterator c=consts.begin(); c!=consts.end(); ++c)
+    result << *c;
+  // Add framework to result
+  result
+    << "// }}}\n"
+    << "// Task Types {{{\n";
+  set<string> ids=main->EV();
+  result
+  << "class " << mainTask << " : public libpi::task::Task" << endl
+  << "{ public:" << endl;
+  for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+    result << "    shared_ptr<libpi::Value> var_" << ToC_Name(*id) << ";" << endl;
+  result
+  << "};" << endl;
+  for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
+    result << def->ToCTaskType();
+  result
+    << "// }}}\n"
+    << "// All Methods {{{\n"
+    << "inline bool _methods(shared_ptr<libpi::task::Task> &_task)\n"
+    << "{ size_t _steps=0;\n"
+    << "  void *_label=_task->GetLabel();\n"
+    << "  if (_label!=NULL)\n"
+    << "    goto *_label;\n"
+    << "  method_Main:\n"
+    << "  #define _this ((" << mainTask << "*)_task.get())" << endl
+    << "  { // Main {{{\n"
+    << main->ToC(mainTask)
+    << "  } // }}}\n"
+    << DefEnvToC(defs)
+    << "} // }}}\n"
+    << "void libpi::task::Worker_Pool::Work() // {{{\n"
+    << "{ try\n"
+    << "  { while (true) // Continue until termination\n"
+    << "    { // Test if program is complete\n"
+    << "      if (ActiveTasks==0)\n"
+    << "      { ourIdleWorkersLock.Lock();\n"
+    << "        shared_ptr<Task> nullTask;\n"
+    << "	while (!ourIdleWorkers.empty())\n"
+    << "        { ourIdleWorkers.front()->EmployTask(nullTask);\n"
+    << "          ourIdleWorkers.pop();\n"
+    << "        }\n"
+    << "        ourIdleWorkersSize=0;\n"
+    << "        ourIdleWorkersLock.Release();\n"
+    << "        break;\n"
+    << "      }\n"
+    << "      // Find next task\n"
+    << "      while (myActiveTasks.empty())\n"
+    << "      { ourIdleWorkersLock.Lock();\n"
+    << "        ourIdleWorkers.push(this);\n"
+    << "        ++ourIdleWorkersSize;\n"
+    << "        ourIdleWorkersLock.Release();\n"
+    << "        myWaitLock.Lock();\n"
+    << "      }\n"
+    << "      shared_ptr<Task> task=myActiveTasks.front();\n"
+    << "      myActiveTasks.pop();\n"
+    << "\n"
+    << "      resume_task:\n"
+    << "      if (!task)\n"
+    << "        break;\n"
+    << "      if (_methods(task))\n"
+    << "      { if (myActiveTasks.empty())\n"
+    << "          goto resume_task;\n"
+    << "        else QueueTask(task);\n"
+    << "      }\n"
+    << "      else\n"
+    << "        --ActiveTasks;\n"
+    << "    }\n"
+    << "  } catch (const string &error)\n"
+    << "  { cerr << \"Error: \" << error << endl;\n"
+    << "  }\n"
+    << "  return;\n"
+    << "} // }}}\n"
+    << "void *_start_worker(void *arg) // {{{\n"
+    << "{ libpi::task::Worker *worker=(libpi::task::Worker*)arg;\n"
+    << "  worker->Work();\n"
+    << "  delete worker;\n"
+    << "} // }}}\n"
+    << "inline void _start_workers() // {{{\n"
+    << "{ pthread_t x[libpi::task::Worker::TargetTasks];\n"
+    << "  pthread_attr_t y;\n"
+    << "  pthread_attr_init(&y);\n"
+    << "  pthread_attr_setstacksize(&y,16384);\n"
+    << "  //pthread_attr_setdetachstate(&y,PTHREAD_CREATE_DETACHED);\n"
+    << "  for (size_t wc=0; wc<libpi::task::Worker::TargetTasks; ++wc)\n"
+    << "  { libpi::task::Worker *_worker=new libpi::task::Worker_Pool();\n"
+    << "    if (wc==0)\n"
+    << "    { // Create main task\n"
+    << "      shared_ptr<libpi::task::Task> _main(new " << mainTask << "());\n"
+    << "      _main->SetLabel(NULL);\n"
+    << "      _main->SetWorker(_worker);\n"
+    << "      _worker->AddTask(_main);\n"
+    << "    }\n"
+    << "    // Bind thread to specific core\n"
+    << "    //cpu_set_t cpuset;\n"
+    << "    //CPU_ZERO(&cpuset);\n"
+    << "    //CPU_SET(wc%cores, &cpuset);\n"
+    << "    //pthread_setaffinity_np(x[wc],sizeof(cpu_set_t), &cpuset);\n"
+    << "    pthread_create(&(x[wc]),&y,_start_worker,(void*)_worker);\n"
+    << "  }\n"
+    << "  for (size_t wc=0; wc<libpi::task::Worker::TargetTasks; ++wc)\n"
+    << "    pthread_join(x[wc],NULL);\n"
+    << "} // }}}\n"
+    << "/*Start process, and its continuations */\n"
+    << "int main(int argc, char **argv) // {{{\n"
+    << "{ // PARSE ARGS!!\n"
+    << "  for (int i=0; i<argc; ++i)\n"
+    << "  { if (string(argv[i])==\"-pi_tprocs\" && i+1<argc)\n"
+    << "    libpi::task::Worker::TargetTasks=atoi(argv[++i]);\n"
+    << "    else\n"
+    << "      _args.push_back(argv[i]);\n"
+    << "  }\n"
+    << "  try\n"
+    << "  { signal(SIGCHLD, SIG_IGN); // Fork optimization\n"
+    << "    // Start workers\n"
+    << "    _start_workers();\n"
+    << "    //munmap(_aprocs,sizeof(int));\n"
+    << "  } catch (const string &error)\n"
+    << "  { cerr << \"Error: \" << error << endl;\n"
+    << "    return 1;\n"
+    << "  }\n"
+    << "  return 0;\n"
+    << "} // }}}";
   delete main;
-  return result;
+  return result.str();
 } // }}}
 MpsTerm *MpsTerm::Parallelize() const // {{{
 { MpsTerm *seqTerm;
@@ -398,3 +529,112 @@ void MpsTerm::Split(const set<string> &fv, MpsTerm* &pre, MpsTerm* &post) const 
 { pre=Copy();
   post=new MpsEnd();
 } // }}}
+
+namespace hapi
+{
+namespace tdc_wrap
+{
+MpsTerm *pre_void(MpsTerm *term, // {{{
+                  const MpsExp &Theta,
+                  const MpsMsgEnv &Gamma,
+                  const MpsProcEnv &Omega, 
+                  const std::set<std::pair<std::string,int> > &pureStack,
+                  const std::string &curPure,
+                  MpsTerm::PureState pureState,
+                  bool checkPure)
+{ return term;
+} // }}}
+MpsTerm *pre_closedefs(MpsTerm *term, // {{{
+                       const MpsExp &Theta,
+                       const MpsMsgEnv &Gamma,
+                       const MpsProcEnv &Omega, 
+                       const std::set<std::pair<std::string,int> > &pureStack,
+                       const std::string &curPure,
+                       MpsTerm::PureState pureState,
+                       bool checkPure)
+{ return term->CloseDefsPre(Gamma);
+} // }}}
+void *wrap_vector(MpsTerm *term, // {{{
+                  const MpsExp &Theta,
+                  const MpsMsgEnv &Gamma,
+                  const MpsProcEnv &Omega, 
+                  const std::set<std::pair<std::string,int> > &pureStack,
+                  const std::string &curPure,
+                  MpsTerm::PureState pureState,
+                  bool checkPure,
+                  std::map<std::string,void*> &children)
+{ std::vector<std::string> *result=new std::vector<std::string>();
+  // Cleanup
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+  { result->insert(result->end(),((std::vector<std::string>*)child->second)->begin(),((std::vector<std::string>*)child->second)->end());
+    delete ((std::vector<std::string>*)child->second);
+  }
+  return result;
+} // }}}
+void *wrap_copy(MpsTerm *term, // {{{
+                const MpsExp &Theta,
+                const MpsMsgEnv &Gamma,
+                const MpsProcEnv &Omega, 
+                const std::set<std::pair<std::string,int> > &pureStack,
+                const std::string &curPure,
+                MpsTerm::PureState pureState,
+                bool checkPure,
+                std::map<std::string,void*> &children)
+{ MpsTerm *result=term->CopyWrapper(children);
+  // Cleanup
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+    delete ((MpsTerm*)child->second);
+  return (void*)result;
+} // }}}
+//void *wrap_consts(MpsTerm *term, // {{{
+//                  const MpsExp &Theta,
+//                  const MpsMsgEnv &Gamma,
+//                  const MpsProcEnv &Omega, 
+//                  const std::set<std::pair<std::string,int> > &pureStack,
+//                  const std::string &curPure,
+//                  MpsTerm::PureState pureState,
+//                  bool checkPure,
+//                  std::map<std::string,void*> &children)
+//{ std::map<string,MpsMsgType> *result=term->GetConsts(Gamma,Omega,children);
+//  // Cleanup
+//  for (map<string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+//    delete ((map<string,MpsMsgType>*)child->second);
+//  return (void*)result;
+//} // }}}
+//void *wrap_genc(MpsTerm *term, // {{{
+//                const MpsExp &Theta,
+//                const MpsMsgEnv &Gamma,
+//                const MpsProcEnv &Omega, 
+//                const std::set<std::pair<std::string,int> > &pureStack,
+//                const std::string &curPure,
+//                MpsTerm::PureState pureState,
+//                bool checkPure,
+//                std::map<std::string,void*> &children)
+//{ std::string *result=term->GenerateC(Gamma,Omega,children);
+//  // Cleanup
+//  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+//    delete ((string*)child->second);
+//  return (void*)result;
+//} // }}}
+void *error_vector(MpsTerm *term, // {{{
+                   std::string msg,
+                   std::map<std::string,void*> &children)
+{ std::vector<std::string> *result=new std::vector<std::string>();
+  result->push_back(msg);
+  // Cleanup
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+  { result->insert(result->end(),((std::vector<std::string>*)child->second)->begin(),((std::vector<std::string>*)child->second)->end());
+    delete ((std::vector<std::string>*)child->second);
+  }
+  return (void*)result;
+} // }}}
+void *error_throw(MpsTerm *term, // {{{
+                  std::string msg,
+                  std::map<std::string,void*> &children)
+{ // Cleanup
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+    delete ((std::vector<std::string>*)child->second);
+  throw msg;
+} // }}}
+}
+}

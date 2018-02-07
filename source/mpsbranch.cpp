@@ -25,15 +25,15 @@ MpsBranch::~MpsBranch() // {{{
     myBranches.erase(myBranches.begin());
   }
 } // }}}
-bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Branch {{{
-{
+void *MpsBranch::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Branch {{{
+{ map<string,void*> children;
   // Check purity constraints
   if (checkPure)
 	{ if (pureStack.size()>0)
-      return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
 
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
   // Verify branch
@@ -41,26 +41,26 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   // Check session is open
   if (session==Gamma.end())
   {
-    return PrintTypeError((string)"Typechecking error - Branching on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Typechecking error - Branching on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
   }
   // Check if session type
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
-    return PrintTypeError((string)"Branching on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Branching on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
-    return TypeCheckRec(Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
+    return TypeCheckRec(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
   if (allType!=NULL)
-    return TypeCheckForall(Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
+    return TypeCheckForall(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   // Check session has select type
   const MpsLocalBranchType *branchType = dynamic_cast<const MpsLocalBranchType*>(msgType->GetLocalType());
   if (branchType==NULL)
-    return PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + msgType->GetLocalType()->ToString("           "),*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + msgType->GetLocalType()->ToString("           "),*this,Theta,Gamma,Omega),children);
   // Check channel index is correct
   if (myChannel.GetIndex() != branchType->GetSender())
-    return PrintTypeError((string)"Branching on wrong index: " + myChannel.ToString(),*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Branching on wrong index: " + myChannel.ToString(),*this,Theta,Gamma,Omega),children);
   // Check label ok
   const map<string,MpsLocalType*> &branches=branchType->GetBranches();
   for (map<string,MpsLocalType*>::const_iterator branch=branches.begin();branch!=branches.end();++branch)
@@ -74,24 +74,21 @@ bool MpsBranch::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
     newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second, msgType->GetPid(), msgType->GetParticipants());
     map<string,MpsTerm*>::const_iterator succ = myBranches.find(branch->first);
     if (succ==myBranches.end())
-      return PrintTypeError((string)"Branching cannot receive label: " + branch->first,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Branching cannot receive label: " + branch->first,*this,Theta,Gamma,Omega),children);
     // Make new Theta
     map<string,MpsExp*>::const_iterator assertion=branchType->GetAssertions().find(branch->first);
     if (assertion==branchType->GetAssertions().end())
-      return PrintTypeError((string)"Branch has no assertion: " + branch->first,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Branch has no assertion: " + branch->first,*this,Theta,Gamma,Omega),children);
     MpsExp *newTheta = new MpsBinOpExp("and",Theta,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Typecheck Branch
-    bool brcheck=succ->second->TypeCheck(*newTheta,newGamma,Omega, pureStack, curPure, pureState, checkPure);
+    children[branch->first] = succ->second->TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega, pureStack, curPure, pureState, checkPure);
 
     // Clean up
     delete newTheta;
     delete newGamma[myChannel.GetName()];
-
-    if (not brcheck)
-      return false;
   }
-  // All checks passed
-  return true;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsBranch::ApplyBRcv(const std::string &path, const std::string &label) const // {{{
 { if (path.size()>0)
@@ -245,6 +242,18 @@ set<string> MpsBranch::FPV() const // {{{
   }
   return result;
 } // }}}
+set<string> MpsBranch::EV() const // {{{
+{
+  set<string> result;
+  result.clear();
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    set<string> sub = it->second->EV();
+    result.insert(sub.begin(), sub.end());
+  }
+  result.insert(myChannel.GetName());
+  return result;
+} // }}}
 set<string> MpsBranch::FEV() const // {{{
 {
   set<string> result;
@@ -310,33 +319,32 @@ string MpsBranch::ToTex(int indent, int sw) const // {{{
   result += ToTex_Hspace(indent,sw) + "\\}";
   return result;
 } // }}}
-string MpsBranch::ToC() const // {{{
+string MpsBranch::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  string lblName = ToC_Name(MpsExp::NewVar("branch")); // Create variable name for the received value
-  string msgName = ToC_Name(MpsExp::NewVar("branch")); // Create variable name for the received message
-  result << "  StringValue " << lblName << ";" << endl
-         << "  {" << endl
-         << "    Message " << msgName << ";" << endl // Declare message variable
-         << "    DecAprocs();" << endl
-         << "    " << ToC_Name(myChannel.GetName()) << "->Receive(" << int2string(myChannel.GetIndex()-1) << ", " << msgName << ");" << endl // Receive message
-         << "    IncAprocs();" << endl
-         << "    " << msgName << ".GetValue(" << lblName << ");" << endl
-         << "  }" << endl;
+  string lblRcvName = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
+  result
+    << ToC_Yield()
+    << "    _task->SetLabel(&&" << lblRcvName << ");" << endl
+    << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex()-1 << ",_task,_task->tmp)) // Receive label to tmp" << endl
+    << "      return false;" << endl
+    << "    " << lblRcvName << ":" << endl;
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
-      result << "  else ";
-    result << "  if (" << lblName << ".ToString()==\"" << it->first << "\")" << endl
-           << "  {" << endl;
+      result << "    else " << endl;
+    // Fixme: Use goto *branchmap[((libpi::String*)_task->tmp.get())->GetValue()];
+    result << "    if (((libpi::String*)_task->tmp.get())->GetValue()==\"" << it->first << "\")" << endl
+           << "    {" << endl
+           << "      _task->tmp.reset();" << endl;
     if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
-      result << "    " << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-             << "    delete " << ToC_Name(myChannel.GetName()) << ";" << endl;
+      result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
+             << "    _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
     }
-    result << it->second->ToC();
-    result << "  }" << endl;
+    result << it->second->ToC(taskType);
+    result << "    }" << endl;
   }
-  result << "  else throw (string)\"Unknown branch: " << lblName << "\";" << endl;
+  result << "    else throw string(\"Unknown branch: \")+((libpi::String*)_task->tmp.get())->GetValue();" << endl;
   return result.str();
 } // }}}
 string MpsBranch::ToCHeader() const // {{{
@@ -347,6 +355,22 @@ string MpsBranch::ToCHeader() const // {{{
     result << it->second->ToCHeader();
   }
   return result.str();
+} // }}}
+void MpsBranch::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+    it->second->ToCConsts(dest,existing);
+} // }}}
+MpsTerm *MpsBranch::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
+{
+  map<string,MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+    newBranches[it->first]=it->second->FlattenFork(normLhs,normRhs,pureMode);
+
+  MpsTerm *result=new MpsBranch(myChannel,newBranches, GetFinalBranches());
+  DeleteMap(newBranches);
+
+  return result;
 } // }}}
 MpsTerm *MpsBranch::RenameAll() const // {{{
 { map<string,MpsTerm*> newBranches;
@@ -373,16 +397,16 @@ MpsTerm *MpsBranch::Append(const MpsTerm &term) const // {{{
   DeleteMap(newBranches);
   return result;
 } // }}}
-MpsTerm *MpsBranch::CloseDefinitions() const // {{{
+MpsTerm *MpsBranch::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
-  map<string,MpsTerm*> newBranches;
-  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
-    newBranches[it->first]=it->second->CloseDefinitions();
+  map<string,MpsTerm*> branches;
+  for (map<string,void*>::iterator it=children.begin(); it!=children.end(); ++it)
+    branches[it->first]=(MpsTerm*)it->second;
 
-  MpsTerm *result=new MpsBranch(myChannel,newBranches, GetFinalBranches());
-  DeleteMap(newBranches);
-
-  return result;
+  return new MpsBranch(myChannel, branches, GetFinalBranches());
+} // }}}
+MpsTerm *MpsBranch::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsBranch::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { map<string,MpsTerm*> newBranches;

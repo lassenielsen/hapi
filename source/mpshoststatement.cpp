@@ -22,15 +22,16 @@ MpsHostStatement::~MpsHostStatement() // {{{
   DeleteVector(myExpParts);
   DeleteVector(myTypes);
 } // }}}
-bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
-{
+void *MpsHostStatement::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Nres {{{
+{ map<string,void*> children;
+ 
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
 
     if (pureState==CPS_PURE && !myPure)
-      return PrintTypeError("Impure hoststatement in pure setting." ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Impure hoststatement in pure setting." ,*this,Theta,Gamma,Omega),children);
   }
 
   // Verify hoststatement
@@ -42,12 +43,14 @@ bool MpsHostStatement::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, co
   { MpsMsgType *partType=(*part)->TypeCheck(Gamma);
     myTypes.push_back(partType);
     if (dynamic_cast<MpsMsgNoType*>(partType)!=NULL)
-      return PrintTypeError("Host Language Statement uses expression untypable expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Host Language Statement uses untypable expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega),children);
     if (dynamic_cast<const MpsDelegateMsgType*>(partType)!=NULL)
-      return PrintTypeError("Host Language Statement uses session variable in expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Host Language Statement uses session variable in expression: " + (*part)->ToString(),*this,Theta,Gamma,Omega),children);
   }
 
-  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
+  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsHostStatement::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)
@@ -155,6 +158,15 @@ set<string> MpsHostStatement::FPV() const // {{{
 {
   return mySucc->FPV();
 } // }}}
+set<string> MpsHostStatement::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  for (vector<MpsExp*>::const_iterator exp=myExpParts.begin(); exp!=myExpParts.end(); ++exp)
+  { set<string> fv = (*exp)->FV();
+    result.insert(fv.begin(),fv.end());
+  }
+  return result;
+} // }}}
 set<string> MpsHostStatement::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();
@@ -205,7 +217,7 @@ string MpsHostStatement::ToTex(int indent, int sw) const // {{{
          << ToTex_Hspace(indent,sw) << mySucc->ToTex(indent,sw);
   return result.str();
 } // }}}
-string MpsHostStatement::ToC() const // {{{
+string MpsHostStatement::ToC(const string &taskType) const // {{{
 {
   stringstream prestmt;
   stringstream stmt;
@@ -216,11 +228,23 @@ string MpsHostStatement::ToC() const // {{{
       stmt << " " << newName << " ";
     }
   }
-  return prestmt.str() + stmt.str() + mySucc->ToC();
+  return ToC_Yield() + string("  // HOST STATEMENT BEGIN\n    ") + prestmt.str() + stmt.str() + "  // HOST STATEMENT END\n" + mySucc->ToC(taskType);
 } // }}}
 string MpsHostStatement::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
+} // }}}
+void MpsHostStatement::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ for (vector<MpsExp*>::const_iterator part=myExpParts.begin(); part!=myExpParts.end(); ++part)
+    (*part)->ToCConsts(dest,existing);
+  mySucc->ToCConsts(dest,existing);
+} // }}}
+MpsTerm *MpsHostStatement::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
+  MpsHostStatement *result= new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
+  delete newSucc;
+  return result;
 } // }}}
 MpsHostStatement *MpsHostStatement::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
@@ -269,12 +293,11 @@ MpsTerm *MpsHostStatement::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsHostStatement *MpsHostStatement::CloseDefinitions() const // {{{
-{
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsHostStatement *result= new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
-  delete newSucc;
-  return result;
+MpsTerm *MpsHostStatement::CopyWrapper(std::map<std::string,void*> &children) const // {{{
+{ return new MpsHostStatement(myHostParts, myExpParts, *(MpsTerm*)children["succ"], myTypes, myPure);
+} // }}}
+MpsTerm *MpsHostStatement::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsHostStatement *MpsHostStatement::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

@@ -18,23 +18,24 @@ MpsAssign::~MpsAssign() // {{{
   delete myType;
   delete mySucc;
 } // }}}
-bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Check exp has correct type, and check succ in updated sigma {{{
-{
+void *MpsAssign::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // * Check exp has correct type, and check succ in updated sigma {{{
+{ map<string,void*> children;
+ 
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
   MpsMsgType *exptype=myExp->TypeCheck(Gamma);
   // Is exp typed
   if (dynamic_cast<const MpsMsgNoType*>(exptype))
-    return PrintTypeError((string)"Expression does not typecheck",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Expression does not typecheck",*this,Theta,Gamma,Omega),children);
   if (dynamic_cast<const MpsMsgNoType*>(myType)==NULL)
   { // Compare types
     bool exptypematch = exptype->Equal(Theta,*myType);
     delete exptype;
     if (not exptypematch)
-      return PrintTypeError((string)"Expression does not have type: " + myType->ToString(),*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError((string)"Expression does not have type: " + myType->ToString(),*this,Theta,Gamma,Omega),children);
   }
   else
   { // Store type
@@ -43,11 +44,11 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
   }
   // Verify assign
   if (dynamic_cast<MpsDelegateMsgType*>(myType)!=NULL)
-    return PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError("Assignment type cannot be a session, because it breaks linearity",*this,Theta,Gamma,Omega),children);
   // Check no session is eclipsed
   MpsMsgEnv::const_iterator var=Gamma.find(myId);
   if (var!=Gamma.end() && dynamic_cast<const MpsDelegateMsgType*>(var->second)!=NULL)
-    return PrintTypeError((string)"Session eclipsed by assignment: " + myId,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"Session eclipsed by assignment: " + myId,*this,Theta,Gamma,Omega),children);
   // Make new environment
   string newId = MpsExp::NewVar(myId);
   MpsExp *tmpTheta=Theta.Rename(myId,newId);
@@ -78,10 +79,11 @@ bool MpsAssign::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const Mps
       newGamma[it->first]=it->second->ERename(myId,newId);
   newGamma[myId]=myType->Copy();
   // Check new Successor
-  bool result = mySucc->TypeCheck(*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
+  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure, pureState, checkPure);
   delete newTheta;
   DeleteMap(newGamma);
-  return result;
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsAssign::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)
@@ -176,6 +178,14 @@ set<string> MpsAssign::FPV() const // {{{
 {
   return mySucc->FPV();
 } // }}}
+set<string> MpsAssign::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  result.insert(myId);
+  set<string> fv=myExp->FV();
+  result.insert(fv.begin(),fv.end());
+  return result;
+} // }}}
 set<string> MpsAssign::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();
@@ -208,19 +218,32 @@ string MpsAssign::ToTex(int indent, int sw) const // {{{
   return ToTex_Var(myId) + ":" + myType->ToTex(indent + myId.size() + 1) + "=" + myExp->ToString() + ";\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsAssign::ToC() const // {{{
+string MpsAssign::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  result << myType->ToC() << " " << ToC_Name(myId) << ";" << endl;
+  result << ToC_Yield()
+         << "    {" << endl;
   string varName = myExp->ToC(result,GetExpType().ToC());
-  MpsTerm *tmpSucc = mySucc->ERename(myId,varName);
-  result << tmpSucc->ToC();
-  delete tmpSucc;
+  result << "      _this->var_" << ToC_Name(myId) << "=" << varName << ";" << endl
+         << "    }" << endl
+         << mySucc->ToC(taskType);
   return result.str();
 } // }}}
 string MpsAssign::ToCHeader() const // {{{
 {
   return mySucc->ToCHeader();
+} // }}}
+void MpsAssign::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{
+  myExp->ToCConsts(dest,existing);
+  mySucc->ToCConsts(dest,existing);
+} // }}}
+MpsTerm *MpsAssign::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs, normRhs, pureMode);
+  MpsTerm *result= new MpsAssign(myId, *myExp, *myType, *newSucc);
+  delete newSucc;
+  return result;
 } // }}}
 MpsTerm *MpsAssign::RenameAll() const // {{{
 { string newId=MpsExp::NewVar(myId);
@@ -266,12 +289,12 @@ MpsTerm *MpsAssign::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsAssign::CloseDefinitions() const // {{{
+MpsTerm *MpsAssign::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsTerm *result= new MpsAssign(myId, *myExp, *myType, *newSucc);
-  delete newSucc;
-  return result;
+  return new MpsAssign(myId, *myExp, *myType, *(MpsTerm*)children["succ"]);
+} // }}}
+MpsTerm *MpsAssign::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsAssign::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

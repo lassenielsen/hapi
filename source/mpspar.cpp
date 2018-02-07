@@ -10,6 +10,7 @@ using namespace hapi;
 MpsPar::MpsPar(const MpsTerm &left, const MpsTerm &right, const vector<string> &leftFinal, const vector<string> &rightFinal) // {{{
 : myLeftFinal(leftFinal)
 , myRightFinal(rightFinal)
+, myType("task")
 {
   // Assert left != NULL
   // Assert right != NULL
@@ -22,29 +23,29 @@ MpsPar::~MpsPar() // {{{
   delete myLeft;
   delete myRight;
 } // }}}
-bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Par {{{
-{ 
+void *MpsPar::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Use rule Par {{{
+{ map<string,void*> children;
   // Check purity constraionts
   PureState leftState=pureState;
   PureState rightState=pureState;
   set<pair<string,int> > rightPureStack=pureStack;
   if (checkPure)
   { if (pureState!=CPS_IMPURE && pureState!=CPS_PURE && pureState!=CPS_INIT_BRANCH1_FORK && pureState!=CPS_SERVICE_FORK)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
     if (pureStack.size()>0)
     { leftState=CPS_SERVICE_DEF;
       // Check what participant is implemented
       MpsDef *pureDef=dynamic_cast<MpsDef*>(myLeft);
       if (pureDef==NULL)
-        return PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
 
       // Extract implemented participant
       MpsLink *bodyLink=dynamic_cast<MpsLink*>(pureDef->GetBody());
       if (bodyLink==NULL)
-        return PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError("Implementation of pure participant " + pureDef->GetName() + " must start by linking as the implemented participant (def X() = link ...)",*this,Theta,Gamma,Omega),children);
       set<pair<string,int> >::iterator impl=rightPureStack.find(pair<string,int>(bodyLink->GetChannel(),bodyLink->GetPid()));
       if (impl==rightPureStack.end())
-        return PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega);
+        return wrap_err(this,PrintTypeError("Expected implementation of pure participant but linking as " + int2string(bodyLink->GetPid()) + "@" + bodyLink->GetChannel(),*this,Theta,Gamma,Omega),children);
       rightPureStack.erase(impl);
 
     }
@@ -64,6 +65,8 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   MpsMsgEnv leftGamma;
   MpsMsgEnv rightGamma;
   set<string> leftSessions = myLeft->FEV();
+  myLeftFinal.clear();
+  myRightFinal.clear();
   for (MpsMsgEnv::const_iterator var=Gamma.begin(); var!=Gamma.end(); ++var)
   {
     const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(var->second);
@@ -88,8 +91,10 @@ bool MpsPar::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsPro
   }
 
   // Check each sub-process with the split Gamma
-  return myLeft->TypeCheck(Theta,leftGamma,Omega,set<pair<string,int> >(),curPure, leftState, checkPure) &&
-         myRight->TypeCheck(Theta,rightGamma,Omega,rightPureStack,curPure, rightState, checkPure);
+  children["left"]=myLeft->TDCompile(pre,wrap,wrap_err,Theta,leftGamma,Omega,set<pair<string,int> >(),curPure, leftState, checkPure);
+  children["right"]=myRight->TDCompile(pre,wrap,wrap_err,Theta,rightGamma,Omega,rightPureStack,curPure, rightState, checkPure);
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsPar::ApplyRcv(const std::string &path, const MpsExp *val) const // {{{
 { if (path.size()==0)
@@ -390,6 +395,13 @@ set<string> MpsPar::FPV() const // {{{
   result.insert(sub.begin(),sub.end());
   return result;
 } // }}}
+set<string> MpsPar::EV() const // {{{
+{
+  set<string> result = myLeft->EV();
+  set<string> sub = myRight->EV();
+  result.insert(sub.begin(),sub.end());
+  return result;
+} // }}}
 set<string> MpsPar::FEV() const // {{{
 {
   set<string> result = myLeft->FEV();
@@ -431,30 +443,69 @@ string MpsPar::ToTex(int indent, int sw) const // {{{
        + ToTex_Hspace(indent,sw) + "| " + myRight->ToTex(indent+2,sw) + "\\newline\n"
        + ToTex_Hspace(indent,sw) + ")";
 } // }}}
-string MpsPar::ToC() const // {{{
+string MpsPar::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  string newName = ToC_Name(MpsExp::NewVar("fork")); // Create variable name foor the mmessagee to send
-  result << "  IncAprocs();" << endl
-         << "  int " << newName << "=fork();" << endl
-         << "  if (" << newName << ">0)" << endl
-         << "  {" << endl;
-  for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it) {
-    result << "    " << ToC_Name(*it) << "->Close(false);" << endl
-           << "    delete " << ToC_Name(*it) << ";" << endl;
-  }
-  result <<  myLeft->ToC()
-         << "  }" << endl
-         << "  else if (" << newName << "==0)" << endl
-         << "  {" << endl;
-  for (vector<string>::const_iterator it=myRightFinal.begin(); it!=myRightFinal.end(); ++it) {
-    result << "    " << ToC_Name(*it) << "->Close(false);" << endl
-           << "    delete " << ToC_Name(*it) << ";" << endl;
-  }
-  result <<  myRight->ToC()
-         << "  }" << endl
-         << "else throw (string)\"Error during fork!\";" << endl
-         << "return new Cnt();" << endl;
+  result << ToC_Yield();
+
+  if (myType=="process") // {{{
+  { string newName = ToC_Name(MpsExp::NewVar("fork")); // Create variable name foor the mmessagee to send
+    result
+    << "    { ++(*libpi::task::Task::ActiveTasks);" << endl
+    << "      int " << newName << "=fork();" << endl
+    << "      if (" << newName << ">0)" << endl
+    << "      { // Left process" << endl;
+    for (vector<string>::const_iterator it=myLeftFinal.begin(); it!=myLeftFinal.end(); ++it) {
+      result << "    " << ToC_Name(*it) << "->Close(false);" << endl
+             << "    delete " << ToC_Name(*it) << ";" << endl;
+    }
+    result
+    <<  myLeft->ToC(taskType)
+    << "      }" << endl
+    << "      else if (" << newName << "==0)" << endl
+    << "      { // Right process" << endl;
+    for (vector<string>::const_iterator it=myRightFinal.begin(); it!=myRightFinal.end(); ++it) {
+      result << "    " << ToC_Name(*it) << "->Close(false);" << endl
+             << "    delete " << ToC_Name(*it) << ";" << endl;
+    }
+    result
+    <<  myRight->ToC(taskType)
+    << "      }" << endl
+    << "      else throw (string)\"Error during fork!\";" << endl
+    << "      return new Cnt();" << endl
+    << "    }" << endl;
+  } // }}}
+  else if (myType=="thread") // {{{
+  { const MpsCall *callptr=dynamic_cast<const MpsCall*>(myRight);
+    string newName = ToC_Name(MpsExp::NewVar("state")); // Create variable name foor the new state
+    if (callptr==NULL)
+      throw string("MpsPar type thread requires rhs to be a direct methodcall.");
+    result
+    << "    { Task_" << ToC_Name(callptr->GetName()) << " *" << newName << " = new Task_" << ToC_Name(callptr->GetName()) << ";" << endl
+    << "      " << newName << "->SetWorker(&_task->GetWorker());" << endl
+    << callptr->ToC_prepare(newName)
+    << "      ++(*libpi::task::Task::ActiveTasks);" << endl
+    << "      _spawn_thread(" << newName << ");" << endl
+    << "    }" << endl;
+    result <<  myLeft->ToC(taskType);
+  } // }}}
+  else if (myType=="task") // {{{
+  { const MpsCall *callptr=dynamic_cast<const MpsCall*>(myRight);
+    string newName = ToC_Name(MpsExp::NewVar("task")); // Create variable name foor the new state
+    string newName2 = ToC_Name(MpsExp::NewVar("task")); // Create variable name foor the new state
+    if (callptr==NULL)
+      throw string("MpsPar type thread requires rhs to be a direct methodcall.");
+    result
+    << "    { Task_" << ToC_Name(callptr->GetName()) << " *" << newName << "(new Task_" << ToC_Name(callptr->GetName()) << "());" << endl
+    << "      " << newName << "->SetWorker(&_task->GetWorker());" << endl
+    << callptr->ToC_prepare(newName)
+    << "      shared_ptr<libpi::task::Task> " << newName2 << "(" << newName << ");" << endl
+    << "      _task->GetWorker().AddTask(" << newName2 << ");" << endl
+    << "    }" << endl
+    << myLeft->ToC(taskType);
+  } // }}}
+  else
+    throw string("Error, unknown par type ")+myType;
   return result.str();
 } // }}}
 string MpsPar::ToCHeader() const // {{{
@@ -463,6 +514,44 @@ string MpsPar::ToCHeader() const // {{{
   result << myLeft->ToCHeader();
   result << myRight->ToCHeader();
   return result.str();
+} // }}}
+void MpsPar::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ myLeft->ToCConsts(dest,existing);
+  myRight->ToCConsts(dest,existing);
+} // }}}
+bool isCall(const MpsTerm *term) // {{{
+{ if (dynamic_cast<const MpsCall*>(term)!=NULL)
+    return true;
+  const MpsDef *defptr=dynamic_cast<const MpsDef*>(term);
+  return (defptr!=NULL && isCall(defptr->GetBody()));
+} // }}}
+MpsTerm *MpsPar::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
+{
+  MpsTerm *newLeft = myLeft->FlattenFork(normLhs,normRhs,pureMode);
+  if (normLhs && !isCall(newLeft))
+  { string defName=MpsTerm::NewName("FlatLeft");
+    MpsTerm *succ=new MpsCall(defName,vector<MpsExp*>(),vector<MpsExp*>(),vector<MpsMsgType*>(),vector<MpsMsgType*>());
+    MpsTerm *flatLeft=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(), *newLeft, *succ, pureMode);
+    delete succ;
+    delete newLeft;
+    newLeft=flatLeft;
+  }
+  MpsTerm *newRight = myRight->FlattenFork(normLhs,normRhs,pureMode);
+  if (normRhs && !isCall(newRight))
+  { string defName=MpsTerm::NewName("FlatRight");
+    MpsTerm *succ=new MpsCall(defName,vector<MpsExp*>(),vector<MpsExp*>(),vector<MpsMsgType*>(),vector<MpsMsgType*>());
+    MpsTerm *flatRight=new MpsDef(defName, vector<string>(), vector<MpsMsgType*>(), vector<string>(), vector<MpsMsgType*>(), *newRight, *succ, pureMode);
+    delete succ;
+    delete newRight;
+    newRight=flatRight;
+  }
+
+  MpsTerm *result=new MpsPar(*newLeft,*newRight, GetLeftFinal(), GetRightFinal());
+
+  delete newLeft;
+  delete newRight;
+
+  return result;
 } // }}}
 MpsTerm *MpsPar::RenameAll() const // {{{
 { MpsTerm *newLeft=myLeft->RenameAll();
@@ -484,17 +573,11 @@ bool MpsPar::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &p
 MpsTerm *MpsPar::Append(const MpsTerm &term) const // {{{
 { throw (string)"Error: Appending to parallell terms not implemented";
 } // }}}
-MpsTerm *MpsPar::CloseDefinitions() const // {{{
-{
-  MpsTerm *newLeft = myLeft->CloseDefinitions();
-  MpsTerm *newRight = myRight->CloseDefinitions();
-
-  MpsTerm *result=new MpsPar(*newLeft,*newRight, GetLeftFinal(), GetRightFinal());
-
-  delete newLeft;
-  delete newRight;
-
-  return result;
+MpsTerm *MpsPar::CopyWrapper(std::map<std::string,void*> &children) const // {{{
+{ return new MpsPar(*(MpsTerm*)children["left"], *(MpsTerm*)children["right"], GetLeftFinal(), GetRightFinal());
+} // }}}
+MpsTerm *MpsPar::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsPar::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newLeft=myLeft->ExtractDefinitions(env);

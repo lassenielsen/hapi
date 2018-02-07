@@ -21,12 +21,13 @@ MpsGuiValue::~MpsGuiValue() // {{{
   delete myValue;
   delete mySucc;
 } // }}}
-bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Type check name, value and session {{{
-{
+void *MpsGuiValue::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const MpsExp &Theta, const MpsMsgEnv &Gamma, const MpsProcEnv &Omega, const set<pair<string,int> > &pureStack, const string &curPure, PureState pureState, bool checkPure) // Type check name, value and session {{{
+{ map<string,void*> children;
+ 
   if (checkPure)
 	{ // Check purity constraints
     if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
-      return PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega);
+      return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
   // Verify guivalue
@@ -36,30 +37,32 @@ bool MpsGuiValue::TypeCheck(const MpsExp &Theta, const MpsMsgEnv &Gamma, const M
   bool nametypematch = stringtype.Equal(Theta,*nametype);
   delete nametype;
   if (!nametypematch)
-    return PrintTypeError("Name for guivalue must be of type String",*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError("Name for guivalue must be of type String",*this,Theta,Gamma,Omega),children);
   // Check ownership of session
   MpsMsgEnv::const_iterator var=Gamma.find(mySession);
   // Check that session exists
   if (var==Gamma.end())
-    return PrintTypeError((string)"guivalue on unknown session " + mySession,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"guivalue on unknown session " + mySession,*this,Theta,Gamma,Omega),children);
   // Check if session type
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(var->second);
   if (msgType==NULL)
-    return PrintTypeError((string)"guivalue on non-session type: " + mySession,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"guivalue on non-session type: " + mySession,*this,Theta,Gamma,Omega),children);
 
   // Check if correct PID and MaxPID is given
   if (myPid != msgType->GetPid())
-    return PrintTypeError((string)"guivalue gives wrong pid for session: " + mySession,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"guivalue gives wrong pid for session: " + mySession,*this,Theta,Gamma,Omega),children);
   if (myMaxpid != msgType->GetMaxpid())
-    return PrintTypeError((string)"guivalue gives wrong maxpid for sessoin: " + mySession,*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"guivalue gives wrong maxpid for sessoin: " + mySession,*this,Theta,Gamma,Omega),children);
   // Check that value is welltyped
   MpsMsgType *valType = myValue->TypeCheck(Gamma);
   bool untyped = dynamic_cast<MpsMsgNoType*>(valType)!=NULL;
   delete valType;
   if (untyped)
-    return PrintTypeError((string)"guivalue uses untyped expression: " + myValue->ToString(),*this,Theta,Gamma,Omega);
+    return wrap_err(this,PrintTypeError((string)"guivalue uses untyped expression: " + myValue->ToString(),*this,Theta,Gamma,Omega),children);
 
-  return mySucc->TypeCheck(Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
+  children["succ"]=mySucc->TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,pureStack,curPure, pureState, checkPure);
+  // Wrap result
+  return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
 MpsTerm *MpsGuiValue::ApplyOther(const std::string &path) const // {{{
 { if (path.size()!=0)
@@ -168,6 +171,16 @@ set<string> MpsGuiValue::FPV() const // {{{
   set<string> result = mySucc->FPV();
   return result;
 } // }}}
+set<string> MpsGuiValue::EV() const // {{{
+{
+  set<string> result = mySucc->EV();
+  result.insert(mySession);
+  set<string> fv=myName->FV();
+  result.insert(fv.begin(),fv.end());
+  fv=myValue->FV();
+  result.insert(fv.begin(),fv.end());
+  return result;
+} // }}}
 set<string> MpsGuiValue::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();
@@ -208,13 +221,23 @@ string MpsGuiValue::ToTex(int indent, int sw) const // {{{
        + myValue->ToString() + ");\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
-string MpsGuiValue::ToC() const // {{{
+string MpsGuiValue::ToC(const string &taskType) const // {{{
 {
   throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
 } // }}}
 string MpsGuiValue::ToCHeader() const // {{{
 {
   throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
+} // }}}
+void MpsGuiValue::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
+{ throw (string)"MpsGuiValue::ToC(): guivalue is not implemented yet!";
+} // }}}
+MpsTerm *MpsGuiValue::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
+{
+  MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
+  MpsTerm *result= new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
+  delete newSucc;
+  return result;
 } // }}}
 MpsTerm *MpsGuiValue::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
@@ -259,12 +282,11 @@ MpsTerm *MpsGuiValue::Append(const MpsTerm &term) const // {{{
   delete newSucc;
   return result;
 } // }}}
-MpsTerm *MpsGuiValue::CloseDefinitions() const // {{{
-{
-  MpsTerm *newSucc = mySucc->CloseDefinitions();
-  MpsTerm *result= new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
-  delete newSucc;
-  return result;
+MpsTerm *MpsGuiValue::CopyWrapper(std::map<std::string,void*> &children) const // {{{
+{ return new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *(MpsTerm*)children["succ"]);
+} // }}}
+MpsTerm *MpsGuiValue::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
+{ return this;
 } // }}}
 MpsTerm *MpsGuiValue::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);

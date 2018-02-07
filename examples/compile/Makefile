@@ -37,7 +37,7 @@ $(OK_CPP_FILES): %.cpp : %.pip
 
 $(OK_EXE_FILES): % : %.cpp
 	@echo "=== Building executable from C++ code in $@.cpp"
-	@($(CC) $(Copt) $@.cpp -o $@ -lpi -lpthread) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
+	@($(CC) $(Copt) $@.cpp -o $@ -lpi -lpthread -lgmp) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
 
 autoclean:
 	touch $(OK_PIP_FILES)

@@ -22,20 +22,6 @@ std::string DefEnvToString(const MpsFunctionEnv &env) // {{{
 std::string DefEnvToC(const MpsFunctionEnv &env) // {{{
 {
   stringstream ss;
-  ss << endl << "/* Procedure declerations */" << endl
-     << "class Cnt // {{{" << endl
-     << "{" << endl
-     << "  public:" << endl
-     << "    Cnt() {}" << endl
-     << "    virtual ~Cnt() {}" << endl
-     << "    virtual bool IsEmpty() { return true; }" << endl
-     << "    virtual Cnt *Run() { return new Cnt(); }" << endl
-     << "}; // }}}" << endl;
-  for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
-  {
-    ss << def->ToCDecl() << ";" << endl;
-    ss << def->ToCCnt() << ";" << endl;
-  }
   ss << endl << "/* Procedure implementations */" << endl;
   for (MpsFunctionEnv::const_iterator def=env.begin(); def!=env.end(); ++def)
   {
@@ -155,125 +141,35 @@ string MpsFunction::ToString() const // {{{
      << GetBody().ToString("    ");
   return ss.str();
 } // }}}
-string MpsFunction::ToCDecl() const // {{{
-{
-  stringstream ss;
-  ss << "inline Cnt *" << ToC_Name(GetName()) << "(";
-  // Print state arguments
-  vector<MpsMsgType*>::const_iterator type=GetStateTypes().begin();
-  for (vector<string>::const_iterator arg=GetStateArgs().begin();
-       arg!=GetStateArgs().end() &&
-       type!=GetStateTypes().end();
-       ++arg, ++type)
-  {
-    if (arg!=GetStateArgs().begin())
-      ss << ",";
-    ss << (*type)->ToC() << " &" << ToC_Name(*arg);
-  }
-  // Print arguments
-  type=GetTypes().begin();
-  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg,++type)
-  {
-    if (arg!=GetArgs().begin() || GetStateArgs().size()>0)
-      ss << ",";
-    ss << (*type)->ToC() << " &" << ToC_Name(*arg);
-  }
-  ss << ")";
-  return ss.str();
-} // }}}
 string MpsFunction::ToC() const // {{{
 {
   stringstream ss;
-  ss << ToCDecl() << " // {{{" << endl
-     << "{" << endl
-     << GetBody().ToC()
-     << "} // }}}";
+  string taskType=ToC_Name(GetName());
+  ss << "  method_" << taskType << ": // {{{" << endl
+     << "  #undef _this" << endl
+     << "  #define _this ((Task_" << taskType << "*)_task.get())" << endl
+     << "  {" << endl;
+  ss << GetBody().ToC(taskType)
+     << "  } // }}}";
   return ss.str();
 } // }}}
-string MpsFunction::ToCCnt() const // {{{
-{
-  stringstream ss;
-  string name=string("__Cnt__")+ToC_Name(GetName());
-  ss << "class " << name << " : public Cnt // {{{" << endl
-     << "{" << endl
-     << "  public:" << endl
-     << "    " << name << "(";
-  // Print state arguments
-  vector<MpsMsgType*>::const_iterator type=GetStateTypes().begin();
-  for (vector<string>::const_iterator arg=GetStateArgs().begin();
-       arg!=GetStateArgs().end() &&
-       type!=GetStateTypes().end();
-       ++arg, ++type)
-  {
-    if (arg!=GetStateArgs().begin())
-      ss << ",";
-    ss << (*type)->ToC() << " &" << ToC_Name(*arg);
-  }
-  // Print arguments
-  type=GetTypes().begin();
-  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg,++type)
-  {
-    if (arg!=GetArgs().begin() || GetStateArgs().size()>0)
-      ss << ",";
-    ss << (*type)->ToC() << " &" << ToC_Name(*arg);
-  }
-  ss << ")";
-  ss << ": ";
-  // Print state arguments
-  for (vector<string>::const_iterator arg=GetStateArgs().begin();
-       arg!=GetStateArgs().end();
-       ++arg)
-  {
-    if (arg!=GetStateArgs().begin())
-      ss << ", ";
-    ss << ToC_Name(*arg) << "(" << ToC_Name(*arg) << ")" << endl;
-  }
-  // Print arguments
-  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg)
-  {
-    if (arg!=GetArgs().begin() || GetStateArgs().size()>0)
-      ss << ", ";
-    ss << ToC_Name(*arg) << "(" << ToC_Name(*arg) << ")" << endl;
-  }
-  ss << "{}" << endl;
-  ss << "    virtual ~" << name << "() {}" << endl
-     << "    virtual bool IsEmpty() { return false; }" << endl
-     << "    virtual Cnt *Run() { return " << ToC_Name(GetName()) << "(";
-  // Print state arguments
-  for (vector<string>::const_iterator arg=GetStateArgs().begin();
-       arg!=GetStateArgs().end();
-       ++arg)
-  {
-    if (arg!=GetStateArgs().begin())
-      ss << ", ";
-    ss << ToC_Name(*arg);
-  }
-  // Print arguments
-  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg)
-  {
-    if (arg!=GetArgs().begin() || GetStateArgs().size()>0)
-      ss << ", ";
-    ss << ToC_Name(*arg);
-  }
+string MpsFunction::ToCTaskType() const // {{{
+{ set<string> ids=GetBody().EV();
+  ids.insert(GetStateArgs().begin(),GetStateArgs().end());
+  ids.insert(GetStateArgs().begin(),GetStateArgs().end());
 
-  ss << "); }" << endl
-     << "  private:" << endl;
-  // Print state arguments
-  type=GetStateTypes().begin();
-  for (vector<string>::const_iterator arg=GetStateArgs().begin();
-       arg!=GetStateArgs().end() &&
-       type!=GetStateTypes().end();
-       ++arg, ++type)
-  {
-    ss << (*type)->ToC() << " " << ToC_Name(*arg) << ";" << endl;
-  }
-  // Print arguments
-  type=GetTypes().begin();
-  for (std::vector<std::string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg,++type)
-  {
-    ss << (*type)->ToC() << " " << ToC_Name(*arg) << ";" << endl;
-  }
-  ss << "}; // }}}" << endl;
+  stringstream ss;
+  ss
+  << "class Task_" << ToC_Name(GetName()) << " : public libpi::task::Task" << endl
+  << "{ public:" << endl;
+  for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+    ss << "    shared_ptr<libpi::Value> var_" << ToC_Name(*id) << ";" << endl;
+  for (vector<string>::const_iterator arg=GetStateArgs().begin(); arg!=GetStateArgs().end(); ++arg)
+    ss << "    inline void SetStateArg" << std::distance(GetStateArgs().begin(),arg) << "(const shared_ptr<libpi::Value> &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
+  for (vector<string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg)
+    ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(const shared_ptr<libpi::Value> &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
+  ss
+  << "};" << endl;
   return ss.str();
 } // }}}
 }
