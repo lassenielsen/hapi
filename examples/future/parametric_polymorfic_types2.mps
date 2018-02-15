@@ -27,9 +27,9 @@
    ^Delete: $end; \
   }
 
-#define $pollist \
-  1:&x; \
-  1->2:$leq(&x); \
+#define $anylist \
+  1:$x; \
+  1->2:$leq($x); \
   $list(&x);
 
 // Declare channel (constructor) {{{
