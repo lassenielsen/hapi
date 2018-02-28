@@ -38,7 +38,7 @@ namespace hapi
  * nu is the creation of a global channel. <br/>
  */
 // }}}
-enum event_type {tau=0, snd=10, rcv=11, bsnd=12, brcv=13, link=20, sync=21, guivalue=30, fundef=40, funcall=41, nu=42, cond=43, assign=44, create=45, host=101};
+enum event_type {tau=0, snd=10, rcv=11, bsnd=12, brcv=13, link=20, sync=21, guivalue=30, fundef=40, funcall=41, nu=42, cond=43, assign=44, create=45, host=101, sndtype=210, ecvtype=211};
 
 // DOCUMENTATION: MpsEvent {{{
 /*! MpsEvent represents an event that can be omitted by a process during evaluation.
@@ -73,7 +73,7 @@ class MpsEvent // {{{
     MpsChannel myChannel; // For snd, rcv, bsnd, brcv, link and sync
     MpsExp *myValue; // For snd, rcv and guivalue
     std::string myLabel; // For bsnd, brcv and sync
-    std::string mySession; // For link and guivalue
+    std::string mySession; // For link, guivalue, sndtype and rcvtype
     int myMaxpid; // For link and sync
     int myPid; // For guivalue,link
     std::string myName; // For guivalue
