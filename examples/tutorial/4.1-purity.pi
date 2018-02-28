@@ -58,7 +58,7 @@ local Fun()
   s[2]>>x;
   c=new counter(2 of 2); //! Inharited impurity
   c[1]>>val;
-  HOST("std::cout << ((libpi::String*)", val, ".get())->ToString() << std::endl;"); // HOST impurity
+  HOST("std::cout << ((libpi::String*)", val, ".get())->GetValue() << std::endl;"); // HOST impurity
   s[2]<<5*x*x-3*x;
 )
 Fun();

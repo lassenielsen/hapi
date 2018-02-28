@@ -1,6 +1,6 @@
 programs = hapi hapi-compile
 name = hapi
-version = 2015
+version = 2018
 compiler = g++
 opt = -O3
 args = -std=c++11 $(opt) `sdl-config --cflags`

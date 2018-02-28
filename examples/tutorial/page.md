@@ -315,10 +315,10 @@ ReceiveInts(s);
 >./2.4-recursion
 Sending value
 10
-Sending value
-9
 Received value
 10
+Sending value
+9
 Sending value
 8
 Received value
@@ -631,7 +631,7 @@ local Counter(Int i)
 Counter(1);
 |
 // Example 2: Random service
-// Not pure, because different connections may get different answers from service
+// Not pure, because different connections may get different "version" of service
 #define $rand \
   1->2:Bool; \
   $end;
@@ -653,7 +653,7 @@ local Random2()
 Random2();
 |
 // Example 3: Inherited impurity and host language impurity
-// Not pure, because using unpure services
+// Not pure, because using impure services
 #define $fun \
   2->1:Int; \
   1->2:Int; \
@@ -667,14 +667,14 @@ local Fun()
   s[2]>>x;
   c=new counter(2 of 2); //! Inharited impurity
   c[1]>>val;
-  HOST("std::cout << ", val, ".ToString() << std::endl;"); // HOST impurity
+  HOST("std::cout << ((libpi::String*)", val, ".get())->GetValue() << std::endl;"); // HOST impurity
   s[2]<<5*x*x-3*x;
 )
 Fun();
 |
 // Example 4: Pure service
 global $fun fact(1 pure,2); // Notice pure declaration of 1st participant
-local pure Fact()              // Notice pure declaration of method
+local pure Fact()           // Notice pure declaration of method
 ( global s=new fact(1 of 2);
   Fact();
   |
@@ -974,30 +974,30 @@ String x8="8";
 Bool x9=true;
 ( // Simple printing, although be aware the pitfalls of using raw c++ io
   // ie no coordination with other outputting processes.
-  HOST("std::cout << ", x1, ".ToString() << std::flush << ", x2, ".ToString() << std::flush << ", x3, ".ToString() << std::endl;");
-| HOST("std::cout << ", x4, ".ToString() << std::flush << ", x5, ".ToString() << std::flush << ", x6, ".ToString() << std::endl;");
-| HOST("std::cout << ", x7, ".ToString() << std::flush << ", x8, ".ToString() << std::flush << ", x9, ".ToString() << std::endl;");
+  HOST("std::cout << ((libpi::Int*)", x1, ".get())->ToString() << std::flush << ((libpi::String*)", x2, ".get())->GetValue() << std::flush << ((libpi::Bool*)", x3, ".get())->ToString() << std::endl;");
+| HOST("std::cout << ((libpi::Int*)", x4, ".get())->ToString() << std::flush << ((libpi::String*)", x5, ".get())->GetValue() << std::flush << ((libpi::Bool*)", x6, ".get())->ToString() << std::endl;");
+| HOST("std::cout << ((libpi::Int*)", x7, ".get())->ToString() << std::flush << ((libpi::String*)", x8, ".get())->GetValue() << std::flush << ((libpi::Bool*)", x9, ".get())->ToString() << std::endl;");
 | // Use host language (c++) functionality in output
-  HOST("std::cout << (", x3, ".GetValue()?", x1, ".ToString():", x2, ".ToString()) << std::endl;");
-| HOST("std::cout << (", x6, ".GetValue()?", x4, ".ToString():", x5, ".ToString()) << std::endl;");
-| HOST("std::cout << (", x9, ".GetValue()?", x7, ".ToString():", x8, ".ToString()) << std::endl;");
+  HOST("std::cout << (((libpi::Bool*)", x3, ".get())->GetValue()?((libpi::Int*)", x1, ".get())->ToString():((libpi::String*)", x2, ".get())->GetValue()) << std::endl;");
+| HOST("std::cout << (((libpi::Bool*)", x6, ".get())->GetValue()?((libpi::Int*)", x4, ".get())->ToString():((libpi::String*)", x5, ".get())->GetValue()) << std::endl;");
+| HOST("std::cout << (((libpi::Bool*)", x9, ".get())->GetValue()?((libpi::Int*)", x7, ".get())->ToString():((libpi::String*)", x8, ".get())->GetValue()) << std::endl;");
 )
 | // Retrieve/import values from host language to hapi process
   String str1="Hello";
   String space=" ";
   String str2="World";
   String res="";
-  HOST("", res, "=StringValue(", str1, ".GetValue() + ", space, ".GetValue() + ", str2, ".GetValue());");
-  HOST("std::cout << ", res, ".GetValue() << std::endl;"); // Outputs "Hello World"
+  HOST("", res, ".reset(new libpi::String(((libpi::String*)", str1, ".get())->GetValue() + ((libpi::String*)", space, ".get())->GetValue() + ((libpi::String*)", str2, ".get())->GetValue()));");
+  HOST("std::cout << ((libpi::String*)", res, ".get())->GetValue() << std::endl;"); // Outputs "Hello World"
 </pre>
 '''Output'''<br/>
 <pre>
 >./5.2-host
-12true
-Hello World
+Hello World1
+2true
 45false
 78true
-1
 5
-7
+17
+
 </pre>
