@@ -82,6 +82,32 @@ MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
   {
     return Recvs(tree->Child(1),Channel(tree->Child(0)),succ);
   } // }}}
+  else if (tree->Case() == "piact_tsnd") // id << Mtype ; {{{
+  { MpsMsgType *type=Mtype(tree->Child(2));
+    MpsTerm *result = new MpsSndType(tree->Child(0)->Token().Content(),
+                                     *type,
+                                     *succ,
+                                     false);
+    delete type;
+    delete succ;
+    return result;
+  } // }}}
+  else if (tree->Case() == "piact_trcv") // id >> nlvar ; {{{
+  { MpsTerm *result = new MpsRcvType(tree->Child(0)->Token().Content(),
+                                     tree->Child(2)->Token().Content(),
+                                     *succ,
+                                     false);
+    delete succ;
+    return result;
+  } // }}}
+  else if (tree->Case() == "piact_ltrcv") // id >> lvar ; {{{
+  { MpsTerm *result = new MpsRcvType(tree->Child(0)->Token().Content(),
+                                     tree->Child(2)->Token().Content(),
+                                     *succ,
+                                     false);
+    delete succ;
+    return result;
+  } // }}}
   else if (tree->Case() == "piact_link") // id = new id ( int of int ) ; {{{
   { MpsTerm *result = new MpsLink(tree->Child(3)->Token().Content(),
                                   tree->Child(0)->Token().Content(),
@@ -506,6 +532,20 @@ MpsGlobalType *MpsParser::Gact(const parsetree *tree, MpsGlobalType *succ) { // 
     delete succ;
     return result;
   } // }}}
+  if (tree->Case() == "gact_nltmsg") // int : nlvar ; {{{
+  { 
+    int from = stoi(tree->Child(0)->Token().Content());
+    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ, args);
+    delete succ;
+    return result;
+  } // }}}
+  if (tree->Case() == "gact_ltmsg") // int : lvar ; {{{
+  { 
+    int from = stoi(tree->Child(0)->Token().Content());
+    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ, args);
+    delete succ;
+    return result;
+  } // }}}
 
   throw string("Unknown Gact parsetree: ") + tree->Type() + "." + tree->Case();
 } // }}}
@@ -622,6 +662,34 @@ MpsLocalType *MpsParser::Lact(const parsetree *tree, MpsLocalType *succ) // {{{
     delete assertion;
     return result;
   } // }}}
+  else if (tree->Case() == "lact_nltsnd") //  int << nlvar ; {{{
+  {
+    int channel = string2int(tree->Child(0)->Token().Content());
+    MpsLocalType *result = new MpsLocalTypeSndType(channel,tree->Child(2)->Token().Content(),*succ);
+    delete succ;
+    return result;
+  } // }}}
+  else if (tree->Case() == "lact_nltrcv") //  int >> nlvar ; {{{
+  {
+    int channel = string2int(tree->Child(0)->Token().Content());
+    MpsLocalType *result = new MpsLocalTypeRcvType(channel,tree->Child(2)->Token().Content(),*succ);
+    delete succ;
+    return result;
+  } // }}}
+  else if (tree->Case() == "lact_ltsnd") //  int << lvar ; {{{
+  {
+    int channel = string2int(tree->Child(0)->Token().Content());
+    MpsLocalType *result = new MpsLocalLTypeSndType(channel,tree->Child(2)->Token().Content(),*succ);
+    delete succ;
+    return result;
+  } // }}}
+  else if (tree->Case() == "lact_ltrcv") //  int >> lvar ; {{{
+  {
+    int channel = string2int(tree->Child(0)->Token().Content());
+    MpsLocalType *result = new MpsLocalLTypeRcvType(channel,tree->Child(2)->Token().Content(),*succ);
+    delete succ;
+    return result;
+  } // }}}
   else if (tree->Case() == "lact_rec") // rec lvar Targs ; {{{
   {
     string name = tree->Child(1)->Token().Content();
@@ -727,6 +795,9 @@ MpsMsgType *MpsParser::Mtype(const parsetree *tree) // {{{
     delete gtype;
 
     return result;
+  } // }}}
+  else if (tree->Case() == "mtype_nlvar") // nlvar {{{
+  { return new MpsVarMsgType(tree->Child(0)->Token().Content());
   } // }}}
   else if (tree->Case() == "mtype_ltype") // Ltype ( int of Participants ) {{{
   {

@@ -1,0 +1,203 @@
+#define $anyset($t) \
+  rec $s;
+  2->1 \
+  {^Delete: $end; \
+   ^Insert: 2->1: $t; $s; \
+   ^Member: 2->1: $t; 1->2: Bool; $s; \
+   ^Size: 1->2: $t; Int; \
+   ^Height: 1->2: Int; $s; \
+   ^Dissolve: \
+    1->2 \
+    {^Empty: $end; \
+     ^NonEmpty: \
+      1->2: $s; \
+      1->2: $s(1 of 1 pure, 2); \
+      1->2: $s(1 of 1 pure, 2); \
+      $end; \
+    } \
+  }
+#define $set \
+  2->1: $s; \
+  2->1: 2->1:$s; 2->1:$s; 1->2:Bool;(1 pure, 2); \
+  $anyset($s)
+
+$set set(1 pure, 2);
+local pure service Set(set (1 of 2) s) // {{{
+( s>>$t;
+  s[2]>>chleq;
+  local pure EmptySet($anyset($t)(1 of 1 pure,2) this) // {{{
+  ( local pure Set($anyset($t)(1 of 1 pure, 2) this, $t member, $anyset($t)(2 of 1 pure, 1) left, $anyset($t)(2 of 1 pure, 2) right) // {{{
+    ( local pure RotateLeft($anyset($t)(1 of 1 pure, 2), $t member, $anyset($t)(2 of 1 pure, 1) left, $anyset($t)(2 of 1 pure, 2) right) // {{{
+      ( right[1]<<^Dissolve;
+        right[1]>>rMember;
+        right[1]>>rLeft;
+        right[1]>>rRight;
+        $anyset($t)(1 pure, 2) s1,s2;
+        Set(s1,member,left,rLeft); | Set(this,rMember,s2,rRight);
+      ) | // }}}
+      local pure RotateRight($anyset($t)(1 of 1 pure, 2), $t member, $anyset($t)(2 of 1 pure, 1) left, $anyset($t)(2 of 1 pure, 2) right) // {{{
+      ( left[1]<<^Dissolve;
+        left[1]>>lMember;
+        left[1]>>lLeft;
+        left[1]>>lRight;
+        $anyset($t)(1 pure, 2) s1,s2;
+        Set(s1,member,lRight,right); | Set(this,lMember,lLeft,s2);
+      ) | // }}}
+      local pure Balance($anyset($t)(1 of 1 pure, 2), $t member, $anyset($t)(2 of 1 pure, 1) left, $anyset($t)(2 of 1 pure, 2) right) // {{{
+      ( left[1]<<^Dissolve;
+        left[1]>>
+        {^Empty:
+          left=new set(2 of 2);
+          left<<$t;
+          left[1]<<chleq;
+          right[1]<<^Dissolve;
+          right[1]>>
+          {^Empty:
+            righ=new set(2 of 2);
+            right<<$t;
+            right[1]<<chleq;
+            Set(this,member,left,right);
+           ^NonEmpty:
+            right[1]>>rMember;
+            right[1]>>rLeft;
+            right[1]>>rRight;
+            $anyset($t)(1 pure, 2) r1,r2;
+            Set(r1,member,left,rLeft); | Set(this,rMember,r2,rRight);
+          }
+         ^NonEmpty:
+          left[1]>>lMember;
+          left[1]>>lLeft;
+          left[1]>>lRight;
+          right[1]<<^Dissolve;
+          right[1]>>
+          {^Empty:
+            righ=new set(2 of 2);
+            right<<$t;
+            right[1]<<chleq;
+            $anyset($t)(1 pure, 2) l1,l2;
+            Set(this,lMember,lLeft,l2); | Set(l1,member,lRight,right);
+           ^NonEmpty:
+            right[1]>>rMember;
+            right[1]>>rLeft;
+            right[1]>>rRight;
+            lLeft[1]<<^Height;
+            lLeft[1]>>hll;
+            lRight[1]<<^Height;
+            lRight[1]>>hlr;
+            rLeft[1]<<^Height;
+            rLeft[1]>>hrl;
+            rRight[1]<<^Height;
+            rRight[1]>hrr;
+            hl=if hll>hlr then hll else hlr;
+            hr=if hrl>hrr then hrl else hrr;
+            $anyset($t)(1 pure, 2) l1,l2;
+            $anyset($t)(1 pure, 2) r1,r2;
+            if hll<hlr and hl>1+hr
+            then ( RotateLeft(l1,lMember,lLeft,lRight);
+                 | Set(r1,rMember,rLeft,rRight);
+                 | RotateRight(this,member,l2,r2);
+                 )
+            else if hl>1+hr
+            then ( Set(l1,lMember,lLeft,lRight);
+                 | Set(r1,rMember,rLeft,rRight);
+                 | RotateRight(this,member,l2,r2);
+                 )
+            else if hrl>hrr and hl+1<hr
+            then ( Set(l1,lMember,lLeft,lRight);
+                 | RotateRight(r1,rMember,rLeft,rRight);
+                 | RotateLeft(this,member,l2,r2);
+                 )
+            else if hl+1<hr
+            then ( Set(l1,lMember,lLeft,lRight);
+                 | Set(r1,rMember,rLeft,rRight);
+                 | RotateLeft(this,member,l2,r2);
+                 )
+            else ( Set(l1,lMember,lLeft,lRight);
+                 | Set(r1,rMember,rLeft,rRight);
+                 | Set(this,member,l2,r2);
+                 )
+          }
+        }
+      ) | // }}}
+      this[2]>>
+      { ^Delete:
+          left[1]<<^Delete;
+          right[1]<<^Delete;
+        ^Insert:
+          this[2]>>v;
+          sleq=new chleq(2 of 2);
+          sleq[1]<<v<<member;
+          sleq[1]>>leq;
+          sgeq=new chgeq(2 of 2);
+          sgeq[1]<<member<<v;
+          sgeq[1]>>geq;
+          if leq and geq
+          then Set(this,member,left,right)
+          else if leq
+          then left[1]<<^Insert<<v; Balance(this,member,left,right);
+          else right[1]<<^Insert<<v; Balance(this,member,left,right);
+        ^Member:
+          this[2]>>v;
+          sleq=new chleq(2 of 2);
+          sleq[1]<<v<<member;
+          sleq[1]>>leq;
+          sgeq=new chgeq(2 of 2);
+          sgeq[1]<<member<<v;
+          sgeq[1]>>geq;
+          if leq and geq
+          then this[2]<<true; Set(this,member,left,right);
+          else if v<member
+          then left[1]<<^Member<<v;
+               left[1]>>r;
+               this[2]<<r;
+               Set(this,member,left,right);
+          then right[1]<<^Member<<v;
+               right[1]>>r;
+               this[2]<<r;
+               Set(this,member,left,right);
+        ^Size:
+          left[1]<<^Size;
+          left[1]>>ls;
+          right[1]<<^Size;
+          right[1]>>rs;
+          this[2]<<1+ls+rs;
+          Set(this,member,left,right);
+        ^Height:
+          left[1]<<^Height;
+          left[1]>>lh;
+          right[1]<<^Height;
+          right[1]>>rh;
+          if lh<rh
+          then this[2]<<1+rh;
+               Set(this,member,left,right);
+          else this[2]<<1+lh;
+               Set(this,member,left,right);
+        ^Dissolve:
+          this[2]<<^NonEmpty;
+          this[2]<<member;
+          this[2]<<left;
+          this[2]<<right;
+      }
+    ) | // }}}
+    this[2]>>
+    {^Delete:
+     ^Insert:
+      this[2]>>v;
+      lft=new set(2 of 2);
+      rgt=new set(2 of 2);
+      Set(this,v,lft,rgt);
+     ^Member:
+      this[2]>>q;
+      this[2]<<false;
+      EmptySet(this);
+     ^Size:
+      this[2]<<0;
+      EmptySet(this);
+     ^Height:
+      this[2]<<0;
+      EmptySet(this);
+     ^Dissolve:
+      this[2]<<^Empty;
+  ) | // }}}
+  EmptySet(s);
+) | // }}}

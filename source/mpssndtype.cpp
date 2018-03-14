@@ -5,7 +5,7 @@ using namespace std;
 using namespace hapi;
 
 MpsSndType::MpsSndType(const string &session, const MpsMsgType &type, const MpsTerm &succ, bool final) // {{{
-: mySesssion(session)
+: mySession(session)
 , myFinal(final)
 {
   mySucc = succ.Copy();
@@ -31,11 +31,11 @@ void *MpsSndType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
   MpsMsgEnv::const_iterator session=Gamma.find(mySession);
   // Check session is open
   if (session==Gamma.end())
-    return wrap_err(this,PrintTypeError((string)"Sending on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
+    return wrap_err(this,PrintTypeError((string)"Sending on closed session: " + mySession,*this,Theta,Gamma,Omega),children);
   // Check if session type
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
+    return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + mySession,*this,Theta,Gamma,Omega),children);
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   // Check if unfolding is necessary
   if (recType!=NULL)
@@ -46,13 +46,13 @@ void *MpsSndType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
   // Check session has correct type
   const MpsLocalSendType *sndType = dynamic_cast<const MpsLocalSendType*>(msgType->GetLocalType());
   if (sndType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Sending type on session with non-send type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
+    return wrap_err(this,PrintTypeError((string)"Sending type on session with non-send type: " + mySession,*this,Theta,Gamma,Omega),children);
   // Make new environment
   MpsLocalType *newType=sndType->GetSucc()->MSubst(sndType->GetVar(),*myType);
   MpsDelegateLocalMsgType *newMsgType=new MpsDelegateLocalMsgType(*newType,msgType->GetPid(),msgType->GetParticipants());
   delete newType;
   MpsMsgEnv newGamma = Gamma;
-  newGamma[myChannel.GetName()]=newMsgType;
+  newGamma[mySession]=newMsgType;
   // Check rest of program
   children["succ"]=mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Store if this is final action in session
@@ -75,7 +75,6 @@ bool MpsSndType::SubSteps(vector<MpsStep> &dest) // {{{
 } // }}}
 MpsTerm *MpsSndType::PRename(const string &src, const string &dst) const // {{{
 {
-  // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->PRename(src,dst);
   MpsTerm *result = new MpsSndType(mySession, *myType, *newSucc, GetFinal());
   delete newSucc;
@@ -118,7 +117,7 @@ MpsTerm *MpsSndType::ESubst(const string &source, const MpsExp &dest) const // {
 MpsTerm *MpsSndType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
-  MpsMsgType *newType = myType.GSubst(source,dest,args);
+  MpsMsgType *newType = myType->GSubst(source,dest,args);
   MpsTerm *result = new MpsSndType(mySession, *newType, *newSucc, GetFinal());
 
   // Clean Up
@@ -130,7 +129,7 @@ MpsTerm *MpsSndType::GSubst(const string &source, const MpsGlobalType &dest, con
 MpsTerm *MpsSndType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
-  MpsMsgType *newType = myType.LSubst(source,dest,args);
+  MpsMsgType *newType = myType->LSubst(source,dest,args);
   MpsTerm *result = new MpsSndType(mySession, *newType, *newSucc, GetFinal());
 
   // Clean Up
@@ -181,7 +180,7 @@ string MpsSndType::ToString(string indent) const // {{{
 } // }}}
 string MpsSndType::ToTex(int indent, int sw) const // {{{
 {
-  return myChannel.ToTex() + "$\\ll$" + myType->ToString() + ";\\newline\n"
+  return mySession + "$\\ll$" + myType->ToString() + ";\\newline\n"
        + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
 } // }}}
 string MpsSndType::ToC(const string &taskType) const // {{{
@@ -199,7 +198,7 @@ void MpsSndType::ToCConsts(vector<string> &dest, unordered_set<string> &existing
 MpsTerm *MpsSndType::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
-  MpsTerm *result = new MpsSndType(myChannel, *myExp, *newSucc, *myType, GetFinal());
+  MpsTerm *result = new MpsSndType(mySession, *myType, *newSucc, GetFinal());
   delete newSucc;
 
   return result;
@@ -207,7 +206,7 @@ MpsTerm *MpsSndType::FlattenFork(bool normLhs, bool normRhs, bool pureMode) cons
 MpsTerm *MpsSndType::RenameAll() const // {{{
 { MpsTerm *newSucc=mySucc->RenameAll();
   MpsMsgType *newType=myType->RenameAll();
-  MpsTerm *result=new MpsSndType(myChannel,*myExp,*newSucc,*newType, GetFinal());
+  MpsTerm *result = new MpsSndType(mySession, *newType, *newSucc, GetFinal());
   delete newSucc;
   delete newType;
   return result;
@@ -215,8 +214,8 @@ MpsTerm *MpsSndType::RenameAll() const // {{{
 bool MpsSndType::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 {
   // Find used vars
-  set<string> usedVars = myExp->FV();
-  usedVars.insert(myChannel.GetName());
+  set<string> usedVars;
+  usedVars.insert(mySession);
   // Split receives using the used vars
   MpsTerm *pre;
   MpsTerm *post;
@@ -228,26 +227,26 @@ bool MpsSndType::Parallelize(const MpsTerm &receivers, MpsTerm* &seqTerm, MpsTer
   bool opt2=mySucc->Parallelize(*post,seqSucc,parSucc);
   delete post;
   // Make parallelized term
-  MpsTerm *parTmp = new MpsSndType(myChannel, *myExp, *parSucc, GetMsgType(), GetFinal());
+  MpsTerm *parTmp = new MpsSndType(mySession, *myType, *parSucc, GetFinal());
   delete parSucc;
   parTerm = pre->Append(*parTmp);
   delete pre;
   delete parTmp;
   // Make sequential term
-  seqTerm = new MpsSndType(myChannel, *myExp, *seqSucc, GetMsgType(), GetFinal());
+  seqTerm = new MpsSndType(mySession, *myType, *seqSucc, GetFinal());
   delete seqSucc;
   return opt1 || opt2;
 } // }}}
 MpsTerm *MpsSndType::Append(const MpsTerm &term) const // {{{
 {
   MpsTerm *newSucc=mySucc->Append(term);
-  MpsTerm *result=new MpsSndType(myChannel, *myExp, *newSucc, GetMsgType(), GetFinal());
+  MpsTerm *result=new MpsSndType(mySession, *myType, *newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsSndType::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
-  return new MpsSndType(myChannel, *myExp, *(MpsTerm*)children["succ"], GetMsgType(), GetFinal());
+  return new MpsSndType(mySession, *myType, *(MpsTerm)*children["succ"], GetFinal());
 } // }}}
 MpsTerm *MpsSndType::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 {
@@ -255,7 +254,7 @@ MpsTerm *MpsSndType::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 } // }}}
 MpsTerm *MpsSndType::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
-  MpsTerm *result=new MpsSndType(myChannel,*myExp,*newSucc,*myType, GetFinal());
+  MpsTerm *result = new MpsSndType(mySession, *myType, *newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}
