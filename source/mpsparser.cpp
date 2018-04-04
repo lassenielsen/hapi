@@ -535,14 +535,14 @@ MpsGlobalType *MpsParser::Gact(const parsetree *tree, MpsGlobalType *succ) { // 
   if (tree->Case() == "gact_nltmsg") // int : nlvar ; {{{
   { 
     int from = stoi(tree->Child(0)->Token().Content());
-    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ, args);
+    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ);
     delete succ;
     return result;
   } // }}}
   if (tree->Case() == "gact_ltmsg") // int : lvar ; {{{
   { 
     int from = stoi(tree->Child(0)->Token().Content());
-    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ, args);
+    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ);
     delete succ;
     return result;
   } // }}}
@@ -662,31 +662,27 @@ MpsLocalType *MpsParser::Lact(const parsetree *tree, MpsLocalType *succ) // {{{
     delete assertion;
     return result;
   } // }}}
-  else if (tree->Case() == "lact_nltsnd") //  int << nlvar ; {{{
+  else if (tree->Case() == "lact_nltsnd") //  << nlvar ; {{{
   {
-    int channel = string2int(tree->Child(0)->Token().Content());
-    MpsLocalType *result = new MpsLocalTypeSndType(channel,tree->Child(2)->Token().Content(),*succ);
+    MpsLocalType *result = new MpsLocalTypeSendType(tree->Child(1)->Token().Content(),*succ);
     delete succ;
     return result;
   } // }}}
-  else if (tree->Case() == "lact_nltrcv") //  int >> nlvar ; {{{
+  else if (tree->Case() == "lact_nltrcv") //  >> nlvar ; {{{
   {
-    int channel = string2int(tree->Child(0)->Token().Content());
-    MpsLocalType *result = new MpsLocalTypeRcvType(channel,tree->Child(2)->Token().Content(),*succ);
+    MpsLocalType *result = new MpsLocalTypeRcvType(tree->Child(1)->Token().Content(),*succ);
     delete succ;
     return result;
   } // }}}
-  else if (tree->Case() == "lact_ltsnd") //  int << lvar ; {{{
+  else if (tree->Case() == "lact_ltsnd") //  << lvar ; {{{
   {
-    int channel = string2int(tree->Child(0)->Token().Content());
-    MpsLocalType *result = new MpsLocalLTypeSndType(channel,tree->Child(2)->Token().Content(),*succ);
+    MpsLocalType *result = new MpsLocalTypeSendType(tree->Child(1)->Token().Content(),*succ);
     delete succ;
     return result;
   } // }}}
-  else if (tree->Case() == "lact_ltrcv") //  int >> lvar ; {{{
+  else if (tree->Case() == "lact_ltrcv") //  >> lvar ; {{{
   {
-    int channel = string2int(tree->Child(0)->Token().Content());
-    MpsLocalType *result = new MpsLocalLTypeRcvType(channel,tree->Child(2)->Token().Content(),*succ);
+    MpsLocalType *result = new MpsLocalTypeRcvType(tree->Child(1)->Token().Content(),*succ);
     delete succ;
     return result;
   } // }}}

@@ -3,6 +3,7 @@
 
 #include <dpl/parsetree.hpp>
 #include <hapi/mpsterms.hpp>
+#include <hapi/mpstype.hpp>
 #include <string>
 #include <map>
 #include <vector>

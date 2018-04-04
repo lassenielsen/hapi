@@ -282,6 +282,36 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
     std::map<std::string,MpsGlobalType*> myBranches;
     std::map<std::string,MpsExp*> myAssertions;
 }; // }}}
+class MpsGlobalTypeMsgType : public MpsGlobalType // {{{
+{
+  public:
+    MpsGlobalTypeMsgType(int sender, const std::string &dest, const MpsGlobalType &succ);
+    virtual ~MpsGlobalTypeMsgType();
+    MpsGlobalTypeMsgType *Copy() const;
+    bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const;
+    //bool operator==(const MpsGlobalType &rhs) const;
+
+    std::set<std::string> FGV() const;
+    std::set<std::string> FLV() const;
+    std::set<std::string> FEV() const;
+    MpsGlobalTypeMsgType *GRename(const std::string &from, const std::string &to) const;
+    MpsGlobalTypeMsgType *LRename(const std::string &from, const std::string &to) const;
+    MpsGlobalTypeMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsGlobalTypeMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
+    MpsGlobalTypeMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
+    MpsGlobalTypeMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsGlobalTypeMsgType *RenameAll() const;
+
+    std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0, int sw=2) const;
+    MpsLocalType *Project(int pid) const;
+    int GetMaxPid() const;
+
+  private:
+    int mySender;
+    std::string myDest;
+    MpsGlobalType *mySucc;
+}; // }}}
 
 // DOCUMENTATION: MpsLocalType {{{
 /*!
@@ -643,6 +673,70 @@ class MpsLocalSyncType : public MpsLocalType // {{{
     std::map<std::string,MpsLocalType*> myBranches;
     std::map<std::string,MpsExp*> myAssertions;
 }; // }}}
+class MpsLocalTypeSendType : public MpsLocalType // {{{
+{
+  public:
+    MpsLocalTypeSendType(const std::string &dest, const MpsLocalType &succ);
+    virtual ~MpsLocalTypeSendType();
+    MpsLocalTypeSendType *Copy() const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    bool IsDone() const;
+
+    std::set<std::string> FGV() const;
+    std::set<std::string> FLV() const;
+    std::set<std::string> FEV() const;
+    MpsLocalTypeSendType *GRename(const std::string &from, const std::string &to) const;
+    MpsLocalTypeSendType *LRename(const std::string &from, const std::string &to) const;
+    MpsLocalTypeSendType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalTypeSendType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
+    MpsLocalTypeSendType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
+    MpsLocalTypeSendType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalTypeSendType *RenameAll() const;
+
+    MpsLocalType *Merge(MpsLocalType &rhs) const;
+    std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0, int sw=2) const;
+
+    // Accessors
+    const MpsLocalType *GetSucc() const;
+    const std::string &GetDest() const;
+
+  private:
+    std::string myDest;
+    MpsLocalType *mySucc;
+}; // }}}
+class MpsLocalTypeRcvType : public MpsLocalType // {{{
+{
+  public:
+    MpsLocalTypeRcvType(const std::string dest, const MpsLocalType &succ);
+    virtual ~MpsLocalTypeRcvType();
+    MpsLocalTypeRcvType *Copy() const;
+    bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
+    bool IsDone() const;
+
+    std::set<std::string> FGV() const;
+    std::set<std::string> FLV() const;
+    std::set<std::string> FEV() const;
+    MpsLocalTypeRcvType *GRename(const std::string &from, const std::string &to) const;
+    MpsLocalTypeRcvType *LRename(const std::string &from, const std::string &to) const;
+    MpsLocalTypeRcvType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalTypeRcvType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
+    MpsLocalTypeRcvType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
+    MpsLocalTypeRcvType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalTypeRcvType *RenameAll() const;
+
+    MpsLocalType *Merge(MpsLocalType &rhs) const;
+    std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0, int sw=2) const;
+
+    // Accessors
+    const MpsLocalType *GetSucc() const;
+    const std::string &GetDest() const;
+
+  private:
+    std::string myDest;
+    MpsLocalType *mySucc;
+}; // }}}
 
 // DOCUMENTATION: MpsMsgType {{{
 /*!
@@ -706,6 +800,30 @@ class MpsMsgNoType : public MpsMsgType // {{{
     MpsMsgNoType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsMsgNoType *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsMsgNoType *RenameAll() const;
+
+    std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
+}; // }}}
+class MpsVarMsgType : public MpsMsgType // {{{
+{
+  public:
+    MpsVarMsgType(const std::string &name);
+    virtual ~MpsVarMsgType();
+    MpsVarMsgType *Copy() const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    //bool operator==(const MpsMsgType &rhs) const;
+
+    std::set<std::string> FGV() const;
+    std::set<std::string> FLV() const;
+    std::set<std::string> FEV() const;
+    MpsVarMsgType *GRename(const std::string &source, const std::string &dest) const;
+    MpsVarMsgType *LRename(const std::string &source, const std::string &dest) const;
+    MpsVarMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsVarMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
+    MpsVarMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
+    MpsVarMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsVarMsgType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;

@@ -34,6 +34,7 @@ library_objects = \
   objects/mpssnd.o \
   objects/mpssndtype.o \
   objects/mpsrcv.o \
+  objects/mpsrcvtype.o \
   objects/mpsselect.o \
   objects/mpsbranch.o \
   objects/mpsnu.o \
