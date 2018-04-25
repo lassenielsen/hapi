@@ -307,6 +307,9 @@ class MpsTerm // {{{
     //! Expression variable renaming
     virtual MpsTerm *ERename(const std::string &src,
                              const std::string &dst) const = 0;
+    //! Non-linear type-variable renaming
+    virtual MpsTerm *MRename(const std::string &src,
+                             const std::string &dst) const = 0;
     //! Process variable substitution
     virtual MpsTerm *PSubst(const std::string &var,
                             const MpsTerm &exp,

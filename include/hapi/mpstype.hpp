@@ -82,6 +82,7 @@ class MpsGlobalType // {{{
     virtual MpsGlobalType *GRename(const std::string &from, const std::string &to) const = 0;
     virtual MpsGlobalType *LRename(const std::string &from, const std::string &to) const = 0;
     virtual MpsGlobalType *ERename(const std::string &source, const std::string &dest) const = 0;
+    virtual MpsGlobalType *MRename(const std::string &source, const std::string &dest) const = 0;
     virtual MpsGlobalType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const = 0;
     virtual MpsGlobalType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const = 0;
     virtual MpsGlobalType *ESubst(const std::string &source, const MpsExp &dest) const = 0;
@@ -118,6 +119,7 @@ class MpsGlobalMsgType : public MpsGlobalType // {{{
     MpsGlobalMsgType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalMsgType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsGlobalMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsGlobalMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -153,6 +155,7 @@ class MpsGlobalBranchType : public MpsGlobalType // {{{
     MpsGlobalBranchType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalBranchType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalBranchType *ERename(const std::string &source, const std::string &dest) const;
+    MpsGlobalBranchType *MRename(const std::string &source, const std::string &dest) const;
     MpsGlobalBranchType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalBranchType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalBranchType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -184,6 +187,7 @@ class MpsGlobalRecType : public MpsGlobalType // {{{
     MpsGlobalRecType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalRecType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalRecType *ERename(const std::string &source, const std::string &dest) const;
+    MpsGlobalRecType *MRename(const std::string &source, const std::string &dest) const;
     MpsGlobalRecType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalRecType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalRecType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -214,6 +218,7 @@ class MpsGlobalVarType : public MpsGlobalType // {{{
     MpsGlobalVarType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalVarType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalVarType *ERename(const std::string &source, const std::string &dest) const;
+    MpsGlobalVarType *MRename(const std::string &source, const std::string &dest) const;
     MpsGlobalType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalVarType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalVarType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -243,6 +248,7 @@ class MpsGlobalEndType : public MpsGlobalType // {{{
     MpsGlobalEndType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalEndType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalEndType *ERename(const std::string &source, const std::string &dest) const;
+    MpsGlobalEndType *MRename(const std::string &source, const std::string &dest) const;
     MpsGlobalEndType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalEndType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalEndType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -268,6 +274,7 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
     MpsGlobalSyncType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalSyncType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalSyncType *ERename(const std::string &source, const std::string &dest) const;
+    MpsGlobalSyncType *MRename(const std::string &source, const std::string &dest) const;
     MpsGlobalSyncType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalSyncType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalSyncType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -297,6 +304,7 @@ class MpsGlobalTypeMsgType : public MpsGlobalType // {{{
     MpsGlobalTypeMsgType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalTypeMsgType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalTypeMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsGlobalTypeMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsGlobalTypeMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalTypeMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsGlobalTypeMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -341,9 +349,11 @@ class MpsLocalType // {{{
     virtual MpsLocalType *GRename(const std::string &from, const std::string &to) const = 0;
     virtual MpsLocalType *LRename(const std::string &from, const std::string &to) const = 0;
     virtual MpsLocalType *ERename(const std::string &from, const std::string &to) const = 0;
+    virtual MpsLocalType *MRename(const std::string &from, const std::string &to) const = 0;
     virtual MpsLocalType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const = 0;
     virtual MpsLocalType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const = 0;
     virtual MpsLocalType *ESubst(const std::string &source, const MpsExp &dest) const = 0;
+    virtual MpsLocalType *MSubst(const std::string &source, const MpsMsgType &dest) const = 0;
     virtual MpsLocalType *RenameAll() const=0;
 
     // Merge two types to make least supertype
@@ -376,9 +386,11 @@ class MpsLocalSendType : public MpsLocalType // {{{
     MpsLocalSendType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalSendType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalSendType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalSendType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalSendType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSendType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSendType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalSendType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalSendType *RenameAll() const;
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
@@ -419,9 +431,11 @@ class MpsLocalRcvType : public MpsLocalType // {{{
     MpsLocalRcvType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalRcvType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalRcvType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalRcvType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalRcvType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalRcvType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalRcvType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalRcvType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalRcvType *RenameAll() const;
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
@@ -461,9 +475,11 @@ class MpsLocalForallType : public MpsLocalType // {{{
     MpsLocalForallType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalForallType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalForallType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalForallType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalForallType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalForallType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalForallType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalForallType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalForallType *RenameAll() const;
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
@@ -496,9 +512,11 @@ class MpsLocalSelectType : public MpsLocalType // {{{
     MpsLocalSelectType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalSelectType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalSelectType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalSelectType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalSelectType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSelectType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSelectType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalSelectType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalSelectType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
@@ -532,9 +550,11 @@ class MpsLocalBranchType : public MpsLocalType // {{{
     MpsLocalBranchType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalBranchType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalBranchType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalBranchType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalBranchType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalBranchType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalBranchType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalBranchType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalBranchType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
@@ -568,9 +588,11 @@ class MpsLocalRecType : public MpsLocalType // {{{
     MpsLocalRecType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalRecType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalRecType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalRecType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalRecType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalRecType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalRecType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalRecType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalRecType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
@@ -602,9 +624,11 @@ class MpsLocalVarType : public MpsLocalType // {{{
     MpsLocalVarType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalVarType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalVarType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalVarType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalVarType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalVarType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalVarType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalVarType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
@@ -630,9 +654,11 @@ class MpsLocalEndType : public MpsLocalType // {{{
     MpsLocalEndType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalEndType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalEndType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalEndType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalEndType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalEndType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalEndType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalEndType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalEndType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
@@ -654,9 +680,11 @@ class MpsLocalSyncType : public MpsLocalType // {{{
     MpsLocalSyncType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalSyncType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalSyncType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalSyncType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalSyncType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSyncType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalSyncType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalSyncType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalSyncType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
@@ -688,9 +716,11 @@ class MpsLocalTypeSendType : public MpsLocalType // {{{
     MpsLocalTypeSendType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalTypeSendType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalTypeSendType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalTypeSendType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalTypeSendType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalTypeSendType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalTypeSendType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalTypeSendType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalTypeSendType *RenameAll() const;
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
@@ -720,9 +750,11 @@ class MpsLocalTypeRcvType : public MpsLocalType // {{{
     MpsLocalTypeRcvType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalTypeRcvType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalTypeRcvType *ERename(const std::string &from, const std::string &to) const;
+    MpsLocalTypeRcvType *MRename(const std::string &from, const std::string &to) const;
     MpsLocalTypeRcvType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsLocalTypeRcvType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsLocalTypeRcvType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsLocalTypeRcvType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsLocalTypeRcvType *RenameAll() const;
 
     MpsLocalType *Merge(MpsLocalType &rhs) const;
@@ -763,6 +795,7 @@ class MpsMsgType // {{{
     virtual MpsMsgType *GRename(const std::string &source, const std::string &dest) const=0;
     virtual MpsMsgType *LRename(const std::string &source, const std::string &dest) const=0;
     virtual MpsMsgType *ERename(const std::string &source, const std::string &dest) const=0;
+    virtual MpsMsgType *MRename(const std::string &source, const std::string &dest) const=0;
     virtual MpsMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const=0;
     virtual MpsMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const=0;
     virtual MpsMsgType *ESubst(const std::string &source, const MpsExp &dest) const=0;
@@ -796,6 +829,7 @@ class MpsMsgNoType : public MpsMsgType // {{{
     MpsMsgNoType *GRename(const std::string &source, const std::string &dest) const;
     MpsMsgNoType *LRename(const std::string &source, const std::string &dest) const;
     MpsMsgNoType *ERename(const std::string &source, const std::string &dest) const;
+    MpsMsgNoType *MRename(const std::string &source, const std::string &dest) const;
     MpsMsgNoType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsMsgNoType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsMsgNoType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -820,6 +854,7 @@ class MpsVarMsgType : public MpsMsgType // {{{
     MpsVarMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsVarMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsVarMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsVarMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsVarMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsVarMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsVarMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -844,6 +879,7 @@ class MpsIntMsgType : public MpsMsgType // {{{
     MpsIntMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsIntMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsIntMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsIntMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsIntMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsIntMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsIntMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -868,6 +904,7 @@ class MpsFloatMsgType : public MpsMsgType // {{{
     MpsFloatMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsFloatMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsFloatMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsFloatMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsFloatMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsFloatMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsFloatMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -892,6 +929,7 @@ class MpsStringMsgType : public MpsMsgType // {{{
     MpsStringMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsStringMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsStringMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsStringMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsStringMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsStringMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsStringMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -916,6 +954,7 @@ class MpsBoolMsgType : public MpsMsgType // {{{
     MpsBoolMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsBoolMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsBoolMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsBoolMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsBoolMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsBoolMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsBoolMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -940,6 +979,7 @@ class MpsTupleMsgType : public MpsMsgType // {{{
     MpsTupleMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsTupleMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsTupleMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsTupleMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsTupleMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTupleMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsTupleMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -970,6 +1010,7 @@ class MpsChannelMsgType : public MpsMsgType // {{{
     MpsChannelMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsChannelMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsChannelMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsChannelMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsChannelMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsChannelMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsChannelMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -1003,6 +1044,7 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
     virtual MpsDelegateMsgType *GRename(const std::string &source, const std::string &dest) const=0;
     virtual MpsDelegateMsgType *LRename(const std::string &source, const std::string &dest) const=0;
     virtual MpsDelegateMsgType *ERename(const std::string &source, const std::string &dest) const=0;
+    virtual MpsDelegateMsgType *MRename(const std::string &source, const std::string &dest) const=0;
     virtual MpsDelegateMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const=0;
     virtual MpsDelegateMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const=0;
     virtual MpsDelegateMsgType *ESubst(const std::string &source, const MpsExp &dest) const=0;
@@ -1035,6 +1077,7 @@ class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
     MpsDelegateLocalMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsDelegateLocalMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsDelegateLocalMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsDelegateLocalMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsDelegateLocalMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsDelegateLocalMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsDelegateLocalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
@@ -1062,6 +1105,7 @@ class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegat
     MpsDelegateGlobalMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsDelegateGlobalMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsDelegateGlobalMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsDelegateGlobalMsgType *MRename(const std::string &source, const std::string &dest) const;
     MpsDelegateGlobalMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsDelegateGlobalMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsDelegateGlobalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;

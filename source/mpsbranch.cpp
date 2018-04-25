@@ -144,6 +144,22 @@ MpsTerm *MpsBranch::ERename(const string &src, const string &dst) const // {{{
   DeleteMap(newBranches);
   return result;
 } // }}}
+MpsTerm *MpsBranch::MRename(const string &src, const string &dst) const // {{{
+{
+  //MpsChannel newChannel=myChannel.MRename(src,dst);
+  map<string, MpsTerm*> newBranches;
+  newBranches.clear();
+  // ERename each branch
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    MpsTerm *newBranch = it->second->MRename(src,dst);
+    newBranches[it->first] = newBranch;
+  }
+  MpsTerm *result = new MpsBranch(myChannel, newBranches, GetFinalBranches());
+  // Clean up
+  DeleteMap(newBranches);
+  return result;
+} // }}}
 MpsTerm *MpsBranch::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   MpsChannel newChannel=myChannel;

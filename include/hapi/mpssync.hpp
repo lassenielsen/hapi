@@ -29,6 +29,7 @@ class MpsSync : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsTerm *PRename(const std::string &src, const std::string &dst) const;
     MpsTerm *ERename(const std::string &src, const std::string &dst) const;
+    MpsTerm *MRename(const std::string &src, const std::string &dst) const;
     MpsTerm *PSubst(const std::string &var,
                     const MpsTerm &exp,
                     const std::vector<std::string> &args,

@@ -89,8 +89,37 @@ MpsTerm *MpsNu::ERename(const string &src, const string &dst) const // {{{
   }
   else
     newSucc = mySucc->ERename(src,dst);
-  MpsTerm *result = new MpsNu(myParticipants, newChannel, *newSucc, *myType);
+
+  MpsGlobalType *newType=myType->ERename(src,dst);
+
+  MpsTerm *result = new MpsNu(myParticipants, newChannel, *newSucc, *newType);
   delete newSucc;
+  delete newType;
+  return result;
+} // }}}
+MpsTerm *MpsNu::MRename(const string &src, const string &dst) const // {{{
+{
+  // assert mySucc != NULL
+  //if (myChannel==src) // No substitution necessary
+  //  return Copy();
+
+  MpsTerm *newSucc = NULL;
+  string newChannel=myChannel;
+  //if (myChannel==dst) // Must rename myChannel
+  //{
+  //  newChannel = MpsExp::NewVar();
+  //  MpsTerm *tmpSucc = mySucc->ERename(myChannel,newChannel);
+  //  newSucc = tmpSucc->ERename(src,dst);
+  //  delete tmpSucc;
+  //}
+  //else
+    newSucc = mySucc->MRename(src,dst);
+
+  MpsGlobalType *newType=myType->MRename(src,dst);
+
+  MpsTerm *result = new MpsNu(myParticipants, newChannel, *newSucc, *newType);
+  delete newSucc;
+  delete newType;
   return result;
 } // }}}
 MpsTerm *MpsNu::ReIndex(const string &session, int pid, int maxpid) const // {{{

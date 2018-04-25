@@ -34,6 +34,7 @@ class MpsAssign : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsAssign *PRename(const std::string &src, const std::string &dst) const;
     MpsAssign *ERename(const std::string &src, const std::string &dst) const;
+    MpsAssign *MRename(const std::string &src, const std::string &dst) const;
     MpsAssign *PSubst(const std::string &var,
                       const MpsTerm &exp,
                       const std::vector<std::string> &args,

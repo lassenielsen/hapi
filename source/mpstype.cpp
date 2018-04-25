@@ -794,6 +794,87 @@ MpsGlobalSyncType *MpsGlobalSyncType::ERename(const string &from, const string &
   return result;
 } // }}}
 
+// Rename Non-linear Type Variable
+MpsGlobalMsgType *MpsGlobalMsgType::MRename(const string &from, const string &to) const // {{{
+{
+  MpsGlobalType *newSucc = mySucc->MRename(from,to);
+  MpsMsgType *newMsgType = myMsgType->MRename(from,to);
+  MpsGlobalMsgType *result = NULL;
+  if (myAssertionType)
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc, *myAssertion, myId);
+  else
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc);
+  delete newSucc;
+  delete newMsgType;
+  return result;
+} // }}}
+MpsGlobalBranchType *MpsGlobalBranchType::MRename(const string &from, const string &to) const // {{{
+{
+  map<string,MpsGlobalType*> newBranches;
+  for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+    newBranches[it->first] = it->second->MRename(from,to);
+  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, newBranches, myAssertions);
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsGlobalRecType *MpsGlobalRecType::MRename(const string &from, const string &to) const // {{{
+{
+  // Substitute in Args
+  vector<TypeArg> newArgs;
+  for (vector<TypeArg>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+  { MpsMsgType *newType = it->myType->MRename(from,to);
+    newArgs.push_back(TypeArg(it->myName,*newType,*it->myValue));
+    delete newType;
+  }
+
+  //if (from == myName) // If name is hidden, make no further substitutions
+  //  return new MpsGlobalRecType(myName, *mySucc, newArgs);
+
+  MpsGlobalRecType *result=NULL;
+  if (myName == to) // Rename to avoid variable capturing
+  {
+    string newName=NewGVar();
+    MpsGlobalType *tmpSucc=mySucc->MRename(myName,newName);
+    MpsGlobalType *newSucc=tmpSucc->MRename(from,to);
+    delete tmpSucc;
+    result = new MpsGlobalRecType(newName,*newSucc, newArgs);
+    delete newSucc;
+  }
+  else // No rename is necessary
+  {
+    MpsGlobalType *newSucc=mySucc->MRename(from,to);
+    result= new MpsGlobalRecType(myName,*newSucc,newArgs);
+    delete newSucc;
+  }
+  return result;
+} // }}}
+MpsGlobalVarType *MpsGlobalVarType::MRename(const string &from, const string &to) const // {{{
+{
+  // assert to != myName
+  //if (from == myName)
+  //  return new MpsGlobalVarType(to,myValues);
+  //else
+    return Copy();
+} // }}}
+MpsGlobalEndType *MpsGlobalEndType::MRename(const string &from, const string &to) const // {{{
+{
+  return Copy();
+} // }}}
+MpsGlobalSyncType *MpsGlobalSyncType::MRename(const string &from, const string &to) const // {{{
+{
+  map<string,MpsGlobalType*> newBranches;
+  for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+    newBranches[it->first] = it->second->MRename(from,to);
+  // Substitute in assertions?
+  MpsGlobalSyncType *result = new MpsGlobalSyncType(newBranches,myAssertions);
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+
 // Global Type Substitution
 MpsGlobalMsgType *MpsGlobalMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
@@ -2879,6 +2960,150 @@ MpsLocalSyncType *MpsLocalSyncType::ERename(const string &from, const string &to
   // Clean up
   DeleteMap(newBranches);
   DeleteMap(newAssertions);
+
+  return result;
+} // }}}
+
+// Rename Non-Linear Type Variable
+MpsLocalSendType *MpsLocalSendType::MRename(const string &from, const string &to) const // {{{
+{
+  MpsMsgType *newMsgType = myMsgType->MRename(from,to);
+  MpsLocalType *newSucc = mySucc->MRename(from,to);
+  MpsLocalSendType *result=NULL;
+  if (myAssertionType)
+    result=new MpsLocalSendType(myReceiver, *newMsgType, *newSucc, *myAssertion, myId);
+  else
+    result=new MpsLocalSendType(myReceiver, *newMsgType, *newSucc);
+
+  // Clean Up
+  delete newSucc;
+  delete newMsgType;
+  return result;
+} // }}}
+MpsLocalRcvType *MpsLocalRcvType::MRename(const string &from, const string &to) const // {{{
+{
+  MpsMsgType *newMsgType = myMsgType->MRename(from,to);
+  MpsLocalType *newSucc=mySucc->MRename(from,to);
+  MpsLocalRcvType *result=NULL;
+  if (myAssertionType)
+    result=new MpsLocalRcvType(mySender, *newMsgType, *newSucc, *myAssertion, myId);
+  else
+    result=new MpsLocalRcvType(mySender, *newMsgType, *newSucc);
+
+  // Clean Up
+  delete newSucc;
+  delete newMsgType;
+  return result;
+} // }}}
+MpsLocalForallType *MpsLocalForallType::MRename(const string &from, const string &to) const // {{{
+{
+  //if (myName==from)
+  //  return Copy();
+
+  MpsLocalType *newSucc=mySucc->MRename(from,to);
+  MpsLocalForallType *result=new MpsLocalForallType(myName, *myAssertion, *newSucc);
+  // Clean Up
+  delete newSucc;
+  return result;
+} // }}}
+MpsLocalSelectType *MpsLocalSelectType::MRename(const string &from, const string &to) const // {{{
+{
+  map<string,MpsLocalType*> newBranches;
+  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+    newBranches[it->first] = it->second->MRename(from,to);
+  MpsLocalSelectType *result = new MpsLocalSelectType(myReceiver,newBranches,myAssertions);
+
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsLocalBranchType *MpsLocalBranchType::MRename(const string &from, const string &to) const // {{{
+{
+  map<string,MpsLocalType*> newBranches;
+  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+    newBranches[it->first] = it->second->MRename(from,to);
+  MpsLocalBranchType *result = new MpsLocalBranchType(mySender,newBranches,myAssertions);
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsLocalRecType *MpsLocalRecType::MRename(const string &from, const string &to) const // {{{
+{
+  //bool hidden=false;
+  // Rename in arg values
+  vector<TypeArg> newArgs;
+  for (vector<TypeArg>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+  {
+    MpsMsgType *newType = it->myType->MRename(from, to);
+    MpsExp *newValue = it->myValue->Rename(from, to);
+    TypeArg newArg(it->myName, *newType, *newValue);
+    newArgs.push_back(newArg);
+    delete newType;
+    delete newValue;
+    //if (from == it->myName) // source is hidden in succ
+    //  hidden=true;
+  }
+
+  //if (hidden) // source is hidden
+  //  return new MpsLocalRecType(myName, *mySucc, newArgs);
+
+  MpsLocalType *newSucc = mySucc->Copy();
+  MpsLocalType *tmp = NULL;
+  // Avoid variable capture by renaming
+  //for (vector<TypeArg>::iterator it=newArgs.begin(); it!=newArgs.end(); ++it)
+  //{
+  //  if (it->myName==to)
+  //  { string newName=MpsExp::NewVar();
+  //    tmp=newSucc->MRename(it->myName,newName);
+  //    delete newSucc;
+  //    newSucc=tmp;
+  //    it->myName=newName;
+  //  }
+  //}
+  // Substitute in body
+  tmp = newSucc->MRename(from,to);
+  delete newSucc;
+  newSucc=tmp;
+
+  // Create new type
+  MpsLocalRecType *result = new MpsLocalRecType(myName,*newSucc,newArgs);
+  delete newSucc;
+  return result;
+} // }}}
+MpsLocalVarType *MpsLocalVarType::MRename(const string &from, const string &to) const // {{{
+{
+  //vector<MpsExp*> newValues;
+  //for (vector<MpsExp*>::const_iterator it=myValues.begin(); it!=myValues.end(); ++it)
+  //  newValues.push_back((*it)->Rename(from,to));
+
+  MpsLocalVarType *result = new MpsLocalVarType(myName,myValues);
+
+  // Clean Up
+  //DeleteVector(newValues);
+
+  return result;
+} // }}}
+MpsLocalEndType *MpsLocalEndType::MRename(const string &from, const string &to) const // {{{
+{
+  return Copy();
+} // }}}
+MpsLocalSyncType *MpsLocalSyncType::MRename(const string &from, const string &to) const // {{{
+{
+  map<string,MpsLocalType*> newBranches;
+  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+    newBranches[it->first] = it->second->MRename(from,to);
+
+  //map<string,MpsExp*> newAssertions;
+  //for (map<string,MpsExp*>::const_iterator it=myAssertions.begin(); it!=myAssertions.end(); ++it)
+  //  newAssertions[it->first] = it->second->Rename(from,to);
+
+  MpsLocalSyncType *result = new MpsLocalSyncType(newBranches,myAssertions);
+
+  // Clean up
+  DeleteMap(newBranches);
+  //DeleteMap(newAssertions);
 
   return result;
 } // }}}

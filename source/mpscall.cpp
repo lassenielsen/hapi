@@ -165,6 +165,25 @@ MpsTerm *MpsCall::ERename(const string &src, const string &dst) const // {{{
   DeleteVector(newStateTypes);
   return result;
 } // }}}
+MpsTerm *MpsCall::MRename(const string &src, const string &dst) const // {{{
+{
+  //vector<MpsExp*> newArgs;
+  //for (vector<MpsExp*>::const_iterator it=myArgs.begin();it!=myArgs.end();++it)
+  //  newArgs.push_back((*it)->Rename(src,dst));
+  //vector<MpsExp*> newState;
+  //for (vector<MpsExp*>::const_iterator it=myState.begin();it!=myState.end();++it)
+  //  newState.push_back((*it)->Rename(src,dst));
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myTypes.begin();it!=myTypes.end();++it)
+    newTypes.push_back((*it)->MRename(src,dst));
+  vector<MpsMsgType*> newStateTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin();it!=myStateTypes.end();++it)
+    newStateTypes.push_back((*it)->MRename(src,dst));
+  MpsTerm *result = new MpsCall(myName,myArgs,myState,newTypes,newStateTypes);
+  DeleteVector(newTypes);
+  DeleteVector(newStateTypes);
+  return result;
+} // }}}
 MpsTerm *MpsCall::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   return Copy();

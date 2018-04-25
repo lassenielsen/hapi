@@ -44,11 +44,11 @@ void *MpsSndType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
   if (allType!=NULL)
     return TypeCheckForall(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   // Check session has correct type
-  const MpsLocalSendType *sndType = dynamic_cast<const MpsLocalSendType*>(msgType->GetLocalType());
+  const MpsLocalTypeSendType *sndType = dynamic_cast<const MpsLocalTypeSendType*>(msgType->GetLocalType());
   if (sndType==NULL)
     return wrap_err(this,PrintTypeError((string)"Sending type on session with non-send type: " + mySession,*this,Theta,Gamma,Omega),children);
   // Make new environment
-  MpsLocalType *newType=sndType->GetSucc()->MSubst(sndType->GetVar(),*myType);
+  MpsLocalType *newType=sndType->GetSucc()->MSubst(sndType->GetDest(),*myType);
   MpsDelegateLocalMsgType *newMsgType=new MpsDelegateLocalMsgType(*newType,msgType->GetPid(),msgType->GetParticipants());
   delete newType;
   MpsMsgEnv newGamma = Gamma;
@@ -84,7 +84,7 @@ MpsTerm *MpsSndType::ERename(const string &src, const string &dst) const // {{{
 {
   MpsTerm *newSucc = mySucc->ERename(src,dst);
   MpsMsgType *newType=myType->ERename(src,dst);
-  MpsChannel newSession=mySession==src?dst:mySession;
+  string newSession=mySession==src?dst:mySession;
   MpsTerm *result = new MpsSndType(newSession, *newType, *newSucc, GetFinal());
   delete newSucc;
   delete newType;
@@ -108,7 +108,7 @@ MpsTerm *MpsSndType::ESubst(const string &source, const MpsExp &dest) const // {
 {
   string newSession=stringESubst(mySession,source,dest);
   MpsTerm *newSucc = mySucc->ESubst(source,dest);
-  MpsExp *newType=myType->ESubst(source,dest);
+  MpsMsgType *newType=myType->ESubst(source,dest);
   MpsTerm *result = new MpsSndType(newSession, *newType, *newSucc, GetFinal());
   delete newType;
   delete newSucc;
@@ -147,7 +147,7 @@ set<string> MpsSndType::EV() const // {{{
 {
   set<string> result = mySucc->EV();
   result.insert(mySession);
-  set<string> fv=myType->FV();
+  set<string> fv=myType->FEV();
   result.insert(fv.begin(),fv.end());
   return result;
 } // }}}
@@ -155,7 +155,7 @@ set<string> MpsSndType::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();
   result.insert(mySession);
-  set<string> fv=myType->FV();
+  set<string> fv=myType->FEV();
   result.insert(fv.begin(),fv.end());
   return result;
 } // }}}
@@ -246,7 +246,7 @@ MpsTerm *MpsSndType::Append(const MpsTerm &term) const // {{{
 } // }}}
 MpsTerm *MpsSndType::CopyWrapper(std::map<std::string,void*> &children) const // {{{
 {
-  return new MpsSndType(mySession, *myType, *(MpsTerm)*children["succ"], GetFinal());
+  return new MpsSndType(mySession, *myType, *(MpsTerm*)children["succ"], GetFinal());
 } // }}}
 MpsTerm *MpsSndType::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 {

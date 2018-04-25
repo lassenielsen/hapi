@@ -28,14 +28,14 @@ void *MpsRcvType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
   }
  
   // Verify rcv
-  MpsMsgEnv::const_iterator session=Gamma.find(myChannel.GetName());
+  MpsMsgEnv::const_iterator session=Gamma.find(mySession);
   // Check session is open
   if (session==Gamma.end())
-    return wrap_err(this,PrintTypeError((string)"Receiving on closed session: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
+    return wrap_err(this,PrintTypeError((string)"Receiving on closed session: " + mySession,*this,Theta,Gamma,Omega),children);
   // Check if session type
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
+    return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + mySession,*this,Theta,Gamma,Omega),children);
   // Check if unfolding is necessary
   const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
   if (recType!=NULL)
@@ -44,25 +44,9 @@ void *MpsRcvType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
   if (allType!=NULL)
     return TypeCheckForall(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
   // Check session has receive type
-  const MpsLocalRcvType *rcvType = dynamic_cast<const MpsLocalRcvType*>(msgType->GetLocalType());
+  const MpsLocalTypeRcvType *rcvType = dynamic_cast<const MpsLocalTypeRcvType*>(msgType->GetLocalType());
   if (rcvType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Receiving on session: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
-  // Check channel index is correct
-  if (myChannel.GetIndex() != rcvType->GetSender())
-    return wrap_err(this,PrintTypeError((string)"Receiving on session(wrong index): " + myChannel.ToString(),*this,Theta,Gamma,Omega),children);
-  // Is renaming of myDest necessary?
-  bool rename = false;
-  if (rcvType->GetAssertionType())
-  { set<string> fv=Theta.FV();
-    if (fv.find(myDest)!=fv.end())
-      rename=true;
-    for (MpsMsgEnv::const_iterator it=Gamma.begin(); (not rename) && it!=Gamma.end(); ++it)
-    { fv = it->second->FEV();
-      if (fv.find(myDest)!=fv.end())
-        rename=true;
-    }
-  }
-  string newDest=rename?MpsExp::NewVar(myDest):myDest;
+    return wrap_err(this,PrintTypeError((string)"Type-receiving on session: " + mySession,*this,Theta,Gamma,Omega),children);
   // Make new Gamma
   MpsMsgEnv newGamma;
   for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
@@ -71,96 +55,26 @@ void *MpsRcvType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
       newGamma[it->first]=it->second;
     else // SESSION TYPE
     { MpsLocalType *newType=NULL;
-      if (it->first==myChannel.GetName())
-      { if (rcvType->GetAssertionType())
-        { MpsLocalType *tmpType=NULL;
-          if (rename && rcvType->GetAssertionName()!=myDest) // Rename in succ
-            tmpType=rcvType->GetSucc()->ERename(myDest,newDest);
-          else
-            tmpType=rcvType->GetSucc()->Copy();
-          newType=tmpType->ERename(rcvType->GetAssertionName(),myDest);
-        }
-        else
-          newType=rcvType->GetSucc()->Copy();
+      if (it->first==mySession)
+      { string newId=MpsExp::NewVar(myDest);
+        newType=rcvType->GetSucc()->MRename(myDest,newId);
       }
       else
-      { if (rename)
-          newType=delType->GetLocalType()->ERename(myDest,newDest);
-        else
-          newType=delType->GetLocalType()->Copy();
-      }
+        newType=delType->GetLocalType()->Copy();
       newGamma[it->first] = new MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetParticipants());
       delete newType;
     }
   }
   // Save created type for deletion
-  MpsDelegateMsgType *newType=dynamic_cast<MpsDelegateMsgType*>(newGamma[myChannel.GetName()]);
-  // Check if assertion domain is respected
-  if (rcvType->GetAssertionType() && typeid(*rcvType->GetMsgType()) != typeid(MpsBoolMsgType))
-    return wrap_err(this,PrintTypeError((string)"Assertion of non-boolean type: " + rcvType->ToString("!!!!!      "),*this,Theta,Gamma,Omega),children);
+  MpsDelegateMsgType *newType=dynamic_cast<MpsDelegateMsgType*>(newGamma[mySession]);
 
-  // Check not overwriting unfinished session
-  MpsMsgEnv::const_iterator dstVar=Gamma.find(myDest);
-  if (dstVar!=Gamma.end() &&
-      dynamic_cast<const MpsDelegateMsgType*>(dstVar->second)!=NULL &&
-      !dynamic_cast<const MpsDelegateMsgType*>(dstVar->second)->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-    return wrap_err(this,PrintTypeError((string)"Overwriting open session: " + myDest,*this,Theta,Gamma,Omega),children);
-  // Check specification of pid and maxpid
-  const MpsDelegateMsgType *delRcvType=dynamic_cast<const MpsDelegateMsgType*>(rcvType->GetMsgType());
-  if (delRcvType!=NULL)
-  { if (myPid==-1)
-      myPid=delRcvType->GetPid();
-    else if (delRcvType->GetPid()!=myPid)
-      return wrap_err(this,PrintTypeError((string)"Receiving session with pid different than specified",*this,Theta,Gamma,Omega),children);
-    if (myMaxPid==-1)
-      myMaxPid=delRcvType->GetMaxpid();
-    else if (delRcvType->GetMaxpid()!=myMaxPid)
-      return wrap_err(this,PrintTypeError((string)"Receiving session with maxpid different than specified",*this,Theta,Gamma,Omega),children);
-  }
-  newGamma[myDest]=rcvType->GetMsgType()->Copy();
-  // Create new Assumptions
-  MpsExp *newTheta=NULL;
-  if (rcvType->GetAssertionType())
-  { MpsExp *newAssertion=NULL;
-    if (rcvType->GetAssertionName()!=myDest)
-    { MpsExp *tmpAssertion=NULL;
-      if (rename)
-        tmpAssertion=rcvType->GetAssertion().Rename(myDest,newDest);
-      else
-        tmpAssertion=rcvType->GetAssertion().Copy();
-      newAssertion=tmpAssertion->Rename(rcvType->GetAssertionName(),myDest);
-      delete tmpAssertion;
-    }
-    else
-      newAssertion=rcvType->GetAssertion().Copy();
-    newTheta=new MpsBinOpExp("and",Theta,*newAssertion,MpsBoolMsgType(),MpsBoolMsgType());
-    delete newAssertion;
-  }
-  else
-    newTheta=Theta.Copy();
   // Check rest of program
-  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Store if this is final action in session
   myFinal=newType->GetLocalType()->IsDone();
   // Clean Up
-  delete newTheta;
-  if (rename)
-  {
-    while (newGamma.size()>0)
-    { const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(newGamma.begin()->second);
-      if (delType!=NULL || newGamma.begin()->first==myDest) // Is session type
-        delete newGamma.begin()->second;
-      newGamma.erase(newGamma.begin());
-    }
-  }
-  else
-  {
-    delete newGamma[session->first];
-    delete newGamma[myDest];
-  }
+  delete newType;
 
-  // Store message type in term
-  SetMsgType(*(rcvType->GetMsgType()));
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
@@ -170,16 +84,17 @@ bool MpsRcvType::SubSteps(vector<MpsStep> &dest) // {{{
   event.myType = tau;
   event.mySubType = rcvtype;
   event.mySession = mySession;
+  vector<string> paths;
   paths.push_back("");
   dest.push_back(MpsStep(event, paths));
   return false;
 } // }}}
 MpsTerm *MpsRcvType::ApplyOther(const std::string &path) const // {{{
-{ if (path.size()>0
+{ if (path.size()>0)
     return Error((string)"Applying RcvType on "+ToString()+" with nonempty path "+path);
   MpsTerm *result=NULL;
   string newVar=MpsExp::NewVar(myDest);
-  result = mySucc->NLRename(myDest,newVar);
+  result = mySucc->MRename(myDest,newVar);
   return result;
 } // }}}
 MpsTerm *MpsRcvType::ReIndex(const string &session, int pid, int maxpid) const // {{{
@@ -222,8 +137,8 @@ MpsTerm *MpsRcvType::PSubst(const string &var, const MpsTerm &exp, const vector<
 } // }}}
 MpsTerm *MpsRcvType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
-  string newSession=stringEsubst(mySession,source,dest);
-  if (src == myDest || dest.FV().count(myDest)>0) // Unexpected variable overlap
+  string newSession=stringESubst(mySession,source,dest);
+  if (source == myDest || dest.FV().count(myDest)>0) // Unexpected variable overlap
     throw string("MpsRcvType::ERename name collision with NLVar: ")+ myDest;
 
   MpsTerm *newSucc=mySucc->ESubst(source,dest);
@@ -321,7 +236,7 @@ MpsTerm *MpsRcvType::FlattenFork(bool normLhs, bool normRhs, bool pureMode) cons
 } // }}}
 MpsTerm *MpsRcvType::RenameAll() const // {{{
 { string newDest=MpsExp::NewVar(myDest);
-  MpsTerm *tmpSucc=mySucc->NLRename(myDest,newDest);
+  MpsTerm *tmpSucc=mySucc->MRename(myDest,newDest);
   MpsTerm *newSucc=tmpSucc->RenameAll();
   delete tmpSucc;
   MpsTerm *result=new MpsRcvType(mySession,newDest,*newSucc,GetFinal());
@@ -372,7 +287,7 @@ void MpsRcvType::Split(const std::set<std::string> &fv, MpsTerm* &pre, MpsTerm* 
     if (dynamic_cast<const MpsEnd*>(prePre)==NULL)
     { // This op cannot be moved to post
       delete prePre;
-      pre = new MpsRcvType(Session, myDest, *succPre, GetFinal());
+      pre = new MpsRcvType(mySession, myDest, *succPre, GetFinal());
       delete succPre;
       post=succPost;
     }
@@ -395,7 +310,7 @@ MpsTerm *MpsRcvType::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 } // }}}
 MpsTerm *MpsRcvType::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
-  MpsTerm *result=new MpsRcvType(mySession,myDest,,*newSucc,GetFinal());
+  MpsTerm *result=new MpsRcvType(mySession,myDest,*newSucc,GetFinal());
   delete newSucc;
   return result;
 } // }}}

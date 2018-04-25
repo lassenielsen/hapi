@@ -211,6 +211,10 @@ MpsTerm *MpsDef::ERename(const string &src, const string &dst) const // {{{
       newStateArgs.push_back(*arg);
   }
 
+  vector<MpsMsgType*> newStateTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin(); it!=myStateTypes.end(); ++it)
+    newStateTypes.push_back((*it)->ERename(src,dst));
+
   // Process Args
   vector<string> newArgs;
   for (vector<string>::const_iterator arg=myArgs.begin(); arg!=myArgs.end(); ++arg)
@@ -228,7 +232,11 @@ MpsTerm *MpsDef::ERename(const string &src, const string &dst) const // {{{
     else
       newArgs.push_back(*arg);
   }
-      
+
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myTypes.begin(); it!=myTypes.end(); ++it)
+    newTypes.push_back((*it)->ERename(src,dst));
+
   if (not body_hidden)
   { MpsTerm *tmpBody = newBody->ERename(src,dst);
     delete newBody;
@@ -236,10 +244,36 @@ MpsTerm *MpsDef::ERename(const string &src, const string &dst) const // {{{
   }
 
   // Create result
-  MpsTerm *result = new MpsDef(myName,newArgs,myTypes,newStateArgs,myStateTypes,*newBody,*newSucc,myPure);
+  MpsTerm *result = new MpsDef(myName,newArgs,newTypes,newStateArgs,newStateTypes,*newBody,*newSucc,myPure);
+
+  // Clean up
+  delete newBody;
+  delete newSucc;
+  DeleteVector(newTypes);
+  DeleteVector(newStateTypes);
+
+  return result;
+} // }}}
+MpsTerm *MpsDef::MRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MRename(src,dst); // Succ is substituted immediately
+  MpsTerm *newBody = myBody->MRename(src,dst);
+
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myTypes.begin(); it!=myTypes.end(); ++it)
+    newTypes.push_back((*it)->MRename(src,dst));
+
+  vector<MpsMsgType*> newStateTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin(); it!=myStateTypes.end(); ++it)
+    newStateTypes.push_back((*it)->MRename(src,dst));
+
+  // Create result
+  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*newBody,*newSucc,myPure);
 
   delete newBody;
   delete newSucc;
+  DeleteVector(newTypes);
+  DeleteVector(newStateTypes);
   return result;
 } // }}}
 MpsTerm *MpsDef::ReIndex(const string &session, int pid, int maxpid) const // {{{
