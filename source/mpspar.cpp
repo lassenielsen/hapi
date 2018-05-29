@@ -333,6 +333,15 @@ MpsTerm *MpsPar::ERename(const string &src, const string &dst) const // {{{
   delete newRight;
   return result;
 } // }}}
+MpsTerm *MpsPar::MRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newLeft = myLeft->MRename(src,dst); // Rename in left term
+  MpsTerm *newRight = myRight->MRename(src,dst); // Rename in right term
+  MpsTerm *result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal()); // Combine renamed terms
+  delete newLeft;
+  delete newRight;
+  return result;
+} // }}}
 MpsTerm *MpsPar::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   MpsTerm *newLeft = myLeft->ReIndex(session,pid,maxpid); // Rename in left term

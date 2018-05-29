@@ -114,6 +114,17 @@ MpsTerm *MpsGuiValue::ERename(const string &src, const string &dst) const // {{{
 
   return result;
 } // }}}
+MpsTerm *MpsGuiValue::MRename(const string &src, const string &dst) const // {{{
+{
+  string newSession=mySession==mySession;
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
+  MpsGuiValue *result = new MpsGuiValue(myMaxpid, newSession, myPid, *myName, *myValue, *newSucc);
+
+  // Clean up
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsTerm *MpsGuiValue::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);

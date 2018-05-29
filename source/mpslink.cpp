@@ -158,6 +158,14 @@ MpsTerm *MpsLink::ERename(const string &src, const string &dst) const // {{{
   delete newSucc;
   return result;
 } // }}}
+MpsTerm *MpsLink::MRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
+
+  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsLink::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   // assert mySucc != NULL

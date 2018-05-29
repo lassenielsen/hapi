@@ -73,6 +73,9 @@ bool MpsSndType::SubSteps(vector<MpsStep> &dest) // {{{
   dest.push_back(MpsStep(event, paths));
   return false;
 } // }}}
+MpsTerm *MpsSndType::ApplyOther(const std::string &path) const // {{{
+{ return mySucc->Copy();
+} // }}}
 MpsTerm *MpsSndType::PRename(const string &src, const string &dst) const // {{{
 {
   MpsTerm *newSucc = mySucc->PRename(src,dst);

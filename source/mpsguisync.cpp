@@ -404,6 +404,55 @@ MpsTerm *MpsGuiSync::ERename(const string &src, const string &dst) const // {{{
 
   return result;
 } // }}}
+MpsTerm *MpsGuiSync::MRename(const string &src, const string &dst) const // {{{
+{
+  map<string, inputbranch> newBranches;
+  newBranches.clear();
+  string newSession=mySession==src?dst:mySession;
+  // ERename each branch
+  for (map<string,inputbranch>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    inputbranch newBranch;
+    newBranch.term = it->second.term->Copy(); // Copy branch-term
+    newBranch.assertion = it->second.assertion->Copy();
+    newBranch.names = it->second.names;
+    newBranch.types.clear();
+    for (vector<MpsMsgType*>::const_iterator type=it->second.types.begin(); type!=it->second.types.end(); ++type)
+      newBranch.types.push_back((*type)->MRename(src,dst));
+    newBranch.values.clear();
+    for (vector<MpsExp*>::const_iterator value=it->second.values.begin(); value!=it->second.values.end(); ++value)
+      newBranch.values.push_back((*value)->Copy());
+    // vector<string>::find
+    // Find new arguments, and rename if necessary
+    newBranch.args=it->second.args;
+    MpsTerm *tmpTerm = newBranch.term->MRename(src,dst); // Make substitution in body
+    delete newBranch.term;
+    newBranch.term=tmpTerm;
+
+    newBranches[it->first] = newBranch;
+  }
+  MpsGuiSync *result = new MpsGuiSync(myMaxpid, newSession, myPid, newBranches);
+
+  // Clean up
+  while (newBranches.size() > 0)
+  {
+    delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    while (newBranches.begin()->second.types.size()>0)
+    {
+      delete *newBranches.begin()->second.types.begin();
+      newBranches.begin()->second.types.erase(newBranches.begin()->second.types.begin());
+    }
+    while (newBranches.begin()->second.values.size()>0)
+    {
+      delete *newBranches.begin()->second.values.begin();
+      newBranches.begin()->second.values.erase(newBranches.begin()->second.values.begin());
+    }
+    newBranches.erase(newBranches.begin());
+  }
+
+  return result;
+} // }}}
 MpsTerm *MpsGuiSync::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   map<string, inputbranch> newBranches;

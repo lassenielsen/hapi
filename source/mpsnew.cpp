@@ -127,6 +127,13 @@ MpsTerm *MpsNew::ERename(const string &src, const string &dst) const // {{{
   delete newSucc;
   return result;
 } // }}}
+MpsTerm *MpsNew::MRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
+  MpsTerm *result = new MpsNew(myNames, *myType, *newSucc);
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsNew::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   for (int i=0; i<myNames.size(); ++i)

@@ -91,6 +91,17 @@ MpsHostStatement *MpsHostStatement::ERename(const string &src, const string &dst
 
   return result;
 } // }}}
+MpsHostStatement *MpsHostStatement::MRename(const string &src, const string &dst) const // {{{
+{
+  // Rename in succ
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
+
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc, myTypes, myPure);
+  // Clean up
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsHostStatement *MpsHostStatement::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   // assert mySucc != NULL

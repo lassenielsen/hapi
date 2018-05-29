@@ -45,6 +45,10 @@ MpsTerm *MpsEnd::ERename(const string &src, const string &dst) const // {{{
 {
   return Copy();
 } // }}}
+MpsTerm *MpsEnd::MRename(const string &src, const string &dst) const // {{{
+{
+  return Copy();
+} // }}}
 MpsTerm *MpsEnd::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   return Copy();

@@ -227,6 +227,17 @@ MpsTerm *MpsRcv::ERename(const string &src, const string &dst) const // {{{
   delete newSucc;
   return result;
 } // }}}
+MpsTerm *MpsRcv::MRename(const string &src, const string &dst) const // {{{
+{
+  // assert mySucc != NULL
+  MpsMsgType *newType = GetMsgType().MRename(src,dst);
+
+  MpsTerm *newSucc=mySucc->MRename(src,dst);
+  MpsTerm *result = new MpsRcv(myChannel, myDest, myPid, myMaxPid, *newSucc, *newType, GetFinal());
+  delete newType;
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsRcv::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   // assert mySucc != NULL

@@ -1206,6 +1206,103 @@ MpsGlobalSyncType *MpsGlobalSyncType::ESubst(const string &source, const MpsExp 
   return result;
 } // }}}
 
+// Non-Linear Type Substitution
+MpsGlobalMsgType *MpsGlobalMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsMsgType *newMsgType = myMsgType->MSubst(source,dest);
+
+  // Create newSucc and newAssertion
+  MpsGlobalType *newSucc=NULL;
+  MpsExp *newAssertion=NULL;
+  string newId;
+  set<string> fv=dest.FEV();
+  if (myAssertionType && fv.find(myId)!=fv.end()) // Rename myId before substituting
+  { newId = MpsExp::NewVar(myId);
+    MpsGlobalType *tmpSucc=mySucc->ERename(myId,newId);
+    newSucc=tmpSucc->MSubst(source,dest);
+    delete tmpSucc;
+    newAssertion = myAssertion->Rename(myId, newId);
+  }
+  else
+  { newId = myId;
+    newSucc = mySucc->MSubst(source,dest);
+    newAssertion = myAssertion->Copy();
+  }
+
+  // Create result
+  MpsGlobalMsgType *result = NULL;
+  if (myAssertionType)
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc, *newAssertion, newId);
+  else
+    result = new MpsGlobalMsgType(mySender, myReceiver, *newMsgType, *newSucc);
+
+  // Clean Up
+  delete newSucc;
+  delete newMsgType;
+  delete newAssertion;
+  return result;
+} // }}}
+MpsGlobalBranchType *MpsGlobalBranchType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  map<string,MpsGlobalType*> newBranches;
+  for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+    newBranches[it->first] = it->second->MSubst(source,dest);
+  MpsGlobalBranchType *result = new MpsGlobalBranchType(mySender, myReceiver, newBranches, myAssertions);
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsGlobalRecType *MpsGlobalRecType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  vector<TypeArg> newArgs;
+  for (vector<TypeArg>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+  { MpsMsgType *newType=it->myType->MSubst(source,dest);
+    newArgs.push_back(TypeArg(it->myName,*newType, *it->myValue));
+    delete newType;
+  }
+  //if (source == myName)
+  //  return new MpsGlobalRecType(myName,*mySucc,newArgs);
+  MpsGlobalRecType *result=NULL;
+  set<string> fv = dest.FGV();
+  if (fv.find(myName) != fv.end()) // Rename to avoid variable capturing
+  {
+    string newName=NewGVar();
+    MpsGlobalType *tmpSucc=mySucc->GRename(myName,newName);
+    MpsGlobalType *newSucc=tmpSucc->MSubst(source,dest);
+    delete tmpSucc;
+    result = new MpsGlobalRecType(newName,*newSucc,newArgs);
+    delete newSucc;
+  }
+  else // No rename is necessary
+  {
+    MpsGlobalType *newSucc=mySucc->MSubst(source,dest);
+    result= new MpsGlobalRecType(myName,*newSucc,newArgs);
+    delete newSucc;
+  }
+  return result;
+} // }}}
+MpsGlobalVarType *MpsGlobalVarType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsGlobalEndType *MpsGlobalEndType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsGlobalSyncType *MpsGlobalSyncType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  map<string,MpsGlobalType*> newBranches;
+  for (map<string,MpsGlobalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+    newBranches[it->first] = it->second->MSubst(source,dest);
+  // Substitute in assertions?
+  MpsGlobalSyncType *result = new MpsGlobalSyncType(newBranches,myAssertions);
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+
 // Rename all variables to unique names to avoid all name clashes
 MpsGlobalMsgType *MpsGlobalMsgType::RenameAll() const // {{{
 {
@@ -3557,6 +3654,105 @@ MpsLocalSyncType *MpsLocalSyncType::ESubst(const string &source, const MpsExp &d
   return result;
 } // }}}
 
+// Non-linear Type Substitution
+MpsLocalSendType *MpsLocalSendType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsMsgType *newMsgType = myMsgType->MSubst(source,dest);
+  MpsLocalType *newSucc = mySucc->MSubst(source,dest);
+  MpsLocalSendType *result = new MpsLocalSendType(myReceiver,*newMsgType,*newSucc);
+
+  // Clean Up
+  delete newSucc;
+  delete newMsgType;
+
+  return result;
+} // }}}
+MpsLocalRcvType *MpsLocalRcvType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsLocalType *newSucc = mySucc->MSubst(source,dest);
+  MpsMsgType *newMsgType = myMsgType->MSubst(source,dest);
+  MpsLocalRcvType *result = new MpsLocalRcvType(mySender,*newMsgType,*newSucc);
+
+  // Clean up
+  delete newSucc;
+  delete newMsgType;
+
+  return result;
+} // }}}
+MpsLocalForallType *MpsLocalForallType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsLocalType *newSucc = mySucc->MSubst(source,dest);
+  MpsLocalForallType *result = new MpsLocalForallType(myName, *myAssertion,*newSucc);
+  // Clean up
+  delete newSucc;
+  return result;
+} // }}}
+MpsLocalSelectType *MpsLocalSelectType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  map<string,MpsLocalType*> newBranches;
+  newBranches.clear();
+  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+    newBranches[it->first] = it->second->MSubst(source,dest);
+  MpsLocalSelectType *result = new MpsLocalSelectType(myReceiver,newBranches,myAssertions);
+
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsLocalBranchType *MpsLocalBranchType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  map<string,MpsLocalType*> newBranches;
+  newBranches.clear();
+  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+    newBranches[it->first] = it->second->MSubst(source,dest);
+  MpsLocalBranchType *result = new MpsLocalBranchType(mySender,newBranches,myAssertions);
+
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsLocalRecType *MpsLocalRecType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  vector<TypeArg> newArgs;
+  for (vector<TypeArg>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it)
+  {
+    MpsMsgType *newType = it->myType->MSubst(source, dest);
+    TypeArg newArg(it->myName, *newType, *it->myValue);
+    newArgs.push_back(newArg);
+    delete newType;
+  }
+  MpsLocalType *newSucc=mySucc->MSubst(source,dest);
+  MpsLocalRecType *result= new MpsLocalRecType(myName,*newSucc,newArgs);
+
+  // Clean Up
+  delete newSucc;
+
+  return result;
+} // }}}
+MpsLocalVarType *MpsLocalVarType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsLocalEndType *MpsLocalEndType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsLocalSyncType *MpsLocalSyncType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  map<string,MpsLocalType*> newBranches;
+  newBranches.clear();
+  for (map<string,MpsLocalType*>::const_iterator it=myBranches.begin();it!=myBranches.end();++it)
+    newBranches[it->first] = it->second->MSubst(source,dest);
+  MpsLocalSyncType *result = new MpsLocalSyncType(newBranches,myAssertions);
+
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
+
 // Rename all bindings
 MpsLocalSendType *MpsLocalSendType::RenameAll() const // {{{
 {
@@ -4970,11 +5166,11 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::ERename(const string &source
 // Global Type Substitution
 MpsMsgNoType *MpsMsgNoType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
-  return new MpsMsgNoType();
+  return Copy();
 } // }}}
 MpsIntMsgType *MpsIntMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
-  return new MpsIntMsgType();
+  return Copy();
 } // }}}
 MpsFloatMsgType *MpsFloatMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
@@ -5035,11 +5231,11 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::GSubst(const string &source,
 // Local Type Substitution
 MpsMsgNoType *MpsMsgNoType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
-  return new MpsMsgNoType();
+  return Copy();
 } // }}}
 MpsIntMsgType *MpsIntMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
-  return new MpsIntMsgType();
+  return Copy();
 } // }}}
 MpsFloatMsgType *MpsFloatMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
@@ -5154,6 +5350,71 @@ MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::ESubst(const string &source, c
 MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   MpsGlobalType *newType = myGlobalType->ESubst(source,dest);
+  MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
+
+  // Clean Up
+  delete newType;
+
+  return result;
+} // }}}
+
+// Non-linear Type Substitution
+MpsMsgNoType *MpsMsgNoType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsIntMsgType *MpsIntMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsFloatMsgType *MpsFloatMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsStringMsgType *MpsStringMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsBoolMsgType *MpsBoolMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsTupleMsgType *MpsTupleMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  vector<MpsMsgType*> newElements;
+  for (vector<MpsMsgType*>::const_iterator elt=myElements.begin(); elt!=myElements.end(); ++elt)
+    newElements.push_back((*elt)->MSubst(source,dest));
+
+  MpsTupleMsgType *result=new MpsTupleMsgType(newElements);
+
+  //Clean Up
+  DeleteVector(newElements);
+
+  return result;
+} // }}}
+MpsChannelMsgType *MpsChannelMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsGlobalType *newType=myType->MSubst(source,dest);
+  MpsChannelMsgType *result=new MpsChannelMsgType(*newType,myParticipants);
+
+  // Clean Up
+  delete newType;
+
+  return result;
+} // }}}
+MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsLocalType *newType = myType->MSubst(source,dest);
+  MpsDelegateLocalMsgType *result=new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
+
+  // Clean Up
+  delete newType;
+
+  return result;
+} // }}}
+MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsGlobalType *newType = myGlobalType->MSubst(source,dest);
   MpsDelegateGlobalMsgType *result=new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
 
   // Clean Up
