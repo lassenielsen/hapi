@@ -116,9 +116,8 @@ MpsTerm *MpsGuiValue::ERename(const string &src, const string &dst) const // {{{
 } // }}}
 MpsTerm *MpsGuiValue::MRename(const string &src, const string &dst) const // {{{
 {
-  string newSession=mySession==mySession;
   MpsTerm *newSucc = mySucc->MRename(src,dst);
-  MpsGuiValue *result = new MpsGuiValue(myMaxpid, newSession, myPid, *myName, *myValue, *newSucc);
+  MpsGuiValue *result = new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
 
   // Clean up
   delete newSucc;

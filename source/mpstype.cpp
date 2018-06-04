@@ -5163,6 +5163,57 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::ERename(const string &source
   return result;
 } // }}}
 
+// Rename Non-linear Type Variable
+MpsMsgNoType *MpsMsgNoType::MRename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsIntMsgType *MpsIntMsgType::MRename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsFloatMsgType *MpsFloatMsgType::MRename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsStringMsgType *MpsStringMsgType::MRename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsBoolMsgType *MpsBoolMsgType::MRename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsTupleMsgType *MpsTupleMsgType::MRename(const string &source, const string &dest) const // {{{
+{
+  vector<MpsMsgType*> newElements;
+  for (vector<MpsMsgType*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
+    newElements.push_back((*it)->MRename(source,dest));
+  MpsTupleMsgType *result = new MpsTupleMsgType(newElements);
+  DeleteVector(newElements);
+  return result;
+} // }}}
+MpsChannelMsgType *MpsChannelMsgType::MRename(const string &source, const string &dest) const // {{{
+{ MpsGlobalType *newType = myType->MRename(source,dest);
+  MpsChannelMsgType *result = new MpsChannelMsgType(*newType,myParticipants);
+  delete newType;
+  return result;
+} // }}}
+MpsDelegateLocalMsgType *MpsDelegateLocalMsgType::MRename(const string &source, const string &dest) const // {{{
+{
+  MpsLocalType *newType = myType->MRename(source,dest);
+  MpsDelegateLocalMsgType *result = new MpsDelegateLocalMsgType(*newType,GetPid(),GetParticipants());
+  delete newType;
+  return result;
+} // }}}
+MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::MRename(const string &source, const string &dest) const // {{{
+{
+  MpsGlobalType *newType = myGlobalType->MRename(source,dest);
+  MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*newType,GetPid(),GetParticipants());
+  delete newType;
+  return result;
+} // }}}
+
 // Global Type Substitution
 MpsMsgNoType *MpsMsgNoType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
