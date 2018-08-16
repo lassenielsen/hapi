@@ -217,6 +217,23 @@ MpsTerm *MpsSync::ERename(const string &src, const string &dst) const // {{{
 
   return result;
 } // }}}
+MpsTerm *MpsSync::MRename(const string &src, const string &dst) const // {{{
+{
+  map<string, MpsTerm*> newBranches;
+  // MRename each branch
+  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+  {
+    MpsTerm *newBranch = it->second->MRename(src,dst);
+    newBranches[it->first] = newBranch;
+  }
+
+  MpsTerm *result = new MpsSync(myMaxpid, mySession, newBranches, myAssertions);
+
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
 MpsTerm *MpsSync::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   map<string, MpsTerm*> newBranches;

@@ -712,7 +712,7 @@ class MpsLocalSyncType : public MpsLocalType // {{{
 class MpsLocalTypeSendType : public MpsLocalType // {{{
 {
   public:
-    MpsLocalTypeSendType(const std::string &dest, const MpsLocalType &succ);
+    MpsLocalTypeSendType(const std::string &dest, const MpsLocalType &succ, bool linear);
     virtual ~MpsLocalTypeSendType();
     MpsLocalTypeSendType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
@@ -736,17 +736,19 @@ class MpsLocalTypeSendType : public MpsLocalType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
 
     // Accessors
-    const MpsLocalType *GetSucc() const;
-    const std::string &GetDest() const;
+    const MpsLocalType *GetSucc() const { return mySucc; }
+    const std::string &GetDest() const { return myDest; }
+    const bool &IsLinear() const { return myLinear; }
 
   private:
     std::string myDest;
     MpsLocalType *mySucc;
+    bool myLinear;
 }; // }}}
 class MpsLocalTypeRcvType : public MpsLocalType // {{{
 {
   public:
-    MpsLocalTypeRcvType(const std::string dest, const MpsLocalType &succ);
+    MpsLocalTypeRcvType(const std::string &dest, const MpsLocalType &succ, bool linear);
     virtual ~MpsLocalTypeRcvType();
     MpsLocalTypeRcvType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const;
@@ -770,12 +772,14 @@ class MpsLocalTypeRcvType : public MpsLocalType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
 
     // Accessors
-    const MpsLocalType *GetSucc() const;
-    const std::string &GetDest() const;
+    const MpsLocalType *GetSucc() const { return mySucc; }
+    const std::string &GetDest() const { return myDest; }
+    const bool &IsLinear() const { return myLinear; }
 
   private:
     std::string myDest;
     MpsLocalType *mySucc;
+    bool myLinear;
 }; // }}}
 
 // DOCUMENTATION: MpsMsgType {{{

@@ -119,6 +119,13 @@ MpsTerm *MpsSelect::ERename(const string &src, const string &dst) const // {{{
   delete newSucc;
   return result;
 } // }}}
+MpsTerm *MpsSelect::MRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
+  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc, GetFinal());
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsSelect::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   // assert mySucc != NULL

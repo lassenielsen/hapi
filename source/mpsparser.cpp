@@ -664,25 +664,25 @@ MpsLocalType *MpsParser::Lact(const parsetree *tree, MpsLocalType *succ) // {{{
   } // }}}
   else if (tree->Case() == "lact_nltsnd") //  << nlvar ; {{{
   {
-    MpsLocalType *result = new MpsLocalTypeSendType(tree->Child(1)->Token().Content(),*succ);
+    MpsLocalType *result = new MpsLocalTypeSendType(tree->Child(1)->Token().Content(),*succ,false);
     delete succ;
     return result;
   } // }}}
   else if (tree->Case() == "lact_nltrcv") //  >> nlvar ; {{{
   {
-    MpsLocalType *result = new MpsLocalTypeRcvType(tree->Child(1)->Token().Content(),*succ);
+    MpsLocalType *result = new MpsLocalTypeRcvType(tree->Child(1)->Token().Content(),*succ,false);
     delete succ;
     return result;
   } // }}}
   else if (tree->Case() == "lact_ltsnd") //  << lvar ; {{{
   {
-    MpsLocalType *result = new MpsLocalTypeSendType(tree->Child(1)->Token().Content(),*succ);
+    MpsLocalType *result = new MpsLocalTypeSendType(tree->Child(1)->Token().Content(),*succ,true);
     delete succ;
     return result;
   } // }}}
   else if (tree->Case() == "lact_ltrcv") //  >> lvar ; {{{
   {
-    MpsLocalType *result = new MpsLocalTypeRcvType(tree->Child(1)->Token().Content(),*succ);
+    MpsLocalType *result = new MpsLocalTypeRcvType(tree->Child(1)->Token().Content(),*succ,true);
     delete succ;
     return result;
   } // }}}

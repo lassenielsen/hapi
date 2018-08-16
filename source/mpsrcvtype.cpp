@@ -121,10 +121,20 @@ MpsTerm *MpsRcvType::ERename(const string &src, const string &dst) const // {{{
   // assert mySucc != NULL
   string newSession=mySession==src?dst:mySession;
   if (src == myDest || dst==myDest) // Unexpected variable overlap
-    throw string("MpsRcvType::ERename name collision with NLVar: ")+ myDest;
+    throw string("MpsRcvType::ERename name collision with EVar: ")+ myDest;
 
   MpsTerm *newSucc=mySucc->ERename(src,dst);
   MpsTerm *result = new MpsRcvType(newSession, myDest, *newSucc, GetFinal());
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsRcvType::MRename(const string &src, const string &dst) const // {{{
+{
+  if (src == myDest || dst==myDest) // Unexpected variable overlap
+    throw string("MpsRcvType::ERename name collision with NLVar: ")+ myDest;
+
+  MpsTerm *newSucc=mySucc->MRename(src,dst);
+  MpsTerm *result = new MpsRcvType(mySession, myDest, *newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}

@@ -134,6 +134,13 @@ MpsTerm *MpsSnd::ERename(const string &src, const string &dst) const // {{{
   delete newExp;
   return result;
 } // }}}
+MpsTerm *MpsSnd::MRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newSucc = mySucc->ERename(src,dst);
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType(), GetFinal());
+  delete newSucc;
+  return result;
+} // }}}
 MpsTerm *MpsSnd::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);

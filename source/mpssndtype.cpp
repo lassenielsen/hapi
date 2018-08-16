@@ -93,6 +93,15 @@ MpsTerm *MpsSndType::ERename(const string &src, const string &dst) const // {{{
   delete newType;
   return result;
 } // }}}
+MpsTerm *MpsSndType::MRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
+  MpsMsgType *newType=myType->MRename(src,dst);
+  MpsTerm *result = new MpsSndType(mySession, *newType, *newSucc, GetFinal());
+  delete newSucc;
+  delete newType;
+  return result;
+} // }}}
 MpsTerm *MpsSndType::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
