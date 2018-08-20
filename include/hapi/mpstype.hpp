@@ -79,6 +79,7 @@ class MpsGlobalType // {{{
     virtual std::set<std::string> FGV() const = 0;
     virtual std::set<std::string> FLV() const = 0;
     virtual std::set<std::string> FEV() const = 0;
+    virtual std::set<std::string> FMV() const = 0;
     virtual MpsGlobalType *GRename(const std::string &from, const std::string &to) const = 0;
     virtual MpsGlobalType *LRename(const std::string &from, const std::string &to) const = 0;
     virtual MpsGlobalType *ERename(const std::string &source, const std::string &dest) const = 0;
@@ -117,6 +118,7 @@ class MpsGlobalMsgType : public MpsGlobalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsGlobalMsgType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalMsgType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalMsgType *ERename(const std::string &source, const std::string &dest) const;
@@ -154,6 +156,7 @@ class MpsGlobalBranchType : public MpsGlobalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsGlobalBranchType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalBranchType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalBranchType *ERename(const std::string &source, const std::string &dest) const;
@@ -187,6 +190,7 @@ class MpsGlobalRecType : public MpsGlobalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsGlobalRecType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalRecType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalRecType *ERename(const std::string &source, const std::string &dest) const;
@@ -219,6 +223,7 @@ class MpsGlobalVarType : public MpsGlobalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsGlobalVarType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalVarType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalVarType *ERename(const std::string &source, const std::string &dest) const;
@@ -250,6 +255,7 @@ class MpsGlobalEndType : public MpsGlobalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsGlobalEndType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalEndType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalEndType *ERename(const std::string &source, const std::string &dest) const;
@@ -277,6 +283,7 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsGlobalSyncType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalSyncType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalSyncType *ERename(const std::string &source, const std::string &dest) const;
@@ -299,7 +306,7 @@ class MpsGlobalSyncType : public MpsGlobalType // {{{
 class MpsGlobalTypeMsgType : public MpsGlobalType // {{{
 {
   public:
-    MpsGlobalTypeMsgType(int sender, const std::string &dest, const MpsGlobalType &succ);
+    MpsGlobalTypeMsgType(int sender, const std::string &dest, const MpsGlobalType &succ, bool linear);
     virtual ~MpsGlobalTypeMsgType();
     MpsGlobalTypeMsgType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const;
@@ -308,6 +315,7 @@ class MpsGlobalTypeMsgType : public MpsGlobalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsGlobalTypeMsgType *GRename(const std::string &from, const std::string &to) const;
     MpsGlobalTypeMsgType *LRename(const std::string &from, const std::string &to) const;
     MpsGlobalTypeMsgType *ERename(const std::string &source, const std::string &dest) const;
@@ -322,9 +330,11 @@ class MpsGlobalTypeMsgType : public MpsGlobalType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
     MpsLocalType *Project(int pid) const;
     int GetMaxPid() const;
+    bool IsLinear() { return myLinear; }
 
   private:
     int mySender;
+    bool myLinear;
     std::string myDest;
     MpsGlobalType *mySucc;
 }; // }}}
@@ -354,6 +364,7 @@ class MpsLocalType // {{{
     virtual std::set<std::string> FGV() const = 0;
     virtual std::set<std::string> FLV() const = 0;
     virtual std::set<std::string> FEV() const = 0;
+    virtual std::set<std::string> FMV() const = 0;
     virtual MpsLocalType *GRename(const std::string &from, const std::string &to) const = 0;
     virtual MpsLocalType *LRename(const std::string &from, const std::string &to) const = 0;
     virtual MpsLocalType *ERename(const std::string &from, const std::string &to) const = 0;
@@ -391,6 +402,7 @@ class MpsLocalSendType : public MpsLocalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsLocalSendType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalSendType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalSendType *ERename(const std::string &from, const std::string &to) const;
@@ -436,6 +448,7 @@ class MpsLocalRcvType : public MpsLocalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsLocalRcvType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalRcvType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalRcvType *ERename(const std::string &from, const std::string &to) const;
@@ -480,6 +493,7 @@ class MpsLocalForallType : public MpsLocalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsLocalForallType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalForallType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalForallType *ERename(const std::string &from, const std::string &to) const;
@@ -517,6 +531,7 @@ class MpsLocalSelectType : public MpsLocalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsLocalSelectType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalSelectType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalSelectType *ERename(const std::string &from, const std::string &to) const;
@@ -555,6 +570,7 @@ class MpsLocalBranchType : public MpsLocalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsLocalBranchType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalBranchType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalBranchType *ERename(const std::string &from, const std::string &to) const;
@@ -593,6 +609,7 @@ class MpsLocalRecType : public MpsLocalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsLocalRecType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalRecType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalRecType *ERename(const std::string &from, const std::string &to) const;
@@ -629,6 +646,7 @@ class MpsLocalVarType : public MpsLocalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsLocalVarType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalVarType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalVarType *ERename(const std::string &from, const std::string &to) const;
@@ -659,6 +677,7 @@ class MpsLocalEndType : public MpsLocalType // {{{
     std::set<std::string> FEV() const;
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
+    std::set<std::string> FMV() const;
     MpsLocalEndType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalEndType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalEndType *ERename(const std::string &from, const std::string &to) const;
@@ -685,6 +704,7 @@ class MpsLocalSyncType : public MpsLocalType // {{{
     std::set<std::string> FEV() const;
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
+    std::set<std::string> FMV() const;
     MpsLocalSyncType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalSyncType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalSyncType *ERename(const std::string &from, const std::string &to) const;
@@ -721,6 +741,7 @@ class MpsLocalTypeSendType : public MpsLocalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsLocalTypeSendType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalTypeSendType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalTypeSendType *ERename(const std::string &from, const std::string &to) const;
@@ -757,6 +778,7 @@ class MpsLocalTypeRcvType : public MpsLocalType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsLocalTypeRcvType *GRename(const std::string &from, const std::string &to) const;
     MpsLocalTypeRcvType *LRename(const std::string &from, const std::string &to) const;
     MpsLocalTypeRcvType *ERename(const std::string &from, const std::string &to) const;
@@ -804,6 +826,7 @@ class MpsMsgType // {{{
     virtual std::set<std::string> FLV() const=0;
     virtual std::set<std::string> FGV() const=0;
     virtual std::set<std::string> FEV() const=0;
+    virtual std::set<std::string> FMV() const=0;
     virtual MpsMsgType *GRename(const std::string &source, const std::string &dest) const=0;
     virtual MpsMsgType *LRename(const std::string &source, const std::string &dest) const=0;
     virtual MpsMsgType *ERename(const std::string &source, const std::string &dest) const=0;
@@ -839,6 +862,7 @@ class MpsMsgNoType : public MpsMsgType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsMsgNoType *GRename(const std::string &source, const std::string &dest) const;
     MpsMsgNoType *LRename(const std::string &source, const std::string &dest) const;
     MpsMsgNoType *ERename(const std::string &source, const std::string &dest) const;
@@ -865,6 +889,7 @@ class MpsVarMsgType : public MpsMsgType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsVarMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsVarMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsVarMsgType *ERename(const std::string &source, const std::string &dest) const;
@@ -891,6 +916,7 @@ class MpsIntMsgType : public MpsMsgType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsIntMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsIntMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsIntMsgType *ERename(const std::string &source, const std::string &dest) const;
@@ -917,6 +943,7 @@ class MpsFloatMsgType : public MpsMsgType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsFloatMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsFloatMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsFloatMsgType *ERename(const std::string &source, const std::string &dest) const;
@@ -943,6 +970,7 @@ class MpsStringMsgType : public MpsMsgType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsStringMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsStringMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsStringMsgType *ERename(const std::string &source, const std::string &dest) const;
@@ -969,6 +997,7 @@ class MpsBoolMsgType : public MpsMsgType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsBoolMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsBoolMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsBoolMsgType *ERename(const std::string &source, const std::string &dest) const;
@@ -995,6 +1024,7 @@ class MpsTupleMsgType : public MpsMsgType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsTupleMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsTupleMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsTupleMsgType *ERename(const std::string &source, const std::string &dest) const;
@@ -1027,6 +1057,7 @@ class MpsChannelMsgType : public MpsMsgType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsChannelMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsChannelMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsChannelMsgType *ERename(const std::string &source, const std::string &dest) const;
@@ -1062,6 +1093,7 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
     virtual std::set<std::string> FGV() const=0;
     virtual std::set<std::string> FLV() const=0;
     virtual std::set<std::string> FEV() const=0;
+    virtual std::set<std::string> FMV() const=0;
     virtual MpsDelegateMsgType *GRename(const std::string &source, const std::string &dest) const=0;
     virtual MpsDelegateMsgType *LRename(const std::string &source, const std::string &dest) const=0;
     virtual MpsDelegateMsgType *ERename(const std::string &source, const std::string &dest) const=0;
@@ -1096,6 +1128,7 @@ class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsDelegateLocalMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsDelegateLocalMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsDelegateLocalMsgType *ERename(const std::string &source, const std::string &dest) const;
@@ -1125,6 +1158,7 @@ class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegat
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
     MpsDelegateGlobalMsgType *GRename(const std::string &source, const std::string &dest) const;
     MpsDelegateGlobalMsgType *LRename(const std::string &source, const std::string &dest) const;
     MpsDelegateGlobalMsgType *ERename(const std::string &source, const std::string &dest) const;

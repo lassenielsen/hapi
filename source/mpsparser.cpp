@@ -535,14 +535,14 @@ MpsGlobalType *MpsParser::Gact(const parsetree *tree, MpsGlobalType *succ) { // 
   if (tree->Case() == "gact_nltmsg") // int : nlvar ; {{{
   { 
     int from = stoi(tree->Child(0)->Token().Content());
-    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ);
+    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ, false);
     delete succ;
     return result;
   } // }}}
   if (tree->Case() == "gact_ltmsg") // int : lvar ; {{{
   { 
     int from = stoi(tree->Child(0)->Token().Content());
-    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ);
+    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ, true);
     delete succ;
     return result;
   } // }}}
