@@ -28,9 +28,9 @@
   }
 
 #define $list \
-  2:$x; \
-  2->1:$anyleq($x)(1 pure,2); \
-  $anylist($x);
+  2:#x; \
+  2->1:$anyleq(#x)(1 pure,2); \
+  $anylist(#x);
 $list(1 pure,2) list;
 local pure service List($list (1 of 1 pure, 2) s) // Implement list {{{
 ( s[2]>>$t;

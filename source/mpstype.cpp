@@ -8,6 +8,7 @@ using namespace hapi;
 
 int MpsLocalType::ourNextId = 1;
 int MpsGlobalType::ourNextId = 1;
+int MpsMsgType::ourNextId = 1;
 
 string MpsLocalType::NewLVar(string basename) // {{{
 {
@@ -17,7 +18,13 @@ string MpsLocalType::NewLVar(string basename) // {{{
 } // }}}
 string MpsGlobalType::NewGVar(string orig) // {{{
 {
-  string result = "~$x";
+  string result = (string)"~$"+orig;
+  result += int2string(ourNextId);
+  return result;
+} // }}}
+string MpsMsgType::NewMVar(string orig) // {{{
+{
+  string result = (string)"~#"+orig;
   result += int2string(ourNextId);
   return result;
 } // }}}
@@ -78,6 +85,13 @@ MpsGlobalSyncType::MpsGlobalSyncType(const std::map<std::string,MpsGlobalType*> 
   for (map<string,MpsExp*>::const_iterator it=assertions.begin(); it!=assertions.end(); ++it)
     myAssertions[it->first] = it->second->Copy();
 } // }}}
+MpsGlobalTypeMsgType::MpsGlobalTypeMsgType(int sender, const string &dest, const MpsGlobalType &succ, bool linear) // {{{
+: mySender(sender)
+, myDest(dest)
+, myLinear(linear)
+, mySucc(succ.Copy())
+{
+} // }}}
 
 // Destructors
 MpsGlobalType::~MpsGlobalType() // {{{
@@ -110,6 +124,10 @@ MpsGlobalSyncType::~MpsGlobalSyncType() // {{{
   DeleteMap(myBranches);
   DeleteMap(myAssertions);
 } // }}}
+MpsGlobalTypeMsgType::~MpsGlobalTypeMsgType() // {{{
+{
+  delete mySucc;
+} // }}}
 
 // Make Deep Copy
 MpsGlobalMsgType *MpsGlobalMsgType::Copy() const// {{{
@@ -138,6 +156,10 @@ MpsGlobalEndType *MpsGlobalEndType::Copy() const // {{{
 MpsGlobalSyncType *MpsGlobalSyncType::Copy() const // {{{
 {
   return new MpsGlobalSyncType(myBranches, myAssertions);
+} // }}}
+MpsGlobalTypeMsgType *MpsGlobalTypeMsgType::Copy() const// {{{
+{
+  return new MpsGlobalTypeMsgType(mySender, myDest, *mySucc, IsLinear());
 } // }}}
 
 // TODO: Improve equality to co-inductive type equality and subtyping
@@ -371,6 +393,27 @@ bool MpsGlobalSyncType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) con
   // All checks passed
   return true;
 } // }}}
+bool MpsGlobalTypeMsgType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) const // {{{
+{
+  const MpsGlobalTypeMsgType *rhsptr=dynamic_cast<const MpsGlobalTypeMsgType*>(&rhs);
+  if (rhsptr==NULL)
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"RHS not type-message");
+  if (mySender != rhsptr->mySender ||
+      myDest != rhsptr->myDest ||
+      myLinear != rhsptr->myLinear)
+    return ERROR_GLOBALEQ(Theta,*this,rhs,"Head mismatch");
+
+  // Rename to common name in Assertions
+  string newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+  // Rename to common name in Succ
+  MpsGlobalType *lhsSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
+  MpsGlobalType *rhsSucc=IsLinear()?rhsptr->mySucc->LRename(rhsptr->myDest,newDest):rhsptr->mySucc->MRename(rhsptr->myDest,newDest);;
+  bool checkSucc=lhsSucc->Equal(Theta,*rhsSucc);
+  delete lhsSucc;
+  delete rhsSucc;
+
+  return checkSucc;
+} // }}}
 
 // Free Global Type Variables
 set<string> MpsGlobalMsgType::FGV() const // {{{
@@ -420,6 +463,10 @@ set<string> MpsGlobalSyncType::FGV() const // {{{
   }
   return result;
 } // }}}
+set<string> MpsGlobalTypeMsgType::FGV() const // {{{
+{
+  return mySucc->FGV();
+} // }}}
 
 // Free Local Type Variables
 set<string> MpsGlobalMsgType::FLV() const // {{{
@@ -464,6 +511,13 @@ set<string> MpsGlobalSyncType::FLV() const // {{{
     set<string> flv = it->second->FLV();
     result.insert(flv.begin(),flv.end());
   }
+  return result;
+} // }}}
+set<string> MpsGlobalTypeMsgType::FLV() const // {{{
+{
+  set<string> result=mySucc->FLV();
+  if (IsLinear())
+    result.insert(myDest);
   return result;
 } // }}}
 
@@ -536,6 +590,10 @@ set<string> MpsGlobalSyncType::FEV() const // {{{
   }
   return result;
 } // }}}
+set<string> MpsGlobalTypeMsgType::FEV() const // {{{
+{
+  return mySucc->FEV();
+} // }}}
 
 // Free Message Type Variables
 set<string> MpsGlobalMsgType::FMV() const // {{{
@@ -581,6 +639,13 @@ set<string> MpsGlobalSyncType::FMV() const // {{{
     set<string> fgv = it->second->FGV();
     result.insert(fgv.begin(),fgv.end());
   }
+  return result;
+} // }}}
+set<string> MpsGlobalTypeMsgType::FMV() const // {{{
+{
+  set<string> result=mySucc->FMV();
+  if (!IsLinear())
+    result.insert(myDest);
   return result;
 } // }}}
 
@@ -664,6 +729,29 @@ MpsGlobalSyncType *MpsGlobalSyncType::GRename(const string &from, const string &
 
   return result;
 } // }}}
+MpsGlobalTypeMsgType *MpsGlobalTypeMsgType::GRename(const string &from, const string &to) const // {{{
+{ if (myDest==from)
+    return Copy();
+  string newDest;
+  MpsGlobalType *tmpSucc;
+  if (myDest==to)
+  { // rename myDest
+    newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+    tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
+  }
+  else
+  { newDest=myDest;
+    tmpSucc=mySucc->Copy();
+  }
+
+  MpsGlobalType *newSucc = tmpSucc->GRename(from,to);
+  delete tmpSucc;
+
+  MpsGlobalTypeMsgType *result = new MpsGlobalTypeMsgType(mySender, newDest, *newSucc, IsLinear());
+  delete newSucc;
+
+  return result;
+} // }}}
 
 // Rename Local Type Variable
 MpsGlobalMsgType *MpsGlobalMsgType::LRename(const string &from, const string &to) const // {{{
@@ -727,6 +815,29 @@ MpsGlobalSyncType *MpsGlobalSyncType::LRename(const string &from, const string &
   MpsGlobalSyncType *result = new MpsGlobalSyncType(newBranches,myAssertions);
   // Clean up
   DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsGlobalTypeMsgType *MpsGlobalTypeMsgType::LRename(const string &from, const string &to) const // {{{
+{ if (myDest==from)
+    return Copy();
+  string newDest;
+  MpsGlobalType *tmpSucc;
+  if (myDest==to)
+  { // rename myDest
+    newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+    tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
+  }
+  else
+  { newDest=myDest;
+    tmpSucc=mySucc->Copy();
+  }
+
+  MpsGlobalType *newSucc = tmpSucc->LRename(from,to);
+  delete tmpSucc;
+
+  MpsGlobalTypeMsgType *result = new MpsGlobalTypeMsgType(mySender, newDest, *newSucc, IsLinear());
+  delete newSucc;
 
   return result;
 } // }}}
@@ -840,6 +951,29 @@ MpsGlobalSyncType *MpsGlobalSyncType::ERename(const string &from, const string &
 
   return result;
 } // }}}
+MpsGlobalTypeMsgType *MpsGlobalTypeMsgType::ERename(const string &from, const string &to) const // {{{
+{ if (myDest==from)
+    return Copy();
+  string newDest;
+  MpsGlobalType *tmpSucc;
+  if (myDest==to)
+  { // rename myDest
+    newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+    tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
+  }
+  else
+  { newDest=myDest;
+    tmpSucc=mySucc->Copy();
+  }
+
+  MpsGlobalType *newSucc = tmpSucc->ERename(from,to);
+  delete tmpSucc;
+
+  MpsGlobalTypeMsgType *result = new MpsGlobalTypeMsgType(mySender, newDest, *newSucc, IsLinear());
+  delete newSucc;
+
+  return result;
+} // }}}
 
 // Rename Non-linear Type Variable
 MpsGlobalMsgType *MpsGlobalMsgType::MRename(const string &from, const string &to) const // {{{
@@ -918,6 +1052,29 @@ MpsGlobalSyncType *MpsGlobalSyncType::MRename(const string &from, const string &
   MpsGlobalSyncType *result = new MpsGlobalSyncType(newBranches,myAssertions);
   // Clean up
   DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsGlobalTypeMsgType *MpsGlobalTypeMsgType::MRename(const string &from, const string &to) const // {{{
+{ if (myDest==from)
+    return Copy();
+  string newDest;
+  MpsGlobalType *tmpSucc;
+  if (myDest==to)
+  { // rename myDest
+    newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+    tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
+  }
+  else
+  { newDest=myDest;
+    tmpSucc=mySucc->Copy();
+  }
+
+  MpsGlobalType *newSucc = tmpSucc->MRename(from,to);
+  delete tmpSucc;
+
+  MpsGlobalTypeMsgType *result = new MpsGlobalTypeMsgType(mySender, newDest, *newSucc, IsLinear());
+  delete newSucc;
 
   return result;
 } // }}}
@@ -1034,6 +1191,33 @@ MpsGlobalSyncType *MpsGlobalSyncType::GSubst(const string &source, const MpsGlob
 
   return result;
 } // }}}
+MpsGlobalTypeMsgType *MpsGlobalTypeMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
+{
+  if (source == myDest)
+    return Copy();
+
+  string newDest;
+  MpsGlobalType *tmpSucc=NULL;
+  set<string> fv = IsLinear()?dest.FLV():dest.FMV();
+  if (fv.find(myDest) != fv.end()) // Rename to avoid variable capturing
+  { // rename myDest
+    newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+    tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
+  }
+  else // No rename is necessary
+  { newDest=myDest;
+    tmpSucc=mySucc->Copy();
+  }
+
+  // Perform substitution
+  MpsGlobalType *newSucc=tmpSucc->GSubst(source,dest,args);
+  delete tmpSucc;
+  MpsGlobalTypeMsgType *result = new MpsGlobalTypeMsgType(mySender,newDest,*newSucc,IsLinear());
+
+  // Clean Up
+  delete newSucc;
+  return result;
+} // }}}
 
 // Local Type Substitution
 MpsGlobalMsgType *MpsGlobalMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
@@ -1117,6 +1301,33 @@ MpsGlobalSyncType *MpsGlobalSyncType::LSubst(const string &source, const MpsLoca
   // Clean up
   DeleteMap(newBranches);
 
+  return result;
+} // }}}
+MpsGlobalTypeMsgType *MpsGlobalTypeMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
+{
+  if (source == myDest)
+    return Copy();
+
+  string newDest;
+  MpsGlobalType *tmpSucc=NULL;
+  set<string> fv = IsLinear()?dest.FLV():dest.FMV();
+  if (fv.find(myDest) != fv.end()) // Rename to avoid variable capturing
+  { // rename myDest
+    newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+    tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
+  }
+  else // No rename is necessary
+  { newDest=myDest;
+    tmpSucc=mySucc->Copy();
+  }
+
+  // Perform substitution
+  MpsGlobalType *newSucc=tmpSucc->LSubst(source,dest,args);
+  delete tmpSucc;
+  MpsGlobalTypeMsgType *result = new MpsGlobalTypeMsgType(mySender,newDest,*newSucc,IsLinear());
+
+  // Clean Up
+  delete newSucc;
   return result;
 } // }}}
 
@@ -1252,6 +1463,33 @@ MpsGlobalSyncType *MpsGlobalSyncType::ESubst(const string &source, const MpsExp 
 
   return result;
 } // }}}
+MpsGlobalTypeMsgType *MpsGlobalTypeMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
+{
+  if (source == myDest)
+    return Copy();
+
+  string newDest;
+  MpsGlobalType *tmpSucc=NULL;
+  set<string> fv = dest.FV();
+  if (fv.find(myDest) != fv.end()) // Rename to avoid variable capturing
+  { // rename myDest
+    newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+    tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
+  }
+  else // No rename is necessary
+  { newDest=myDest;
+    tmpSucc=mySucc->Copy();
+  }
+
+  // Perform substitution
+  MpsGlobalType *newSucc=tmpSucc->ESubst(source,dest);
+  delete tmpSucc;
+  MpsGlobalTypeMsgType *result = new MpsGlobalTypeMsgType(mySender,newDest,*newSucc,IsLinear());
+
+  // Clean Up
+  delete newSucc;
+  return result;
+} // }}}
 
 // Non-Linear Type Substitution
 MpsGlobalMsgType *MpsGlobalMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
@@ -1349,6 +1587,33 @@ MpsGlobalSyncType *MpsGlobalSyncType::MSubst(const string &source, const MpsMsgT
 
   return result;
 } // }}}
+MpsGlobalTypeMsgType *MpsGlobalTypeMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  if (source == myDest)
+    return Copy();
+
+  string newDest;
+  MpsGlobalType *tmpSucc=NULL;
+  set<string> fv = IsLinear()?dest.FLV():dest.FMV();
+  if (fv.find(myDest) != fv.end()) // Rename to avoid variable capturing
+  { // rename myDest
+    newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+    tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
+  }
+  else // No rename is necessary
+  { newDest=myDest;
+    tmpSucc=mySucc->Copy();
+  }
+
+  // Perform substitution
+  MpsGlobalType *newSucc=tmpSucc->MSubst(source,dest);
+  delete tmpSucc;
+  MpsGlobalTypeMsgType *result = new MpsGlobalTypeMsgType(mySender,newDest,*newSucc,IsLinear());
+
+  // Clean Up
+  delete newSucc;
+  return result;
+} // }}}
 
 // Rename all variables to unique names to avoid all name clashes
 MpsGlobalMsgType *MpsGlobalMsgType::RenameAll() const // {{{
@@ -1440,6 +1705,20 @@ MpsGlobalSyncType *MpsGlobalSyncType::RenameAll() const // {{{
 
   // Clean up
   DeleteMap(newBranches);
+
+  return result;
+} // }}}
+MpsGlobalTypeMsgType *MpsGlobalTypeMsgType::RenameAll() const // {{{
+{
+  // Create new id for assertion
+  string newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+  MpsGlobalType *tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
+  MpsGlobalType *newSucc=tmpSucc->RenameAll();
+  delete tmpSucc;
+  MpsGlobalTypeMsgType *result=new MpsGlobalTypeMsgType(mySender, newDest, *newSucc, IsLinear());
+
+  // Clean Up
+  delete newSucc;
 
   return result;
 } // }}}
@@ -1546,6 +1825,13 @@ string MpsGlobalSyncType::ToString(const string &indent) const// {{{
 
   return result;
 } // }}}
+string MpsGlobalTypeMsgType::ToString(const string &indent) const// {{{
+{
+  string result
+    = int2string(mySender) + ":" + myDest + ";\n"
+    + indent + mySucc->ToString(indent);
+  return result;
+} // }}}
 
 // Make string representation with Latex markup
 string MpsGlobalMsgType::ToTex(int indent, int sw) const// {{{
@@ -1646,6 +1932,13 @@ string MpsGlobalSyncType::ToTex(int indent, int sw) const// {{{
   result += (string)"\\newline\n"
           + ToTex_Hspace(indent,sw) + "\\}";
 
+  return result;
+} // }}}
+string MpsGlobalTypeMsgType::ToTex(int indent, int sw) const// {{{
+{
+  string result
+    = ToTex_PP(mySender) + ":" + ToTex_Var(myDest) + ";\\newline\n"
+    + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
   return result;
 } // }}}
 
@@ -1753,6 +2046,20 @@ MpsLocalType *MpsGlobalSyncType::Project(int pid) const // {{{
 
   return result;
 } // }}}
+MpsLocalType *MpsGlobalTypeMsgType::Project(int pid) const // {{{
+{
+  MpsLocalType *succ = mySucc->Project(pid);
+  MpsLocalType * result=NULL;
+  if (pid==mySender)
+    result = new MpsLocalTypeSendType(myDest,*succ,IsLinear());
+  else
+    result = new MpsLocalTypeRcvType(myDest,*succ,IsLinear());
+
+  // Clean up
+  delete succ;
+
+  return result;
+} // }}}
 
 // Find Max(Pids(G))
 int MpsGlobalMsgType::GetMaxPid() const // {{{
@@ -1799,6 +2106,13 @@ int MpsGlobalSyncType::GetMaxPid() const // {{{
     if (succmax > maxpid)
       maxpid = succmax;
   }
+  return maxpid;
+} // }}}
+int MpsGlobalTypeMsgType::GetMaxPid() const // {{{
+{
+  int maxpid = mySucc->GetMaxPid();
+  if (mySender > maxpid)
+    maxpid = mySender;
   return maxpid;
 } // }}}
 
@@ -2442,18 +2756,18 @@ bool MpsLocalTypeSendType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) c
     MpsLocalTypeSendType *newSucc=NULL;
     MpsLocalTypeSendType *newRhsSucc=NULL;
     bool result;
-    string newId = MpsExp::NewVar(myDest);
+    string newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
     if (IsLinear()) // Linear type
-    { MpsLocalType *newSucc=mySucc->LRename(myDest,newId);
-      MpsLocalType *newRhsSucc=rhsptr->GetSucc()->LRename(rhsptr->GetDest(),newId);
+    { MpsLocalType *newSucc=mySucc->LRename(myDest,newDest);
+      MpsLocalType *newRhsSucc=rhsptr->GetSucc()->LRename(rhsptr->GetDest(),newDest);
       result=newSucc->Equal(Theta,*newRhsSucc);
       delete newSucc;
       delete newRhsSucc;
       return result;
     }
     else
-    { MpsLocalType *newSucc=mySucc->MRename(myDest,newId);
-      MpsLocalType *newRhsSucc=rhsptr->GetSucc()->MRename(rhsptr->GetDest(),newId);
+    { MpsLocalType *newSucc=mySucc->MRename(myDest,newDest);
+      MpsLocalType *newRhsSucc=rhsptr->GetSucc()->MRename(rhsptr->GetDest(),newDest);
       result=newSucc->Equal(Theta,*newRhsSucc);
       delete newSucc;
       delete newRhsSucc;
@@ -2480,18 +2794,18 @@ bool MpsLocalTypeRcvType::Equal(const MpsExp &Theta, const MpsLocalType &rhs) co
     MpsLocalTypeSendType *newSucc=NULL;
     MpsLocalTypeSendType *newRhsSucc=NULL;
     bool result;
-    string newId = MpsExp::NewVar(myDest);
+    string newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
     if (IsLinear()) // Linear type
-    { MpsLocalType *newSucc=mySucc->LRename(myDest,newId);
-      MpsLocalType *newRhsSucc=rhsptr->GetSucc()->LRename(rhsptr->GetDest(),newId);
+    { MpsLocalType *newSucc=mySucc->LRename(myDest,newDest);
+      MpsLocalType *newRhsSucc=rhsptr->GetSucc()->LRename(rhsptr->GetDest(),newDest);
       result=newSucc->Equal(Theta,*newRhsSucc);
       delete newSucc;
       delete newRhsSucc;
       return result;
     }
     else
-    { MpsLocalType *newSucc=mySucc->MRename(myDest,newId);
-      MpsLocalType *newRhsSucc=rhsptr->GetSucc()->MRename(rhsptr->GetDest(),newId);
+    { MpsLocalType *newSucc=mySucc->MRename(myDest,newDest);
+      MpsLocalType *newRhsSucc=rhsptr->GetSucc()->MRename(rhsptr->GetDest(),newDest);
       result=newSucc->Equal(Theta,*newRhsSucc);
       delete newSucc;
       delete newRhsSucc;
@@ -2999,21 +3313,21 @@ MpsLocalTypeSendType *MpsLocalTypeSendType::GRename(const string &from, const st
     return Copy();
 
   MpsLocalType *tmpSucc;
-  string tmpDest;
+  string newDest;
 
   if (!IsLinear() && to==myDest)
-  { tmpDest=MpsExp::NewVar(myDest);
-    tmpSucc=mySucc->GRename(myDest,tmpDest);
+  { newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+    tmpSucc=mySucc->GRename(myDest,newDest);
   }
   else
-  { tmpDest=myDest;
+  { newDest=myDest;
     tmpSucc=mySucc->Copy();
   }
 
   MpsLocalType *newSucc=tmpSucc->GRename(from,to);
   delete tmpSucc;
 
-  MpsLocalTypeSendType *result=new MpsLocalTypeSendType(tmpDest, *newSucc, myLinear);
+  MpsLocalTypeSendType *result=new MpsLocalTypeSendType(newDest, *newSucc, myLinear);
 
   // Clean Up
   delete newSucc;
@@ -3024,21 +3338,21 @@ MpsLocalTypeRcvType *MpsLocalTypeRcvType::GRename(const string &from, const stri
     return Copy();
 
   MpsLocalType *tmpSucc;
-  string tmpDest;
+  string newDest;
 
   if (!IsLinear() && to==myDest)
-  { tmpDest=MpsExp::NewVar(myDest);
-    tmpSucc=mySucc->GRename(myDest,tmpDest);
+  { newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
+    tmpSucc=mySucc->GRename(myDest,newDest);
   }
   else
-  { tmpDest=myDest;
+  { newDest=myDest;
     tmpSucc=mySucc->Copy();
   }
 
   MpsLocalType *newSucc=tmpSucc->GRename(from,to);
   delete tmpSucc;
 
-  MpsLocalTypeRcvType *result=new MpsLocalTypeRcvType(myDest, *newSucc, myLinear);
+  MpsLocalTypeRcvType *result=new MpsLocalTypeRcvType(newDest, *newSucc, myLinear);
 
   // Clean Up
   delete newSucc;
@@ -3590,21 +3904,21 @@ MpsLocalTypeSendType *MpsLocalTypeSendType::MRename(const string &from, const st
     return Copy();
 
   MpsLocalType *tmpSucc;
-  string tmpDest;
+  string newDest;
 
   if (!IsLinear() && to==myDest)
-  { tmpDest=MpsExp::NewVar(myDest);
-    tmpSucc=mySucc->MRename(myDest,tmpDest);
+  { newDest=MpsMsgType::NewMVar(myDest);
+    tmpSucc=mySucc->MRename(myDest,newDest);
   }
   else
-  { tmpDest=myDest;
+  { newDest=myDest;
     tmpSucc=mySucc->Copy();
   }
 
   MpsLocalType *newSucc=tmpSucc->MRename(from,to);
   delete tmpSucc;
 
-  MpsLocalTypeSendType *result=new MpsLocalTypeSendType(tmpDest, *newSucc, myLinear);
+  MpsLocalTypeSendType *result=new MpsLocalTypeSendType(newDest, *newSucc, myLinear);
 
   // Clean Up
   delete newSucc;
@@ -3615,21 +3929,21 @@ MpsLocalTypeRcvType *MpsLocalTypeRcvType::MRename(const string &from, const stri
     return Copy();
 
   MpsLocalType *tmpSucc;
-  string tmpDest;
+  string newDest;
 
   if (!IsLinear() && to==myDest)
-  { tmpDest=MpsExp::NewVar(myDest);
-    tmpSucc=mySucc->MRename(myDest,tmpDest);
+  { newDest=MpsMsgType::NewMVar(myDest);
+    tmpSucc=mySucc->MRename(myDest,newDest);
   }
   else
-  { tmpDest=myDest;
+  { newDest=myDest;
     tmpSucc=mySucc->Copy();
   }
 
   MpsLocalType *newSucc=tmpSucc->MRename(from,to);
   delete tmpSucc;
 
-  MpsLocalTypeRcvType *result=new MpsLocalTypeRcvType(myDest, *newSucc, myLinear);
+  MpsLocalTypeRcvType *result=new MpsLocalTypeRcvType(newDest, *newSucc, myLinear);
 
   // Clean Up
   delete newSucc;
@@ -3740,24 +4054,24 @@ MpsLocalTypeSendType *MpsLocalTypeSendType::GSubst(const string &source, const M
     return Copy();
 
   MpsLocalType *tmpSucc;
-  string tmpDest;
+  string newDest;
 
   set<string> fv = dest.FGV();
   if (!IsLinear() && fv.find(myDest)!=fv.end())
   { // Renaming is necessary
-    tmpDest=MpsExp::NewVar(myDest);
-    tmpSucc=mySucc->GRename(myDest,tmpDest);
+    newDest=MpsMsgType::NewMVar(myDest);
+    tmpSucc=mySucc->GRename(myDest,newDest);
   }
   else
   { // Renaming unnecessary
-    tmpDest=myDest;
+    newDest=myDest;
     tmpSucc=mySucc->Copy();
   }
 
   MpsLocalType *newSucc = tmpSucc->GSubst(source,dest,args);
   delete tmpSucc;
 
-  MpsLocalTypeSendType *result = new MpsLocalTypeSendType(tmpDest,*newSucc,IsLinear());
+  MpsLocalTypeSendType *result = new MpsLocalTypeSendType(newDest,*newSucc,IsLinear());
 
   // Clean up
   delete newSucc;
@@ -3770,24 +4084,24 @@ MpsLocalTypeRcvType *MpsLocalTypeRcvType::GSubst(const string &source, const Mps
     return Copy();
 
   MpsLocalType *tmpSucc;
-  string tmpDest;
+  string newDest;
 
   set<string> fv = dest.FGV();
   if (!IsLinear() && fv.find(myDest)!=fv.end())
   { // Renaming is necessary
-    tmpDest=MpsExp::NewVar(myDest);
-    tmpSucc=mySucc->GRename(myDest,tmpDest);
+    newDest=MpsMsgType::NewMVar(myDest);
+    tmpSucc=mySucc->GRename(myDest,newDest);
   }
   else
   { // Renaming unnecessary
-    tmpDest=myDest;
+    newDest=myDest;
     tmpSucc=mySucc->Copy();
   }
 
   MpsLocalType *newSucc = tmpSucc->GSubst(source,dest,args);
   delete tmpSucc;
 
-  MpsLocalTypeRcvType *result = new MpsLocalTypeRcvType(tmpDest,*newSucc,IsLinear());
+  MpsLocalTypeRcvType *result = new MpsLocalTypeRcvType(newDest,*newSucc,IsLinear());
 
   // Clean up
   delete newSucc;
@@ -3923,24 +4237,24 @@ MpsLocalTypeSendType *MpsLocalTypeSendType::LSubst(const string &source, const M
     return Copy();
 
   MpsLocalType *tmpSucc;
-  string tmpDest;
+  string newDest;
 
   set<string> fv = dest.FGV();
   if (IsLinear() && fv.find(myDest)!=fv.end())
   { // Renaming is necessary
-    tmpDest=NewLVar(myDest);
-    tmpSucc=mySucc->LRename(myDest,tmpDest);
+    newDest=NewLVar(myDest);
+    tmpSucc=mySucc->LRename(myDest,newDest);
   }
   else
   { // Renaming unnecessary
-    tmpDest=myDest;
+    newDest=myDest;
     tmpSucc=mySucc->Copy();
   }
 
   MpsLocalType *newSucc = tmpSucc->LSubst(source,dest,args);
   delete tmpSucc;
 
-  MpsLocalTypeSendType *result = new MpsLocalTypeSendType(tmpDest,*newSucc,IsLinear());
+  MpsLocalTypeSendType *result = new MpsLocalTypeSendType(newDest,*newSucc,IsLinear());
 
   // Clean up
   delete newSucc;
@@ -3953,24 +4267,24 @@ MpsLocalTypeRcvType *MpsLocalTypeRcvType::LSubst(const string &source, const Mps
     return Copy();
 
   MpsLocalType *tmpSucc;
-  string tmpDest;
+  string newDest;
 
   set<string> fv = dest.FGV();
   if (IsLinear() && fv.find(myDest)!=fv.end())
   { // Renaming is necessary
-    tmpDest=NewLVar(myDest);
-    tmpSucc=mySucc->LRename(myDest,tmpDest);
+    newDest=NewLVar(myDest);
+    tmpSucc=mySucc->LRename(myDest,newDest);
   }
   else
   { // Renaming unnecessary
-    tmpDest=myDest;
+    newDest=myDest;
     tmpSucc=mySucc->Copy();
   }
 
   MpsLocalType *newSucc = tmpSucc->LSubst(source,dest,args);
   delete tmpSucc;
 
-  MpsLocalTypeRcvType *result = new MpsLocalTypeRcvType(tmpDest,*newSucc,IsLinear());
+  MpsLocalTypeRcvType *result = new MpsLocalTypeRcvType(newDest,*newSucc,IsLinear());
 
   // Clean up
   delete newSucc;
@@ -4218,7 +4532,7 @@ MpsLocalTypeSendType *MpsLocalTypeSendType::ESubst(const string &source, const M
       MpsLocalType *tmpSucc=mySucc->LRename(myDest,newDest);
     }
     else
-    { newDest=MpsExp::NewVar(myDest);
+    { newDest=MpsMsgType::NewMVar(myDest);
       tmpSucc=mySucc->MRename(myDest,newDest);
     }
   }
@@ -4251,7 +4565,7 @@ MpsLocalTypeRcvType *MpsLocalTypeRcvType::ESubst(const string &source, const Mps
       MpsLocalType *tmpSucc=mySucc->LRename(myDest,newDest);
     }
     else
-    { newDest=MpsExp::NewVar(myDest);
+    { newDest=MpsMsgType::NewMVar(myDest);
       tmpSucc=mySucc->MRename(myDest,newDest);
     }
   }
@@ -4383,7 +4697,7 @@ MpsLocalTypeSendType *MpsLocalTypeSendType::MSubst(const string &source, const M
       MpsLocalType *tmpSucc=mySucc->LRename(myDest,newDest);
     }
     else
-    { newDest=MpsExp::NewVar(myDest);
+    { newDest=MpsMsgType::NewMVar(myDest);
       tmpSucc=mySucc->MRename(myDest,newDest);
     }
   }
@@ -4416,7 +4730,7 @@ MpsLocalTypeRcvType *MpsLocalTypeRcvType::MSubst(const string &source, const Mps
       MpsLocalType *tmpSucc=mySucc->LRename(myDest,newDest);
     }
     else
-    { newDest=MpsExp::NewVar(myDest);
+    { newDest=MpsMsgType::NewMVar(myDest);
       tmpSucc=mySucc->MRename(myDest,newDest);
     }
   }
@@ -4593,7 +4907,7 @@ MpsLocalSyncType *MpsLocalSyncType::RenameAll() const // {{{
 MpsLocalTypeSendType *MpsLocalTypeSendType::RenameAll() const // {{{
 {
   // Create new id for assertion
-  string newDest=IsLinear()?NewLVar(myDest):MpsExp::NewVar(myDest);
+  string newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
   // Renaming in succ
   MpsLocalType *tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
   MpsLocalType *newSucc=tmpSucc->RenameAll();
@@ -4610,7 +4924,7 @@ MpsLocalTypeSendType *MpsLocalTypeSendType::RenameAll() const // {{{
 MpsLocalTypeRcvType *MpsLocalTypeRcvType::RenameAll() const // {{{
 {
   // Create new id for assertion
-  string newDest=IsLinear()?NewLVar(myDest):MpsExp::NewVar(myDest);
+  string newDest=IsLinear()?MpsLocalType::NewLVar(myDest):MpsMsgType::NewMVar(myDest);
   // Renaming in succ
   MpsLocalType *tmpSucc=IsLinear()?mySucc->LRename(myDest,newDest):mySucc->MRename(myDest,newDest);
   MpsLocalType *newSucc=tmpSucc->RenameAll();
@@ -5340,7 +5654,7 @@ MpsLocalType *MpsLocalTypeSendType::Merge(MpsLocalType &rhs) const // {{{
       rhsSucc=rhsptr->mySucc->LRename(rhsptr->myDest,newDest);
     }
     else
-    { newDest=MpsExp::NewVar(myDest);
+    { newDest=MpsMsgType::NewMVar(myDest);
       lhsSucc=mySucc->MRename(myDest,newDest);
       rhsSucc=rhsptr->mySucc->MRename(rhsptr->myDest,newDest);
     }
@@ -5381,7 +5695,7 @@ MpsLocalType *MpsLocalTypeRcvType::Merge(MpsLocalType &rhs) const // {{{
       rhsSucc=rhsptr->mySucc->LRename(rhsptr->myDest,newDest);
     }
     else
-    { newDest=MpsExp::NewVar(myDest);
+    { newDest=MpsMsgType::NewMVar(myDest);
       lhsSucc=mySucc->MRename(myDest,newDest);
       rhsSucc=rhsptr->mySucc->MRename(rhsptr->myDest,newDest);
     }
@@ -5531,6 +5845,10 @@ const vector<TypeArg> &MpsLocalRecType::GetArgs() const // {{{
 MpsMsgNoType::MpsMsgNoType() // {{{
 {
 } // }}}
+MpsVarMsgType::MpsVarMsgType(const string &name) // {{{
+: myName(name)
+{
+} // }}}
 MpsIntMsgType::MpsIntMsgType() // {{{
 {
 } // }}}
@@ -5578,6 +5896,9 @@ MpsMsgType::~MpsMsgType() // {{{
 MpsMsgNoType::~MpsMsgNoType() // {{{
 {
 } // }}}
+MpsVarMsgType::~MpsVarMsgType() // {{{
+{
+} // }}}
 MpsIntMsgType::~MpsIntMsgType() // {{{
 {
 } // }}}
@@ -5616,6 +5937,10 @@ MpsMsgNoType *MpsMsgNoType::Copy() const // {{{
 {
   return new MpsMsgNoType();
 } // }}}
+MpsVarMsgType *MpsVarMsgType::Copy() const // {{{
+{
+  return new MpsVarMsgType(myName);
+} // }}}
 MpsIntMsgType *MpsIntMsgType::Copy() const // {{{
 {
   return new MpsIntMsgType();
@@ -5653,6 +5978,18 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::Copy() const // {{{
 bool MpsMsgNoType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
   return dynamic_cast<const MpsMsgNoType*>(&rhs) != NULL;
+} // }}}
+bool MpsVarMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
+{
+  const MpsVarMsgType *rhsptr=dynamic_cast<const MpsVarMsgType*>(&rhs);
+
+  if (rhsptr==NULL)
+    return false;
+
+  if (Name()!=rhsptr->Name())
+    return false;
+
+  return true;
 } // }}}
 bool MpsIntMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
@@ -5718,6 +6055,10 @@ set<string> MpsMsgNoType::FGV() const // {{{
 {
   return set<string>();
 } // }}}
+set<string> MpsVarMsgType::FGV() const // {{{
+{
+  return set<string>();
+} // }}}
 set<string> MpsIntMsgType::FGV() const // {{{
 {
   return set<string>();
@@ -5759,6 +6100,10 @@ set<string> MpsDelegateGlobalMsgType::FGV() const // {{{
 
 // Free Local Type Variables
 set<string> MpsMsgNoType::FLV() const // {{{
+{
+  return set<string>();
+} // }}}
+set<string> MpsVarMsgType::FLV() const // {{{
 {
   return set<string>();
 } // }}}
@@ -5806,6 +6151,10 @@ set<string> MpsMsgNoType::FEV() const // {{{
 {
   return set<string>();
 } // }}}
+set<string> MpsVarMsgType::FEV() const // {{{
+{
+  return set<string>();
+} // }}}
 set<string> MpsIntMsgType::FEV() const // {{{
 {
   return set<string>();
@@ -5845,10 +6194,16 @@ set<string> MpsDelegateGlobalMsgType::FEV() const // {{{
   return myGlobalType->FEV();
 } // }}}
 
-// Free Expression Variables
+// Free Non-linear Variables
 set<string> MpsMsgNoType::FMV() const // {{{
 {
   return set<string>();
+} // }}}
+set<string> MpsVarMsgType::FMV() const // {{{
+{
+  set<string> result;
+  result.insert(Name());
+  return result;
 } // }}}
 set<string> MpsIntMsgType::FMV() const // {{{
 {
@@ -5891,6 +6246,10 @@ set<string> MpsDelegateGlobalMsgType::FMV() const // {{{
 
 // Rename Global Type Variable
 MpsMsgNoType *MpsMsgNoType::GRename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsVarMsgType *MpsVarMsgType::GRename(const string &source, const string &dest) const // {{{
 {
   return Copy();
 } // }}}
@@ -5945,6 +6304,10 @@ MpsMsgNoType *MpsMsgNoType::LRename(const string &source, const string &dest) co
 {
   return Copy();
 } // }}}
+MpsVarMsgType *MpsVarMsgType::LRename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
 MpsIntMsgType *MpsIntMsgType::LRename(const string &source, const string &dest) const // {{{
 {
   return Copy();
@@ -5993,6 +6356,10 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::LRename(const string &source
 
 // Rename Expression Variable
 MpsMsgNoType *MpsMsgNoType::ERename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsVarMsgType *MpsVarMsgType::ERename(const string &source, const string &dest) const // {{{
 {
   return Copy();
 } // }}}
@@ -6047,6 +6414,11 @@ MpsMsgNoType *MpsMsgNoType::MRename(const string &source, const string &dest) co
 {
   return Copy();
 } // }}}
+MpsVarMsgType *MpsVarMsgType::MRename(const string &source, const string &dest) const // {{{
+{ if (Name()==source)
+    return new MpsVarMsgType(dest);
+  return Copy();
+} // }}}
 MpsIntMsgType *MpsIntMsgType::MRename(const string &source, const string &dest) const // {{{
 {
   return Copy();
@@ -6095,6 +6467,10 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::MRename(const string &source
 
 // Global Type Substitution
 MpsMsgNoType *MpsMsgNoType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
+{
+  return Copy();
+} // }}}
+MpsVarMsgType *MpsVarMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   return Copy();
 } // }}}
@@ -6163,6 +6539,10 @@ MpsMsgNoType *MpsMsgNoType::LSubst(const string &source, const MpsLocalType &des
 {
   return Copy();
 } // }}}
+MpsVarMsgType *MpsVarMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
+{
+  return Copy();
+} // }}}
 MpsIntMsgType *MpsIntMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   return Copy();
@@ -6226,11 +6606,15 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::LSubst(const string &source,
 // Expression Substitution
 MpsMsgNoType *MpsMsgNoType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
-  return new MpsMsgNoType();
+  return Copy();
+} // }}}
+MpsVarMsgType *MpsVarMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
+{
+  return Copy();
 } // }}}
 MpsIntMsgType *MpsIntMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
-  return new MpsIntMsgType();
+  return Copy();
 } // }}}
 MpsFloatMsgType *MpsFloatMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
@@ -6238,11 +6622,11 @@ MpsFloatMsgType *MpsFloatMsgType::ESubst(const string &source, const MpsExp &des
 } // }}}
 MpsStringMsgType *MpsStringMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
-  return new MpsStringMsgType();
+  return Copy();
 } // }}}
 MpsBoolMsgType *MpsBoolMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
-  return new MpsBoolMsgType();
+  return Copy();
 } // }}}
 MpsTupleMsgType *MpsTupleMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
@@ -6291,6 +6675,11 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::ESubst(const string &source,
 // Non-linear Type Substitution
 MpsMsgNoType *MpsMsgNoType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
 {
+  return Copy();
+} // }}}
+MpsMsgType *MpsVarMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{ if (Name()==source)
+    return dest.Copy();
   return Copy();
 } // }}}
 MpsIntMsgType *MpsIntMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
@@ -6356,11 +6745,15 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::MSubst(const string &source,
 // Renaming of all bound identifiers
 MpsMsgNoType *MpsMsgNoType::RenameAll() const // {{{
 {
-  return new MpsMsgNoType();
+  return Copy();
+} // }}}
+MpsVarMsgType *MpsVarMsgType::RenameAll() const // {{{
+{
+  return Copy();
 } // }}}
 MpsIntMsgType *MpsIntMsgType::RenameAll() const // {{{
 {
-  return new MpsIntMsgType();
+  return Copy();
 } // }}}
 MpsFloatMsgType *MpsFloatMsgType::RenameAll() const // {{{
 {
@@ -6368,11 +6761,11 @@ MpsFloatMsgType *MpsFloatMsgType::RenameAll() const // {{{
 } // }}}
 MpsStringMsgType *MpsStringMsgType::RenameAll() const // {{{
 {
-  return new MpsStringMsgType();
+  return Copy();
 } // }}}
 MpsBoolMsgType *MpsBoolMsgType::RenameAll() const // {{{
 {
-  return new MpsBoolMsgType();
+  return Copy();
 } // }}}
 MpsTupleMsgType *MpsTupleMsgType::RenameAll() const // {{{
 {
@@ -6423,6 +6816,10 @@ string MpsMsgNoType::ToString(const string &indent) const // {{{
 {
   string result="Untyped";
   return result;
+} // }}}
+string MpsVarMsgType::ToString(const string &indent) const // {{{
+{
+  return Name();
 } // }}}
 string MpsIntMsgType::ToString(const string &indent) const // {{{
 {
@@ -6506,6 +6903,10 @@ string MpsMsgNoType::ToTex(int indent, int sw) const // {{{
   string result=ToTex_KW("Untyped");
   return result;
 } // }}}
+string MpsVarMsgType::ToTex(int indent, int sw) const // {{{
+{
+  return ToTex_Var(Name());
+} // }}}
 string MpsIntMsgType::ToTex(int indent, int sw) const // {{{
 {
   string result=ToTex_KW("Int");
@@ -6560,6 +6961,10 @@ string MpsDelegateGlobalMsgType::ToTex(int indent, int sw) const // {{{
 string MpsMsgNoType::ToC() const // {{{
 {
   return "???"; //throw string("Cannot compile unknon type: MpsMsgNoType");
+} // }}}
+string MpsVarMsgType::ToC() const // {{{
+{
+  return "libpi::Value"; //Use supertype
 } // }}}
 string MpsIntMsgType::ToC() const // {{{
 {

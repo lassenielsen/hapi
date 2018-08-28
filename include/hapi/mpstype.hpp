@@ -99,7 +99,7 @@ class MpsGlobalType // {{{
     //! Return process id in type
     virtual int GetMaxPid() const=0;
     //! Generate (totally) new global variable name
-    static std::string NewGVar(std::string orig="$X");
+    static std::string NewGVar(std::string orig="$id");
     
   private:
     static int ourNextId;
@@ -330,7 +330,7 @@ class MpsGlobalTypeMsgType : public MpsGlobalType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
     MpsLocalType *Project(int pid) const;
     int GetMaxPid() const;
-    bool IsLinear() { return myLinear; }
+    bool IsLinear() const { return myLinear; }
 
   private:
     int mySender;
@@ -379,7 +379,7 @@ class MpsLocalType // {{{
     virtual MpsLocalType *Merge(MpsLocalType &rhs) const = 0;
     virtual std::string ToString(const std::string &indent="") const = 0;
     virtual std::string ToTex(int indent=0, int sw=2) const = 0;
-    static std::string NewLVar(std::string basename="FUN");
+    static std::string NewLVar(std::string basename="%id");
 
     // Grammar
     const static std::string BNF_LTYPE;
@@ -842,12 +842,16 @@ class MpsMsgType // {{{
     virtual std::string ToTex(int indent=0, int sw=2) const = 0;
     virtual std::string ToC() const = 0;
     virtual std::string ToCPtr() const { return std::string("shared_ptr<" + ToC() + " >"); }
+    static std::string NewMVar(std::string basename="#id");
 
     // Grammar
     const static std::string BNF_STYPE;
     const static std::string BNF_STYPES;
     const static std::string BNF_STYPES2;
     const static std::string BNF_MTYPE;
+
+  private:
+    static int ourNextId;
 }; // }}}
 
 class MpsMsgNoType : public MpsMsgType // {{{
@@ -897,12 +901,17 @@ class MpsVarMsgType : public MpsMsgType // {{{
     MpsVarMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsVarMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     MpsVarMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
-    MpsVarMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
+    MpsMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsVarMsgType *RenameAll() const;
 
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
+
+    const std::string &Name() const { return myName; }
+
+  private:
+    std::string myName;
 }; // }}}
 class MpsIntMsgType : public MpsMsgType // {{{
 {
