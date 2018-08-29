@@ -73,8 +73,7 @@ MpsTerm *MpsParser::PiEActs(const parsetree *tree) // {{{
   throw string("Unknown PiEActs parsetree: ") + tree->Type() + "." + tree->Case();
 } // }}}
 MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
-{
-  if (tree->Case() =="piact_sends") // Ch Sends {{{
+{ if (tree->Case() =="piact_sends") // Ch Sends {{{
   {
     return Sends(tree->Child(1),Channel(tree->Child(0)),succ);
   } // }}}

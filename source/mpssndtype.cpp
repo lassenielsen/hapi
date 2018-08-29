@@ -174,6 +174,7 @@ set<string> MpsSndType::FEV() const // {{{
 MpsTerm *MpsSndType::Copy() const // {{{
 {
   MpsTerm *result = new MpsSndType(mySession, *myType, *mySucc, GetFinal());
+  return result;
 } // }}}
 bool MpsSndType::Terminated() const // {{{
 {
