@@ -49,31 +49,28 @@ void *MpsRcvType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
     return wrap_err(this,PrintTypeError((string)"Type-receiving on session: " + mySession,*this,Theta,Gamma,Omega),children);
   // Make new Gamma
   MpsMsgEnv newGamma;
+  string newDest=MpsMsgType::NewMVar(myDest);
   for (MpsMsgEnv::const_iterator it=Gamma.begin(); it!=Gamma.end(); ++it)
   { const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(it->second);
-    if (delType==NULL) // Not session type
+    if (delType==NULL || it->first!=mySession) // Not session type
       newGamma[it->first]=it->second;
-    else // SESSION TYPE
-    { MpsLocalType *newType=NULL;
-      if (it->first==mySession)
-      { string newId=MpsExp::NewVar(myDest);
-        newType=rcvType->GetSucc()->MRename(myDest,newId);
-      }
-      else
-        newType=delType->GetLocalType()->Copy();
-      newGamma[it->first] = new MpsDelegateLocalMsgType(*newType,delType->GetPid(),delType->GetParticipants());
-      delete newType;
-    }
   }
-  // Save created type for deletion
-  MpsDelegateMsgType *newType=dynamic_cast<MpsDelegateMsgType*>(newGamma[mySession]);
+  // Now instantiate mySession in newGamma
+  MpsLocalType *newType=rcvType->GetSucc()->MRename(rcvType->GetDest(),newDest);
+  { // Store if this is final action in session
+    myFinal=newType->IsDone();
+  }
+  MpsMsgType *newMsgType=new MpsDelegateLocalMsgType(*newType,msgType->GetPid(),msgType->GetParticipants());
+  delete newType;
+  newGamma[mySession] = newMsgType;
 
   // Check rest of program
-  children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
-  // Store if this is final action in session
-  myFinal=newType->GetLocalType()->IsDone();
+  // Preform subst in succ
+  MpsTerm *chkSucc=mySucc->MRename(myDest,newDest);
+  children["succ"] = chkSucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
+  delete chkSucc;
   // Clean Up
-  delete newType;
+  delete newMsgType;
 
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);

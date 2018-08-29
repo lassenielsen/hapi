@@ -1,10 +1,10 @@
-#define $anyset($t) \
+#define $anyset(#t) \
   rec $s;
   2->1 \
   {^Delete: $end; \
-   ^Insert: 2->1: $t; $s; \
-   ^Member: 2->1: $t; 1->2: Bool; $s; \
-   ^Size: 1->2: $t; Int; \
+   ^Insert: 2->1: #t; $s; \
+   ^Member: 2->1: #t; 1->2: Bool; $s; \
+   ^Size: 1->2: #t; Int; \
    ^Height: 1->2: Int; $s; \
    ^Dissolve: \
     1->2 \
@@ -17,9 +17,9 @@
     } \
   }
 #define $set \
-  2->1: $s; \
-  2->1: 2->1:$s; 2->1:$s; 1->2:Bool;(1 pure, 2); \
-  $anyset($s)
+  2: #s; \
+  2->1: 2->1:#s; 2->1:#s; 1->2:Bool;(1 pure, 2); \
+  $anyset(#s)
 
 $set set(1 pure, 2);
 local pure service Set(set (1 of 2) s) // {{{

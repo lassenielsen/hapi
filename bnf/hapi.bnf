@@ -174,7 +174,7 @@ Lbranches ::= ::lbranches_end  bid Assertion COLON Ltype
 # Message (value) Types
 Mtype ::= ::mtype_stype Stype
         | ::mtype_gtype Gtype ( Participants )
-        | ::mtype_nlvar nlvar # Meta var for Stype and Gtype
+        | ::mtype_nlvar nlvar
         | ::mtype_ltype Ltype ( int of Participants )
         | ::mtype_ptype Gtype ( int of Participants )
 Stype ::= ::type_int    Int 
