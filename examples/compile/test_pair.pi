@@ -1,0 +1,22 @@
+#include<console.pi>
+#include<struct/pair.pi>
+
+c=new console(2 of 2);
+p1 = new pair(2 of 2);
+p1 << String;
+p1 << Int;
+p1[1] << "Hello World";
+p1[1] << 5;
+p1[1] << ^get_fst;
+p1[1] >> x;
+c[1] << ^PutString << x;
+p1[1] << ^get_snd;
+p1[1] >> y;
+c[1] << ^PutInt << y;
+p1[1] << ^set_snd;
+p1[1] << 10;
+p1[1] << ^get_snd;
+p1[1] >> z;
+c[1] << ^PutInt << z;
+p1[1] << ^end;
+c[1]<<^Stop;

@@ -47,6 +47,12 @@ void *MpsSndType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
   const MpsLocalTypeSendType *sndType = dynamic_cast<const MpsLocalTypeSendType*>(msgType->GetLocalType());
   if (sndType==NULL)
     return wrap_err(this,PrintTypeError((string)"Sending type on session with non-send type: " + mySession,*this,Theta,Gamma,Omega),children);
+  // Check linearity constraint
+  if (!sndType->IsLinear())
+  { const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(myType);
+    if (delType!=NULL) // Using linear type in (possibly) non linear setting
+      return wrap_err(this,PrintTypeError((string)"Applying session type to non-linear polymorphic type: " + sndType->GetDest(),*this,Theta,Gamma,Omega),children);
+  }
   // Make new environment
   MpsLocalType *newType=sndType->GetSucc()->MSubst(sndType->GetDest(),*myType);
   MpsDelegateLocalMsgType *newMsgType=new MpsDelegateLocalMsgType(*newType,msgType->GetPid(),msgType->GetParticipants());
