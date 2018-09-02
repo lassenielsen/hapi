@@ -1,14 +1,12 @@
-#include<console.pi>
-
 #define $abslist \
   2: #elt; \
-  $list(#elt,#snd)
+  $list(#elt)
 #define $list(_elt) \
   rec $list; \
   2->1 \
   {^get: \
     2->1: Int; \
-    1->2: \
+    1->2 \
     {^val: \
       1->2: _elt; \
       $list; \
@@ -37,19 +35,17 @@
     2->1: _elt; \
     $list; \
    ^pop: \
-    1->2: \
+    1->2 \
     {^nil: \
       $end; \
      ^cons: \
       1->2: _elt; \
-      1->2: $list; \
+      1->2: $list(2 of 1 pure,2); \
       $end; \
     } \
    ^append: \
-    2->1: $list; \
     $list; \
    ^copy: \
-    1->2: $list; \
     $list; \
    ^delete: \
     $end; \
@@ -59,11 +55,11 @@ global $abslist list(1 pure,2);
 local pure service List(list (1 of 2) s)
 ( s>>#elt;
   local pure Nil($list(#elt)(1 of 1 pure, 2) this)
-  ( global pure Cons(#elt head, $list(#elt)(2 of 1 pure, 2) tail, $list(#elt)(1 of 1 oure,2) this)
+  ( global pure Cons(#elt head, $list(#elt)(2 of 1 pure, 2) tail, $list(#elt)(1 of 1 pure,2) this)
     ( this[2]>>
       {^get:
         this[2]>>i;
-        if (i<=0)
+        if i<=0
         then this[2]<<^val<<head;
              Cons(head,tail,this);
         else tail[1]<<^get<<i-1;
@@ -80,58 +76,54 @@ local pure service List(list (1 of 2) s)
        ^set:
         this[2]>>i;
         this[2]>>v;
-        if (i<=0)
+        if i<=0
         then Cons(v,tail,this);
         else tail[1]<<^set<<i-1<<v;
              Cons(head,tail,this);
        ^length:
-        tail<<^length;
-        tail>>l;
+        tail[1]<<^length;
+        tail[1]>>l;
         this[2]<<n+1;
         Cons(head,tail,this);
        ^apply:
         this[2]>>fc;
         f = new fc(2 of 2);
         f[1]<<head;
-        f[1]>>newhead;
-        tail<<^apply<<fc;
-        Cons(newhead,tail,this);
+        f[1]>>h;
+        tail[1]<<^apply<<fc;
+        Cons(h,tail,this);
        ^insert:
         this[2]>>i;
         this[2]>>v;
-        if (i==0)
+        if i<=0
         then tail = new list(2 of 2);
              tail<<#elt;
              Cons(v,tail,this);
         else Nil(this); // Report error requires subsequent get
        ^cons:
-        this[2]>>head;
-        tail = new list(2 of 2);
-        tail<<#elt;
-        Cons(v,tail,this);
+        this[2]>>h;
+        t=new list(2 of 2);
+        t<<#elt;
+        t[1]<<^cons<<head<<^append<<tail;
+        Cons(h,t,this);
        ^snoc:
-        this[2]>>head;
-        tail = new list(2 of 2);
-        tail<<#elt;
-        Cons(v,tail,this);
+        this[2]>>h;
+	tail[1]<<^snoc<<h;
+        Cons(head,tail,this);
        ^pop:
-        this[2]<<^nil;
+        this[2]<<^cons<<head<<tail;
        ^append:
         this[2]>>l;
-        l[1]<<^pop;
-        l[1]>>
-        {^nil:
-          Nil(this);
-         ^cons:
-          l[1]>>head;
-          l[1]>>tail;
-          Cons(head,tail,this);
-        }
+	tail[1]<<^append<<l;
        ^copy:
         cpy = new list(2 of 2);
+	tail[1]<<^copy;
+        tail[1]>>t;
+	cpy[1]<<^cons<<head<<^append<<t;
         this[2]<<cpy;
-        Nnil(this);
+        Cons(head,tail,this);
        ^delete:
+        tail[2]<<^delete;
       }
     )
     this[2]>>
@@ -152,21 +144,22 @@ local pure service List(list (1 of 2) s)
      ^insert:
       this[2]>>i;
       this[2]>>v;
-      if (i==0)
+      if i<=0
       then tail = new list(2 of 2);
            tail<<#elt;
            Cons(v,tail,this);
-      else Nil(this); // Report error requires subsequent get
+      else tail[1]<<^insert<<i-2<<v;
+           Cons(head,tail,this);
      ^cons:
       this[2]>>head;
       tail = new list(2 of 2);
       tail<<#elt;
-      Cons(v,tail,this);
+      Cons(head,tail,this);
      ^snoc:
       this[2]>>head;
       tail = new list(2 of 2);
       tail<<#elt;
-      Cons(v,tail,this);
+      Cons(head,tail,this);
      ^pop:
       this[2]<<^nil;
      ^append:
@@ -183,7 +176,7 @@ local pure service List(list (1 of 2) s)
      ^copy:
       cpy = new list(2 of 2);
       this[2]<<cpy;
-      Nnil(this);
+      Nil(this);
      ^delete:
     }
   )
