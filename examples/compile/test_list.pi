@@ -40,12 +40,14 @@
       $end; \
      ^cons: \
       1->2: _elt; \
-      1->2: $list(2 of 1 pure,2); \
+      1->2: $list;(2 of 1 pure,2); \
       $end; \
     } \
    ^append: \
+    2->1: $list;(2 of 1 pure,2); \
     $list; \
    ^copy: \
+    1->2: $list;(2 of 1 pure,2); \
     $list; \
    ^delete: \
     $end; \
@@ -67,7 +69,7 @@ local pure service List(list (1 of 2) s)
              {^val:
                tail[1]>>v;
                this[2]<<^val<<v;
-               Cons(head,tailmthis);
+               Cons(head,tail,this);
               ^err:
                tail[1]>>msg;
                this[2]<<^err<<msg;
@@ -94,12 +96,14 @@ local pure service List(list (1 of 2) s)
         Cons(h,tail,this);
        ^insert:
         this[2]>>i;
-        this[2]>>v;
+        this[2]>>h;
         if i<=0
-        then tail = new list(2 of 2);
-             tail<<#elt;
-             Cons(v,tail,this);
-        else Nil(this); // Report error requires subsequent get
+        then t = new list(2 of 2);
+             t<<#elt;
+             t[1]<<^cons<<head<<^append<<tail;
+             Cons(h,t,this);
+        else tail[1]<<^instert<<i-1<<h;
+             Cons(head,tail,this);
        ^cons:
         this[2]>>h;
         t=new list(2 of 2);
@@ -116,9 +120,9 @@ local pure service List(list (1 of 2) s)
         this[2]>>l;
 	tail[1]<<^append<<l;
        ^copy:
-        cpy = new list(2 of 2);
 	tail[1]<<^copy;
         tail[1]>>t;
+        cpy = new list(2 of 2);
 	cpy[1]<<^cons<<head<<^append<<t;
         this[2]<<cpy;
         Cons(head,tail,this);
@@ -148,8 +152,7 @@ local pure service List(list (1 of 2) s)
       then tail = new list(2 of 2);
            tail<<#elt;
            Cons(v,tail,this);
-      else tail[1]<<^insert<<i-2<<v;
-           Cons(head,tail,this);
+      else Nil(this);
      ^cons:
       this[2]>>head;
       tail = new list(2 of 2);

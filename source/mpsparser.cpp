@@ -783,7 +783,7 @@ MpsMsgType *MpsParser::Mtype(const parsetree *tree) // {{{
     MpsGlobalType *gtype = Gtype(tree->Child(0));
     vector<MpsParticipant> participants;
     Participants(tree->Child(2),participants);
-    if (participants.size()!=gtype->GetMaxPid())
+    if (participants.size()<gtype->GetMaxPid())
       throw string("Wrong participant count in ") + tree->Type() + "." + tree->Case();
     MpsChannelMsgType *result = new MpsChannelMsgType(*gtype,participants);
     // Clean up
@@ -812,7 +812,7 @@ MpsMsgType *MpsParser::Mtype(const parsetree *tree) // {{{
     int pid = string2int(tree->Child(2)->Token().Content());
     vector<MpsParticipant> participants;
     Participants(tree->Child(4),participants);
-    if (participants.size()!=gtype->GetMaxPid())
+    if (participants.size()<gtype->GetMaxPid())
       throw string("Wrong participant count in ") + tree->Type() + "." + tree->Case();
     MpsDelegateGlobalMsgType *result = new MpsDelegateGlobalMsgType(*gtype,pid,participants);
 
