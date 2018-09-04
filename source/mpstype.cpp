@@ -2012,11 +2012,18 @@ MpsLocalType *MpsGlobalBranchType::Project(int pid) const // {{{
 } // }}}
 MpsLocalType *MpsGlobalRecType::Project(int pid) const // {{{
 {
-  MpsLocalType *succ = mySucc->Project(pid);
+  MpsLocalType *tmpSucc = mySucc->Project(pid);
+  // Perform substitution of unprojected occurences
+  vector<string> args;
+  for (size_t i=0;i<myArgs.size();++i)
+    args.push_back(myArgs[i].myName);
+  MpsLocalType *newSucc = tmpSucc->GSubst(myName,*this,args);
+  delete tmpSucc;
+
   string name = myName;
   replace(name.begin(),name.end(),'$','%');
-  MpsLocalType *result = new MpsLocalRecType(name,*succ,myArgs);
-  delete succ;
+  MpsLocalType *result = new MpsLocalRecType(name,*newSucc,myArgs);
+  delete newSucc;
   return result;
 } // }}}
 MpsLocalType *MpsGlobalVarType::Project(int pid) const // {{{
