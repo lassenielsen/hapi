@@ -5893,7 +5893,6 @@ MpsDelegateGlobalMsgType::MpsDelegateGlobalMsgType(const MpsGlobalType &type, in
 : MpsDelegateMsgType(pid,participants)
 {
   myGlobalType=type.Copy();
-  myLocalType=myGlobalType->Project(GetPid());
 } // }}}
 
 // Destructors
@@ -5936,7 +5935,6 @@ MpsDelegateLocalMsgType::~MpsDelegateLocalMsgType() // {{{
 MpsDelegateGlobalMsgType::~MpsDelegateGlobalMsgType() // {{{
 {
   delete myGlobalType;
-  delete myLocalType;
 } // }}}
 
 // Make Deep Copy
@@ -6053,8 +6051,15 @@ bool MpsDelegateMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const
   for (int i=0; i<GetMaxpid(); ++i)
     if (GetParticipants()[i] != rhsptr->GetParticipants()[i])
       return false;
-    
-  return GetLocalType()->Equal(Theta,*rhsptr->GetLocalType());
+  MpsLocalType lhsCpy=CopyLocalType();
+  MpsLocalType rhsCpy=thsptr->CopyLocalType();
+  bool result = lhsCpy->Equal(Theta,rhsCpy);
+
+  // Clean up
+  delete lhsCpy;
+  delete rhsCpy;
+
+  return result;
 } // }}}
 
 // Free Global Type Variables
@@ -6890,8 +6895,7 @@ string MpsDelegateLocalMsgType::ToString(const string &indent) const // {{{
   return result;
 } // }}}
 string MpsDelegateGlobalMsgType::ToString(const string &indent) const // {{{
-{
-  string result=myLocalType->ToString(indent) + "(" + int2string(GetPid()) + " of ";
+{ string result=myGlobalType()->ToString(indent) + "(" + int2string(GetPid()) + " of ";
   for (int p=0; p<GetParticipants().size(); ++p)
   {
     if (p!=0) // use separator
@@ -6960,7 +6964,7 @@ string MpsDelegateLocalMsgType::ToTex(int indent, int sw) const // {{{
 } // }}}
 string MpsDelegateGlobalMsgType::ToTex(int indent, int sw) const // {{{
 {
-  string result=myLocalType->ToTex(indent,sw) + "@(" + ToTex_PP(GetPid()) + " of " + ToTex_PP(GetMaxpid()) + ")";
+  string result=myGlobalType()->ToTex(indent,sw) + "(" + ToTex_PP(GetPid()) + " of " + ToTex_PP(GetMaxpid()) + ")";
   return result;
 } // }}}
 
@@ -7018,17 +7022,11 @@ const MpsMsgType *MpsTupleMsgType::GetElement(int index) const // {{{
   }
   return myElements[index];
 } // }}}
-const MpsLocalType *MpsDelegateLocalMsgType::GetLocalType() const // {{{
-{ return myType;
+MpsLocalType *MpsDelegateLocalMsgType::CopyLocalType() // {{{
+{ return myType->Copy();
 } // }}}
-const MpsLocalType *MpsDelegateGlobalMsgType::GetLocalType() const // {{{
-{ return myLocalType;
-} // }}}
-MpsLocalType *MpsDelegateLocalMsgType::GetLocalType() // {{{
-{ return myType;
-} // }}}
-MpsLocalType *MpsDelegateGlobalMsgType::GetLocalType() // {{{
-{ return myLocalType;
+MpsLocalType *MpsDelegateGlobalMsgType::CopyLocalType() // {{{
+{ return myGlobalType->Project(myParticipant);
 } // }}}
 
 /* TypeArg implementation

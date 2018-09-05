@@ -1117,8 +1117,7 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
     std::string ToTex(int indent=0, int sw=2) const=0;
     std::string ToC() const;
 
-    virtual const MpsLocalType *GetLocalType() const=0;
-    virtual MpsLocalType *GetLocalType()=0;
+    virtual MpsLocalType *CopyLocalType() const=0;
     int GetPid() const {return myPid;}
     int GetMaxpid() const {return myParticipants.size();}
     const std::vector<MpsParticipant> GetParticipants() const {return myParticipants;}
@@ -1151,8 +1150,7 @@ class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
 
     // Accessors
-    const MpsLocalType *GetLocalType() const; // {return myType;}
-    MpsLocalType *GetLocalType(); // {return myType;}
+    MpsLocalType *CopyLocalType();
 
   private:
     MpsLocalType *myType;
@@ -1183,12 +1181,10 @@ class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegat
     // Accessors
     const MpsGlobalType *GetGlobalType() const {return myGlobalType;}
     MpsGlobalType *GetGlobalType() {return myGlobalType;}
-    const MpsLocalType *GetLocalType() const;
-    MpsLocalType *GetLocalType();
+    MpsLocalType *CopyLocalType();
 
   private:
     MpsGlobalType *myGlobalType;
-    MpsLocalType *myLocalType;
 }; // }}}
 
 // Define environments
