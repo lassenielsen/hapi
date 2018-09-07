@@ -1,3 +1,5 @@
+#include<console.pi>
+
 #define $abslist \
   2: #elt; \
   $list(#elt)
@@ -85,7 +87,7 @@ local pure service List(list (1 of 2) s)
        ^length:
         tail[1]<<^length;
         tail[1]>>l;
-        this[2]<<n+1;
+        this[2]<<l+1;
         Cons(head,tail,this);
        ^apply:
         this[2]>>fc;
@@ -102,7 +104,7 @@ local pure service List(list (1 of 2) s)
              t<<#elt;
              t[1]<<^cons<<head<<^append<<tail;
              Cons(h,t,this);
-        else tail[1]<<^instert<<i-1<<h;
+        else tail[1]<<^insert<<i-1<<h;
              Cons(head,tail,this);
        ^cons:
         this[2]>>h;
@@ -119,15 +121,17 @@ local pure service List(list (1 of 2) s)
        ^append:
         this[2]>>l;
 	tail[1]<<^append<<l;
+        Cons(head,tail,this);
        ^copy:
 	tail[1]<<^copy;
         tail[1]>>t;
         cpy = new list(2 of 2);
+        cpy<<#elt;
 	cpy[1]<<^cons<<head<<^append<<t;
         this[2]<<cpy;
         Cons(head,tail,this);
        ^delete:
-        tail[2]<<^delete;
+        tail[1]<<^delete;
       }
     )
     this[2]>>
@@ -178,6 +182,7 @@ local pure service List(list (1 of 2) s)
       }
      ^copy:
       cpy = new list(2 of 2);
+      cpy<<#elt;
       this[2]<<cpy;
       Nil(this);
      ^delete:
@@ -186,3 +191,11 @@ local pure service List(list (1 of 2) s)
   Nil(s);
 )
 |
+ilist=new list(2 of 2);
+ilist<<Int;
+ilist[1]<<^cons<<1<<^cons<<2<<^cons<<3;
+ilist[1]<<^length;
+ilist[1]>>l;
+c = new console(2 of 2);
+c[1]<<^PutString<<"ilists length is"<<^PutInt<<l<<^End;
+ilist[1]<<^delete;

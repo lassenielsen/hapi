@@ -1096,7 +1096,7 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
     MpsDelegateMsgType(int pid, const std::vector<MpsParticipant> &participants);
     virtual ~MpsDelegateMsgType();
     virtual MpsDelegateMsgType *Copy() const=0;
-    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    virtual bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const=0;
     //bool operator==(const MpsMsgType &rhs) const;
 
     virtual std::set<std::string> FGV() const=0;
@@ -1133,6 +1133,7 @@ class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
     virtual ~MpsDelegateLocalMsgType();
 
     MpsDelegateLocalMsgType *Copy() const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;
@@ -1151,6 +1152,7 @@ class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
 
     // Accessors
     MpsLocalType *CopyLocalType() const;
+    const MpsLocalType *GetLocalType() const {return myType;}
 
   private:
     MpsLocalType *myType;
@@ -1162,6 +1164,7 @@ class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegat
     virtual ~MpsDelegateGlobalMsgType();
 
     MpsDelegateGlobalMsgType *Copy() const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
     std::set<std::string> FGV() const;
     std::set<std::string> FLV() const;
     std::set<std::string> FEV() const;

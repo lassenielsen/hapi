@@ -6038,10 +6038,8 @@ bool MpsChannelMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const 
       return false;
   return myType->Equal(Theta,*rhsptr->myType);
 } // }}}
-bool MpsDelegateMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
-{
-
-  const MpsDelegateMsgType *rhsptr=dynamic_cast<const MpsDelegateMsgType*>(&rhs);
+bool MpsDelegateLocalMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
+{ const MpsDelegateMsgType *rhsptr=dynamic_cast<const MpsDelegateMsgType*>(&rhs);
   if (rhsptr==NULL)
     return false;
   if (GetPid() != rhsptr->GetPid())
@@ -6051,13 +6049,38 @@ bool MpsDelegateMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const
   for (int i=0; i<GetMaxpid(); ++i)
     if (GetParticipants()[i] != rhsptr->GetParticipants()[i])
       return false;
-  MpsLocalType *lhsCpy=CopyLocalType();
   MpsLocalType *rhsCpy=rhsptr->CopyLocalType();
-  bool result = lhsCpy->Equal(Theta,*rhsCpy);
+  bool result = GetLocalType()->Equal(Theta,*rhsCpy);
 
   // Clean up
-  delete lhsCpy;
   delete rhsCpy;
+
+  return result;
+} // }}}
+bool MpsDelegateGlobalMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
+{ const MpsDelegateMsgType *rhsptr=dynamic_cast<const MpsDelegateMsgType*>(&rhs);
+  if (rhsptr==NULL)
+    return false;
+  if (GetPid() != rhsptr->GetPid())
+    return false;
+  if (GetMaxpid() != rhsptr->GetMaxpid())
+    return false;
+  for (int i=0; i<GetMaxpid(); ++i)
+    if (GetParticipants()[i] != rhsptr->GetParticipants()[i])
+      return false;
+
+  const MpsDelegateGlobalMsgType *rhsptr_global=dynamic_cast<const MpsDelegateGlobalMsgType*>(&rhs);
+  bool result=true;
+  if (rhsptr_global!=NULL) // Handle case explicitly to avoid infinite loops
+    result=GetGlobalType()->Equal(Theta,*rhsptr_global->GetGlobalType());
+  else
+  { MpsLocalType *lhsCpy=CopyLocalType();
+    MpsLocalType *rhsCpy=rhsptr->CopyLocalType();
+    result = lhsCpy->Equal(Theta,*rhsCpy);
+    // Clean up
+    delete lhsCpy;
+    delete rhsCpy;
+  }
 
   return result;
 } // }}}
