@@ -71,9 +71,12 @@ void *MpsLink::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, con
   var=newGamma.find(mySession);
   if (var!=newGamma.end())
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
-    if (session!=NULL &&
-        !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return wrap_err(this,PrintTypeError((string)"Linking on open session:" + mySession,*this,Theta,Gamma,Omega),children);
+    if (session!=NULL)
+    { MpsLocalType *localSession=session->CopyLocalType();
+      bool isDone=localSession->IsDone();
+      if (!isDone)
+        return wrap_err(this,PrintTypeError((string)"Linking on open session:" + mySession,*this,Theta,Gamma,Omega),children);
+    }
 
     newGamma.erase(var);
   }

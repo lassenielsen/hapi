@@ -1150,7 +1150,7 @@ class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
     std::string ToTex(int indent=0, int sw=2) const;
 
     // Accessors
-    MpsLocalType *CopyLocalType();
+    MpsLocalType *CopyLocalType() const;
 
   private:
     MpsLocalType *myType;
@@ -1181,7 +1181,7 @@ class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegat
     // Accessors
     const MpsGlobalType *GetGlobalType() const {return myGlobalType;}
     MpsGlobalType *GetGlobalType() {return myGlobalType;}
-    MpsLocalType *CopyLocalType();
+    MpsLocalType *CopyLocalType() const;
 
   private:
     MpsGlobalType *myGlobalType;

@@ -25,9 +25,13 @@ void *MpsEnd::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
   // Check that all sessions have been completed
   for (MpsMsgEnv::const_iterator var=Gamma.begin();var!=Gamma.end();++var)
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
-    if (session!=NULL &&
-        !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return wrap_err(this,PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega),children);
+    if (session!=NULL)
+    { MpsLocalType *localSession=session->CopyLocalType();
+      bool sessionEqual=localSession->Equal(Theta,MpsLocalEndType());
+      delete localSession;
+      if (!sessionEqual)
+        return wrap_err(this,PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega),children);
+    }
   }
 
   // Wrap result

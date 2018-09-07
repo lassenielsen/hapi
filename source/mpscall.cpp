@@ -106,9 +106,13 @@ void *MpsCall::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, con
   // Check that endGamma is completed
   for (MpsMsgEnv::const_iterator var=endGamma.begin();var!=endGamma.end();++var)
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
-    if (session!=NULL &&
-        !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return wrap_err(this,PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega),children);
+    if (session!=NULL)
+    { MpsLocalType *localSession=session->CopyLocalType();
+      bool isDone=localSession->IsDone();
+      delete localSession;
+      if (!isDone)
+        return wrap_err(this,PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega),children);
+    }
   }
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);

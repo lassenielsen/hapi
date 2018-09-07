@@ -30,10 +30,13 @@ void *MpsNu::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, const
   MpsMsgEnv::iterator var=newGamma.find(myChannel);
   if (var!=newGamma.end())
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
-    if (session!=NULL &&
-        !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return wrap_err(this,PrintTypeError((string)"Hiding uncompleted session:" + myChannel,*this,Theta,Gamma,Omega),children);
-
+    if (session!=NULL)
+    { MpsLocalType *localSession=session->CopyLocalType();
+      bool isDone=localSession->IsDone();
+      delete localSession;
+      if (!isDone)
+        return wrap_err(this,PrintTypeError((string)"Hiding uncompleted session:" + myChannel,*this,Theta,Gamma,Omega),children);
+    }
     // Remove hidden variable
     newGamma.erase(var);
   }

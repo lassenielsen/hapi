@@ -39,20 +39,29 @@ void *MpsSnd::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
     return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
-  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
+  MpsLocalType *localMsgType=msgType->CopyLocalType();
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(localMsgType);
   // Check if unfolding is necessary
   if (recType!=NULL)
+  { delete localMsgType;
     return TypeCheckRec(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
-  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
+  }
+  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(localMsgType);
   if (allType!=NULL)
+  { delete localMsgType;
     return TypeCheckForall(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
+  }
   // Check session has send type
-  const MpsLocalSendType *sndType = dynamic_cast<const MpsLocalSendType*>(msgType->GetLocalType());
+  const MpsLocalSendType *sndType = dynamic_cast<const MpsLocalSendType*>(localMsgType);
   if (sndType==NULL)
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Sending on session with non-send type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
+  }
   // Check channel index is correct
   if (myChannel.GetIndex() != sndType->GetReceiver())
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Sending on wrong index in session: " + myChannel.ToString(),*this,Theta,Gamma,Omega),children);
+  }
   // Make new environment
   MpsLocalType *newType=NULL;
   if (sndType->GetAssertionType())
@@ -69,11 +78,17 @@ void *MpsSnd::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
   string exptype_str= exptype->ToString("!!");
   delete exptype;
   if (not msgtypematch)
-    return wrap_err(this,PrintTypeError((string)"Expression does not have type:\n!!" + sndType->GetMsgType()->ToString("!!") + "\nBut type:\n!!" + exptype_str,*this,Theta,Gamma,Omega),children);
+  { string sndTypeStr=sndType->GetMsgType()->ToString("!!");
+    delete localMsgType;
+    return wrap_err(this,PrintTypeError((string)"Expression does not have type:\n!!" + sndTypeStr + "\nBut type:\n!!" + exptype_str,*this,Theta,Gamma,Omega),children);
+  }
   // Check Assertion is fulfilled
   if (sndType->GetAssertionType())
   { if (sndType->GetMsgType()->ToString()!="Bool")
-      return wrap_err(this,PrintTypeError((string)"Assertions not supported for message-type: " + sndType->GetMsgType()->ToString(),*this,Theta,Gamma,Omega),children);
+    { string sndTypeStr=sndType->GetMsgType()->ToString("!!");
+      delete localMsgType;
+      return wrap_err(this,PrintTypeError((string)"Assertions not supported for message-type:\n!!" + sndTypeStr,*this,Theta,Gamma,Omega),children);
+    }
     MpsExp *msgAssertion=sndType->GetAssertion().Subst(sndType->GetAssertionName(),*myExp);
     vector<const MpsExp*> hyps;
     hyps.push_back(&Theta);
@@ -81,7 +96,9 @@ void *MpsSnd::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
     hyps.pop_back();
     delete msgAssertion;
     if (not checkAssertion)
+    { delete localMsgType;
       return wrap_err(this,PrintTypeError((string)"Assertion not respected",*this,Theta,Gamma,Omega),children);
+    }
   }
   // If delegating remove delegated session
   if (dynamic_cast<const MpsDelegateMsgType*>(sndType->GetMsgType())!=NULL)
@@ -89,11 +106,14 @@ void *MpsSnd::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
   // Check rest of program
   children["succ"]=mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Store if this is final action in session
-  myFinal=newMsgType->GetLocalType()->IsDone();
-  // Clean Up
-  delete newMsgType;
+  MpsLocalType *localNewMsgType=newMsgType->CopyLocalType();
+  myFinal=localNewMsgType->IsDone();
   // Store message type in term
   SetMsgType(*(sndType->GetMsgType()));
+  // Clean up
+  delete newMsgType;
+  delete localNewMsgType;
+  delete localMsgType; // Copy that was casted to sndType
 
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);

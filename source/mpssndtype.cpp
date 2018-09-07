@@ -36,35 +36,46 @@ void *MpsSndType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
     return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + mySession,*this,Theta,Gamma,Omega),children);
-  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
+  MpsLocalType *localMsgType=msgType->CopyLocalType();
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(localMsgType);
   // Check if unfolding is necessary
   if (recType!=NULL)
+  { delete localMsgType;
     return TypeCheckRec(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
-  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
+  }
+  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(localMsgType);
   if (allType!=NULL)
+  { delete localMsgType;
     return TypeCheckForall(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
+  }
   // Check session has correct type
-  const MpsLocalTypeSendType *sndType = dynamic_cast<const MpsLocalTypeSendType*>(msgType->GetLocalType());
+  const MpsLocalTypeSendType *sndType = dynamic_cast<const MpsLocalTypeSendType*>(localMsgType);
   if (sndType==NULL)
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Sending type on session with non-send type: " + mySession,*this,Theta,Gamma,Omega),children);
+  }
   // Check linearity constraint
   if (!sndType->IsLinear())
   { const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(myType);
     if (delType!=NULL) // Using linear type in (possibly) non linear setting
-      return wrap_err(this,PrintTypeError((string)"Applying session type to non-linear polymorphic type: " + sndType->GetDest(),*this,Theta,Gamma,Omega),children);
+    { string dest=sndType->GetDest();
+      delete localMsgType;
+      return wrap_err(this,PrintTypeError((string)"Applying session type to non-linear polymorphic type: " + dest,*this,Theta,Gamma,Omega),children);
+    }
   }
   // Make new environment
   MpsLocalType *newType=sndType->GetSucc()->MSubst(sndType->GetDest(),*myType);
+  // Store if this is final action in session
+  myFinal=newType->IsDone();
   MpsDelegateLocalMsgType *newMsgType=new MpsDelegateLocalMsgType(*newType,msgType->GetPid(),msgType->GetParticipants());
   delete newType;
   MpsMsgEnv newGamma = Gamma;
   newGamma[mySession]=newMsgType;
   // Check rest of program
   children["succ"]=mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
-  // Store if this is final action in session
-  myFinal=newMsgType->GetLocalType()->IsDone();
   // Clean Up
   delete newMsgType;
+  delete localMsgType;
 
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);

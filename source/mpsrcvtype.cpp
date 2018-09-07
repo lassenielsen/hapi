@@ -37,16 +37,23 @@ void *MpsRcvType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
   if (msgType==NULL)
     return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + mySession,*this,Theta,Gamma,Omega),children);
   // Check if unfolding is necessary
-  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
+  MpsLocalType *localMsgType=msgType->CopyLocalType();
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(localMsgType);
   if (recType!=NULL)
+  { delete localMsgType;
     return TypeCheckRec(pre, wrap, wrap_err, Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
-  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
+  }
+  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(localMsgType);
   if (allType!=NULL)
+  { delete localMsgType;
     return TypeCheckForall(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
+  }
   // Check session has receive type
-  const MpsLocalTypeRcvType *rcvType = dynamic_cast<const MpsLocalTypeRcvType*>(msgType->GetLocalType());
+  const MpsLocalTypeRcvType *rcvType = dynamic_cast<const MpsLocalTypeRcvType*>(localMsgType);
   if (rcvType==NULL)
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Type-receiving on session: " + mySession,*this,Theta,Gamma,Omega),children);
+  }
   // Make new Gamma
   MpsMsgEnv newGamma;
   string newDest=MpsMsgType::NewMVar(myDest);
@@ -71,6 +78,7 @@ void *MpsRcvType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
   delete chkSucc;
   // Clean Up
   delete newMsgType;
+  delete localMsgType;
 
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);

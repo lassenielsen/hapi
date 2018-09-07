@@ -510,9 +510,11 @@ inline void *TypeCheckRec(MpsTerm::tdc_pre pre, MpsTerm::tdc_post wrap, MpsTerm:
   { return wrap_err(&term,PrintTypeError((std::string)"Unfolding closed session: " + session,term,Theta,Gamma,Omega),children);
   }
   const hapi::MpsDelegateMsgType *delType = dynamic_cast<const hapi::MpsDelegateMsgType*>(it->second);
-  const hapi::MpsLocalRecType *type = dynamic_cast<const hapi::MpsLocalRecType*>(delType->GetLocalType());
+  MpsLocalType *localDelType=delType->CopyLocalType();
+  const hapi::MpsLocalRecType *type = dynamic_cast<const hapi::MpsLocalRecType*>(localDelType);
   if (type==NULL)
-  { return wrap_err(&term,PrintTypeError((std::string)"Unfolding non-rec type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
+  { delete localDelType;
+    return wrap_err(&term,PrintTypeError((std::string)"Unfolding non-rec type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
   }
   hapi::MpsMsgEnv newGamma = Gamma;
   // Create type for substitution
@@ -543,6 +545,7 @@ inline void *TypeCheckRec(MpsTerm::tdc_pre pre, MpsTerm::tdc_post wrap, MpsTerm:
     result = wrap_err(&term,PrintTypeError((std::string)"Using non-contractive type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
   delete newType;
   delete newMsgType;
+  delete localDelType;
   return result;
 } // }}}
 inline void *TypeCheckForall(MpsTerm::tdc_pre pre, MpsTerm::tdc_post wrap, MpsTerm::tdc_error wrap_err, const hapi::MpsExp &Theta, const hapi::MpsMsgEnv &Gamma, const hapi::MpsProcEnv &Omega, const std::set<std::pair<std::string,int> > &pureStack, const std::string &curPure, MpsTerm::PureState pureState, bool checkPure, hapi::MpsTerm &term, const std::string &session) // Using new rule forall {{{
@@ -551,9 +554,12 @@ inline void *TypeCheckForall(MpsTerm::tdc_pre pre, MpsTerm::tdc_post wrap, MpsTe
   if (it==Gamma.end())
     return wrap_err(&term,PrintTypeError((std::string)"Forall on closed session: " + session,term,Theta,Gamma,Omega),children);
   const hapi::MpsDelegateMsgType *delType = dynamic_cast<const hapi::MpsDelegateMsgType*>(it->second);
-  const hapi::MpsLocalForallType *type = dynamic_cast<const hapi::MpsLocalForallType*>(delType->GetLocalType());
+  MpsLocalType *localDelType=delType->CopyLocalType();
+  const hapi::MpsLocalForallType *type = dynamic_cast<const hapi::MpsLocalForallType*>(localDelType);
   if (type==NULL)
+  { delete localDelType;
     return wrap_err(&term,PrintTypeError((std::string)"Forall on non-forall type: " + it->second->ToString(),term,Theta,Gamma,Omega),children);
+  }
   // Find new name for bound variable
   std::string newName = hapi::MpsExp::NewVar(type->GetName());
   // Create type for substitution
@@ -570,6 +576,7 @@ inline void *TypeCheckForall(MpsTerm::tdc_pre pre, MpsTerm::tdc_post wrap, MpsTe
   void *result = term.TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   // Clean Up
   delete newTheta;
+  delete localDelType;
   return result;
 } // }}}
 
