@@ -1,201 +1,42 @@
 #include<console.pi>
+#include<struct/list.pi>
+#include<math/fib.pi>
 
-#define $abslist \
-  2: #elt; \
-  $list(#elt)
-#define $list(_elt) \
-  rec $list; \
-  2->1 \
-  {^get: \
-    2->1: Int; \
-    1->2 \
-    {^val: \
-      1->2: _elt; \
-      $list; \
-     ^err: \
-      1->2: String; \
-      $list; \
-    } \
-   ^set: \
-    2->1: Int; \
-    2->1: _elt; \
-    $list; \
-   ^length: \
-    1->2: Int; \
-    $list; \
-   ^apply: \
-    2->1: 2->1: _elt; 1->2: _elt; $end; (1 pure, 2); \
-    $list; \
-   ^insert: \
-    2->1: Int; \
-    2->1: _elt; \
-    $list; \
-   ^cons: \
-    2->1: _elt; \
-    $list; \
-   ^snoc: \
-    2->1: _elt; \
-    $list; \
-   ^pop: \
-    1->2 \
-    {^nil: \
-      $end; \
-     ^cons: \
-      1->2: _elt; \
-      1->2: $list;(2 of 1 pure,2); \
-      $end; \
-    } \
-   ^append: \
-    2->1: $list;(2 of 1 pure,2); \
-    $list; \
-   ^copy: \
-    1->2: $list;(2 of 1 pure,2); \
-    $list; \
-   ^delete: \
-    $end; \
-  }
-
-global $abslist list(1 pure,2);
-local pure service List(list (1 of 2) s)
-( s>>#elt;
-  local pure Nil($list(#elt)(1 of 1 pure, 2) this)
-  ( global pure Cons(#elt head, $list(#elt)(2 of 1 pure, 2) tail, $list(#elt)(1 of 1 pure,2) this)
-    ( this[2]>>
-      {^get:
-        this[2]>>i;
-        if i<=0
-        then this[2]<<^val<<head;
-             Cons(head,tail,this);
-        else tail[1]<<^get<<i-1;
-             tail[1]>>
-             {^val:
-               tail[1]>>v;
-               this[2]<<^val<<v;
-               Cons(head,tail,this);
-              ^err:
-               tail[1]>>msg;
-               this[2]<<^err<<msg;
-               Cons(head,tail,this);
-             }
-       ^set:
-        this[2]>>i;
-        this[2]>>v;
-        if i<=0
-        then Cons(v,tail,this);
-        else tail[1]<<^set<<i-1<<v;
-             Cons(head,tail,this);
-       ^length:
-        tail[1]<<^length;
-        tail[1]>>l;
-        this[2]<<l+1;
-        Cons(head,tail,this);
-       ^apply:
-        this[2]>>fc;
-        f = new fc(2 of 2);
-        f[1]<<head;
-        f[1]>>h;
-        tail[1]<<^apply<<fc;
-        Cons(h,tail,this);
-       ^insert:
-        this[2]>>i;
-        this[2]>>h;
-        if i<=0
-        then t = new list(2 of 2);
-             t<<#elt;
-             t[1]<<^cons<<head<<^append<<tail;
-             Cons(h,t,this);
-        else tail[1]<<^insert<<i-1<<h;
-             Cons(head,tail,this);
-       ^cons:
-        this[2]>>h;
-        t=new list(2 of 2);
-        t<<#elt;
-        t[1]<<^cons<<head<<^append<<tail;
-        Cons(h,t,this);
-       ^snoc:
-        this[2]>>h;
-	tail[1]<<^snoc<<h;
-        Cons(head,tail,this);
-       ^pop:
-        this[2]<<^cons<<head<<tail;
-       ^append:
-        this[2]>>l;
-	tail[1]<<^append<<l;
-        Cons(head,tail,this);
-       ^copy:
-	tail[1]<<^copy;
-        tail[1]>>t;
-        cpy = new list(2 of 2);
-        cpy<<#elt;
-	cpy[1]<<^cons<<head<<^append<<t;
-        this[2]<<cpy;
-        Cons(head,tail,this);
-       ^delete:
-        tail[1]<<^delete;
-      }
-    )
-    this[2]>>
-    {^get:
-      this[2]>>i;
-      this[2]<<^err<<"Index out of bounds";
-      Nil(this);
-     ^set:
-      this[2]>>i;
-      this[2]>>v;
-      Nil(this); // Report error requires subsequent get
-     ^length:
-      this[2]<<0;
-      Nil(this);
-     ^apply:
-      this[2]>>f;
-      Nil(this);
-     ^insert:
-      this[2]>>i;
-      this[2]>>v;
-      if i<=0
-      then tail = new list(2 of 2);
-           tail<<#elt;
-           Cons(v,tail,this);
-      else Nil(this);
-     ^cons:
-      this[2]>>head;
-      tail = new list(2 of 2);
-      tail<<#elt;
-      Cons(head,tail,this);
-     ^snoc:
-      this[2]>>head;
-      tail = new list(2 of 2);
-      tail<<#elt;
-      Cons(head,tail,this);
-     ^pop:
-      this[2]<<^nil;
-     ^append:
-      this[2]>>l;
-      l[1]<<^pop;
-      l[1]>>
-      {^nil:
-        Nil(this);
-       ^cons:
-        l[1]>>head;
-        l[1]>>tail;
-        Cons(head,tail,this);
-      }
-     ^copy:
-      cpy = new list(2 of 2);
-      cpy<<#elt;
-      this[2]<<cpy;
-      Nil(this);
-     ^delete:
+global PrintIntList($list(Int)(2 of 1 pure,2) l)
+( c=new console(2 of 2);
+  c[1]<<^PutString<<"list start";
+  local X($list(Int)(2 of 1 pure,2) l, $console(2 of 1,2) c)
+  ( l[1]<<^pop;
+    l[1]>>
+    {^cons:
+      l[1]>>v>>tail;
+      c[1]<<^PutInt<<v;
+      X(tail,c);
+     ^nil:
+      c[1]<<^PutString<<"list end"<<^End;
     }
   )
-  Nil(s);
+  X(l,c);
 )
-|
+#define $intlistresult 2->1:$list(Int)(2 of 1 pure,2); $end;
+global RangeIntList(Int idx, $list(Int)(2 of 1 pure,2) dest, $intlistresult(2 of 1,2) return)
+( if idx<=0
+  then return[1]<<dest;
+  else dest[1]<<^cons<<idx-5*(idx/5);
+       RangeIntList(idx-1,dest,return);
+)
 ilist=new list(2 of 2);
 ilist<<Int;
-ilist[1]<<^cons<<1<<^cons<<2<<^cons<<3;
-ilist[1]<<^length;
-ilist[1]>>l;
-c = new console(2 of 2);
-c[1]<<^PutString<<"ilists length is"<<^PutInt<<l<<^End;
-ilist[1]<<^delete;
+global $intlistresult r1,r2;
+RangeIntList(10000,ilist,r2);
+|
+r1[2]>>ilist;
+//ilist[1]<<^snoc<<2<<^snoc<<4<<^snoc<<6;
+//ilist[1]<<^copy;
+//ilist[1]>>cpy;
+//( PrintIntList(cpy);
+//| x = new cb(2 of 2);
+  ilist[1]<<^apply<<fib;
+  PrintIntList(ilist);
+//  ilist[1]<<^delete;
+//)

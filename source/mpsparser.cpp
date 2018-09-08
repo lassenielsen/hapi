@@ -130,7 +130,7 @@ MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
   { vector<MpsParticipant> participants;
     Participants(tree->Child(3),participants);
     MpsGlobalType *type = Gtype(tree->Child(0));
-    if (participants.size()!=type->GetMaxPid())
+    if (participants.size()<type->GetMaxPid())
     { delete succ;
       delete type;
       throw string("Participant count does not match type: ") + tree->Type() + "." + tree->Case();

@@ -64,8 +64,8 @@ void *MpsLink::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, con
   }
 
   // Check correct maxpid
-  if (myMaxpid != channel->GetGlobalType()->GetMaxPid())
-    return wrap_err(this,PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega),children);
+  if (myMaxpid != channel->GetParticipants().size())
+    return wrap_err(this,PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetParticipants().size()),*this,Theta,Gamma,Omega),children);
 
   // Check that only completed sessions are hidden
   var=newGamma.find(mySession);
