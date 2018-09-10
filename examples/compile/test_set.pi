@@ -23,7 +23,7 @@ global PrintIntSet($set(Int)(2 of 1 pure,2) s)
 global RangeIntSet(Int idx, $set(Int)(2 of 1 pure,2) dest, $intsetresult(2 of 1,2) return)
 ( if idx<=0
   then return[1]<<dest;
-  else dest[1]<<^Insert<<idx-5*(idx/5);
+  else dest[1]<<^Insert<<idx-100*(idx/100);
        RangeIntSet(idx-1,dest,return);
 )
 global 2->1:Int;2->1:Int;1->2:Bool;$end; leqint(1 pure,2);

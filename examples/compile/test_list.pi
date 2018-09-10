@@ -28,15 +28,8 @@ global RangeIntList(Int idx, $list(Int)(2 of 1 pure,2) dest, $intlistresult(2 of
 ilist=new list(2 of 2);
 ilist<<Int;
 global $intlistresult r1,r2;
-RangeIntList(10000,ilist,r2);
+RangeIntList(1000,ilist,r2);
 |
 r1[2]>>ilist;
-//ilist[1]<<^snoc<<2<<^snoc<<4<<^snoc<<6;
-//ilist[1]<<^copy;
-//ilist[1]>>cpy;
-//( PrintIntList(cpy);
-//| x = new cb(2 of 2);
-  ilist[1]<<^apply<<fib;
-  PrintIntList(ilist);
-//  ilist[1]<<^delete;
-//)
+ilist[1]<<^apply<<fib;
+PrintIntList(ilist);

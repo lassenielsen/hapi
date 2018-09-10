@@ -156,7 +156,7 @@ MpsTerm *MpsSnd::ERename(const string &src, const string &dst) const // {{{
 } // }}}
 MpsTerm *MpsSnd::MRename(const string &src, const string &dst) const // {{{
 {
-  MpsTerm *newSucc = mySucc->ERename(src,dst);
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
   MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, GetMsgType(), GetFinal());
   delete newSucc;
   return result;
