@@ -2,28 +2,37 @@
 #include<struct/set.pi>
 
 global PrintIntSet($set(Int)(2 of 1 pure,2) s)
-( c=new console(2 of 2);
-  c[1]<<^PutString<<"set start"<<^End;
-  local X($set(Int)(2 of 1 pure,2) l)
+(
+#define $xreturn 1->2:$console(2 of 1,2); 1->2:Bool; $end;
+  local X($set(Int)(2 of 1 pure,2) l, $console(2 of 1,2) c, Bool first, $xreturn(1 of 1,2) return)
   ( l[1]<<^Dissolve;
     l[1]>>
     {^NonEmpty:
       l[1]>>v>>lt>>rt;
-      c=new console(2 of 2);
-      c[1]<<^PutInt<<v<<^End;
-      ( X(lt);
-      | X(rt);
+      global $xreturn r1,r2;
+      ( X(lt,c,first,r1);
+      | r2[1]>>c>>first;
+        String sep=if first then "" else ",";
+        c[1]<<^str<<sep<<^int<<v;
+        X(rt,c,false,return);
       )
      ^Empty:
+      return[2]<<c<<first;
     }
   )
-  X(s);
+  c=new console(2 of 2);
+  c[1]<<^str<<"{";
+  global $xreturn r1,r2;
+  X(s,c,true,r1);
+  |
+  r2[1]>>c>>empty;
+  c[1]<<^str<<"}"<<^nl<<^end;
 )
 #define $intsetresult 2->1:$set(Int)(2 of 1 pure,2); $end;
 global RangeIntSet(Int idx, $set(Int)(2 of 1 pure,2) dest, $intsetresult(2 of 1,2) return)
 ( if idx<=0
   then return[1]<<dest;
-  else dest[1]<<^Insert<<idx-100*(idx/100);
+  else dest[1]<<^Insert<<idx-10*(idx/10);
        RangeIntSet(idx-1,dest,return);
 )
 global 2->1:Int;2->1:Int;1->2:Bool;$end; leqint(1 pure,2);
@@ -36,7 +45,7 @@ iset=new set(2 of 2);
 iset<<Int;
 iset[1]<<leqint;
 global $intsetresult r1,r2;
-RangeIntSet(10000,iset,r2);
+RangeIntSet(1000,iset,r2);
 |
 r1[2]>>iset;
 PrintIntSet(iset);

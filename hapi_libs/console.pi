@@ -3,34 +3,47 @@
 HOSTHEADER("#include <iostream>");
 #define $console rec $console; \
   2->1 \
-  {^PutString: 2->1:String; $console; \
-   ^PutInt:    2->1:Int;    $console; \
-   ^GetString: 1->2:String; $console; \
-   ^GetInt:    1->2:Int; $console; \
-   ^End:       $end; \
-   ^Stop:      $end; \
+  {^str: 2->1:String; $console; \
+   ^int: 2->1:Int;    $console; \
+   ^nl: $console; \
+   ^input: \
+   2->1 \
+   {^str: 1->2:String; $console; \
+    ^int: 1->2:Int;    $console; \
+   } \
+   ^end:  $end; \
   }
 global $console console(1,2);
 local Console()
 ( s = new console(1 of 2);
   local ConsoleSession($console(1 of 1,2) s)
   ( s[2]>>
-    {^PutString: s[2]>>str;
-                 HOST("std::cout << ((libpi::String*)", str, ".get())->GetValue() << std::endl;");
-                 ConsoleSession(s);
-     ^PutInt:    s[2]>>i;
-                 HOST("std::cout << ((libpi::Int*)", i, ".get())->ToString() << std::endl;");
-                 ConsoleSession(s);
-     ^GetString: String val="";
-                 HOST("{ std::string _s; std::cin >> _s; ", val, "=shared_ptr<libpi::String>(new libpi::String(_s)); }");
-                 s[2]<<val;
-                 ConsoleSession(s);
-     ^GetInt:    Int val=0;
-                 HOST("{ long _l; std::cin >> _l; ", val, "=shared_ptr<libpi::Int>(new libpi::Int(_l)); }");
-                 s[2]<<val;
-                 ConsoleSession(s);
-     ^End:       Console();
-     ^Stop:
+    {^str:
+      s[2]>>str;
+      HOST("std::cout << ((libpi::String*)", str, ".get())->GetValue() << std::flush;");
+      ConsoleSession(s);
+     ^int:
+      s[2]>>i;
+      HOST("std::cout << ((libpi::Int*)", i, ".get())->ToString() << std::flush;");
+      ConsoleSession(s);
+     ^nl:
+      HOST("std::cout << std::endl;");
+      ConsoleSession(s);
+     ^input:
+      s[2]>>
+      {^str:
+        String val="";
+        HOST("{ std::string _s; std::cin >> _s; ", val, "=shared_ptr<libpi::String>(new libpi::String(_s)); }");
+        s[2]<<val;
+        ConsoleSession(s);
+       ^int:
+        Int val=0;
+        HOST("{ long _l; std::cin >> _l; ", val, "=shared_ptr<libpi::Int>(new libpi::Int(_l)); }");
+        s[2]<<val;
+        ConsoleSession(s);
+      }
+     ^end:
+      Console();
     }
   )
   ConsoleSession(s);

@@ -1,0 +1,19 @@
+#include<console.pi>
+
+c=new console(2 of 2);
+c[1]<<^str<<"n=";
+c[1]<<^input<<^int;
+c[1]>>n;
+c[1]<<^str<<"m=";
+c[1]<<^input<<^int;
+c[1]>>m;
+c[1]<<^str<<"n*m="<<^int<<n*m<<^nl<<^end;
+|
+c=new console(2 of 2);
+c[1]<<^str<<"p=";
+c[1]<<^input<<^int;
+c[1]>>p;
+c[1]<<^str<<"q=";
+c[1]<<^input<<^int;
+c[1]>>q;
+c[1]<<^str<<"p%q="<<^int<<p-(p/q)*q<<^nl<<^end;

@@ -28,12 +28,11 @@ local pure StartFib(Int i)
 StartFib(SYSTEM&"tprocs");
 |
 c = new console(2 of 2);
-c[1] << ^PutString << "What is n?"
-     << ^GetInt;
+c[1] << ^str << "What is n?" << ^nl
+     << ^input << ^int;
 c[1] >> v;
 f = new fib(2 of 2);
 f[1] << v;
 f[1] >> r;
-c[1] << ^PutString << "Fib(n) is"
-     << ^PutInt << r
-     << ^Stop;
+c[1] << ^str << "Fib(n)=" << ^int << r << ^nl
+     << ^end;
