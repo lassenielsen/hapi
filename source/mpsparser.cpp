@@ -917,6 +917,33 @@ MpsExp *MpsParser::Exp(const parsetree *tree) // {{{
     delete right;
     return result;
   } // }}}
+  else if (tree->Case() == "exp_geq") // Exp4 >= Exp3 {{{
+  {
+    MpsExp *left = Exp(tree->Child(0));
+    MpsExp *right = Exp(tree->Child(2));
+    MpsExp *result = new MpsBinOpExp(">=", *left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
+  else if (tree->Case() == "exp_lt") // Exp4 < Exp3 {{{
+  {
+    MpsExp *left = Exp(tree->Child(0));
+    MpsExp *right = Exp(tree->Child(2));
+    MpsExp *result = new MpsBinOpExp("<", *left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
+  else if (tree->Case() == "exp_gt") // Exp4 > Exp3 {{{
+  {
+    MpsExp *left = Exp(tree->Child(0));
+    MpsExp *right = Exp(tree->Child(2));
+    MpsExp *result = new MpsBinOpExp(">", *left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
   else if (tree->Case() == "exp_plus") // Exp5 + Exp4 {{{
   {
     MpsExp *left = Exp(tree->Child(0));

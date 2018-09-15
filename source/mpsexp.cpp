@@ -435,9 +435,17 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
     else
       return new MpsMsgNoType();
   } // }}}
-  if (myName == "<=") // Integer operation [int -> int -> bool] // {{{
+  if (myName == "<=" || // Integer operation [int -> int -> bool] // {{{
+      myName==">=" ||
+      myName=="<")
   { if (dynamic_cast<MpsIntMsgType*>(myLeftType) &&
         dynamic_cast<MpsIntMsgType*>(myRightType))
+      return new MpsBoolMsgType();
+    else if (dynamic_cast<MpsFloatMsgType*>(myLeftType) &&
+             dynamic_cast<MpsFloatMsgType*>(myRightType))
+      return new MpsBoolMsgType();
+    else if (dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+             dynamic_cast<MpsStringMsgType*>(myRightType))
       return new MpsBoolMsgType();
     else
       return new MpsMsgNoType();

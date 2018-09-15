@@ -361,6 +361,7 @@ string MpsTerm::MakeC() const // {{{
     << "#include <libpi/value.hpp>\n"
     << "#include <libpi/bool.hpp>\n"
     << "#include <libpi/int.hpp>\n"
+    << "#include <libpi/float.hpp>\n"
     << "#include <libpi/string.hpp>\n"
     << "#include <libpi/session.hpp>\n"
     << "#include <libpi/task/link.hpp>\n"

@@ -27,7 +27,7 @@ local pure service SetService(set (1 of 2) s) // {{{
 ( s>>#t;
   s[2]>>chleq;
   local pure EmptySet($set(#t)(1 of 1 pure,2) this) // {{{
-  ( local pure Set($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right) // {{{
+  ( local pure Set($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right, Int height) // {{{
     ( local pure RotateLeft($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right) // {{{
       ( right[1]<<^Dissolve;
         right[1]>>
@@ -36,7 +36,9 @@ local pure service SetService(set (1 of 2) s) // {{{
           right=new set(2 of 2);
           right<<#t;
           right[1]<<chleq;
-          Set(this,member,left,right);
+          left[1]<<^Height;
+          left[1]>>lh;
+          Set(this,member,left,right,1+lh);
          ^NonEmpty:
           right[1]>>rMember;
           right[1]>>rLeft;
@@ -45,7 +47,11 @@ local pure service SetService(set (1 of 2) s) // {{{
           s<<#t;
           s[1]<<chleq;
           s[1]<<^Assign<<member<<left<<rLeft;
-          Set(this,rMember,s,rRight);
+          s[1]<<^Height;
+          s[1]>>lh;
+          rRight[1]<<^Height;
+          rRight[1]>>rh;
+          Set(this,rMember,s,rRight,if lh<=rh then 1+rh else 1+lh);
         }
       ) // }}}
       local pure RotateRight($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right) // {{{
@@ -56,7 +62,9 @@ local pure service SetService(set (1 of 2) s) // {{{
           left=new set(2 of 2);
           left<<#t;
           left[1]<<chleq;
-          Set(this,member,left,right);
+          right[1]<<^Height;
+          right[1]>>rh;
+          Set(this,member,left,right,1+rh);
          ^NonEmpty:
           left[1]>>lMember;
           left[1]>>lLeft;
@@ -65,7 +73,11 @@ local pure service SetService(set (1 of 2) s) // {{{
           s<<#t;
           s[1]<<chleq;
           s[1]<<^Assign<<member<<lRight<<right;
-          Set(this,lMember,lLeft,s);
+          lLeft[1]<<^Height;
+          lLeft[1]>>lh;
+          s[1]<<^Height;
+          s[1]>>rh;
+          Set(this,lMember,lLeft,s,if lh<=rh then rh+1 else lh+1);
         }
       ) // }}}
       local pure Balance($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right) // {{{
@@ -81,7 +93,7 @@ local pure service SetService(set (1 of 2) s) // {{{
             right=new set(2 of 2);
             right<<#t;
             right[1]<<chleq;
-            Set(this,member,left,right);
+            Set(this,member,left,right,1);
            ^NonEmpty:
             right[1]>>rMember;
             right[1]>>rLeft;
@@ -90,7 +102,11 @@ local pure service SetService(set (1 of 2) s) // {{{
             s<<#t;
             s[1]<<chleq;
             s[1]<<^Assign<<member<<left<<rLeft;
-            Set(this,rMember,s,rRight);
+            s[1]<<^Height;
+            s[1]>>lh;
+            rRight[1]<<^Height;
+            rRight[1]>>rh;
+            Set(this,rMember,s,rRight,if lh<=rh then rh+1 else lh+1);
           }
          ^NonEmpty:
           left[1]>>lMember;
@@ -106,7 +122,11 @@ local pure service SetService(set (1 of 2) s) // {{{
             s<<#t;
             s[1]<<chleq;
             s[1]<<^Assign<<member<<lRight<<right;
-            Set(this,lMember,lLeft,s);
+            lLeft[1]<<^Height;
+            lLeft[1]>>lh;
+            s[1]<<^Height;
+            s[1]>>rh;
+            Set(this,lMember,lLeft,s,if lh<=rh then rh+1 else lh+1);
            ^NonEmpty:
             right[1]>>rMember;
             right[1]>>rLeft;
@@ -145,7 +165,7 @@ local pure service SetService(set (1 of 2) s) // {{{
                  RotateLeft(this,member,s1,s2);
             else s1[1]<<^Assign<<lMember<<lLeft<<lRight;
                  s2[1]<<^Assign<<rMember<<rLeft<<rRight;
-                 Set(this,member,s1,s2);
+                 Set(this,member,s1,s2,if hl<=hr then hr+1 else hl+1);
           }
         }
       ) // }}}
@@ -159,7 +179,11 @@ local pure service SetService(set (1 of 2) s) // {{{
           this[2]>>r;
           left[1]<<^Delete;
           right[1]<<^Delete;
-          Set(this,m,l,r);
+          l[1]<<^Height;
+          l[1]>>hl;
+          r[1]<<^Height;
+          r[1]>>hr;
+          Set(this,m,l,r,if hr<=hl then 1+hl else 1+hr);
         ^Insert:
           this[2]>>v;
           sleq=new chleq(2 of 2);
@@ -169,7 +193,7 @@ local pure service SetService(set (1 of 2) s) // {{{
           sgeq[1]<<member<<v;
           sgeq[1]>>geq;
           if leq and geq
-          then Set(this,member,left,right);
+          then Set(this,member,left,right,height);
           else if leq
           then left[1]<<^Insert<<v; Balance(this,member,left,right);
           else right[1]<<^Insert<<v; Balance(this,member,left,right);
@@ -182,33 +206,27 @@ local pure service SetService(set (1 of 2) s) // {{{
           sgeq[1]<<member<<v;
           sgeq[1]>>geq;
           if leq and geq
-          then this[2]<<true; Set(this,member,left,right);
+          then this[2]<<true;
+               Set(this,member,left,right,height);
           else if leq
           then left[1]<<^Member<<v;
                left[1]>>r;
                this[2]<<r;
-               Set(this,member,left,right);
+               Set(this,member,left,right,height);
           else right[1]<<^Member<<v;
                right[1]>>r;
                this[2]<<r;
-               Set(this,member,left,right);
+               Set(this,member,left,right,height);
         ^Size:
           left[1]<<^Size;
           left[1]>>ls;
           right[1]<<^Size;
           right[1]>>rs;
           this[2]<<1+ls+rs;
-          Set(this,member,left,right);
+          Set(this,member,left,right,height);
         ^Height:
-          left[1]<<^Height;
-          left[1]>>lh;
-          right[1]<<^Height;
-          right[1]>>rh;
-          if lh+1<=rh
-          then this[2]<<1+rh;
-               Set(this,member,left,right);
-          else this[2]<<1+lh;
-               Set(this,member,left,right);
+          this[2]<<height;
+          Set(this,member,left,right,height);
         ^Dissolve:
           this[2]<<^NonEmpty;
           this[2]<<member;
@@ -222,7 +240,11 @@ local pure service SetService(set (1 of 2) s) // {{{
       this[2]>>m;
       this[2]>>l;
       this[2]>>r;
-      Set(this,m,l,r);
+      l[1]<<^Height;
+      l[1]>>lh;
+      r[1]<<^Height;
+      r[1]>>rh;
+      Set(this,m,l,r,if lh<=rh then 1+rh else 1+lh);
      ^Insert:
       lft=new set(2 of 2);
       lft<<#t;
@@ -231,7 +253,7 @@ local pure service SetService(set (1 of 2) s) // {{{
       rgt<<#t;
       rgt[1]<<chleq;
       this[2]>>v;
-      Set(this,v,lft,rgt);
+      Set(this,v,lft,rgt,1);
      ^Member:
       this[2]>>q;
       this[2]<<false;

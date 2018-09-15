@@ -1,0 +1,12 @@
+#include<console.pi>
+#include<order.pi>
+
+c=new console(2 of 2);
+
+o=new stdorder_Int(2 of 2);
+o[1]<<^leq<<5<<7;
+o[1]>>r1;
+c[1]<<^str<<if r1 then "yes" else "no";
+
+o[1]<<^end;
+c[1]<<^end;
