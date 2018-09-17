@@ -1,4 +1,5 @@
 #include<console.pi>
+#include<order.pi>
 #include<struct/set.pi>
 
 global PrintIntSet($set(Int)(2 of 1 pure,2) s)
@@ -35,15 +36,9 @@ global RangeIntSet(Int idx, $set(Int)(2 of 1 pure,2) dest, $intsetresult(2 of 1,
   else dest[1]<<^Insert<<idx-100*(idx/100);
        RangeIntSet(idx-1,dest,return);
 )
-global 2->1:Int;2->1:Int;1->2:Bool;$end; leqint(1 pure,2);
-local pure service LeqInt(leqint (1 of 2) s)
-( s[2]>>lhs>>rhs;
-  s[2]<<lhs<=rhs;
-)
-|
 iset=new set(2 of 2);
 iset<<Int;
-iset[1]<<leqint;
+iset[1]<<stdorder_Int;
 global $intsetresult r1,r2;
 RangeIntSet(10000,iset,r2);
 |

@@ -1,3 +1,4 @@
+#include<order.pi>
 #define $set(_t) \
   rec $set; \
   2->1 \
@@ -19,94 +20,94 @@
   }
 #define $absset \
   2: #elt; \
-  2->1: 2->1:#elt; 2->1:#elt; 1->2:Bool;$end;(1 pure, 2); \
+  2->1: $order(#elt)(1 pure, 2); \
   $set(#elt)
 
 global $absset set(1 pure, 2);
 local pure service SetService(set (1 of 2) s) // {{{
 ( s>>#t;
-  s[2]>>chleq;
+  s[2]>>chcmp;
   local pure EmptySet($set(#t)(1 of 1 pure,2) this) // {{{
-  ( local pure Set($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right, Int height) // {{{
-    ( local pure RotateLeft($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right) // {{{
+  ( local pure Set($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right, Int height, $order(#t)(2 of 1 pure,2) cmp) // {{{
+    ( local pure RotateLeft($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right, $order(#t)(2 of 1 pure,2) cmp) // {{{
       ( right[1]<<^Dissolve;
         right[1]>>
         {^Empty:
           // Cannot rotete
           right=new set(2 of 2);
           right<<#t;
-          right[1]<<chleq;
+          right[1]<<chcmp;
           left[1]<<^Height;
           left[1]>>lh;
-          Set(this,member,left,right,1+lh);
+          Set(this,member,left,right,1+lh,cmp);
          ^NonEmpty:
           right[1]>>rMember;
           right[1]>>rLeft;
           right[1]>>rRight;
           s=new set(2 of 2);
           s<<#t;
-          s[1]<<chleq;
+          s[1]<<chcmp;
           s[1]<<^Assign<<member<<left<<rLeft;
           s[1]<<^Height;
           s[1]>>lh;
           rRight[1]<<^Height;
           rRight[1]>>rh;
-          Set(this,rMember,s,rRight,if lh<=rh then 1+rh else 1+lh);
+          Set(this,rMember,s,rRight,if lh<=rh then 1+rh else 1+lh,cmp);
         }
       ) // }}}
-      local pure RotateRight($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right) // {{{
+      local pure RotateRight($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right, $order(#t)(2 of 1 pure,2) cmp) // {{{
       ( left[1]<<^Dissolve;
         left[1]>>
         {^Empty:
           // Cannot rotate
           left=new set(2 of 2);
           left<<#t;
-          left[1]<<chleq;
+          left[1]<<chcmp;
           right[1]<<^Height;
           right[1]>>rh;
-          Set(this,member,left,right,1+rh);
+          Set(this,member,left,right,1+rh,cmp);
          ^NonEmpty:
           left[1]>>lMember;
           left[1]>>lLeft;
           left[1]>>lRight;
           s=new set(2 of 2);
           s<<#t;
-          s[1]<<chleq;
+          s[1]<<chcmp;
           s[1]<<^Assign<<member<<lRight<<right;
           lLeft[1]<<^Height;
           lLeft[1]>>lh;
           s[1]<<^Height;
           s[1]>>rh;
-          Set(this,lMember,lLeft,s,if lh<=rh then rh+1 else lh+1);
+          Set(this,lMember,lLeft,s,if lh<=rh then rh+1 else lh+1,cmp);
         }
       ) // }}}
-      local pure Balance($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right) // {{{
+      local pure Balance($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right, $order(#t)(2 of 1 pure,2) cmp) // {{{
       ( left[1]<<^Dissolve;
         left[1]>>
         {^Empty:
           left=new set(2 of 2);
           left<<#t;
-          left[1]<<chleq;
+          left[1]<<chcmp;
           right[1]<<^Dissolve;
           right[1]>>
           {^Empty:
             right=new set(2 of 2);
             right<<#t;
-            right[1]<<chleq;
-            Set(this,member,left,right,1);
+            right[1]<<chcmp;
+            Set(this,member,left,right,1,cmp);
            ^NonEmpty:
             right[1]>>rMember;
             right[1]>>rLeft;
             right[1]>>rRight;
             s=new set(2 of 2);
             s<<#t;
-            s[1]<<chleq;
+            s[1]<<chcmp;
             s[1]<<^Assign<<member<<left<<rLeft;
             s[1]<<^Height;
             s[1]>>lh;
             rRight[1]<<^Height;
             rRight[1]>>rh;
-            Set(this,rMember,s,rRight,if lh<=rh then rh+1 else lh+1);
+            Set(this,rMember,s,rRight,if lh<=rh then rh+1 else lh+1,cmp);
           }
          ^NonEmpty:
           left[1]>>lMember;
@@ -117,16 +118,16 @@ local pure service SetService(set (1 of 2) s) // {{{
           {^Empty:
             right=new set(2 of 2);
             right<<#t;
-            right[1]<<chleq;
+            right[1]<<chcmp;
             s=new set(2 of 2);
             s<<#t;
-            s[1]<<chleq;
+            s[1]<<chcmp;
             s[1]<<^Assign<<member<<lRight<<right;
             lLeft[1]<<^Height;
             lLeft[1]>>lh;
             s[1]<<^Height;
             s[1]>>rh;
-            Set(this,lMember,lLeft,s,if lh<=rh then rh+1 else lh+1);
+            Set(this,lMember,lLeft,s,if lh<=rh then rh+1 else lh+1,cmp);
            ^NonEmpty:
             right[1]>>rMember;
             right[1]>>rLeft;
@@ -143,29 +144,29 @@ local pure service SetService(set (1 of 2) s) // {{{
             hr=if hrl<=hrr then hrr else hrl;
             s1=new set(2 of 2);
             s1<<#t;
-            s1[1]<<chleq;
+            s1[1]<<chcmp;
             s2=new set(2 of 2);
             s2<<#t;
-            s2[1]<<chleq;
+            s2[1]<<chcmp;
             if (hll+1<=hlr) and (2+hr<=hl)
             then s1[1]<<^Assign<<lMember<<lLeft<<lRight;
                  s2[1]<<^Assign<<rMember<<rLeft<<rRight;
-                 RotateRight(this,member,s1,s2);
+                 RotateRight(this,member,s1,s2,cmp);
             else if 2+hr<=hl
             then s1[1]<<^Assign<<lMember<<lLeft<<lRight;
                  s2[1]<<^Assign<<rMember<<rLeft<<rRight;
-                 RotateRight(this,member,s1,s2);
+                 RotateRight(this,member,s1,s2,cmp);
             else if (hrr+1<=hrl) and (hl+2<=hr)
             then s1[1]<<^Assign<<lMember<<lLeft<<lRight;
                  s2[1]<<^Assign<<rMember<<rLeft<<rRight;
-                 RotateLeft(this,member,s1,s2);
+                 RotateLeft(this,member,s1,s2,cmp);
             else if hl+2<=hr
             then s1[1]<<^Assign<<lMember<<lLeft<<lRight;
                  s2[1]<<^Assign<<rMember<<rLeft<<rRight;
-                 RotateLeft(this,member,s1,s2);
+                 RotateLeft(this,member,s1,s2,cmp);
             else s1[1]<<^Assign<<lMember<<lLeft<<lRight;
                  s2[1]<<^Assign<<rMember<<rLeft<<rRight;
-                 Set(this,member,s1,s2,if hl<=hr then hr+1 else hl+1);
+                 Set(this,member,s1,s2,if hl<=hr then hr+1 else hl+1,cmp);
           }
         }
       ) // }}}
@@ -173,6 +174,7 @@ local pure service SetService(set (1 of 2) s) // {{{
       { ^Delete:
           left[1]<<^Delete;
           right[1]<<^Delete;
+          cmp[1]<<^end;
         ^Assign:
           this[2]>>m;
           this[2]>>l;
@@ -183,55 +185,52 @@ local pure service SetService(set (1 of 2) s) // {{{
           l[1]>>hl;
           r[1]<<^Height;
           r[1]>>hr;
-          Set(this,m,l,r,if hr<=hl then 1+hl else 1+hr);
+          Set(this,m,l,r,if hr<=hl then 1+hl else 1+hr,cmp);
         ^Insert:
           this[2]>>v;
-          sleq=new chleq(2 of 2);
-          sleq[1]<<v<<member;
-          sleq[1]>>leq;
-          sgeq=new chleq(2 of 2);
-          sgeq[1]<<member<<v;
-          sgeq[1]>>geq;
-          if leq and geq
-          then Set(this,member,left,right,height);
-          else if leq
-          then left[1]<<^Insert<<v; Balance(this,member,left,right);
-          else right[1]<<^Insert<<v; Balance(this,member,left,right);
+          cmp[1]<<^eq<<v<<member;
+          cmp[1]>>eq;
+          if eq
+          then Set(this,member,left,right,height,cmp);
+          else cmp[1]<<^leq<<v<<member;
+               cmp[1]>>leq;
+               if leq
+               then left[1]<<^Insert<<v; Balance(this,member,left,right,cmp);
+               else right[1]<<^Insert<<v; Balance(this,member,left,right,cmp);
         ^Member:
           this[2]>>v;
-          sleq=new chleq(2 of 2);
-          sleq[1]<<v<<member;
-          sleq[1]>>leq;
-          sgeq=new chleq(2 of 2);
-          sgeq[1]<<member<<v;
-          sgeq[1]>>geq;
-          if leq and geq
+          cmp[1]<<^eq<<v<<member;
+          cmp[1]>>eq;
+          if eq
           then this[2]<<true;
-               Set(this,member,left,right,height);
-          else if leq
-          then left[1]<<^Member<<v;
-               left[1]>>r;
-               this[2]<<r;
-               Set(this,member,left,right,height);
-          else right[1]<<^Member<<v;
-               right[1]>>r;
-               this[2]<<r;
-               Set(this,member,left,right,height);
+               Set(this,member,left,right,height,cmp);
+          else cmp[1]<<^leq<<v<<member;
+               cmp[1]>>leq;
+               if leq
+               then left[1]<<^Member<<v;
+                    left[1]>>r;
+                    this[2]<<r;
+                    Set(this,member,left,right,height,cmp);
+               else right[1]<<^Member<<v;
+                    right[1]>>r;
+                    this[2]<<r;
+                    Set(this,member,left,right,height,cmp);
         ^Size:
           left[1]<<^Size;
           left[1]>>ls;
           right[1]<<^Size;
           right[1]>>rs;
           this[2]<<1+ls+rs;
-          Set(this,member,left,right,height);
+          Set(this,member,left,right,height,cmp);
         ^Height:
           this[2]<<height;
-          Set(this,member,left,right,height);
+          Set(this,member,left,right,height,cmp);
         ^Dissolve:
           this[2]<<^NonEmpty;
           this[2]<<member;
           this[2]<<left;
           this[2]<<right;
+          cmp[1]<<^end;
       }
     ) // }}}
     this[2]>>
@@ -244,16 +243,18 @@ local pure service SetService(set (1 of 2) s) // {{{
       l[1]>>lh;
       r[1]<<^Height;
       r[1]>>rh;
-      Set(this,m,l,r,if lh<=rh then 1+rh else 1+lh);
+      cmp=new chcmp(2 of 2);
+      Set(this,m,l,r,if lh<=rh then 1+rh else 1+lh,cmp);
      ^Insert:
       lft=new set(2 of 2);
       lft<<#t;
-      lft[1]<<chleq;
+      lft[1]<<chcmp;
       rgt=new set(2 of 2);
       rgt<<#t;
-      rgt[1]<<chleq;
+      rgt[1]<<chcmp;
+      cmp=new chcmp(2 of 2);
       this[2]>>v;
-      Set(this,v,lft,rgt,1);
+      Set(this,v,lft,rgt,1,cmp);
      ^Member:
       this[2]>>q;
       this[2]<<false;

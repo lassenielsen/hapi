@@ -1,3 +1,4 @@
+#pragma once
 #define $order($val) \
   rec $order; \
   2->1 \

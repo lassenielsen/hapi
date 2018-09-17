@@ -1,6 +1,16 @@
 #define $abslist \
   2: #elt; \
   $list(#elt)
+#define $keep(_elt) \
+  rec $x; \
+  2->1 \
+  {^keep: \
+    2->1: _elt; \
+    1->2: Bool; \
+    $x; \
+   ^end: \
+    $end; \
+  }
 #define $list(_elt) \
   rec $list; \
   2->1 \
@@ -22,11 +32,17 @@
     1->2: Int; \
     $list; \
    ^apply: \
-    2->1: 2->1: _elt; 1->2: _elt; $end; (1 pure, 2); \
+    2->1: 2->1: _elt; 1->2: _elt; $end;(1 pure, 2); \
     $list; \
    ^insert: \
     2->1: Int; \
     2->1: _elt; \
+    $list; \
+   ^erase: \
+    2->1: Int; \
+    $list; \
+   ^filter: \
+    2->1: $keep(_elt)(2 of 1 pure,2); \
     $list; \
    ^cons: \
     2->1: _elt; \
@@ -49,7 +65,7 @@
    ^copy: \
     1->2: $list;(2 of 1 pure,2); \
     $list; \
-   ^delete: \
+   ^end: \
     $end; \
   }
 
@@ -104,6 +120,34 @@ local pure service List(list (1 of 2) s)
              Cons(h,t,this);
         else tail[1]<<^insert<<i-1<<h;
              Cons(head,tail,this);
+       ^erase:
+        this[2]>>i;
+        if i<=0
+        then tail[1]<<^pop;
+             tail[1]>>
+             {^nil:
+               Nil(this);
+              ^cons:
+               tail[1]>>h>>t;
+               Cons(h,t,this);
+             }
+        else tail[1]<<^erase<<i-1;
+             Cons(head,tail,this);
+       ^filter:
+        this[2]>>filter;
+        filter[1]<<^keep<<head;
+        filter[1]>>keep;
+        tail[1]<<^filter<<filter;
+        if keep
+        then Cons(head,tail,this);
+        else tail[1]<<^pop;
+             tail[1]>>
+             {^nil:
+               Nil(this);
+              ^cons:
+               tail[1]>>h>>t;
+               Cons(h,t,this);
+             }
        ^cons:
         this[2]>>h;
         t=new list(2 of 2);
@@ -128,8 +172,8 @@ local pure service List(list (1 of 2) s)
 	cpy[1]<<^cons<<head<<^append<<t;
         this[2]<<cpy;
         Cons(head,tail,this);
-       ^delete:
-        tail[1]<<^delete;
+       ^end:
+        tail[1]<<^end;
       }
     )
     this[2]>>
@@ -155,6 +199,13 @@ local pure service List(list (1 of 2) s)
            tail<<#elt;
            Cons(v,tail,this);
       else Nil(this);
+     ^erase:
+      this[2]>>i;
+      Nil(this);
+     ^filter:
+      this[2]>>filter;
+      filter[1]<<^end;
+      Nil(this);
      ^cons:
       this[2]>>head;
       tail = new list(2 of 2);
@@ -183,7 +234,7 @@ local pure service List(list (1 of 2) s)
       cpy<<#elt;
       this[2]<<cpy;
       Nil(this);
-     ^delete:
+     ^end:
     }
   )
   Nil(s);

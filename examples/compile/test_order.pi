@@ -3,10 +3,20 @@
 
 c=new console(2 of 2);
 
-o=new stdorder_Int(2 of 2);
-o[1]<<^leq<<5<<7;
-o[1]>>r1;
-c[1]<<^str<<if r1 then "yes" else "no";
+iorder=new stdorder_Int(2 of 2);
+sorder=new stdorder_String(2 of 2);
+forder=new stdorder_Float(2 of 2);
+iorder[1]<<^leq<<5<<7;
+iorder[1]>>r1;
+c[1]<<^str<<"5<=7? "<<^str<<if r1 then "yes" else "no" << ^nl;
+sorder[1]<<^less<<"abc"<<"abba";
+sorder[1]>>r2;
+c[1]<<^str<<"abc<abba? "<<^str<<if r2 then "yes" else "no" << ^nl;
+forder[1]<<^eq<<3.1451<<3.1415;
+forder[1]>>r3;
+c[1]<<^str<<"3.1451=3.1415? "<<^str<<if r3 then "yes" else "no" << ^nl;
 
-o[1]<<^end;
+iorder[1]<<^end;
+sorder[1]<<^end;
+forder[1]<<^end;
 c[1]<<^end;
