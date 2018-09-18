@@ -309,10 +309,10 @@ bool MpsGlobalRecType::Equal(const MpsExp &Theta, const MpsGlobalType &rhs) cons
   if (myName != rhsptr->myName) // Rename to common name
   {
     string newName = NewGVar(myName);
-    MpsGlobalType *newType = newlhs->LRename(myName,newName);
+    MpsGlobalType *newType = newlhs->GRename(myName,newName);
     delete newlhs;
     newlhs=newType;
-    newType = newrhs->LRename(rhsptr->myName,newName);
+    newType = newrhs->GRename(rhsptr->myName,newName);
     delete newrhs;
     newrhs=newType;
   }

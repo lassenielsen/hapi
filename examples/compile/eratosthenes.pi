@@ -11,7 +11,7 @@ local pure service FilterMultiplas(filtermultiplas (1 of 2) s)
   ( this[2]>>
     {^keep:
       this[2]>>n;
-      this[2]<<(n/d)*d=n;
+      this[2]<<not ((n/d)*d=n);
       Filter(this);
      ^end:
     }
