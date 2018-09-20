@@ -3,13 +3,13 @@
 
 #define $filtermultiplas \
   2->1:Int; \
-  $keep(Int)
-global $filtermultiplas filtermultiplas(1 pure,2);
-local pure service FilterMultiplas(filtermultiplas (1 of 2) s)
+  $callable(Int,Bool)
+global $filtermultipla filtermultipla(1 pure,2);
+local pure service FilterMultipla(filtermultipla (1 of 2) s)
 ( s[2]>>d;
   local pure Filter($keep(Int)(1 of 1 pure,2) this)
   ( this[2]>>
-    {^keep:
+    {^call:
       this[2]>>n;
       this[2]<<not ((n/d)*d=n);
       Filter(this);
@@ -19,19 +19,6 @@ local pure service FilterMultiplas(filtermultiplas (1 of 2) s)
   Filter(s);
 )
 |
-
-#define $intlistresult 2->1:$list(Int)(2 of 1 pure,2); $end;
-global RangeIntList(Int idx, $list(Int)(2 of 1 pure,2) dest, $intlistresult(2 of 1,2) return)
-( if idx<=0
-  then return[1]<<dest;
-  else dest[1]<<^cons<<idx;
-       RangeIntList(idx-1,dest,return);
-)
-ilist=new list(2 of 2);
-ilist<<Int;
-global $intlistresult r1,r2;
-RangeIntList(1000,ilist,r2);
-|
 global Eratosthenes($list(Int)(2 of 1 pure,2) list)
 ( list[1]<<^pop;
   list[1]>>
@@ -40,12 +27,15 @@ global Eratosthenes($list(Int)(2 of 1 pure,2) list)
     list[1]>>p>>tail;
     c=new console(2 of 2);
     c[1]<<^int<<p<<^nl<<^end;
-    filter=new filtermultiplas(2 of 2);
+    filter=new filtermultipla(2 of 2);
     filter[1]<<p;
     tail[1]<<^filter<<filter;
     Eratosthenes(tail);
   }
 )
-r1[2]>>ilist;
-ilist[1]<<^erase<<0;
+ilist=new range(2 of 2);
+ilist<<Int;
+intSucc=new stdsucc_Int(2 of 2);
+intOrder=new stdorder_Int(2 of 2);
+ilist[1]<<intSucc<<intOrder<<2<<10000;
 Eratosthenes(ilist);
