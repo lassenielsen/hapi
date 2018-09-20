@@ -1,16 +1,9 @@
+#pragma once
+#include<callable.pi>
+#include<order.pi>
 #define $abslist \
   2: #elt; \
   $list(#elt)
-#define $keep(_elt) \
-  rec $x; \
-  2->1 \
-  {^keep: \
-    2->1: _elt; \
-    1->2: Bool; \
-    $x; \
-   ^end: \
-    $end; \
-  }
 #define $list(_elt) \
   rec $list; \
   2->1 \
@@ -42,7 +35,7 @@
     2->1: Int; \
     $list; \
    ^filter: \
-    2->1: $keep(_elt)(2 of 1 pure,2); \
+    2->1: $callable(_elt,Bool)(2 of 1 pure,2); \
     $list; \
    ^cons: \
     2->1: _elt; \
@@ -65,6 +58,9 @@
    ^copy: \
     1->2: $list;(2 of 1 pure,2); \
     $list; \
+   ^takeover: \
+    2->1: $list;(1 of 1 pure,2); \
+    $end; \
    ^end: \
     $end; \
   }
@@ -135,7 +131,7 @@ local pure service List(list (1 of 2) s)
              Cons(head,tail,this);
        ^filter:
         this[2]>>filter;
-        filter[1]<<^keep<<head;
+        filter[1]<<^call<<head;
         filter[1]>>keep;
         tail[1]<<^filter<<filter;
         if keep
@@ -172,6 +168,9 @@ local pure service List(list (1 of 2) s)
 	cpy[1]<<^cons<<head<<^append<<t;
         this[2]<<cpy;
         Cons(head,tail,this);
+       ^takeover:
+        this[2]>>that;
+        Cont(head,tail,that);
        ^end:
         tail[1]<<^end;
       }
@@ -234,9 +233,43 @@ local pure service List(list (1 of 2) s)
       cpy<<#elt;
       this[2]<<cpy;
       Nil(this);
+     ^takeover:
+      this[2]>>that;
+      Nil(that);
      ^end:
     }
   )
   Nil(s);
+)
+|
+#define $range \
+  2:#t; /* list element type */ \
+  2->1: $callable(#t,#t)(2 of 1 pure,2); /* next */ \
+  2->1: $order(#t)(2 of 1 pure,2); /* compare */ \
+  2->1: #t; /* from */ \
+  2->1: #t; /* to */ \
+  $list(#t)
+$range range(1 pure, 2);
+local pure service Range(range (1 of 2) s)
+( s>>#elt;
+  s[2]>>next;
+  s[2]>>cmp;
+  s[1]>>from;
+  s[2]>>to;
+  cmp[1]<<^leq<<from<<to;
+  cmp[1]>>leq;
+  if leq
+  then next[1]<<^call<<from;
+       next[1]>>succ;
+       tail=new range(2 of 2);
+       tail<<#elt;
+       tail[1]<<next<<cmp<<succ<<to;
+       res=new list(2 of 2);
+       res<<#elt;
+       res[1]<<^cons<<from<<^append<<tail;
+       res[1]<<^takeover<<s;
+  else res=new list(2 of 2);
+       res<<#elt;
+       res[1]<<^takeover<<s;
 )
 |

@@ -10,7 +10,7 @@
 # FIXME: Add expression operations (<,>,<=,>=,s1++s2,head,tail) [+,-,*,/,and,or,not,=]
 
 # Whitespace and comments are ignored
- := "[ \n\r\t][ \n\r\t]*+//[^\n]*"
+ := "[ \n\r\t][ \n\r\t]*+//[^\n]*+/\*([^*]*|\*[^/])*\*/"
 
 # KEYWORD tokens
 & := "&"
