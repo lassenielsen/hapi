@@ -170,7 +170,7 @@ local pure service List(list (1 of 2) s)
         Cons(head,tail,this);
        ^takeover:
         this[2]>>that;
-        Cont(head,tail,that);
+        Cons(head,tail,that);
        ^end:
         tail[1]<<^end;
       }
@@ -249,12 +249,12 @@ local pure service List(list (1 of 2) s)
   2->1: #t; /* from */ \
   2->1: #t; /* to */ \
   $list(#t)
-$range range(1 pure, 2);
+global $range range(1 pure, 2);
 local pure service Range(range (1 of 2) s)
 ( s>>#elt;
   s[2]>>next;
   s[2]>>cmp;
-  s[1]>>from;
+  s[2]>>from;
   s[2]>>to;
   cmp[1]<<^leq<<from<<to;
   cmp[1]>>leq;
@@ -268,7 +268,9 @@ local pure service Range(range (1 of 2) s)
        res<<#elt;
        res[1]<<^cons<<from<<^append<<tail;
        res[1]<<^takeover<<s;
-  else res=new list(2 of 2);
+  else next[1]<<^end;
+       cmp[1]<<^end;
+       res=new list(2 of 2);
        res<<#elt;
        res[1]<<^takeover<<s;
 )
