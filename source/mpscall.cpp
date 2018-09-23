@@ -52,7 +52,7 @@ void *MpsCall::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, con
   }
   // Check correct number of arguments
   if (omega->second.stypes.size() != myState.size() ||
-      omega->second.stypes.size() != myState.size() ||
+      omega->second.snames.size() != myState.size() ||
       omega->second.types.size() != myArgs.size())
     return wrap_err(this,PrintTypeError((string)"Process Variable wrong argument-count: " + myName,*this,Theta,Gamma,Omega),children);
   // Check argument-types and remove used sessions from endGamma
