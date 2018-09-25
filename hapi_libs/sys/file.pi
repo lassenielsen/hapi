@@ -1,0 +1,177 @@
+#pragma once
+// The interface for reading files
+#define $infile rec $infile; \
+  2->1 \
+  {^Chunk: \
+    1->2 \
+    {^Some: \
+      1->2:String; \
+      $infile; \
+     ^None: \
+      $end; \
+    } \
+   ^Line: \
+    1->2 \
+    {^Some: \
+      1->2:String; \
+      $infile; \
+     ^None: \
+      $end; \
+    } \
+   ^All: \
+    1->2:String; \
+    $end; \
+   ^Close: \
+    $end; \
+  }
+// The interface for writing files
+#define $outfile rec $outfile; \
+  2->1 \
+  {^Write: \
+    2->1:String; \
+    $outfile; \
+   ^Close: \
+    $end; \
+  }
+// The interface for working with files
+#define $file \
+  2->1 \
+  {^Read: \
+    2->1:String; \
+    1->2 \
+    {^OK: $infile \
+     ^Error: 1->2:String; $end; \
+    } \
+   ^Create: \
+    2->1:String; \
+    1->2 \
+    {^OK: $outfile \
+     ^Error: 1->2:String; $end; \
+    } \
+   ^Remove: \
+    2->1:String; \
+    1->2 \
+    {^OK: $end; \
+     ^Error: 1->2:String; $end; \
+    } \
+  }
+// Macros for file operations
+#define DelOFP(p) "delete ((ofstream*)mpz_get_ui(((libpi::Int*)", p, ".get())->GetValue()));"
+#define CloseIFP(p) "((ofstream*)mpz_get_ui(((libpi::Int*)", p, ".get())->GetValue()))->close();"
+#define DelIFP(p) "delete ((ifstream*)mpz_get_ui(((libpi::Int*)", p, ".get())->GetValue()));"
+#define EOF(b,p) "", b, " = libpi::Bool::GetInstance( ((ifstream*)mpz_get_ui(((libpi::Int*)", p, ".get())->GetValue()))->eof() );"
+#define GetError(s) "", s, ".reset(new libpi::String(strerror(errno)));"
+global $file file(1,2);
+HOSTHEADER("#include <fstream>");
+HOSTHEADER("#include <errno.h>");
+HOSTHEADER("#include <string.h>");
+HOSTHEADER("#include <streambuf>");
+local FileServer()
+( global f = new file(1 of 2);
+  FileServer(); |
+  f[2]>>
+  {^Read:
+    local InFileSession($infile(1 of 1,2) f, Int fptr, Int chunksize)
+    ( f[2]>>
+      {^Chunk:
+        Bool t=true;
+        HOST( EOF(t, fptr) );
+        if t
+        then f[2]<<^None;
+             HOST( CloseIFP(fptr) );
+             HOST( DelIFP(fptr) );
+        else f[2]<<^Some;
+             String chunk="";
+             HOST("{ char *buf = new char[ mpz_get_ui(((libpi::Int*)", chunksize, ".get())->GetValue()) +1 ];");
+             HOST("  ((ifstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue()))->read(buf, mpz_get_ui(((libpi::Int*)", chunksize, ".get())->GetValue()));");
+             HOST("  buf[ mpz_get_ui(((libpi::Int*)", chunksize, ".get())->GetValue()) ] = 0;");
+             HOST("  ", chunk, ".reset(new libpi::String(std::string(buf)));");
+             HOST("  delete [] buf;");
+             HOST("{}}");
+             f[2]<<chunk;
+             InFileSession(f,fptr,chunksize);
+       ^Line:
+        Bool t=true;
+        HOST( EOF(t, fptr) );
+        if t
+        then f[2]<<^None;
+             HOST( CloseIFP(fptr) );
+             HOST( DelIFP(fptr) );
+        else f[2]<<^Some;
+             String chunk="";
+             HOST("{ std::string line;");
+             HOST("  std::getline(*((ifstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue())), line);");
+             HOST("  ", chunk, ".reset(new libpi::String(line));");
+             HOST("{}}");
+             f[2]<<chunk;
+             InFileSession(f,fptr,chunksize);
+       ^All:
+        Bool t=true;
+        HOST( EOF(t, fptr) );
+        if t
+        then f[2]<<"";
+             HOST( CloseIFP(fptr) );
+             HOST( DelIFP(fptr) );
+        else String chunk="";
+             HOST("{ std::string str;");
+             HOST("  int pos=((ifstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue()))->tellg();");
+             HOST("  ((ifstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue()))->seekg(0,std::ios::end);");
+             HOST("  int size=((ifstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue()))->tellg();");
+             HOST("  ((ifstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue()))->seekg(pos);");
+             HOST("  str.reserve(size-pos+1);");
+             HOST("  str.assign((std::istreambuf_iterator<char>(*((ifstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue())))),std::istreambuf_iterator<char>());");
+             HOST("  ", chunk, ".reset(new libpi::String(str));");
+             HOST("{}}");
+             f[2]<<chunk;
+             HOST( CloseIFP(fptr) );
+             HOST( DelIFP(fptr) );
+       ^Close:
+        HOST( CloseIFP(fptr) );
+        HOST( DelIFP(fptr) );
+      }
+    )
+    f[2]>>path;
+    Int fptr=0;
+    HOST("", fptr, " = std::shared_ptr<libpi::Int>( new libpi::Int((unsigned long)(new ifstream( ((libpi::String*)", path, ".get())->GetValue().c_str()))));");
+    Bool t=true;
+    HOST("", t, " = libpi::Bool::GetInstance(((ifstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue()))->is_open());");
+    if t
+    then f[2]<<^OK;
+         InFileSession(f, fptr, 1024*4);
+    else HOST( DelIFP(fptr) );
+         String err="";
+         HOST( GetError(err) );
+         f[2]<<^Error;
+         f[2]<<err;
+   ^Create:
+    local OutFileSession($outfile(1 of 1,2) f, Int fptr)
+    ( f[2]>>
+      {^Close:
+        HOST("((ofstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue()))->close();");
+        HOST( DelOFP(fptr) );
+       ^Write:
+        f[2]>>str;
+        HOST("((ofstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue()))->write( ((libpi::String*)", str , ".get())->GetValue().c_str(), ((libpi::String*)", str , ".get())->GetValue().size() );");
+        OutFileSession(f,fptr);
+      }
+    )
+    f[2]>>path;
+    Int fptr=0;
+    HOST("", fptr, ".reset(new libpi::Int((unsigned long)(new ofstream( ((libpi::String*)", path, ".get())->GetValue().c_str()))));");
+    Bool t=true;
+    HOST("", t, " = libpi::Bool::GetInstance(((ofstream*)mpz_get_ui(((libpi::Int*)", fptr, ".get())->GetValue()))->is_open());");
+    if t
+    then f[2]<<^OK;
+         OutFileSession(f, fptr);
+    else HOST( DelOFP(fptr) );
+         String err="";
+         HOST( GetError(err) );
+         f[2]<<^Error;
+         f[2]<<err;
+   ^Remove:
+    f[2]>>path;
+    f[2]<<^Error;
+    f[2]<<"Not implemented";
+  }
+)
+FileServer(); |
