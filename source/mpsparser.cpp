@@ -1024,15 +1024,22 @@ MpsExp *MpsParser::Exp(const parsetree *tree) // {{{
   else if (tree->Case() == "exp_int") // int {{{
   {
     mpz_t val;
-    mpz_init_set_str(val,tree->Child(0)->Token().Content().c_str(),10);
+    string strval=tree->Child(0)->Token().Content();
+    if (strval[0]=='"')
+      strval[0]='-';
+    mpz_init_set_str(val,strval.c_str(),10);
     MpsExp *exp=new MpsIntVal(val);
     mpz_clear(val);
     return exp;
   } // }}}
-  else if (tree->Case() == "exp_float") // int {{{
+  else if (tree->Case() == "exp_float") // float {{{
   {
     mpf_t val;
-    mpf_init_set_str(val,tree->Child(0)->Token().Content().c_str(),10);
+    string strval=tree->Child(0)->Token().Content();
+    if (strval[0]=='"')
+      strval[0]='-';
+    mpf_init_set_str(val,strval.c_str(),10);
+
     MpsExp *exp=new MpsFloatVal(val);
     mpf_clear(val);
     return exp;
