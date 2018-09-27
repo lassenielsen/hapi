@@ -1,0 +1,49 @@
+#pragma once
+#include<struct/list.pi>
+#include<callable.pi>
+#include<succ.pi>
+
+#define $filtermultipla \
+  2->1:Int; \
+  $callable(Int,Bool)
+global $filtermultipla filtermultipla(1 pure,2);
+local pure service FilterMultipla(filtermultipla (1 of 2) s)
+( s[2]>>d;
+  local pure Filter($callable(Int,Bool)(1 of 1 pure,2) this)
+  ( this[2]>>
+    {^call:
+      this[2]>>n;
+      this[2]<<not ((n/d)*d=n);
+      Filter(this);
+     ^end:
+    }
+  )
+  Filter(s);
+)
+|
+#define $eratosthenes \
+  2->1:Int;
+  $list(Int);
+global $eratosthenes eratosthenes(1 pure, 2);
+local pure service EratosthenesService(eratosthenes (1 of 2) s)
+( local Erastothenes($list(Int)(2 of 1 pure,2) list,$list(Int)(1 of 1 pure,2) result)
+( list[1]<<^pop;
+  list[1]>>
+  {^nil:
+    r=new list(2 of 2);
+    r<<Int;
+    r<<^takeover<<result
+   ^cons:
+    list[1]>>p>>tail;
+    filter=new filtermultipla(2 of 2);
+    filter[1]<<p;
+    tail[1]<<^filter<<filter;
+    Eratosthenes(tail);
+  }
+)
+ilist=new range(2 of 2);
+ilist<<Int;
+isucc=new stdsucc_Int(2 of 2);
+iorder=new stdorder_Int(2 of 2);
+ilist[1]<<isucc<<iorder<<2<<20000;
+Eratosthenes(ilist);
