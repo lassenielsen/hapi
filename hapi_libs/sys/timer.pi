@@ -1,6 +1,8 @@
 #pragma once
 HOSTHEADER("#include <time.h>");
 HOSTHEADER("#include <unistd.h>");
+HOSTHEADER("#include <sys/timeb.h>");
+HOSTHEADER("double gettime() { struct timeb tb; ftime(&tb); double result = tb.millitm; result /= 1000; result+= tb.time; return result; }");
 
 #define $timer rec $timer; \
   2->1 \
@@ -14,9 +16,9 @@ HOSTHEADER("#include <unistd.h>");
     1->2:Bool; \
     $timer; \
    ^timestamp: \
-    1->2:Int; \
+    1->2:Float; \
     $timer; \
-   ^syc: \
+   ^sync: \
     2:#t; \
     2->1:#t; \
     $timer; \
@@ -28,30 +30,31 @@ local service TimeService(timer (1 of 2) t)
 ( local TimeSession($timer(1 of 1,2) t, Float start)
   ( t[2]>>
     {^reset:
-      HOST("{ time_t _t=time(0); ", start, "=std::shared_ptr<libpi::Float>(new libpi::Float(_t)); }");
+      HOST("",start,".reset(new libpi::Float(gettime()));");
       TimeSession(t,start);
      ^read:
-      Float now=0;
-      HOST("{ time_t _t=time(0); ", now, "=std::shared_ptr<libpi::Float>(new libpi::Float(_t)); }");
+      Float now=0.0;
+      HOST("",now,".reset(new libpi::Float(gettime()));");
       t[2]<<now-start;
       TimeSession(t,start);
      ^wait:  t[2]>>wait;
-      HOST("sleep( mpz_get_ui(((libpi::Float*)", wait, ".get())->GetValue()) );");
+      HOST("{ double _w=mpf_get_d(((libpi::Float*)",wait,".get())->GetValue()); cout << _w << endl; usleep((useconds_t)(_w*1000000.0)); }");
       t[2]<<true;
       TimeSession(t,start);
      ^timestamp:
       Float now=0.0;
-      HOST("{ time_t _t=time(0); ", start, "=std::shared_ptr<libpi::Float>(new libpi::Float(_t)); }");
+      HOST("",now,".reset(new libpi::Float(gettime()));");
       t[2]<<now;
       TimeSession(t,start);
      ^sync:
-      t[2]>>wait;
+      t>>#t;
+      t[2]>>val;
       TimeSession(t,start);
      ^end:          
     }
   )
-  Float start=0;
-  HOST("{ time_t _t=time(0); ", start, "=std::shared_ptr<libpi::Float>(new libpi::Float(_t)); }");
+  Float start=0.0;
+  HOST("",start,".reset(new libpi::Float(gettime()));");
   TimeSession(t,start);
-  )
-) TimeServer(); |
+)
+|

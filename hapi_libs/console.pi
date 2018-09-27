@@ -5,7 +5,8 @@ HOSTHEADER("#include <iostream>");
   2->1 \
   {^str: 2->1:String; $console; \
    ^int: 2->1:Int;    $console; \
-   ^nl: $console; \
+   ^flt: 2->1:Float;  $console; \
+   ^nl:  $console; \
    ^input: \
    2->1 \
    {^str: 1->2:String; $console; \
@@ -25,6 +26,10 @@ local Console()
      ^int:
       s[2]>>i;
       HOST("std::cout << ((libpi::Int*)", i, ".get())->ToString() << std::flush;");
+      ConsoleSession(s);
+     ^flt:
+      s[2]>>f;
+      HOST("std::cout << ((libpi::Float*)", f, ".get())->ToString() << std::flush;");
       ConsoleSession(s);
      ^nl:
       HOST("std::cout << std::endl;");
