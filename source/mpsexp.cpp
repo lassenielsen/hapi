@@ -416,6 +416,9 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
   { if (dynamic_cast<MpsIntMsgType*>(myLeftType) &&
         dynamic_cast<MpsIntMsgType*>(myRightType))
       return new MpsIntMsgType();
+    if (dynamic_cast<MpsFloatMsgType*>(myLeftType) &&
+        dynamic_cast<MpsFloatMsgType*>(myRightType))
+      return new MpsFloatMsgType();
     else
       return new MpsMsgNoType();
   } // }}}
@@ -830,8 +833,8 @@ string MpsFloatVal::ToString() const // {{{
   
   mp_exp_t exp;
   char *str=mpf_get_str(NULL,&exp,10,0,myValue);
-  if (exp+1>=strlen(str))
-    dest << str << string(1+exp-strlen(str),'0');
+  if (exp>=strlen(str))
+    dest << str << string(exp-strlen(str),'0')<<".0";
   else if (exp>=0)
     dest << string(str,exp) << "." << string(str+exp);
   else
