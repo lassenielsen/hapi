@@ -32,19 +32,16 @@ A2();
 // Implementation of client (selecting number)
 c=new console(2 of 2);
 s=new a(2 of 2);
-c[1]<<^PutString<<"Requesting a number";
+c[1]<<^str<<"Requesting a number"<<^nl;
 s[1]<<^Number;
 s[1]>>x;
-c[1]<<^PutString<<"Received:";
-c[1]<<^PutInt<<x;
-c[1]<<^End;
+c[1]<<^str<<"Received: "<<^int<<x<<^nl;
+c[1]<<^end;
 |
 // Implementation of client (selecting text)
 c=new console(2 of 2);
 s=new a(2 of 2);
-c[1]<<^PutString<<"Requesting a text";
+c[1]<<^str<<"Requesting a text"<<^nl;
 s[1]<<^Text;
 s[1]>>x;
-c[1]<<^PutString<<"Received:";
-c[1]<<^PutString<<x;
-c[1]<<^End;
+c[1]<<^str<<"Received: "<<^str<<x<<^nl<<^end;

@@ -23,7 +23,7 @@ local SendInts($intmsgs(1 of 1,2) t, Int i)
 ( if i<=0
   then t[2]<<^Done;
   else c=new console(2 of 2);
-       c[1]<<^PutString<<"Sending value"<<^PutInt<<i<<^End;
+       c[1]<<^str<<"Sending value: "<<^int<<i<<^nl<<^end;
        t[2]<<^More<<i; SendInts(t,i-1);
 )
 SendInts(s,10);
@@ -37,7 +37,7 @@ local ReceiveInts($intmsgs(2 of 1,2) t)
   {^Done:
    ^More: t[1]>>x;
           c=new console(2 of 2);
-          c[1]<<^PutString<<"Received value"<<^PutInt<<x<<^End;
+          c[1]<<^str<<"Received value: "<<^int<<x<<^nl<<^end;
           ReceiveInts(t);
   }
 )
