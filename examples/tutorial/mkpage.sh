@@ -63,7 +63,7 @@ std_example "2.3 Branch" 2.3-branch
 std_example "2.4 Recursion" 2.4-recursion
 std_example "2.5 Multiparty" 2.5-multiparty
 echo "=== 3 Standard libraries ==="
-arg_example "3.1 Sys" 3.1-sys arg
+arg_example "3.1 Args" 3.1-args arg
 slw_example "3.2 Timer" 3.2-timer 6
 std_example "3.3 File" 3.3-file
 std_example "3.4 Convert" 3.4-convert

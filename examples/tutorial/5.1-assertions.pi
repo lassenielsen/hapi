@@ -15,19 +15,19 @@
 global $type a(1,2);
 
 c=new console(2 of 2);
-c[1]<<^PutString<<"Input bool x"<<^GetString;
+c[1]<<^str<<"Input bool x: "<<^input<<^str;
 c[1]>>x_str;
 Bool x=(x_str="true");
-c[1]<<^End;
+c[1]<<^end;
 s=new a(1 of 2);
 s[2]<<x;
 s[2]<<not x;
 s[2]>>z;
 c=new console(2 of 2);
-c[1]<<^PutString
-    <<"We know that z is true - it has been proven!"
-    <<^PutString<<(if z then "true" else "false")
-    <<^End;
+c[1]<<^str
+    <<"We know that z is true - it has been proven!"<<^nl
+    <<^str<<"z="<<^str<<(if z then "true" else "false")<<^nl
+    <<^end;
 
 |
 s=new a(2 of 2);
