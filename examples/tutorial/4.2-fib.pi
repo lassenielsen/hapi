@@ -38,12 +38,12 @@ StartFib(SYSTEM & "tprocs");             // Start as many processes as the targe
 
 // Main program
 c=new console(2 of 2);                   // Get access to console
-c[1]<<^PutString<<"Input n"<<^GetInt;    // Ask for n
+c[1]<<^str<<"Input n: "<<^input<<^int;   // Ask for n
 c[1]>>n;                                 // Read n
-c[1]<<^End;                              // Release access to console
+c[1]<<^end;                              // Release access to console
 s=new fib(2 of 2);                       // Call fib(n)
 s[1]<<n;
 s[1]>>f;                                 // Get result
 c=new console(2 of 2);
-c[1]<<^PutString<<"Fib(n)="<<^PutInt<<f; // Print result
-c[1]<<^End;                              // Release access to console
+c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl;     // Print result
+c[1]<<^end;                              // Release access to console
