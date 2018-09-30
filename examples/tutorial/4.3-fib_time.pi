@@ -57,10 +57,11 @@ s=new fib(2 of 2);                       // Call fib(n)
 s[1]<<n;
 s[1]>>f;                                 // Get result
 t[1]<<^sync;t<<Int;t[1]<<f;              // Make timer wait for result (avoids optimizing timer to not wait for result)
+//require(f);                            // A more generic method to avoid optimizing timer, but also avoids other optimizations
 t[1]<<^read;                             // Get used time
 t[1]>>secs;                              // secs = used time
 t[1]<<^end;                              // Stop / release timer
 c=new console(2 of 2);
 c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl      // Print result
-    <<^str<<"Time used: "<<^flt<<secs<<^nl // Print time used
+    <<^str<<"Time: "<<^flt<<secs<<^nl    // Print time used
     <<^end;

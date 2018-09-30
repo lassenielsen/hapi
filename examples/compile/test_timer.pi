@@ -4,7 +4,7 @@ c = new console(2 of 2);
 t = new timer(2 of 2);
 
 // Start message
-c[1]<<^str<<"Waiting "<<^flt<<d<<^str<<" seconds";
+c[1]<<^str<<"Waiting "<<^flt<<5.0<<^str<<" seconds";
 // Wait 5 secs
 t[1]<<^wait<<5.0;
 t[1]>>x;

@@ -11,10 +11,10 @@
 
 // Create console session (and get uninterupted access to console io)
 c=new console(2 of 2);
-// Print string
-c[1]<<^PutString<<"Hello World";
+// Print string and newline
+c[1]<<^str<<"Hello World"<<^nl;
 // Finish console session (and release console io)
-c[1]<<^End;
+c[1]<<^end;
 </pre>
 '''Output'''<br/>
 <pre>
@@ -32,23 +32,23 @@ Hello World
 
 // Print 1
 c=new console(2 of 2);
-c[1]<<^PutInt<<1<<^End;
+c[1]<<^int<<1<<^nl<<^end;
 | // fork
 // Print 2
 c=new console(2 of 2);
-c[1]<<^PutInt<<2<<^End;
+c[1]<<^int<<2<<^nl<<^end;
 | // fork
 // Print 3
 c=new console(2 of 2);
-c[1]<<^PutInt<<3<<^End;
+c[1]<<^int<<3<<^nl<<^end;
 | // fork
 // Print 4
 c=new console(2 of 2);
-c[1]<<^PutInt<<4<<^End;
+c[1]<<^int<<4<<^nl<<^end;
 | // fork
 // Print 5
 c=new console(2 of 2);
-c[1]<<^PutInt<<5<<^End;
+c[1]<<^int<<5<<^nl<<^end;
 </pre>
 '''Output'''<br/>
 <pre>
@@ -74,9 +74,10 @@ c[1]<<^PutInt<<5<<^End;
 local PrintInt(Int i)
 ( // Print i to console
   c=new console(2 of 2);
-  c[1]<<^PutInt 
+  c[1]<<^int 
       <<i
-      <<^End;
+      <<^nl
+      <<^end;
 )
 // Implement the method PrintInts
 global PrintInts(Int i)
@@ -124,7 +125,7 @@ global $intmsg a(1,2);
 // First process implementation
 s=new a(1 of 2); // Connect on channel a as participant 1 of 2, resulting in session s
 c=new console(2 of 2);
-c[1]<<^PutString<<"Sending value"<<^PutInt<<5<<^End;
+c[1]<<^str<<"Sending value: "<<^int<<5<<^nl<<^end;
 s[2]<<5;         // Send value 5 to participant 2 in sesssion s
 
 | // Fork
@@ -133,15 +134,13 @@ s[2]<<5;         // Send value 5 to participant 2 in sesssion s
 s=new a(2 of 2); // Connect on channel a as participant 2 of 2, resulting in session s
 s[1]>>x;         // Receive value from participant 1 in session s, and store as x.
 c=new console(2 of 2);
-c[1]<<^PutString<<"Received value"<<^PutInt<<x<<^End;
+c[1]<<^str<<"Received value: "<<^int<<x<<^nl<<^end;
 </pre>
 '''Output'''<br/>
 <pre>
 >./2.1-message
-Sending value
-5
-Received value
-5
+Sending value: 5
+Received value: 5
 </pre>
 ==== 2.2 Service ====
 '''Source code'''<br/>
@@ -180,23 +179,17 @@ c=new console(2 of 2);
 d=new double(2 of 2);
 d[1]<<1;
 d[1]>>x;
-c[1]<<^PutString<<"Double"<<^PutInt<<1<<^PutString<<"is"<<^PutInt<<x;
+c[1]<<^str<<"Double "<<^int<<1<<^str<<" is "<<^int<<x<<^nl;
 d=new double(2 of 2);
 d[1]<<x;
 d[1]>>y;
-c[1]<<^PutString<<"Double"<<^PutInt<<x<<^PutString<<"is"<<^PutInt<<y<<^End;
+c[1]<<^str<<"Double "<<^int<<x<<^str<<" is "<<^int<<y<<^nl<<^end;
 </pre>
 '''Output'''<br/>
 <pre>
 >./2.2-service
-Double
-1
-is
-2
-Double
-2
-is
-4
+Double 1 is 2
+Double 2 is 4
 </pre>
 ==== 2.3 Branch ====
 '''Source code'''<br/>
@@ -235,32 +228,27 @@ A2();
 // Implementation of client (selecting number)
 c=new console(2 of 2);
 s=new a(2 of 2);
-c[1]<<^PutString<<"Requesting a number";
+c[1]<<^str<<"Requesting a number"<<^nl;
 s[1]<<^Number;
 s[1]>>x;
-c[1]<<^PutString<<"Received:";
-c[1]<<^PutInt<<x;
-c[1]<<^End;
+c[1]<<^str<<"Received: "<<^int<<x<<^nl;
+c[1]<<^end;
 |
 // Implementation of client (selecting text)
 c=new console(2 of 2);
 s=new a(2 of 2);
-c[1]<<^PutString<<"Requesting a text";
+c[1]<<^str<<"Requesting a text"<<^nl;
 s[1]<<^Text;
 s[1]>>x;
-c[1]<<^PutString<<"Received:";
-c[1]<<^PutString<<x;
-c[1]<<^End;
+c[1]<<^str<<"Received: "<<^str<<x<<^nl<<^end;
 </pre>
 '''Output'''<br/>
 <pre>
 >./2.3-branch
 Requesting a number
-Received:
-5
+Received: 5
 Requesting a text
-Received:
-five
+Received: five
 </pre>
 ==== 2.4 Recursion ====
 '''Source code'''<br/>
@@ -290,7 +278,7 @@ local SendInts($intmsgs(1 of 1,2) t, Int i)
 ( if i<=0
   then t[2]<<^Done;
   else c=new console(2 of 2);
-       c[1]<<^PutString<<"Sending value"<<^PutInt<<i<<^End;
+       c[1]<<^str<<"Sending value: "<<^int<<i<<^nl<<^end;
        t[2]<<^More<<i; SendInts(t,i-1);
 )
 SendInts(s,10);
@@ -304,7 +292,7 @@ local ReceiveInts($intmsgs(2 of 1,2) t)
   {^Done:
    ^More: t[1]>>x;
           c=new console(2 of 2);
-          c[1]<<^PutString<<"Received value"<<^PutInt<<x<<^End;
+          c[1]<<^str<<"Received value: "<<^int<<x<<^nl<<^end;
           ReceiveInts(t);
   }
 )
@@ -313,46 +301,26 @@ ReceiveInts(s);
 '''Output'''<br/>
 <pre>
 >./2.4-recursion
-Sending value
-10
-Received value
-10
-Sending value
-9
-Sending value
-8
-Received value
-9
-Sending value
-7
-Received value
-8
-Sending value
-6
-Received value
-7
-Sending value
-5
-Received value
-6
-Sending value
-4
-Received value
-5
-Sending value
-3
-Received value
-4
-Sending value
-2
-Received value
-3
-Sending value
-1
-Received value
-2
-Received value
-1
+Sending value: 10
+Sending value: 9
+Received value: 10
+Sending value: 8
+Received value: 9
+Sending value: 7
+Received value: 8
+Sending value: 6
+Received value: 7
+Sending value: 5
+Received value: 6
+Sending value: 4
+Received value: 5
+Sending value: 3
+Received value: 4
+Sending value: 2
+Received value: 3
+Sending value: 1
+Received value: 2
+Received value: 1
 </pre>
 ==== 2.5 Multiparty ====
 '''Source code'''<br/>
@@ -381,11 +349,11 @@ global $rr4 a(1,2,3,4);
 // First process implementation
 s=new a(1 of 4); // Connect on channel a as participant 1 of 4, resulting in session s
 c=new console(2 of 2);
-c[1]<<^PutString<<"1: Sending value"<<^PutInt<<5<<^End;
+c[1]<<^str<<"1: Sending value: "<<^int<<5<<^nl<<^end;
 s[2]<<5;
 s[4]>>x;
 c=new console(2 of 2);
-c[1]<<^PutString<<"1: Received value"<<^PutInt<<x<<^End;
+c[1]<<^str<<"1: Received value: "<<^int<<x<<^nl<<^end;
 
 | // Fork
 
@@ -393,8 +361,8 @@ c[1]<<^PutString<<"1: Received value"<<^PutInt<<x<<^End;
 s=new a(2 of 4); // Connect on channel a as participant 2 of 4, resulting in session s
 s[1]>>x;
 c=new console(2 of 2);
-c[1]<<^PutString<<"2:Received value"<<^PutInt<<x
-    <<^PutString<<"2:Sending value"<<^PutInt<<x<<^End;
+c[1]<<^str<<"2: Received value: "<<^int<<x<<^nl
+    <<^str<<"2: Sending value: "<<^int<<x<<^nl<<^end;
 s[3]<<x;
 
 | // Fork
@@ -403,8 +371,8 @@ s[3]<<x;
 s=new a(3 of 4); // Connect on channel a as participant 3 of 4, resulting in session s
 s[2]>>x;
 c=new console(2 of 2);
-c[1]<<^PutString<<"3:Received value"<<^PutInt<<x
-    <<^PutString<<"3:Sending value"<<^PutInt<<x<<^End;
+c[1]<<^str<<"3: Received value: "<<^int<<x<<^nl
+    <<^str<<"3: Sending value: "<<^int<<x<<^nl<<^end;
 s[4]<<x;
 
 | // Fork
@@ -413,69 +381,57 @@ s[4]<<x;
 s=new a(4 of 4); // Connect on channel a as participant 4 of 4, resulting in session s
 s[3]>>x;
 c=new console(2 of 2);
-c[1]<<^PutString<<"4:Received value"<<^PutInt<<x
-    <<^PutString<<"4:Sending value"<<^PutInt<<x<<^End;
+c[1]<<^str<<"4: Received value: "<<^int<<x<<^nl
+    <<^str<<"4: Sending value: "<<^int<<x<<^nl<<^end;
 s[1]<<x;
 </pre>
 '''Output'''<br/>
 <pre>
 >./2.5-multiparty
-1: Sending value
-5
-2:Received value
-5
-2:Sending value
-5
-3:Received value
-5
-3:Sending value
-5
-4:Received value
-5
-4:Sending value
-5
-1: Received value
-5
+1: Sending value: 5
+2: Received value: 5
+2: Sending value: 5
+3: Received value: 5
+3: Sending value: 5
+4: Received value: 5
+4: Sending value: 5
+1: Received value: 5
 </pre>
 === 3 Standard libraries ===
-==== 3.1 Sys ====
+==== 3.1 Args ====
 '''Source code'''<br/>
 <pre>
-// Example 3.1 - Introducing sys service
+// Example 3.1 - Introducing args service
 // Iterates over program arguments
 
 #include <console.pi>
 c = new console(2 of 2);
 // Include sys servicee
-#include <sys.pi>
+#include <sys/args.pi>
 // Connect to sys service
-s = new sys(2 of 2);
+s = new args(2 of 2);
 
 // Obtain and print the number of program arguments
-s[1]<<^CountArgs;
+s[1]<<^count;
 s[1]>>argc;
-c[1]<<^PutString<<"Number of args"<<^PutInt<<argc;
+c[1]<<^str<<"Number of args is "<<^int<<argc<<^nl;
 // Method taking open sessions as arguments
 // Method prints program args i, i+1, ..., argc-1
-local PrintArgs(Int i, $console(2 of 1,2) c, $sys(2 of 1 pure,2) s)
-( s[1]<<^GetArg<<i;
+local PrintArgs(Int i, $console(2 of 1,2) c, $args(2 of 1 pure,2) s)
+( s[1]<<^arg<<i;
   s[1]>>
-  {^Some: s[1]>>a;
-          c[1]<<^PutString<<a;
+  {^some: s[1]>>a;
           PrintArgs(i+1,c,s);
-   ^None: s[1]<<^End;
-          c[1]<<^End;
+   ^none: s[1]<<^end;
+          c[1]<<^end;
   }
 )
 PrintArgs(0,c,s); // Print all args
 </pre>
 '''Output'''<br/>
 <pre>
->./3.1-sys arg
-Number of args
-2
-./3.1-sys
-arg
+>./3.1-args arg
+Number of args is 2
 </pre>
 ==== 3.2 Timer ====
 '''Source code'''<br/>
@@ -485,34 +441,30 @@ arg
 
 #include <console.pi>
 // Include timer service
-#include <timer.pi>
+#include <sys/timer.pi>
 c = new console(2 of 2);
 // Connect to timer service
 t = new timer(2 of 2);
 
 // Start message
-c[1]<<^PutString<<"Waiting 5 seconds";
+c[1]<<^str<<"Waiting 5 seconds"<<^nl;
 // Wait 5 secs
-t[1]<<^WaitSeconds<<5;
+t[1]<<^wait<<5.0;
 t[1]>>x;
-// Read timer (should be 5 seconds)
-t[1]<<^ReadSeconds;
+// Read timer (should be roughly 5 seconds)
+t[1]<<^read;
 t[1]>>secs;
 // Print result
-c[1]<<^PutString<<"Timer says the wait took"
-    <<^PutInt<<secs
-    <<^PutString<<"seconds";
+c[1]<<^str<<"Timer says the wait took "<<^flt<<secs<<^str<<" seconds."<<^nl;
 // Clean up
-t[1]<<^End;
-c[1]<<^End;
+t[1]<<^end;
+c[1]<<^end;
 </pre>
 '''Output'''<br/>
 <pre>
 >./3.2-timer
 Waiting 5 seconds
-Timer says the wait took
-5
-seconds
+Timer says the wait took 5.0010001659393310546875 seconds.
 </pre>
 ==== 3.3 File ====
 '''Source code'''<br/>
@@ -521,12 +473,12 @@ seconds
 // Read write and delete local files
 #include <console.pi>
 // Include file service
-#include <file.pi>
+#include <sys/file.pi>
 
 // Error handling
 local FError(String s, $console(2 of 1,2) c, 1->2:String;$end;(2 of 1,2) f)
 ( f[1]>>e;
-  c[1]<<^PutString<<s<<^PutString<<e<<^End;
+  c[1]<<^str<<s<<^str<<": "<<^str<<e<<^nl<<^end;
 )
  
 c = new console(2 of 2);
@@ -539,8 +491,7 @@ f[1]>>
   FError("Write Error:",c,f);
  ^OK:
   f[1]<<^Write<<"Hello World"<<^Close;
-  c[1]<<^PutString;
-  c[1]<<"File written with content: Hello World";
+  c[1]<<^str<<"File written with content: Hello World"<<^nl;
   // Open created file, and read content
   f = new file(2 of 2);
   f[1]<<^Read<<"test.txt";
@@ -550,7 +501,7 @@ f[1]>>
    ^OK:
     f[1]<<^All;
     f[1]>>s;
-    c[1]<<^PutString<<"Read content"<<^PutString<<s;
+    c[1]<<^str<<"Read content: "<<^str<<s<<^nl;
     // Remove file
     f = new file(2 of 2);
     f[1]<<^Remove<<"file.txt";
@@ -558,9 +509,7 @@ f[1]>>
     {^Error:
       FError("Remove Error:",c,f);
      ^OK:
-      c[1]<<^PutString;
-      c[1]<<"Removed file";
-      c[1]<<^End;
+      c[1]<<^str<<"Removed file"<<^nl<<^end;
     }
   }
 }
@@ -569,10 +518,8 @@ f[1]>>
 <pre>
 >./3.3-file
 File written with content: Hello World
-Read content
-Hello World
-Remove Error:
-Not implemented
+Read content: Hello World
+Remove Error:: Not implemented
 </pre>
 ==== 3.4 Convert ====
 '''Source code'''<br/>
@@ -591,17 +538,16 @@ s[1]<<"123";
 s[1]>>
 {^Error:
   s[1]>>e;
-  c[1]<<^PutString<<"Error:"<<^PutString<<e<<^End;
+  c[1]<<^str<<"Error: "<<^str<<e<<^nl<<^end;
  ^Ok:
   s[1]>>n;
-  c[1]<<^PutString<<"The result of converting 123 to an integer is"<<^PutInt<<n<<^End;
+  c[1]<<^str<<"The result of converting 123 to an integer is: "<<^int<<n<<^nl<<^end;
 }
 </pre>
 '''Output'''<br/>
 <pre>
 >./3.4-convert
-The result of converting 123 to an integer is
-123
+The result of converting 123 to an integer is: 123
 </pre>
 === 4 Purity ===
 ==== 4.1 Purity ====
@@ -745,23 +691,20 @@ StartFib(SYSTEM & "tprocs");             // Start as many processes as the targe
 
 // Main program
 c=new console(2 of 2);                   // Get access to console
-c[1]<<^PutString<<"Input n"<<^GetInt;    // Ask for n
+c[1]<<^str<<"Input n: "<<^input<<^int;   // Ask for n
 c[1]>>n;                                 // Read n
-c[1]<<^End;                              // Release access to console
+c[1]<<^end;                              // Release access to console
 s=new fib(2 of 2);                       // Call fib(n)
 s[1]<<n;
 s[1]>>f;                                 // Get result
 c=new console(2 of 2);
-c[1]<<^PutString<<"Fib(n)="<<^PutInt<<f; // Print result
-c[1]<<^End;                              // Release access to console
+c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl;     // Print result
+c[1]<<^end;                              // Release access to console
 </pre>
 '''Output'''<br/>
 <pre>
->echo 10 | ./4.2-fib
-Input n
-Fib(n)=
-89
-</pre>
+>echo 30 | ./4.2-fib
+Input n: </pre>
 ==== 4.3 Fib Time ====
 '''Source code'''<br/>
 <pre>
@@ -771,15 +714,14 @@ Fib(n)=
 // Include console functionality like printing
 #include <console.pi>
 // Include timer functionality like measuring time spent
-#include <timer.pi>
+#include <sys/timer.pi>
 
 // Macro that pretends to use n in an impure way.
 // This stops impure actions, and actions using n
 // to be moved across here,
 // Ensuring that n is available before any of the
 // impure actions below this one is performed.
-HOSTHEADER("#define IGNORE(x)");
-#define require(n) HOST("IGNORE(",n,");")
+#define require(n) HOST("/* ",n," */")
 
 // Define api for service
 #define $fib \
@@ -816,32 +758,28 @@ StartFib(SYSTEM & "tprocs");             // Start as many processes as the targe
 
 // Main program
 c=new console(2 of 2);                   // Get access to console
-c[1]<<^PutString<<"Input n"<<^GetInt;    // Ask for n
+c[1]<<^str<<"Input n: "<<^input<<^int;   // Ask for n
 c[1]>>n;                                 // Read n
-c[1]<<^End;                              // Release access to console
+c[1]<<^end;                              // Release access to console
 
 t=new timer(2 of 2);                     // Start timer
 s=new fib(2 of 2);                       // Call fib(n)
 s[1]<<n;
 s[1]>>f;                                 // Get result
-require(f);                              // Make timer wait for result (avoids optimizing timer to not wait for result)
-t[1]<<^ReadSeconds;                      // Get used time
+t[1]<<^sync;t<<Int;t[1]<<f;              // Make timer wait for result (avoids optimizing timer to not wait for result)
+//require(f);                            // A more generic method to avoid optimizing timer, but also avoids other optimizations
+t[1]<<^read;                             // Get used time
 t[1]>>secs;                              // secs = used time
-t[1]<<^End;                              // Stop / release timer
+t[1]<<^end;                              // Stop / release timer
 c=new console(2 of 2);
-c[1]<<^PutString<<"Fib(n)="<<^PutInt<<f  // Print result
-    <<^PutString<<"Time used:"           // Print time used
-    <<^PutInt<<secs<<^End;
+c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl      // Print result
+    <<^str<<"Time: "<<^flt<<secs<<^nl    // Print time used
+    <<^end;
 </pre>
 '''Output'''<br/>
 <pre>
->echo 10 | ./4.3-fib_time
-Input n
-Fib(n)=
-89
-Time used:
-0
-</pre>
+>echo 30 | ./4.3-fib_time
+Input n: </pre>
 ==== 4.4 Fact ====
 '''Source code'''<br/>
 <pre>
@@ -857,10 +795,8 @@ Time used:
   $end;
 
 global $prodseq prodseq(1 pure ,2);
-local pure Prodseq()
-( global s = new prodseq(1 of 2);
-  Prodseq(); |
-  s[2]>>x1;
+local pure service Prodseq(prodseq (1 of 2) s)
+( s[2]>>x1;
   s[2]>>x2;
   if x2+1 <= x1
   then s[2]<<1;
@@ -877,30 +813,22 @@ local pure Prodseq()
        s2[1]>>r2;
        s[2]<<r1*r2;
 )
-local pure StartProdseq(Int c)
-( if c<=0
-  then Prodseq();
-  else ( Prodseq(); | StartProdseq(c-1); )
-)
-StartProdseq(SYSTEM&"tprocs");
 |
 c = new console(2 of 2);
-c[1] << ^PutString << "What is n?"
-     << ^GetInt;
-c[1] >> v;
+c[1] << ^str << "What is n? "
+     << ^input<<^int;
+c[1] >> n;
 s = new prodseq(2 of 2);
-s[1] << 1 << v;
+s[1] << 1 << n;
 s[1] >> r;
-c[1] << ^PutString << "Fact of n is"
-     << ^PutInt << r
-     << ^End;
+c[1] << ^str << "Fact of n is"
+     << ^int << r << ^nl
+     << ^end;
 </pre>
 '''Output'''<br/>
 <pre>
->echo 10 | ./4.4-fact
-What is n?
-Fact of n is
-3628800
+>echo 30 | ./4.4-fact
+What is n? Fact of n is265252859812191058636308480000000
 </pre>
 === 5 Extras ===
 ==== 5.1 Assertions ====
@@ -923,19 +851,18 @@ Fact of n is
 global $type a(1,2);
 
 c=new console(2 of 2);
-c[1]<<^PutString<<"Input bool x"<<^GetString;
+c[1]<<^str<<"Input bool x: "<<^input<<^str;
 c[1]>>x_str;
 Bool x=(x_str="true");
-c[1]<<^End;
+c[1]<<^end;
 s=new a(1 of 2);
 s[2]<<x;
 s[2]<<not x;
 s[2]>>z;
 c=new console(2 of 2);
-c[1]<<^PutString
-    <<"We know that z is true - it has been proven!"
-    <<^PutString<<(if z then "true" else "false")
-    <<^End;
+c[1]<<^str<<"We know that z is true - it has been proven!"<<^nl
+    <<^str<<"z="<<^str<<(if z then "true" else "false")<<^nl
+    <<^end;
 
 |
 s=new a(2 of 2);
@@ -948,9 +875,8 @@ s[1]<<q1 or q2;
 '''Output'''<br/>
 <pre>
 >echo true | ./5.1-assertions
-Input bool x
-We know that z is true - it has been proven!
-true
+Input bool x: We know that z is true - it has been proven!
+z=true
 </pre>
 ==== 5.2 Host ====
 '''Source code'''<br/>
@@ -993,11 +919,11 @@ Bool x9=true;
 '''Output'''<br/>
 <pre>
 >./5.2-host
-Hello World1
-2true
-45false
-78true
-5
-17
+12trueHello World
+
+457false8
+true
+51
+7
 
 </pre>

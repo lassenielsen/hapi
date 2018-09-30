@@ -12,8 +12,8 @@ s[1]<<"123";
 s[1]>>
 {^Error:
   s[1]>>e;
-  c[1]<<^PutString<<"Error:"<<^PutString<<e<<^End;
+  c[1]<<^str<<"Error: "<<^str<<e<<^nl<<^end;
  ^Ok:
   s[1]>>n;
-  c[1]<<^PutString<<"The result of converting 123 to an integer is"<<^PutInt<<n<<^End;
+  c[1]<<^str<<"The result of converting 123 to an integer is: "<<^int<<n<<^nl<<^end;
 }

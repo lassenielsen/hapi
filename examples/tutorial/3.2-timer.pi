@@ -9,16 +9,15 @@ c = new console(2 of 2);
 t = new timer(2 of 2);
 
 // Start message
-c[1]<<^str<<"Waiting 5 seconds";
+c[1]<<^str<<"Waiting 5 seconds"<<^nl;
 // Wait 5 secs
 t[1]<<^wait<<5.0;
 t[1]>>x;
-c[1]<<^nl;
-// Read timer (should be 5 seconds)
+// Read timer (should be roughly 5 seconds)
 t[1]<<^read;
 t[1]>>secs;
 // Print result
-c[1]<<^str<<"Timer says the wait took "<<^flt<<secs<<^str<<" seconds"<<^nl;
+c[1]<<^str<<"Timer says the wait took "<<^flt<<secs<<^str<<" seconds."<<^nl;
 // Clean up
 t[1]<<^end;
 c[1]<<^end;
