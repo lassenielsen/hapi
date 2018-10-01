@@ -38,7 +38,7 @@ local service TimeService(timer (1 of 2) t)
       t[2]<<now-start;
       TimeSession(t,start);
      ^wait:  t[2]>>wait;
-      HOST("{ double _w=mpf_get_d(((libpi::Float*)",wait,".get())->GetValue()); cout << _w << endl; usleep((useconds_t)(_w*1000000.0)); }");
+      HOST("{ double _w=mpf_get_d(((libpi::Float*)",wait,".get())->GetValue()); usleep((useconds_t)(_w*1000000.0)); }");
       t[2]<<true;
       TimeSession(t,start);
      ^timestamp:

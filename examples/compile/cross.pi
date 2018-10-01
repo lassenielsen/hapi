@@ -1,5 +1,5 @@
 #include <console.pi>
-#include <sys.pi>
+#include <sys/args.pi>
 #include <convert.pi>
 
 #define $intpred 2->1:Int;1->2:Bool;$end;
@@ -38,7 +38,7 @@ local pure service Odd(odd (1 of 2) s)
 // Actual program
 global PrintRes(String whenTrue, String whenFalse, Bool res)
 ( c=new console(2 of 2);
-  c[1]<<^PutString<<if res then whenTrue else whenFalse<<^End;
+  c[1]<<^str<<if res then whenTrue else whenFalse<<^nl<<^end;
 )
 global CheckEven(Int n)
 ( e=new even(2 of 2);
@@ -52,16 +52,16 @@ global CheckOdd(Int n)
   o[1]>>res;
   PrintRes("odd","not odd",res);
 )
-s=new sys(2 of 2);
-s[1]<<^GetArg<<1;
+s=new args(2 of 2);
+s[1]<<^arg<<1;
 s[1]>>
-{^None:
+{^none:
   c=new console(2 of 2);
-  c[1]<<^PutString<<"Please provide integer arg."<<^End;
-  s[1]<<^End;
- ^Some:
+  c[1]<<^str<<"Please provide integer arg."<<^nl<<^end;
+  s[1]<<^end;
+ ^some:
   s[1]>>nstr;
-  s[1]<<^End;
+  s[1]<<^end;
   Int nval=0;
   STRING2INT(nstr,nval);
   ( CheckEven(nval);

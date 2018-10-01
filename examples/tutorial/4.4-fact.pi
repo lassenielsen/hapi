@@ -10,10 +10,8 @@
   $end;
 
 global $prodseq prodseq(1 pure ,2);
-local pure Prodseq()
-( global s = new prodseq(1 of 2);
-  Prodseq(); |
-  s[2]>>x1;
+local pure service Prodseq(prodseq (1 of 2) s)
+( s[2]>>x1;
   s[2]>>x2;
   if x2+1 <= x1
   then s[2]<<1;
@@ -30,20 +28,14 @@ local pure Prodseq()
        s2[1]>>r2;
        s[2]<<r1*r2;
 )
-local pure StartProdseq(Int c)
-( if c<=0
-  then Prodseq();
-  else ( Prodseq(); | StartProdseq(c-1); )
-)
-StartProdseq(SYSTEM&"tprocs");
 |
 c = new console(2 of 2);
-c[1] << ^PutString << "What is n?"
-     << ^GetInt;
-c[1] >> v;
+c[1] << ^str << "What is n? "
+     << ^input<<^int;
+c[1] >> n;
 s = new prodseq(2 of 2);
-s[1] << 1 << v;
+s[1] << 1 << n;
 s[1] >> r;
-c[1] << ^PutString << "Fact of n is"
-     << ^PutInt << r
-     << ^End;
+c[1] << ^str << "Fact of n is"
+     << ^int << r << ^nl
+     << ^end;

@@ -25,8 +25,8 @@ properties. In the end, the same functionality can be implemented in HAPI as in
 any other languagge (ie. it is a turing complete language), but because the
 programs will be structured in a different way, the solution will have
 different properties. This includes but is not limited to what errors and
-mistakes can be found by type-checking and how the implementations can be
-automatically optimized.
+mistakes can be found by type-checking and what optimizations can be performed
+automatically.
 
 This is all very abstract, so let us go through a few examples where HAPI
 offers some properties that cannot be offered by existing programming
@@ -51,7 +51,7 @@ programs are guaranteed to be free of such errors.
 ### Guarantees provided
   * Protocol adherence
   * Assertion adherence
-  * Partial protocol completion (allows non productive loops)
+  * Partial protocol completion (allows unproductive loops)
   * Partial deadlock freedom (full freedom for single session processes)
 
 #### Protocol Adherence Example
@@ -84,12 +84,12 @@ s[1]>>
 ```
 
 #### Protocol Completion Example
-A classic mistake is forgetting end an open session.
+A classic mistake is forgetting to end an open session.
 ```c++
 #include <console.pi>
 
 c=new console(2 of 2);
-c[1]<<^PutString<<"Hello World";
+c[1]<<^str<<"Hello World"<<^nl;
 ```
 The above code will not typecheck, and report an error stating that we are
 terminating with an open session c. This is a common but grave mistake. First
@@ -102,8 +102,7 @@ The below code ends the session as required.
 #include <console.pi>
 
 c=new console(2 of 2);
-c[1]<<^PutString<<"Hello World";
-c[1]<<^End;
+c[1]<<^str<<"Hello World"<<^nl<<^end;
 ```
 
 Automatic Program Optimization
@@ -191,9 +190,9 @@ thus compared to the sequential version, it is more cumbersome to write, harder
 to read, debug, maintain and so on.
 
 The solution in HAPI is for the programmer to write the sequential version
-(marking the service as pure) and then HAPI is able to automatically optimize
-the implementation by rewriting the program to the finitely concurrent version
-only when semantical guarantees are respected.
+and let HAPI automatically optimize the implementation by rewriting the program
+to the finitely concurrent version if semantical guarantees are
+respected.
 
 This should be the dream scenario for programmers - write your programs
 sequentially, and enjoy the benefits in simplicity, debugging, testing,

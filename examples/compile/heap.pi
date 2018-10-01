@@ -1,0 +1,91 @@
+#include<console.pi>
+#include<order.pi>
+
+#define $heap(_elt) \
+  rec $heap; \
+  2->1 \
+  {^push: \
+    2->1:_elt; \
+    $heap; \
+   ^pop: \
+    1->2 \
+    {^some: \
+      1->2:_elt; \
+      $heap; \
+     ^none: \
+      $heap; \
+    } \
+   ^end: \
+    $end; \
+  }
+#define $absheap \
+  2:#elt; \
+  2->1:$order(#elt)(1 pure,2); \
+  $heap(#elt) \
+
+global $absheap heap(1 pure,2);
+local pure service HeapService(heap (1 of 2) this) // {{{
+( this>>#elt;
+  this[2]>>cmp_ch;
+  local pure HeapLeaf($heap(#elt)(1 of 1 pure,2) this) // {{{
+  ( local pure HeapNode($heap(#elt)(1 of 1 pure,2) this, $heap(#elt)(2 of 1 pure,2) left, $heap(#elt)(2 of 1 pure,2) right, #elt val, $order(#elt)(2 of 1 pure,2) cmp) // {{{
+    ( this[2]>>
+      {^push:
+        this[2]>>v;
+        cmp[1]<<^leq<<val<<v;
+        cmp[1]>>leq;
+        left[1]<<^push<<if leq then v else val;
+        HeapNode(this,right,left,if leq then val else v,cmp);
+       ^pop:
+        this[2]<<^some<<val;
+        left[1]<<^pop;
+        left[1]>>
+        {^none:
+          right[1]<<^pop;
+          right[1]>>
+          {^none:
+            left[1]<<^end;
+            right[1]<<^end;
+            cmp[1]<<^end;
+            HeapLeaf(this);
+           ^some:
+            right[1]>>v2;
+            HeapNode(this,right,left,v2,cmp);
+          }
+         ^some:
+          left[1]>>v1;
+          right[1]>>
+          {^none:
+            // This should not happen - but we handle it anyway;
+            HeapNode(this,right,left,v1,cmp);
+           ^some:
+            right[1]>>v2;
+            cmp[1]<<^leq<<v1<<v2;
+            cmp[1]>>leq;
+            left[1]<<^push<<if leq then v2 else v1;
+            HeapNode(this,right,left,if leq then v1 else v2,cmp);
+          }
+        }
+       ^end:
+        left[1]<<^end;
+        right[1]<<^end;
+        cmp[1]<<^end;
+      }
+    ) // }}}
+    this[2]>>
+    {^push:
+      this[2]>>v;
+      left=new heap(2 of 2);
+      right=new heap(2 of 2);
+      cmp=new cmp_ch(2 of 2);
+      HeapNode(this,left,right,v,true,cmp);
+     ^pop:
+      this[2]<<^none;
+      HeapLeaf(this);
+     ^end:
+    }
+  ) // }}}
+  HeapLeaf(this);
+) // }}}
+|
+
