@@ -40,11 +40,12 @@ local pure service UnziplistService(unziplist (1 of 2) this) // {{{
   2->1:$order(#elt)(2 of 1 pure,2); \
   2->1:$list(#elt)(2 of 1 pure,2); \
   2->1:$list(#elt)(2 of 1 pure,2); \
+  1->2:Bool; \
   $list(#elt)
 global $mergelists mergelists(1 pure,2);
 local pure service MergelistsService(mergelists (1 of 2) this) // {{{
 ( this>>#elt;
-  local pure Merge($list(#elt)(2 of 1 pure,2) src1, $list(#elt)(2 of 1 pure,2) src2, $order(#elt)(2 of 1 pure,2) cmp, $list(#elt)(1 of 1 pure,2) this) // {{{
+  local pure Merge($list(#elt)(2 of 1 pure,2) src1, $list(#elt)(2 of 1 pure,2) src2, $order(#elt)(2 of 1 pure,2) cmp, 1->2:Bool;$list(#elt)(1 of 1 pure,2) this) // {{{
   ( src1[1]<<^pop;
     src1[1]>>
     {^cons:
@@ -55,13 +56,13 @@ local pure service MergelistsService(mergelists (1 of 2) this) // {{{
         src2[1]>>h2>>t2;
         cmp[1]<<^leq<<h1<<h2;
         cmp[1]>>leq;
-        local pure SubMerge($list(#elt)(2 of 1 pure,2) src1, $list(#elt)(2 of 1 pure,2) src2, $order(#elt)(2 of 1 pure,2) cmp, $list(#elt)(1 of 1 pure,2) this, #elt head) // {{{
+        local pure SubMerge($list(#elt)(2 of 1 pure,2) src1, $list(#elt)(2 of 1 pure,2) src2, $order(#elt)(2 of 1 pure,2) cmp, 1->2:Bool;$list(#elt)(1 of 1 pure,2) this, #elt head) // {{{
         ( merge=new mergelists(2 of 2);
           merge<<#elt;
           merge[1]<<cmp<<src1<<src2;
-          result=new list(2 of 2);
-          result<<#elt;
-          result[1]<<^cons<<h1<<^append<<merge<<^takeover<<this;
+          merge[1]>>b;
+          this[2]<<true;
+          merge[1]<<^cons<<head<<^takeover<<this;
         ) // }}}
         if leq
         then t2[1]<<^cons<<h2;
@@ -69,12 +70,12 @@ local pure service MergelistsService(mergelists (1 of 2) this) // {{{
         else t1[1]<<^cons<<h1;
              SubMerge(t1,t2,cmp,this,h2);
        ^nil:
-        result=new list(2 of 2);
-        result<<#elt;
-        result[1]<<^cons<<h1<<^append<<t1<<^takeover<<this;
+        this[2]<<true;
+        t1[1]<<^cons<<h1<<^takeover<<this;
         cmp[1]<<^end;
       }
      ^nil:
+      this[2]<<true;
       src2[1]<<^takeover<<this;
       cmp[1]<<^end;
     }
@@ -85,18 +86,17 @@ local pure service MergelistsService(mergelists (1 of 2) this) // {{{
   Merge(l1,l2,cmp,this);
 ) // }}}
 |
-#define $listfun(_elt) \
-  2->1:$list(_elt)(2 of 1 pure,2); \
-  $list(_elt)
 #define $abslistfun \
   2:#elt; \
   2->1:$order(#elt)(1 pure,2); \
-  $listfun(#elt)
+  2->1:$list(#elt)(2 of 1 pure,2); \
+  1->2:Bool; \
+  $list(#elt)
 global $abslistfun mergesort(1 pure,2);
 local pure service MergesortService(mergesort (1 of 2) this) // {{{
 ( this>>#elt;
   this[2]>>cmp_ch;
-  local pure MergesortSession($list(#elt)(1 of 1 pure,2) this, $list(#elt)(2 of 1 pure,2) src)
+  local pure MergesortSession(1->2:Bool;$list(#elt)(1 of 1 pure,2) this, $list(#elt)(2 of 1 pure,2) src)
   ( src[1]<<^get<<1;
     src[1]>>
     {^val: // at least 2 elements
@@ -111,14 +111,20 @@ local pure service MergesortService(mergesort (1 of 2) this) // {{{
       sort2<<#elt;
       sort1[1]<<cmp_ch;
       sort1[1]<<src1;
+      sort1[1]>>b1;
       sort2[1]<<cmp_ch;
       sort2[1]<<src2;
+      sort2[1]>>b2;
       merge=new mergelists(2 of 2);
       merge<<#elt;
       cmp=new cmp_ch(2 of 2);
-      merge[1]<<cmp<<sort1<<sort2<<^takeover<<this;
+      merge[1]<<cmp<<sort1<<sort2;
+      merge[1]>>b3;
+      this[2]<<true;
+      merge[1]<<^takeover<<this;
      ^err: // less than 2 elements, hence ordered
       src[1]>>x;
+      this[2]<<true;
       src[1]<<^takeover<<this;
     }
   )
@@ -126,3 +132,31 @@ local pure service MergesortService(mergesort (1 of 2) this) // {{{
   MergesortSession(this,src);
 ) // }}}
 |
+x=new range(2 of 2);
+x<<Int;
+s=new stdsucc_Int(2 of 2);
+o=new stdorder_Int(2 of 2);
+x[1]<<s<<o<<1<<10000;
+y=new range(2 of 2);
+y<<Int;
+s=new stdsucc_Int(2 of 2);
+o=new stdorder_Int(2 of 2);
+y[1]<<s<<o<<1<<10000;
+x[1]<<^append<<y;
+c=new console(2 of 2); c[1]<<^str<<"Start"<<^nl<<^end;
+m=new mergesort(2 of 2);
+m<<Int;
+m[1]<<stdorder_Int<<x;
+m[1]>>b;
+global PrintList($list(Int)(2 of 1 pure,2) l) // {{{
+( l[1]<<^pop;
+  l[1]>>
+  {^nil:
+   ^cons:
+    l[1]>>h>>t;
+    c=new console(2 of 2);
+    c[1]<<^int<<h<<^nl<<^end;
+    PrintList(t);
+  }
+) // }}}
+PrintList(m);
