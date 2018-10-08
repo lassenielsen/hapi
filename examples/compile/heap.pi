@@ -1,4 +1,21 @@
 #include<console.pi>
+#include<sys/timer.pi>
+#define require(x) HOST("/*",x,"*/") pure
+local WatchProcs()
+( Int a=SYSTEM&"aprocs";
+  Int t=SYSTEM&"tprocs";
+  c=new console(2 of 2);
+  c[1]<<^str<<"#Processes (active/target): ("<<^int<<a<<^str<<"/"<<^int<<t<<^str<<")."<<^nl<<^end;
+  if a<=1
+  then
+  else t=new timer(2 of 2);
+       t[1]<<^wait<<0.5;
+       t[1]>>b;
+       t[1]<<^end;
+       WatchProcs();
+)
+WatchProcs();
+|
 #include<order.pi>
 #include<struct/list.pi>
 #include<succ.pi>
@@ -62,33 +79,51 @@ local pure service HeapService(heap (1 of 2) this) // {{{
         HeapNode(this,right,left,if leq then val else v,cmp);
        ^pop:
         this[2]<<^some<<val;
-        left[1]<<^pop;
-        left[1]>>
+        right[1]<<^popleaf;
+        right[1]>>
         {^none:
-          right[1]<<^pop;
-          right[1]>>
+          left[1]<<^pop;
+          left[1]>>
           {^none:
             left[1]<<^end;
             right[1]<<^end;
             cmp[1]<<^end;
             HeapLeaf(this);
            ^some:
-            right[1]>>v2;
-            HeapNode(this,right,left,v2,cmp);
+            left[1]>>vleft;
+            HeapNode(this,right,left,vleft,cmp);
           }
          ^some:
-          left[1]>>v1;
-          right[1]<<^pop;
-          right[1]>>
+          right[1]>>vleaf;
+          left[1]<<^peek;
+          left[1]>>
           {^none:
-            // This shoudd not happen - but we handle it anyway;
-            HeapNode(this,right,left,v1,cmp);
+            right[1]<<^peek;
+            right[1]>>
+            {^none:
+              HeapNode(this,left,right,vleaf,cmp);
+             ^some:
+              right[1]>>vright;
+              right[1]<<^poppush<<vleaf;
+              HeapNode(this,left,right,vright,cmp);
+            }
            ^some:
-            right[1]>>v2;
-            cmp[1]<<^leq<<v1<<v2;
-            cmp[1]>>leq;
-            left[1]<<^push<<if leq then v2 else v1;
-            HeapNode(this,right,left,if leq then v1 else v2,cmp);
+            left[1]>>vleft;
+            right[1]<<^peek;
+            right[1]>>
+            {^none:
+              left[1]<<^poppush<<vleaf;
+              HeapNode(this,right,left,vleft,cmp);
+             ^some:
+              right[1]>>vright;
+              cmp[1]<<^leq<<vleft<<vright;
+              cmp[1]>>leqlr;
+              if leqlr
+              then left[1]<<^poppush<<vleaf;
+                   HeapNode(this,right,left,vleft,cmp);
+              else right[1]<<^poppush<<vleaf;
+                   HeapNode(this,right,left,vright,cmp);
+            }
           }
         }
        ^peek:
@@ -214,7 +249,10 @@ local pure service HeapService(heap (1 of 2) this) // {{{
   2:#elt; \
   2->1:$order(#elt)(1 pure,2); \
   2->1:$list(#elt)(2 of 1 pure,2); \
-  $heap(#elt)
+  1->2 \
+  {^ok: \
+    $heap(#elt) \
+  }
 global $list2heap list2heap(1 pure,2);
 local pure service List2Heap(list2heap (1 of 2) this) // {{{
 ( this>>#elt;
@@ -225,12 +263,20 @@ local pure service List2Heap(list2heap (1 of 2) this) // {{{
   {^nil:
     res=new heap(2 of 2);
     res<<#elt;
-    res[1]<<cmp_ch<<^takeover<<this;
+    res[1]<<cmp_ch<<^takeover;
+    this[2]<<^ok;
+    res[1]<<this;
    ^cons:
     src[1]>>head>>tail;
     h=new list2heap(2 of 2);
     h<<#elt;
-    h[1]<<cmp_ch<<tail<<^push<<head<<^takeover<<this;
+    h[1]<<cmp_ch<<tail;
+    h[1]>>
+    {^ok:
+      h[1]<<^push<<head<<^takeover;
+      this[2]<<^ok;
+      h[1]<<this;
+    }
   }
 ) // }}}
 |
@@ -270,18 +316,57 @@ local pure service HeapsortService(heapsort (1 of 2) this) // {{{
   h = new list2heap(2 of 2);
   h<<#elt;
   h[1]<<cmp_ch<<src;
-  l = new heap2list(2 of 2);
-  l<<#elt;
-  l[1]<<h<<^takeover<<this;
+  h[1]>>
+  {^ok:
+    l = new heap2list(2 of 2);
+    l<<#elt;
+    l[1]<<h<<^takeover<<this;
+  }
 ) // }}}
 |
+global PrintList($list(Int)(2 of 1 pure,2) l) // {{{
+( l[1]<<^pop;
+  l[1]>>
+  {^nil:
+   ^cons:
+    l[1]>>h>>t;
+    c=new console(2 of 2);
+    c[1]<<^int<<h<<^nl<<^end;
+    PrintList(t);
+  }
+) // }}}
+global PrintHeap($heap(Int)(2 of 1 pure,2) h) // {{{
+( h[1]<<^pop;
+  h[1]>>
+  {^none:
+    h[1]<<^end;
+   ^some:
+    h[1]>>v;
+    c=new console(2 of 2);
+    c[1]<<^int<<v<<^nl<<^end;
+    PrintHeap(h);
+  }
+) // }}}
 ilist=new range(2 of 2);
 ilist<<Int;
 isucc=new stdsucc_Int(2 of 2);
 iorder=new stdorder_Int(2 of 2);
-ilist[1]<<isucc<<iorder<<1<<20000;
-isort=new heapsort(2 of 2);
-isort<<Int;
-isort[1]<<stdorder_Int<<ilist;
-// Use isort;
-isort[1]<<^end;
+ilist[1]<<isucc<<iorder<<1<<10000;
+x=new range(2 of 2);
+x<<Int;
+isucc=new stdsucc_Int(2 of 2);
+iorder=new stdorder_Int(2 of 2);
+x[1]<<isucc<<iorder<<1<<10000;
+ilist[1]<<^append<<x;
+ilist[1]<<^end;
+//isort=new list2heap(2 of 2);
+//isort<<Int;
+//c=new console(2 of 2);
+//c[1]<<^str<<"Sorting"<<^nl<<^end;
+//isort[1]<<stdorder_Int<<ilist;
+//// Use isort;
+//isort[1]>>
+//{^ok:
+////PrintList(isort);
+//  isort[1]<<^end;
+//}
