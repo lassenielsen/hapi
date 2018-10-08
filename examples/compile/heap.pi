@@ -1,21 +1,7 @@
 #include<console.pi>
-#include<sys/timer.pi>
+//#define PROCMONWAIT 0.1
+//#include<debug/procmon.pi>
 #define require(x) HOST("/*",x,"*/") pure
-local WatchProcs()
-( Int a=SYSTEM&"aprocs";
-  Int t=SYSTEM&"tprocs";
-  c=new console(2 of 2);
-  c[1]<<^str<<"#Processes (active/target): ("<<^int<<a<<^str<<"/"<<^int<<t<<^str<<")."<<^nl<<^end;
-  if a<=1
-  then
-  else t=new timer(2 of 2);
-       t[1]<<^wait<<0.5;
-       t[1]>>b;
-       t[1]<<^end;
-       WatchProcs();
-)
-WatchProcs();
-|
 #include<order.pi>
 #include<struct/list.pi>
 #include<succ.pi>
@@ -358,15 +344,15 @@ isucc=new stdsucc_Int(2 of 2);
 iorder=new stdorder_Int(2 of 2);
 x[1]<<isucc<<iorder<<1<<10000;
 ilist[1]<<^append<<x;
-ilist[1]<<^end;
-//isort=new list2heap(2 of 2);
-//isort<<Int;
-//c=new console(2 of 2);
-//c[1]<<^str<<"Sorting"<<^nl<<^end;
-//isort[1]<<stdorder_Int<<ilist;
-//// Use isort;
-//isort[1]>>
-//{^ok:
-////PrintList(isort);
-//  isort[1]<<^end;
-//}
+//ilist[1]<<^end;
+isort=new list2heap(2 of 2);
+isort<<Int;
+c=new console(2 of 2);
+c[1]<<^str<<"Sorting"<<^nl<<^end;
+isort[1]<<stdorder_Int<<ilist;
+// Use isort;
+isort[1]>>
+{^ok:
+  PrintHeap(isort);
+  //isort[1]<<^end;
+}
