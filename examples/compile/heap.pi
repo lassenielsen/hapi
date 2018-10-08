@@ -1,5 +1,24 @@
 #include<console.pi>
+#include<sys/timer.pi>
+#define require(x) HOST("/*",x,"*/") pure
+local WatchProcs()
+( Int a=SYSTEM&"aprocs";
+  Int t=SYSTEM&"tprocs";
+  c=new console(2 of 2);
+  c[1]<<^str<<"#Processes (active/target): ("<<^int<<a<<^str<<"/"<<^int<<t<<^str<<")."<<^nl<<^end;
+  if a<=1
+  then
+  else t=new timer(2 of 2);
+       t[1]<<^wait<<0.5;
+       t[1]>>b;
+       t[1]<<^end;
+       WatchProcs();
+)
+WatchProcs();
+|
 #include<order.pi>
+#include<struct/list.pi>
+#include<succ.pi>
 
 #define $heap(_elt) \
   rec $heap; \
@@ -15,6 +34,28 @@
      ^none: \
       $heap; \
     } \
+   ^peek: \
+    1->2 \
+    {^some: \
+      1->2:_elt; \
+      $heap; \
+     ^none: \
+      $heap; \
+    } \
+   ^popleaf: \
+    1->2 \
+    {^some: \
+      1->2:_elt; \
+      $heap; \
+     ^none: \
+      $heap; \
+    } \
+   ^poppush: \
+    2->1:_elt; \
+    $heap; \
+   ^takeover: \
+    2->1:$heap;(1 of 1 pure,2); \
+    $end; \
    ^end: \
     $end; \
   }
@@ -38,54 +79,294 @@ local pure service HeapService(heap (1 of 2) this) // {{{
         HeapNode(this,right,left,if leq then val else v,cmp);
        ^pop:
         this[2]<<^some<<val;
-        left[1]<<^pop;
-        left[1]>>
+        right[1]<<^popleaf;
+        right[1]>>
         {^none:
-          right[1]<<^pop;
-          right[1]>>
+          left[1]<<^pop;
+          left[1]>>
           {^none:
             left[1]<<^end;
             right[1]<<^end;
             cmp[1]<<^end;
             HeapLeaf(this);
            ^some:
-            right[1]>>v2;
-            HeapNode(this,right,left,v2,cmp);
+            left[1]>>vleft;
+            HeapNode(this,right,left,vleft,cmp);
           }
          ^some:
-          left[1]>>v1;
-          right[1]>>
+          right[1]>>vleaf;
+          left[1]<<^peek;
+          left[1]>>
           {^none:
-            // This should not happen - but we handle it anyway;
-            HeapNode(this,right,left,v1,cmp);
+            right[1]<<^peek;
+            right[1]>>
+            {^none:
+              HeapNode(this,left,right,vleaf,cmp);
+             ^some:
+              right[1]>>vright;
+              right[1]<<^poppush<<vleaf;
+              HeapNode(this,left,right,vright,cmp);
+            }
            ^some:
-            right[1]>>v2;
-            cmp[1]<<^leq<<v1<<v2;
-            cmp[1]>>leq;
-            left[1]<<^push<<if leq then v2 else v1;
-            HeapNode(this,right,left,if leq then v1 else v2,cmp);
+            left[1]>>vleft;
+            right[1]<<^peek;
+            right[1]>>
+            {^none:
+              left[1]<<^poppush<<vleaf;
+              HeapNode(this,right,left,vleft,cmp);
+             ^some:
+              right[1]>>vright;
+              cmp[1]<<^leq<<vleft<<vright;
+              cmp[1]>>leqlr;
+              if leqlr
+              then left[1]<<^poppush<<vleaf;
+                   HeapNode(this,right,left,vleft,cmp);
+              else right[1]<<^poppush<<vleaf;
+                   HeapNode(this,right,left,vright,cmp);
+            }
           }
         }
+       ^peek:
+        this[2]<<^some<<val;
+        HeapNode(this,left,right,val,cmp);
+       ^popleaf:
+        right[1]<<^popleaf;
+        right[1]>>
+        {^none:
+          left[1]<<^popleaf;
+          left[1]>>
+          {^none:
+            left[1]<<^end;
+            right[1]<<^end;
+            cmp[1]<<^end;
+            this[2]<<^some<<val;
+            HeapLeaf(this);
+           ^some: // This should not happen, but we will handle it anyway
+            left[1]>>leaf;
+            this[2]<<^some<<leaf;
+            HeapNode(this,left,right,val,cmp);
+          }
+         ^some:
+          right[1]>>leaf;
+          this[2]<<^some<<leaf;
+          HeapNode(this,right,left,val,cmp);
+        }
+       ^poppush:
+        this[2]>>vnew;
+        left[1]<<^peek;
+        left[1]>>
+        {^none:
+          right[1]<<^peek;
+          right[1]>>
+          {^none:
+            HeapNode(this,left,right,vnew,cmp);
+           ^some:
+            right[1]>>vright;
+            cmp[1]<<^leq<<vnew<<vright;
+            cmp[1]>>leqright;
+            if leqright
+            then HeapNode(this,left,right,vnew,cmp);
+            else right[1]<<^poppush<<vnew;
+                 HeapNode(this,left,right,vright,cmp);
+          }
+         ^some:
+          left[1]>>vleft;
+          cmp[1]<<^leq<<vnew<<vleft;
+          cmp[1]>>leqleft;
+          right[1]<<^peek;
+          right[1]>>
+          {^none: // This should not happen, but we will handle it anyway 
+            if leqleft
+            then HeapNode(this,left,right,vnew,cmp);
+            else left[1]<<^poppush<<vnew;
+                 HeapNode(this,left,right,vleft,cmp);
+           ^some:
+            right[1]>>vright;
+            cmp[1]<<^leq<<vnew<<vright;
+            cmp[1]>>leqright;
+            if leqleft and leqright
+            then HeapNode(this,left,right,vnew,cmp);
+            else if leqleft and not leqright
+            then right[1]<<^poppush<<vnew;
+                 HeapNode(this,left,right,vright,cmp);
+            else if leqright and not leqleft
+            then left[1]<<^poppush<<vnew;
+                 HeapNode(this,left,right,vleft,cmp);
+            else cmp[1]<<^leq<<vleft<<vright;
+                 cmp[1]>>leqlr;
+                 if leqlr
+                 then left[1]<<^poppush<<vnew;
+                      HeapNode(this,left,right,vleft,cmp);
+                 else right[1]<<^poppush<<vnew;
+                      HeapNode(this,left,right,vright,cmp);
+          }
+        }
+       ^takeover:
+        this[2]>>nthis;
+        HeapNode(nthis,left,right,val,cmp);
        ^end:
         left[1]<<^end;
         right[1]<<^end;
         cmp[1]<<^end;
       }
     ) // }}}
+    local pure LeafPush($heap(#elt)(1 of 1 pure,2) this, #elt v) // {{{
+    ( left=new heap(2 of 2);
+      left<<#elt;
+      left[1]<<cmp_ch;
+      right=new heap(2 of 2);
+      right<<#elt;
+      right[1]<<cmp_ch;
+      cmp=new cmp_ch(2 of 2);
+      HeapNode(this,left,right,v,cmp);
+    ) // }}}
     this[2]>>
     {^push:
       this[2]>>v;
-      left=new heap(2 of 2);
-      right=new heap(2 of 2);
-      cmp=new cmp_ch(2 of 2);
-      HeapNode(this,left,right,v,true,cmp);
+      LeafPush(this,v);
      ^pop:
       this[2]<<^none;
       HeapLeaf(this);
+     ^peek:
+      this[2]<<^none;
+      HeapLeaf(this);
+     ^popleaf:
+      this[2]<<^none;
+      HeapLeaf(this);
+     ^poppush: // should not happen, but will consider it as a push
+      this[2]>>v;
+      LeafPush(this,v);
+     ^takeover:
+      this[2]>>nthis;
+      HeapLeaf(nthis);
      ^end:
     }
   ) // }}}
   HeapLeaf(this);
 ) // }}}
 |
-
+#define $list2heap \
+  2:#elt; \
+  2->1:$order(#elt)(1 pure,2); \
+  2->1:$list(#elt)(2 of 1 pure,2); \
+  1->2 \
+  {^ok: \
+    $heap(#elt) \
+  }
+global $list2heap list2heap(1 pure,2);
+local pure service List2Heap(list2heap (1 of 2) this) // {{{
+( this>>#elt;
+  this[2]>>cmp_ch;
+  this[2]>>src;
+  src[1]<<^pop;
+  src[1]>>
+  {^nil:
+    res=new heap(2 of 2);
+    res<<#elt;
+    res[1]<<cmp_ch<<^takeover;
+    this[2]<<^ok;
+    res[1]<<this;
+   ^cons:
+    src[1]>>head>>tail;
+    h=new list2heap(2 of 2);
+    h<<#elt;
+    h[1]<<cmp_ch<<tail;
+    h[1]>>
+    {^ok:
+      h[1]<<^push<<head<<^takeover;
+      this[2]<<^ok;
+      h[1]<<this;
+    }
+  }
+) // }}}
+|
+#define $heap2list \
+  2:#elt; \
+  2->1:$heap(#elt)(2 of 1 pure,2); \
+  $list(#elt)
+global $heap2list heap2list(1 pure,2);
+local pure service Heap2List(heap2list (1 of 2) this) // {{{
+( this>>#elt;
+  this[2]>>src;
+  src[1]<<^pop;
+  src[1]>>
+  {^none:
+    src[1]<<^end;
+    res=new list(2 of 2);
+    res<<#elt;
+    res[1]<<^takeover<<this;
+   ^some:
+    src[1]>>v;
+    t=new heap2list(2 of 2);
+    t<<#elt;
+    t[1]<<src<<^cons<<v<<^takeover<<this;
+  }
+) // }}}
+|
+#define $listfun \
+  2:#elt; \
+  2->1:$order(#elt)(1 pure,2); \
+  2->1:$list(#elt)(2 of 1 pure,2); \
+  $list(#elt)
+global $listfun heapsort(1 pure,2);
+local pure service HeapsortService(heapsort (1 of 2) this) // {{{
+( this>>#elt;
+  this[2]>>cmp_ch;
+  this[2]>>src;
+  h = new list2heap(2 of 2);
+  h<<#elt;
+  h[1]<<cmp_ch<<src;
+  h[1]>>
+  {^ok:
+    l = new heap2list(2 of 2);
+    l<<#elt;
+    l[1]<<h<<^takeover<<this;
+  }
+) // }}}
+|
+global PrintList($list(Int)(2 of 1 pure,2) l) // {{{
+( l[1]<<^pop;
+  l[1]>>
+  {^nil:
+   ^cons:
+    l[1]>>h>>t;
+    c=new console(2 of 2);
+    c[1]<<^int<<h<<^nl<<^end;
+    PrintList(t);
+  }
+) // }}}
+global PrintHeap($heap(Int)(2 of 1 pure,2) h) // {{{
+( h[1]<<^pop;
+  h[1]>>
+  {^none:
+    h[1]<<^end;
+   ^some:
+    h[1]>>v;
+    c=new console(2 of 2);
+    c[1]<<^int<<v<<^nl<<^end;
+    PrintHeap(h);
+  }
+) // }}}
+ilist=new range(2 of 2);
+ilist<<Int;
+isucc=new stdsucc_Int(2 of 2);
+iorder=new stdorder_Int(2 of 2);
+ilist[1]<<isucc<<iorder<<1<<10000;
+x=new range(2 of 2);
+x<<Int;
+isucc=new stdsucc_Int(2 of 2);
+iorder=new stdorder_Int(2 of 2);
+x[1]<<isucc<<iorder<<1<<10000;
+ilist[1]<<^append<<x;
+ilist[1]<<^end;
+//isort=new list2heap(2 of 2);
+//isort<<Int;
+//c=new console(2 of 2);
+//c[1]<<^str<<"Sorting"<<^nl<<^end;
+//isort[1]<<stdorder_Int<<ilist;
+//// Use isort;
+//isort[1]>>
+//{^ok:
+////PrintList(isort);
+//  isort[1]<<^end;
+//}
