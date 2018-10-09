@@ -5,8 +5,9 @@
 using namespace std;
 using namespace hapi;
 
-MpsNew::MpsNew(const std::vector<std::string> &names, const MpsGlobalType &type, const MpsTerm &succ) // {{{
+MpsNew::MpsNew(const std::vector<std::string> &names, const vector<MpsParticipant> &participants, const MpsGlobalType &type, const MpsTerm &succ) // {{{
 : myNames(names)
+, myParticipants(participants)
 {
   mySucc = succ.Copy();
   myType = type.Copy();
@@ -26,8 +27,15 @@ void *MpsNew::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
       return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
+  // Check pure context if pure participant is used
+  bool hasPure=false;
+  for (int i=0;i<myParticipants.size() && !hasPure; ++i)
+    if (myParticipants[i].IsPure())
+      hasPure=true;
+  if (hasPure && pureState!=CPS_PURE)
+    return wrap_err(this,PrintTypeError((string)"Creating pure participants in an impure state",*this,Theta,Gamma,Omega),children);
   // Check correct number of participants
-  if (myNames.size()!=myType->GetMaxPid())
+  if (myNames.size()!=myType->GetMaxPid() || myNames.size()!=myParticipants.size())
     return wrap_err(this,PrintTypeError((string)"Number of participants mismatch",*this,Theta,Gamma,Omega),children);
   // Check that only completed sessions are hidden
   MpsMsgEnv newGamma = Gamma;
@@ -59,10 +67,7 @@ void *MpsNew::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
       newType=tmpType;
     }
     // Create Gamma with new session
-    vector<MpsParticipant> participants;
-    for (int i=0; i<myNames.size(); ++i)
-      participants.push_back(MpsParticipant(i+1,to_string(i+1),false));
-    newGamma[myNames[i]] = new MpsDelegateLocalMsgType(*newType,i+1,participants);
+    newGamma[myNames[i]] = new MpsDelegateLocalMsgType(*newType,i+1,myParticipants);
     delete newType;
   }
   children["succ"] = mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
@@ -102,8 +107,8 @@ bool MpsNew::SubSteps(vector<MpsStep> &dest) // {{{
 } // }}}
 MpsTerm *MpsNew::PRename(const string &src, const string &dst) const // {{{
 {
-  MpsTerm *newSucc = mySucc->PRename(src,dst);
-  MpsTerm *result = new MpsNew(myNames,*myType,*newSucc);
+  MpsTerm *newSucc = mySucc->PRename(src, dst);
+  MpsTerm *result = new MpsNew(myNames, myParticipants, *myType, *newSucc);
   delete newSucc;
   return result;
 } // }}}
@@ -127,14 +132,14 @@ MpsTerm *MpsNew::ERename(const string &src, const string &dst) const // {{{
   MpsTerm *tmpSucc = newSucc->ERename(src,dst);
   delete newSucc;
   newSucc=tmpSucc;
-  MpsTerm *result = new MpsNew(newNames, *myType, *newSucc);
+  MpsTerm *result = new MpsNew(newNames, myParticipants, *myType, *newSucc);
   delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsNew::MRename(const string &src, const string &dst) const // {{{
 {
   MpsTerm *newSucc = mySucc->MRename(src,dst);
-  MpsTerm *result = new MpsNew(myNames, *myType, *newSucc);
+  MpsTerm *result = new MpsNew(myNames, myParticipants, *myType, *newSucc);
   delete newSucc;
   return result;
 } // }}}
@@ -145,7 +150,7 @@ MpsTerm *MpsNew::ReIndex(const string &session, int pid, int maxpid) const // {{
       return Copy();
 
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);
-  MpsTerm *result = new MpsNew(myNames, *myType, *newSucc);
+  MpsTerm *result = new MpsNew(myNames, myParticipants, *myType, *newSucc);
   delete newSucc;
   return result;
 } // }}}
@@ -169,7 +174,7 @@ MpsTerm *MpsNew::PSubst(const string &var, const MpsTerm &exp, const vector<stri
   delete newSucc;
   newSucc=tmpSucc;
 
-  MpsTerm *result = new MpsNew(newNames, *myType, *newSucc);
+  MpsTerm *result = new MpsNew(newNames, myParticipants, *myType, *newSucc);
   delete newSucc;
   return result;
 } // }}}
@@ -180,7 +185,7 @@ MpsTerm *MpsNew::ESubst(const string &source, const MpsExp &dest) const // {{{
   // Test if subst is blocked
   for (int i=0; i<myNames.size(); ++i)
   { if (source==myNames[i])
-    { MpsTerm *result = new MpsNew(myNames, *newType, *mySucc);
+    { MpsTerm *result = new MpsNew(myNames, myParticipants, *newType, *mySucc);
       delete newType;
       return result;
     }
@@ -204,7 +209,7 @@ MpsTerm *MpsNew::ESubst(const string &source, const MpsExp &dest) const // {{{
   delete newSucc;
   newSucc=tmpSucc;
 
-  MpsTerm *result = new MpsNew(newNames, *newType, *newSucc);
+  MpsTerm *result = new MpsNew(newNames, myParticipants, *newType, *newSucc);
   delete newType;
   delete newSucc;
   return result;
@@ -213,7 +218,7 @@ MpsTerm *MpsNew::GSubst(const string &source, const MpsGlobalType &dest, const v
 {
   MpsGlobalType *newType = myType->GSubst(source,dest,args);
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
-  MpsTerm *result =  new MpsNew(myNames, *newType, *newSucc);
+  MpsTerm *result =  new MpsNew(myNames, myParticipants, *newType, *newSucc);
 
   // Clean Up
   delete newType;
@@ -225,7 +230,7 @@ MpsTerm *MpsNew::LSubst(const string &source, const MpsLocalType &dest, const ve
 {
   MpsGlobalType *newType = myType->LSubst(source,dest,args);
   MpsTerm *newSucc = mySucc->LSubst(source,dest,args);
-  MpsTerm *result =  new MpsNew(myNames, *newType, *newSucc);
+  MpsTerm *result =  new MpsNew(myNames, myParticipants, *newType, *newSucc);
 
   // Clean Up
   delete newType;
@@ -250,15 +255,15 @@ set<string> MpsNew::EV() const // {{{
 set<string> MpsNew::FEV() const // {{{
 {
   set<string> result = mySucc->FEV();
-  set<string> result2 = myType->FEV();
-  result.insert(result2.begin(),result2.end());
   for (vector<string>::const_iterator name=myNames.begin(); name!=myNames.end(); ++name)
     result.erase(*name);
+  set<string> result2 = myType->FEV();
+  result.insert(result2.begin(),result2.end());
   return result;
 } // }}}
 MpsTerm *MpsNew::Copy() const // {{{
 {
-  return new MpsNew(myNames, *myType, *mySucc);
+  return new MpsNew(myNames, myParticipants, *myType, *mySucc);
 } // }}}
 bool MpsNew::Terminated() const // {{{
 {
@@ -268,19 +273,25 @@ MpsTerm *MpsNew::Simplify() const // {{{
 {
   // assert mySucc != NULL
   MpsTerm *newSucc = mySucc->Simplify();
-  MpsTerm *result = new MpsNew(myNames, *myType, *newSucc);
+  MpsTerm *result = new MpsNew(myNames, myParticipants, *myType, *newSucc);
   delete newSucc;
   return result;
 } // }}}
 string MpsNew::ToString(string indent) const // {{{
 {
   stringstream result;
+  result << myType->ToString(indent) << "(";
+  for (int i=0; i<myParticipants.size(); ++i)
+  { if (i!=0)
+      result << ", ";
+    result << myParticipants[1].GetName();
+  }
+  result << ") ";
   for (int i=0; i<myNames.size(); ++i)
   { if (i!=0)
       result << ", ";
     result << myNames[i];
   }
-  result << " = new " << myType->ToString(indent);
   result << ";\n" + indent + mySucc->ToString(indent);
   return result.str();
 } // }}}
@@ -288,12 +299,18 @@ string MpsNew::ToTex(int indent, int sw) const // {{{
 {
   int typeIndent = indent + 5;
   stringstream result;
+  result << myType->ToTex(indent,sw) << "(";
+  for (int i=0; i<myParticipants.size(); ++i)
+  { if (i!=0)
+      result << ", ";
+    result << ToTex_KW(myParticipants[1].GetName());
+  }
+  result << ") ";
   for (int i=0; i<myNames.size(); ++i)
   { if (i!=0)
       result << ", ";
-    result << ToTex_Session(myNames[i]);
+    result << ToTex_KW(myNames[i]);
   }
-  result << " = " << ToTex_KW("new") << " " << myType->ToTex(typeIndent,sw);
   result << ";\\newline\n" + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
   return result.str();
 } // }}}
@@ -336,7 +353,7 @@ void MpsNew::ToCConsts(vector<string> &dest, unordered_set<string> &existing) co
 MpsTerm *MpsNew::FlattenFork(bool normLhs, bool normRhs, bool pureMode) const // {{{
 {
   MpsTerm *newSucc = mySucc->FlattenFork(normLhs,normRhs,pureMode);
-  MpsTerm *result= new MpsNew(myNames, *myType, *newSucc);
+  MpsTerm *result= new MpsNew(myNames, myParticipants, *myType, *newSucc);
   delete newSucc;
   return result;
 } // }}}
@@ -352,7 +369,7 @@ MpsTerm *MpsNew::RenameAll() const // {{{
     newSucc=tmpSucc;
   }
 
-  MpsTerm *result=new MpsNew(newNames,*newType,*newSucc);
+  MpsTerm *result=new MpsNew(newNames, myParticipants, *newType,*newSucc);
 
   delete newSucc;
   delete newType;
@@ -361,26 +378,26 @@ MpsTerm *MpsNew::RenameAll() const // {{{
 } // }}}
 bool MpsNew::Parallelize(const MpsTerm &receives, MpsTerm* &seqTerm, MpsTerm* &parTerm) const // {{{
 { MpsTerm *seqSucc = mySucc->Parallelize();
-  seqTerm=new MpsNew(myNames, *myType, *seqSucc);
+  seqTerm=new MpsNew(myNames, myParticipants, *myType, *seqSucc);
   delete seqSucc;
   parTerm=receives.Append(*seqTerm);
   return false; // All optimizations are guarded
 } // }}}
 MpsTerm *MpsNew::Append(const MpsTerm &term) const // {{{
 { MpsTerm *newSucc=mySucc->Append(term);
-  MpsTerm *result=new MpsNew(myNames, *myType, *newSucc);
+  MpsTerm *result=new MpsNew(myNames, myParticipants, *myType, *newSucc);
   delete newSucc;
   return result;
 } // }}}
 MpsTerm *MpsNew::CopyWrapper(std::map<std::string,void*> &children) const // {{{
-{ return new MpsNew(myNames, *myType, *(MpsTerm*)children["succ"]);
+{ return new MpsNew(myNames, myParticipants, *myType, *(MpsTerm*)children["succ"]);
 } // }}}
 MpsTerm *MpsNew::CloseDefsPre(const MpsMsgEnv &Gamma) // {{{
 { return this;
 } // }}}
 MpsTerm *MpsNew::ExtractDefinitions(MpsFunctionEnv &env) const // {{{
 { MpsTerm *newSucc=mySucc->ExtractDefinitions(env);
-  MpsTerm *result=new MpsNew(myNames, *myType, *newSucc);
+  MpsTerm *result=new MpsNew(myNames, myParticipants, *myType, *newSucc);
   delete newSucc;
   return result;
 } // }}}

@@ -1,6 +1,6 @@
 #include<console.pi>
-//#define PROCMONWAIT 0.1
-//#include<debug/procmon.pi>
+#define PROCMONWAIT 0.1
+#include<debug/procmon.pi>
 #define require(x) HOST("/*",x,"*/") pure
 #include<order.pi>
 #include<struct/list.pi>
@@ -38,6 +38,7 @@
     } \
    ^poppush: \
     2->1:_elt; \
+    1->2:Bool; \
     $heap; \
    ^takeover: \
     2->1:$heap;(1 of 1 pure,2); \
@@ -64,50 +65,44 @@ local pure service HeapService(heap (1 of 2) this) // {{{
         left[1]<<^push<<if leq then v else val;
         HeapNode(this,right,left,if leq then val else v,cmp);
        ^pop:
-        this[2]<<^some<<val;
-        right[1]<<^popleaf;
-        right[1]>>
+        left[1]<<^peek;
+        left[1]>>
         {^none:
-          left[1]<<^pop;
-          left[1]>>
-          {^none:
-            left[1]<<^end;
-            right[1]<<^end;
-            cmp[1]<<^end;
-            HeapLeaf(this);
-           ^some:
-            left[1]>>vleft;
-            HeapNode(this,right,left,vleft,cmp);
-          }
+          cmp[1]<<^end;
+          left[1]<<^end;
+          this[2]<<^some<<val;
+          right[1]<<^takeover<<this;
          ^some:
-          right[1]>>vleaf;
-          left[1]<<^peek;
-          left[1]>>
+          left[1]>>vleft;
+          right[1]<<^popleaf;
+          right[1]>>
           {^none:
-            right[1]<<^peek;
-            right[1]>>
-            {^none:
-              HeapNode(this,left,right,vleaf,cmp);
-             ^some:
-              right[1]>>vright;
-              right[1]<<^poppush<<vleaf;
-              HeapNode(this,left,right,vright,cmp);
-            }
+            cmp[1]<<^end;
+            right[1]<<^end;
+            this[2]<<^some<<val;
+            left[1]<<^takeover<<this;
            ^some:
-            left[1]>>vleft;
+            right[1]>>vleaf;
             right[1]<<^peek;
             right[1]>>
             {^none:
-              left[1]<<^poppush<<vleaf;
-              HeapNode(this,right,left,vleft,cmp);
+              cmp[1]<<^end;
+              right[1]<<^end;
+              left[1]<<^push<<vleaf;
+              this[2]<<^some<<val;
+              left[1]<<^takeover<<this;
              ^some:
               right[1]>>vright;
               cmp[1]<<^leq<<vleft<<vright;
               cmp[1]>>leqlr;
               if leqlr
               then left[1]<<^poppush<<vleaf;
+                   left[1]>>done;
+                   this[2]<<^some<<val;
                    HeapNode(this,right,left,vleft,cmp);
               else right[1]<<^poppush<<vleaf;
+                   right[1]>>done;
+                   this[2]<<^some<<val;
                    HeapNode(this,right,left,vright,cmp);
             }
           }
@@ -145,14 +140,18 @@ local pure service HeapService(heap (1 of 2) this) // {{{
           right[1]<<^peek;
           right[1]>>
           {^none:
+            this[2]<<true;
             HeapNode(this,left,right,vnew,cmp);
            ^some:
             right[1]>>vright;
             cmp[1]<<^leq<<vnew<<vright;
             cmp[1]>>leqright;
             if leqright
-            then HeapNode(this,left,right,vnew,cmp);
+            then this[2]<<true;
+                 HeapNode(this,left,right,vnew,cmp);
             else right[1]<<^poppush<<vnew;
+                 right[1]>>done;
+                 this[2]<<true;
                  HeapNode(this,left,right,vright,cmp);
           }
          ^some:
@@ -163,27 +162,39 @@ local pure service HeapService(heap (1 of 2) this) // {{{
           right[1]>>
           {^none: // This should not happen, but we will handle it anyway 
             if leqleft
-            then HeapNode(this,left,right,vnew,cmp);
+            then this[2]<<true;
+                 HeapNode(this,left,right,vnew,cmp);
             else left[1]<<^poppush<<vnew;
+                 left[1]>>done;
+                 this[2]<<true;
                  HeapNode(this,left,right,vleft,cmp);
            ^some:
             right[1]>>vright;
             cmp[1]<<^leq<<vnew<<vright;
             cmp[1]>>leqright;
             if leqleft and leqright
-            then HeapNode(this,left,right,vnew,cmp);
+            then this[2]<<true;
+                 HeapNode(this,left,right,vnew,cmp);
             else if leqleft and not leqright
             then right[1]<<^poppush<<vnew;
+                 right[1]>>done;
+                 this[2]<<true;
                  HeapNode(this,left,right,vright,cmp);
             else if leqright and not leqleft
             then left[1]<<^poppush<<vnew;
+                 left[1]>>done;
+                 this[2]<<true;
                  HeapNode(this,left,right,vleft,cmp);
             else cmp[1]<<^leq<<vleft<<vright;
                  cmp[1]>>leqlr;
                  if leqlr
                  then left[1]<<^poppush<<vnew;
+                      left[1]>>done;
+                      this[2]<<true;
                       HeapNode(this,left,right,vleft,cmp);
                  else right[1]<<^poppush<<vnew;
+                      right[1]>>done;
+                      this[2]<<true;
                       HeapNode(this,left,right,vright,cmp);
           }
         }
@@ -221,6 +232,7 @@ local pure service HeapService(heap (1 of 2) this) // {{{
       HeapLeaf(this);
      ^poppush: // should not happen, but will consider it as a push
       this[2]>>v;
+      this[2]<<true;
       LeafPush(this,v);
      ^takeover:
       this[2]>>nthis;

@@ -10,7 +10,7 @@ namespace hapi {
 class MpsNew : public MpsTerm // {{{
 {
   public:
-    MpsNew(const std::vector<std::string> &names, const MpsGlobalType &type, const MpsTerm &succ);
+    MpsNew(const std::vector<std::string> &names, const std::vector<MpsParticipant> &participants, const MpsGlobalType &type, const MpsTerm &succ);
     virtual ~MpsNew();
 
     void* TDCompileMain(tdc_pre pre,
@@ -61,11 +61,13 @@ class MpsNew : public MpsTerm // {{{
     const std::vector<std::string> &GetNames() const { return myNames; }
     const MpsGlobalType &GetType() const { return *myType; }
     const MpsTerm &GetSucc() const { return *mySucc; }
+    const std::vector<MpsParticipant> &GetParticipants() const { return myParticipants; }
 
   private:
     std::vector<std::string> myNames;
     MpsGlobalType *myType;
     MpsTerm *mySucc;
+    std::vector<MpsParticipant> myParticipants;
 }; // }}}
 }
 #endif

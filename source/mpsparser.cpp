@@ -117,25 +117,27 @@ MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (tree->Case() == "piact_new") // Gtype Ids ; {{{
-  { vector<string> names;
-    Ids(tree->Child(1), names);
+  else if (tree->Case() == "piact_new") // Gtype ( Participants ) Ids ; {{{
+  { vector<MpsParticipant> participants;
+    Participants(tree->Child(2),participants);
+    vector<string> names;
+    Ids(tree->Child(4), names);
     MpsGlobalType *type=Gtype(tree->Child(0));
-    MpsTerm *result = new MpsNew(names, *type, *succ);
+    MpsTerm *result = new MpsNew(names, participants, *type, *succ);
     delete type;
     delete succ;
     return result;
   } // }}}
-  else if (tree->Case() == "piact_ch") // Gtype id ( Participants ) ; {{{
+  else if (tree->Case() == "piact_ch") // Gtype ( Participants ) id ; {{{
   { vector<MpsParticipant> participants;
-    Participants(tree->Child(3),participants);
+    Participants(tree->Child(2),participants);
     MpsGlobalType *type = Gtype(tree->Child(0));
     if (participants.size()<type->GetMaxPid())
     { delete succ;
       delete type;
       throw string("Participant count does not match type: ") + tree->Type() + "." + tree->Case();
     }
-    MpsTerm *result = new MpsNu(participants,tree->Child(1)->Token().Content(), *succ, *type);
+    MpsTerm *result = new MpsNu(participants,tree->Child(4)->Token().Content(), *succ, *type);
     delete succ;
     delete type;
     return result;
@@ -290,27 +292,29 @@ MpsTerm *MpsParser::PiEAct(const parsetree *tree) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (tree->Case() == "pieact_new") // global Gtype Ids ; Pi {{{
-  { MpsTerm *succ = Pi(tree->Child(4));
+  else if (tree->Case() == "pieact_new") // global Gtype ( Participants ) Ids ; Pi {{{
+  { MpsTerm *succ = Pi(tree->Child(7));
+    vector<MpsParticipant> participants;
+    Participants(tree->Child(3),participants);
     vector<string> names;
-    Ids(tree->Child(2), names);
+    Ids(tree->Child(5), names);
     MpsGlobalType *type=Gtype(tree->Child(1));
-    MpsTerm *result = new MpsNew(names, *type, *succ);
+    MpsTerm *result = new MpsNew(names, participants, *type, *succ);
     delete type;
     delete succ;
     return result;
   } // }}}
-  else if (tree->Case() == "pieact_ch") // global Gtype id ( Participants ) ; Pi {{{
+  else if (tree->Case() == "pieact_ch") // global Gtype ( Participants ) id ; Pi {{{
   { MpsTerm *succ = Pi(tree->Child(7));
     vector<MpsParticipant> participants;
-    Participants(tree->Child(4),participants);
+    Participants(tree->Child(3),participants);
     MpsGlobalType *type = Gtype(tree->Child(1));
     if (participants.size()!=type->GetMaxPid())
     { delete succ;
       delete type;
       throw string("Participant count does not match type: ") + tree->Type() + "." + tree->Case();
     }
-    MpsTerm *result = new MpsNu(participants,tree->Child(2)->Token().Content(), *succ, *type);
+    MpsTerm *result = new MpsNu(participants,tree->Child(5)->Token().Content(), *succ, *type);
     delete succ;
     delete type;
     return result;

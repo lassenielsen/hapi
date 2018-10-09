@@ -12,7 +12,7 @@
     1->2:Int; \
     $end; \
   }
-global $string2int string2int(1 pure, 2);
+global $string2int(1 pure, 2) string2int;
 local pure service ConvertString2Int(string2int (1 of 2) s)
 ( s[2]>>str;
   Int val=0;

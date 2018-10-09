@@ -107,8 +107,8 @@ PiAct ::= ::piact_sends Ch Sends ;
         | ::piact_trcv  id >> nlvar ;
         | ::piact_ltrcv id >> lvar ;
         | ::piact_link  id = new id ( int of int ) ;
-        | ::piact_new   Gtype Ids ;
-        | ::piact_ch    Gtype id ( Participants ) ;
+        | ::piact_new   Gtype ( Participants ) Ids ;
+        | ::piact_ch    Gtype ( Participants ) id ;
         | ::piact_ass   Mtype id = Exp ;
         | ::piact_a_ass id = Exp ;
         | ::piact_def   local Mode pvar Dargs ( Args ) ( Pi )
@@ -120,8 +120,8 @@ PiAct ::= ::piact_sends Ch Sends ;
 
 # Extended statements (for associativity)
 PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi2
-         | ::pieact_new   global Gtype Ids ; Pi2
-         | ::pieact_ch    global Gtype id ( Participants ) ; Pi2
+         | ::pieact_new   global Gtype ( Participants ) Ids ; Pi2
+         | ::pieact_ch    global Gtype ( Participants ) id ; Pi2
          | ::pieact_ass   global Mtype id = Exp ; Pi2
          | ::pieact_a_ass global id = Exp ; Pi2
          | ::pieact_def   global Mode pvar Dargs ( Args ) ( Pi ) Pi2

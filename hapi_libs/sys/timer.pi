@@ -25,7 +25,7 @@ HOSTHEADER("double gettime() { struct timeb tb; ftime(&tb); double result = tb.m
    ^end: \
     $end; \
   }
-global $timer timer(1,2);
+global $timer(1,2) timer;
 local service TimeService(timer (1 of 2) t)
 ( local TimeSession($timer(1 of 1,2) t, Float start)
   ( t[2]>>

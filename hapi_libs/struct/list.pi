@@ -65,7 +65,7 @@
     $end; \
   }
 
-global $abslist list(1 pure,2);
+global $abslist(1 pure,2) list;
 local pure service List(list (1 of 2) s)
 ( s>>#elt;
   local pure Nil($list(#elt)(1 of 1 pure, 2) this)
@@ -146,10 +146,14 @@ local pure service List(list (1 of 2) s)
              }
        ^cons:
         this[2]>>h;
-        t=new list(2 of 2);
-        t<<#elt;
-        t[1]<<^cons<<head<<^append<<tail;
-        Cons(h,t,this);
+        global $list(#elt) l1,l2;
+        Cons(h,l2,this);
+        |
+        Cons(head,tail,l1);
+        //t=new list(2 of 2);
+        //t<<#elt;
+        //t[1]<<^cons<<head<<^append<<tail;
+        //Cons(h,t,this);
        ^snoc:
         this[2]>>h;
 	tail[1]<<^snoc<<h;
@@ -249,7 +253,7 @@ local pure service List(list (1 of 2) s)
   2->1: #t; /* from */ \
   2->1: #t; /* to */ \
   $list(#t)
-global $range range(1 pure, 2);
+global $range(1 pure, 2) range;
 local pure service Range(range (1 of 2) s)
 ( s>>#elt;
   s[2]>>next;

@@ -31,7 +31,7 @@
     $end; \
   }
 #define stdorder(TYPE) \
-global $order(TYPE) stdorder_ ## TYPE (1 pure,2); \
+global $order(TYPE)(1 pure,2) stdorder_ ## TYPE; \
 local pure service StdOrder ## TYPE (stdorder_ ## TYPE (1 of 2) s) \
 ( local pure X($order(TYPE)(1 of 1 pure,2) s) \
   ( s[2]>> \
