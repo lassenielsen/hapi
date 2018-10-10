@@ -4,8 +4,8 @@
   1->2:Int;\
   $end;
 
-global $fib(1 pure,2) fib;
-local pure service Fib(fib (1 of 2) s)
+global $fib fib(1 pure,2);
+local pure service ExpFib(fib (1 of 2) s)
 ( local pure Fib(1->2:Int;$end;(1 of 1 pure,2) return, Int n, Int f1, Int f2)
   ( if n<=0
     then return[2]<<f1;

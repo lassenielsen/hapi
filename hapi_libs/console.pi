@@ -14,7 +14,7 @@ HOSTHEADER("#include <iostream>");
    } \
    ^end:  $end; \
   }
-global $console(1,2) console;
+global $console console(1,2);
 local Console()
 ( s = new console(1 of 2);
   local ConsoleSession($console(1 of 1,2) s)

@@ -23,7 +23,7 @@
   2->1: #snd; \
   $instpair(#fst,#snd)
 
-global $pair(1 pure,2) pair;
+global $pair pair(1 pure,2);
 local pure service Pair(pair (1 of 2) s)
 ( s >> #fst;
   s >> #snd;

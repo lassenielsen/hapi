@@ -4,7 +4,7 @@
   1->2:Int;\
   $end;
 
-global $fib(1 pure,2) expfib;
+global $fib expfib(1 pure,2);
 local pure service ExpFib(expfib (1 of 2) s)
 ( s[2]>>x;
   if x <=1

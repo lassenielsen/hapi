@@ -9,7 +9,7 @@
 #define __ARGV(x,i) HOST("  ", x, ".reset(new libpi::String(_args[ mpz_get_ui(((libpi::Int*)", i, ".get())->GetValue())]));") pure
 Int argc=0;
 __ARGC(argc);
-global $args(1 pure, 2) args;
+global $args args(1 pure, 2);
 local pure service ArgsService(args (1 of 2) s)
 ( local pure ArgsSession($args(1 of 1 pure,2) s)
   ( s[2]>>

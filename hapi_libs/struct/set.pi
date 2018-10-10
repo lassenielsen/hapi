@@ -23,7 +23,7 @@
   2->1: $order(#elt)(1 pure, 2); \
   $set(#elt)
 
-global $absset(1 pure, 2) set;
+global $absset set(1 pure, 2);
 local pure service SetService(set (1 of 2) s) // {{{
 ( s>>#t;
   s[2]>>chcmp;

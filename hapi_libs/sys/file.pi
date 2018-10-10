@@ -61,7 +61,7 @@
 #define DelIFP(p) "delete ((ifstream*)mpz_get_ui(((libpi::Int*)", p, ".get())->GetValue()));"
 #define EOF(b,p) "", b, " = libpi::Bool::GetInstance( ((ifstream*)mpz_get_ui(((libpi::Int*)", p, ".get())->GetValue()))->eof() );"
 #define GetError(s) "", s, ".reset(new libpi::String(strerror(errno)));"
-global $file(1,2) file;
+global $file file(1,2);
 HOSTHEADER("#include <fstream>");
 HOSTHEADER("#include <errno.h>");
 HOSTHEADER("#include <string.h>");
