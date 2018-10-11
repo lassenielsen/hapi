@@ -147,29 +147,29 @@ o=new stdorder_Int(2 of 2);
 y[1]<<s<<o<<1<<10000;
 x[1]<<^append<<y;
 tmr=new timer(2 of 2);
-split=new unziplist(2 of 2);
-split<<Int;
-split[1]<<x;
-split[1]>>x1>>x2;
+//split=new unziplist(2 of 2);
+//split<<Int;
+//split[1]<<x;
+//split[1]>>x1>>x2;
+m=new mergesort(2 of 2);
+m<<Int;
+m[1]<<stdorder_Int<<x;
+m[1]>>done;
 tmr[1]<<^read;
 tmr[1]>>splittime;
 tmr[1]<<^end;
 c=new console(2 of 2); c[1]<<^str<<"Split took "<<^flt<<splittime<<^str<<" seconds."<<^nl<<^end;
-x1[1]<<^end;
-x2[1]<<^end;
-//m=new mergesort(2 of 2);
-//m<<Int;
-//m[1]<<stdorder_Int<<x;
-//m[1]>>done;
-//global PrintList($list(Int)(2 of 1 pure,2) l) // {{{
-//( l[1]<<^pop;
-//  l[1]>>
-//  {^nil:
-//   ^cons:
-//    l[1]>>h>>t;
-//    c=new console(2 of 2);
-//    c[1]<<^int<<h<<^nl<<^end;
-//    PrintList(t);
-//  }
-//) // }}}
-//PrintList(m);
+global PrintList($list(Int)(2 of 1 pure,2) l) // {{{
+( l[1]<<^pop;
+  l[1]>>
+  {^nil:
+   ^cons:
+    l[1]>>h>>t;
+    c=new console(2 of 2);
+    c[1]<<^int<<h<<^nl<<^end;
+    PrintList(t);
+  }
+) // }}}
+PrintList(m);
+//x1[1]<<^end;
+//x2[1]<<^end;

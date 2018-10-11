@@ -110,10 +110,10 @@ local pure service List(list (1 of 2) s)
         this[2]>>i;
         this[2]>>h;
         if i<=0
-        then t = new list(2 of 2);
-             t<<#elt;
-             t[1]<<^cons<<head<<^append<<tail;
-             Cons(h,t,this);
+        then global $list(#elt) l1,l2(1 pure,2);
+             Cons(h,l2,this);
+             |
+             Cons(head,tail,l1);
         else tail[1]<<^insert<<i-1<<h;
              Cons(head,tail,this);
        ^erase:
@@ -152,20 +152,20 @@ local pure service List(list (1 of 2) s)
         Cons(head,tail,l1);
        ^snoc:
         this[2]>>h;
-	tail[1]<<^snoc<<h;
+        tail[1]<<^snoc<<h;
         Cons(head,tail,this);
        ^pop:
         this[2]<<^cons<<head<<tail;
        ^append:
         this[2]>>l;
-	tail[1]<<^append<<l;
+        tail[1]<<^append<<l;
         Cons(head,tail,this);
        ^copy:
-	tail[1]<<^copy;
+        tail[1]<<^copy;
         tail[1]>>t;
         cpy = new list(2 of 2);
         cpy<<#elt;
-	cpy[1]<<^cons<<head<<^append<<t;
+        cpy[1]<<^cons<<head<<^append<<t;
         this[2]<<cpy;
         Cons(head,tail,this);
        ^takeover:
@@ -207,27 +207,21 @@ local pure service List(list (1 of 2) s)
       Nil(this);
      ^cons:
       this[2]>>head;
-      tail = new list(2 of 2);
-      tail<<#elt;
-      Cons(head,tail,this);
+      global $list(#elt) l1,l2(1 pure,2);
+      Cons(head,l2,this);
+      |
+      Nil(l1);
      ^snoc:
       this[2]>>head;
-      tail = new list(2 of 2);
-      tail<<#elt;
-      Cons(head,tail,this);
+      global $list(#elt) l1,l2(1 pure,2);
+      Cons(head,l2,this);
+      |
+      Nil(l1);
      ^pop:
       this[2]<<^nil;
      ^append:
       this[2]>>l;
-      l[1]<<^pop;
-      l[1]>>
-      {^nil:
-        Nil(this);
-       ^cons:
-        l[1]>>head;
-        l[1]>>tail;
-        Cons(head,tail,this);
-      }
+      l[1]<<^takeover<<this;
      ^copy:
       cpy = new list(2 of 2);
       cpy<<#elt;

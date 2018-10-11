@@ -199,8 +199,8 @@ local pure service HeapService(heap (1 of 2) this) // {{{
           }
         }
        ^takeover:
-        this[2]>>nthis;
-        HeapNode(nthis,left,right,val,cmp);
+        this[2]>>that;
+        HeapNode(that,left,right,val,cmp);
        ^end:
         left[1]<<^end;
         right[1]<<^end;
@@ -208,14 +208,14 @@ local pure service HeapService(heap (1 of 2) this) // {{{
       }
     ) // }}}
     local pure LeafPush($heap(#elt)(1 of 1 pure,2) this, #elt v) // {{{
-    ( left=new heap(2 of 2);
-      left<<#elt;
-      left[1]<<cmp_ch;
-      right=new heap(2 of 2);
-      right<<#elt;
-      right[1]<<cmp_ch;
+    ( global $heap(#elt) left1, left2(1 pure,2);
+      HeapLeaf(left1);
+      |
+      global $heap(#elt) right1, right2(1 pure,2);
+      HeapLeaf(right1);
+      |
       cmp=new cmp_ch(2 of 2);
-      HeapNode(this,left,right,v,cmp);
+      HeapNode(this,left2,right2,v,cmp);
     ) // }}}
     this[2]>>
     {^push:
@@ -235,8 +235,8 @@ local pure service HeapService(heap (1 of 2) this) // {{{
       this[2]<<true;
       LeafPush(this,v);
      ^takeover:
-      this[2]>>nthis;
-      HeapLeaf(nthis);
+      this[2]>>that;
+      HeapLeaf(that);
      ^end:
     }
   ) // }}}
@@ -247,35 +247,27 @@ local pure service HeapService(heap (1 of 2) this) // {{{
   2:#elt; \
   2->1:$order(#elt)(1 pure,2); \
   2->1:$list(#elt)(2 of 1 pure,2); \
-  1->2 \
-  {^ok: \
-    $heap(#elt) \
-  }
+  $heap(#elt)
 global $list2heap list2heap(1 pure,2);
-local pure service List2Heap(list2heap (1 of 2) this) // {{{
+local pure service List2HeapService(list2heap (1 of 2) this) // {{{
 ( this>>#elt;
   this[2]>>cmp_ch;
   this[2]>>src;
-  src[1]<<^pop;
-  src[1]>>
-  {^nil:
-    res=new heap(2 of 2);
-    res<<#elt;
-    res[1]<<cmp_ch<<^takeover;
-    this[2]<<^ok;
-    res[1]<<this;
-   ^cons:
-    src[1]>>head>>tail;
-    h=new list2heap(2 of 2);
-    h<<#elt;
-    h[1]<<cmp_ch<<tail;
-    h[1]>>
-    {^ok:
-      h[1]<<^push<<head<<^takeover;
-      this[2]<<^ok;
-      h[1]<<this;
+  local pure List2Heap($heap(#elt)(1 of 1 pure,2) this, $list(#elt)(2 of 1 pure,2) src, $heap(#elt)(2 of 1 pure,2) dst) // {{{
+  ( src[1]<<^pop;
+    src[1]>>
+    {^nil:
+      dst[1]<<^takeover<<this;
+     ^cons:
+      src[1]>>head>>tail;
+      dst[1]<<^push<<head;
+      List2Heap(this,tail,dst);
     }
-  }
+  ) // }}}
+  dst=new heap(2 of 2);
+  dst<<#elt;
+  dst[1]<<cmp_ch;
+  List2Heap(this,src,dst);
 ) // }}}
 |
 #define $heap2list \
@@ -283,22 +275,26 @@ local pure service List2Heap(list2heap (1 of 2) this) // {{{
   2->1:$heap(#elt)(2 of 1 pure,2); \
   $list(#elt)
 global $heap2list heap2list(1 pure,2);
-local pure service Heap2List(heap2list (1 of 2) this) // {{{
+local pure service Heap2ListService(heap2list (1 of 2) this) // {{{
 ( this>>#elt;
   this[2]>>src;
-  src[1]<<^pop;
-  src[1]>>
-  {^none:
-    src[1]<<^end;
-    res=new list(2 of 2);
-    res<<#elt;
-    res[1]<<^takeover<<this;
-   ^some:
-    src[1]>>v;
-    t=new heap2list(2 of 2);
-    t<<#elt;
-    t[1]<<src<<^cons<<v<<^takeover<<this;
-  }
+  local pure Heap2List($list(#elt)(1 of 1 pure,2) this, $heap(#elt)(2 of 1 pure,2) src, $list(#elt)(2 of 1 pure,2) dst) // {{{
+  ( src[1]<<^pop;
+    src[1]>>
+    {^none:
+      src[1]<<^end;
+      dst[1]<<^takeover<<this;
+     ^some:
+      src[1]>>v;
+      global $list(#elt) t1,t2(1 pure,2);
+      Heap2List(t1,src,dst);
+      |
+      t2[1]<<^cons<<v<<^takeover<<this;
+    }
+  ) // }}}
+  dst=new list(2 of 2);
+  dst<<#elt;
+  Heap2List(this,src,dst);
 ) // }}}
 |
 #define $listfun \
@@ -314,12 +310,9 @@ local pure service HeapsortService(heapsort (1 of 2) this) // {{{
   h = new list2heap(2 of 2);
   h<<#elt;
   h[1]<<cmp_ch<<src;
-  h[1]>>
-  {^ok:
-    l = new heap2list(2 of 2);
-    l<<#elt;
-    l[1]<<h<<^takeover<<this;
-  }
+  l = new heap2list(2 of 2);
+  l<<#elt;
+  l[1]<<h<<^takeover<<this;
 ) // }}}
 |
 global PrintList($list(Int)(2 of 1 pure,2) l) // {{{
@@ -363,8 +356,5 @@ c=new console(2 of 2);
 c[1]<<^str<<"Sorting"<<^nl<<^end;
 isort[1]<<stdorder_Int<<ilist;
 // Use isort;
-isort[1]>>
-{^ok:
-  PrintHeap(isort);
-  //isort[1]<<^end;
-}
+PrintHeap(isort);
+//isort[1]<<^end;
