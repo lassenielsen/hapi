@@ -1,6 +1,6 @@
 #include<console.pi>
 #define PROCMONWAIT 0.1
-#include<debug/procmon.pi>
+//#include<debug/procmon.pi>
 #define require(x) HOST("/*",x,"*/") pure
 #include<order.pi>
 #include<struct/list.pi>
@@ -350,11 +350,11 @@ iorder=new stdorder_Int(2 of 2);
 x[1]<<isucc<<iorder<<1<<10000;
 ilist[1]<<^append<<x;
 //ilist[1]<<^end;
-isort=new list2heap(2 of 2);
+isort=new heapsort(2 of 2);
 isort<<Int;
 c=new console(2 of 2);
 c[1]<<^str<<"Sorting"<<^nl<<^end;
 isort[1]<<stdorder_Int<<ilist;
 // Use isort;
-PrintHeap(isort);
-//isort[1]<<^end;
+//PrintHeap(isort);
+isort[1]<<^end;
