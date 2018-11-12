@@ -913,8 +913,8 @@ string MpsCondExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("ifval"));
   string condVar = myCond->ToC(dest, "libpi::Bool");
-  dest << "      shared_ptr<libpi::Value> " << varName << ";" << endl
-       << "      if (((libpi::Bool*)" << condVar << ".get())->GetValue())" << endl
+  dest << "      libpi::Value *" << varName << ";" << endl
+       << "      if (((libpi::Bool*)" << condVar << ")->GetValue())" << endl
        << "      {" << endl;
   string trueVar = myTrueBranch->ToC(dest, typeName);
   dest << "      " << varName << " = " << trueVar << ";" << endl
@@ -931,7 +931,7 @@ string MpsUnOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("unop"));
   if (myName == "not") // {{{
   { string subName = myRight->ToC(dest, typeName);
-    dest << "      shared_ptr<" << typeName << "> " << varName << "=libpi::Bool::GetInstance(!((libpi::Bool*)" << subName << ".get())->GetValue());" << endl;
+    dest << "      " << typeName << " *" << varName << "=libpi::Bool::GetInstance(!((libpi::Bool*)" << subName << ")->GetValue());" << endl;
     return varName;
   } // }}}
   else
@@ -942,27 +942,44 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
-  dest << "      shared_ptr<" << typeName << "> " << varName << "((*((" << myLeftType->ToC() << "*)" << leftName << ".get())) ";
-  if (myName=="=")
-    dest << "==";
-  else if (myName=="or")
-    dest << "||";
-  else if (myName=="and")
-    dest << "&&";
-  else
-    dest << myName;
-  dest << " (*((" << myRightType->ToC() << "*)" << rightName << ".get())));" << endl;
+  if (myName=="=" || myName=="<=" || myName==">=" || myName=="!=")
+  { string opName=myName;
+    if (opName=="=")
+      opName="==";
+    else if (opName=="or")
+      opName="||";
+    else if (opName=="and")
+      opName="&&";
+    dest << "      " << typeName << " *" << varName << "="
+         << "(*dynamic_cast<" << myLeftType->ToC() << "*>(" << leftName << "))"
+         << " " << opName << " "
+         << "(*dynamic_cast<" << myRightType->ToC() << "*>(" << rightName << "));";
+  }
+  else 
+  { dest << "      " << typeName << " *" << varName << "(new " << typeName << "("
+         << "*dynamic_cast<" << myLeftType->ToC() << "*>(" << leftName << "), "
+         << "*dynamic_cast<" << myRightType->ToC() << "*>(" << rightName << "), ";
+    if (myName=="+")
+      dest << typeName << "::OP_ADD";
+    else if (myName=="-")
+      dest << typeName << "::OP_SUB";
+    else if (myName=="*")
+      dest << typeName << "::OP_MULT";
+    else if (myName=="/")
+      dest << typeName << "::OP_DIV";
+    dest << ",&_task->GetWorker()));" << endl;
+  }
   return varName;
 } // }}}
 string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   // FIXME: Test if const, and return name if it is
   string varName = ToC_Name(MpsExp::NewVar("tupleval"));
-  dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Tuple());" << endl;
+  dest << "      " << typeName << " *" << varName << "(new libpi::Tuple(_this));" << endl;
   for (vector<MpsExp*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
   { dest << "      {" << endl;
     string eltName = (*it)->ToC(dest,"Unknown");
-    dest << "        " << varName << ".AddValue(" << eltName << ");" << endl
+    dest << "        " << varName << "->AddValue(" << eltName << ");" << endl
          << "      }" << endl;
   }
   return varName;
@@ -971,9 +988,9 @@ string MpsSystemExp::ToC(stringstream &dest, const string &typeName) const // {{
 {
   string varName = ToC_Name(MpsExp::NewVar("systemexp"));
   if (myField=="aprocs")
-    dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(libpi::task::Worker::ActiveTasks));" << endl;
+    dest << "      " << typeName << " *" << varName << "(new libpi::Int(libpi::task::Worker::ActiveTasks,_this));" << endl;
   else if (myField=="tprocs")
-    dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(libpi::task::Worker::TargetTasks));" << endl;
+    dest << "      " << typeName << " *" << varName << "(new libpi::Int(libpi::task::Worker::TargetTasks,_this));" << endl;
   else
     throw (string)"MpsSystemExp::ToC: Unknown field " + myField;
   return varName;
@@ -987,7 +1004,7 @@ void MpsIntVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std
 { // Add int const with name including value
   string val=ToString();
   stringstream ss;
-  ss << "shared_ptr<libpi::Int> intval_" << val << "(new libpi::Int(\"" << val << "\"));" << endl;
+  ss << "libpi::Int *intval_" << val << "(new libpi::Int(\"" << val << "\", NULL));" << endl;
   string def= ss.str();
   AddConstDef(def);
 } // }}}
@@ -995,14 +1012,14 @@ void MpsFloatVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<s
 { // Add float const with name including md5 of value
   string val=ToString();
   stringstream ss;
-  ss << "shared_ptr<libpi::Float> floatval_" << md5(val) << "(new libpi::Float(\"" << val << "\"));" << endl;
+  ss << "libpi::Float *floatval_" << md5(val) << "(new libpi::Float(\"" << val << "\", NULL));" << endl;
   string def=ss.str();
   AddConstDef(def);
 } // }}}
 void MpsStringVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
 { // Add string const with name including md5 of value
   stringstream ss;
-  ss << "shared_ptr<libpi::String> stringval_" << md5(myValue) << "(new libpi::String(\"" << stuff_string(myValue) << "\"));" << endl;
+  ss << "libpi::String *stringval_" << md5(myValue) << "(new libpi::String(\"" << stuff_string(myValue) << "\", NULL));" << endl;
   string def=ss.str();
   AddConstDef(def);
 } // }}}

@@ -504,15 +504,12 @@ string MpsPar::ToC(const string &taskType) const // {{{
   else if (myType=="task") // {{{
   { const MpsCall *callptr=dynamic_cast<const MpsCall*>(myRight);
     string newName = ToC_Name(MpsExp::NewVar("task")); // Create variable name foor the new state
-    string newName2 = ToC_Name(MpsExp::NewVar("task")); // Create variable name foor the new state
     if (callptr==NULL)
       throw string("MpsPar type thread requires rhs to be a direct methodcall.");
     result
-    << "    { Task_" << ToC_Name(callptr->GetName()) << " *" << newName << "(new Task_" << ToC_Name(callptr->GetName()) << "());" << endl
-    << "      " << newName << "->SetWorker(&_task->GetWorker());" << endl
+    << "    { Task_" << ToC_Name(callptr->GetName()) << " *" << newName << "(new Task_" << ToC_Name(callptr->GetName()) << "(&_task->GetWorker()));" << endl
     << callptr->ToC_prepare(newName)
-    << "      shared_ptr<libpi::task::Task> " << newName2 << "(" << newName << ");" << endl
-    << "      _task->GetWorker().AddTask(" << newName2 << ");" << endl
+    << "      _task->GetWorker().AddTask(" << newName << ");" << endl
     << "    }" << endl
     << myLeft->ToC(taskType);
   } // }}}

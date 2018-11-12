@@ -236,7 +236,7 @@ string MpsHostStatement::ToC(const string &taskType) const // {{{
   { stmt << myHostParts[i];
     if (i<myExpParts.size())
     { string newName = myExpParts[i]->ToC(prestmt, myTypes[i]->ToC());
-      stmt << " " << newName << " ";
+      stmt << " ((" << myTypes[i]->ToC() << "*)" << newName << ") ";
     }
   }
   return ToC_Yield() + string("  // HOST STATEMENT BEGIN\n    ") + prestmt.str() + stmt.str() + "  // HOST STATEMENT END\n" + mySucc->ToC(taskType);

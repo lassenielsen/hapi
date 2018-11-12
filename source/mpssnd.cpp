@@ -277,19 +277,21 @@ string MpsSnd::ToC(const string &taskType) const // {{{
          << "    // " << myChannel.GetName() << "[" << myChannel.GetIndex() << "] << " << myExp->ToString() << ";" << endl
          << "    { " << endl;
   string valName=myExp->ToC(result, GetMsgType().ToC()); // Compute message and store in variable valName
-  result << "      ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Send("
+  result << "      ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ")->Send("
            << myChannel.GetIndex()-1 << ",_task,"
            << valName << ");" << endl // Send computed value
          << "    }" << endl;
+  // Mark all sent values
+  result << "  _task->GetWorker()->Mark(" << ToC_Name(valName) << ";" << endl;
   if (delType!=NULL)
   { // Assume task or thread level
     // Otherwise need to close session
-    result << "  " << ToC_Name(valName) << ".reset();" << endl;
+    result << "  " << ToC_Name(valName) << "=NULL;" << endl;
   }
   if (myFinal)
   {
-    result << "  ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
-           << "  _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
+    result << "  ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ")->Close(true);" << endl
+           << "  _this->var_" << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
   }
   result << mySucc->ToC(taskType);
   return result.str();

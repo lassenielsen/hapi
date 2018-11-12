@@ -245,7 +245,7 @@ string MpsCond::ToC(const string &taskType) const // {{{
   result << ToC_Yield()
          << "    {" << endl;
   string newName = myCond->ToC(result,"libpi::Bool");
-  result << "      if (((libpi::Bool*)" << newName << ".get())->GetValue())" << endl
+  result << "      if (((libpi::Bool*)" << newName << ")->GetValue())" << endl
          << "        goto " << trueLabel << ";" << endl
          << "      else" << endl
          << "        goto " << falseLabel << ";" << endl

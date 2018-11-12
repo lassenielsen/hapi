@@ -246,13 +246,13 @@ string MpsSelect::ToC(const std::string &taskType) const // {{{
   string msgName = ToC_Name(MpsExp::NewVar("select")); // Create variable name for the message to send
   result << ToC_Yield()
          << "    // " << myChannel.GetName() << "[" << myChannel.GetIndex() << "] << " << myLabel << ";" << endl
-         << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Send("
+         << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ")->Send("
          << myChannel.GetIndex()-1 << ",_task,"
          << "label_" << md5(myLabel) << ");" << endl;
   if (myFinal)
   {
-    result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
-           << "    _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
+    result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ")->Close(true);" << endl
+           << "    _this->var_" << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
   }
   result << mySucc->ToC(taskType);
   return result.str();
@@ -264,7 +264,7 @@ string MpsSelect::ToCHeader() const // {{{
 void MpsSelect::ToCConsts(vector<string> &dest, unordered_set<string> &existing) const // {{{
 { mySucc->ToCConsts(dest,existing);
   stringstream ss;
-  ss << "shared_ptr<libpi::String> label_" << md5(myLabel) << "(new libpi::String(\"" << stuff_string(myLabel) << "\"));" << endl;
+  ss << "libpi::String *label_" << md5(myLabel) << "(new libpi::String(\"" << stuff_string(myLabel) << "\",NULL));" << endl;
   string def=ss.str();
   if (existing.find(def)==existing.end())
   { dest.push_back(def);

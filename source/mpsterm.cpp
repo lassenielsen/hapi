@@ -395,7 +395,7 @@ string MpsTerm::MakeC() const // {{{
   << "class " << mainTask << " : public libpi::task::Task" << endl
   << "{ public:" << endl;
   for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
-    result << "    shared_ptr<libpi::Value> var_" << ToC_Name(*id) << ";" << endl;
+    result << "    libpi::Value *var_" << ToC_Name(*id) << ";" << endl;
   result
   << "};" << endl;
   for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
@@ -403,13 +403,13 @@ string MpsTerm::MakeC() const // {{{
   result
     << "// }}}\n"
     << "// All Methods {{{\n"
-    << "inline bool _methods(shared_ptr<libpi::task::Task> &_task)\n"
+    << "inline bool _methods(libpi::task::Task *&_task)\n"
     << "{ size_t _steps=0;\n"
     << "  void *_label=_task->GetLabel();\n"
     << "  if (_label!=NULL)\n"
     << "    goto *_label;\n"
     << "  method_Main:\n"
-    << "  #define _this ((" << mainTask << "*)_task.get())" << endl
+    << "  #define _this ((" << mainTask << "*)_task)" << endl
     << "  { // Main {{{\n"
     << main->ToC(mainTask)
     << "  } // }}}\n"
@@ -430,15 +430,14 @@ string MpsTerm::MakeC() const // {{{
     << "          myGCNewValues=myGCMarks;\n"
     << "        }\n"
     << "        if (!myActiveTasks.empty())\n"
-    << "          break;
+    << "          break;\n"
     << "        ourIdleWorkersLock.Lock();\n"
     << "        if (ourIdleWorkersSize==libpi::task::Worker::Workers-1) // Test if program is complete\n"
-    << "        { shared_ptr<Task> nullTask;\n"
-    << "          while (!ourIdleWorkers.empty())\n"
-    << "          { ourIdleWorkers.front()->EmployTask(nullTask);\n"
+    << "        { while (!ourIdleWorkers.empty())\n"
+    << "          { ourIdleWorkers.front()->EmployTask(NULL);\n"
     << "            ourIdleWorkers.pop();\n"
     << "          }\n"
-    << "          AddTask(nullTask);\n"
+    << "          AddTask(NULL);\n"
     << "          ourIdleWorkersSize=0;\n"
     << "          ourIdleWorkersLock.Release();\n"
     << "          break;\n"
@@ -451,7 +450,7 @@ string MpsTerm::MakeC() const // {{{
     << "          myWaitLock.Lock();\n"
     << "        }\n"
     << "      }\n"
-    << "      shared_ptr<Task> task=myActiveTasks.front();\n"
+    << "      Task *task=myActiveTasks.front();\n"
     << "      myActiveTasks.pop();\n"
     << "\n"
     << "      resume_task:\n"
@@ -485,9 +484,8 @@ string MpsTerm::MakeC() const // {{{
     << "  { libpi::task::Worker *_worker=new libpi::task::Worker_Pool();\n"
     << "    if (wc==0)\n"
     << "    { // Create main task\n"
-    << "      shared_ptr<libpi::task::Task> _main(new " << mainTask << "());\n"
+    << "      libpi::task::Task *_main(new " << mainTask << "(&_worker));\n"
     << "      _main->SetLabel(NULL);\n"
-    << "      _main->SetWorker(_worker);\n"
     << "      _worker->AddTask(_main);\n"
     << "    }\n"
     << "    // Bind thread to specific core\n"

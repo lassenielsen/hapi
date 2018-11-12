@@ -358,25 +358,25 @@ string MpsBranch::ToC(const string &taskType) const // {{{
   result
     << ToC_Yield()
     << "    _task->SetLabel(&&" << lblRcvName << ");" << endl
-    << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex()-1 << ",_task,_task->tmp)) // Receive label to tmp" << endl
+    << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ")->Receive(" << myChannel.GetIndex()-1 << ",_task,_task->tmp)) // Receive label to tmp" << endl
     << "      return false;" << endl
     << "    " << lblRcvName << ":" << endl;
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
   {
     if (it != myBranches.begin())
       result << "    else " << endl;
-    // Fixme: Use goto *branchmap[((libpi::String*)_task->tmp.get())->GetValue()];
-    result << "    if (((libpi::String*)_task->tmp.get())->GetValue()==\"" << it->first << "\")" << endl
+    // Fixme: Use goto *branchmap[((libpi::String*)_task->tmp)->GetValue()];
+    result << "    if (((libpi::String*)_task->tmp)->GetValue()==\"" << it->first << "\")" << endl
            << "    {" << endl
-           << "      _task->tmp.reset();" << endl;
+           << "      _task->tmp=NULL;" << endl;
     if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
-      result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
-             << "    _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
+      result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ")->Close(true);" << endl
+             << "    _this->var_" << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
     }
     result << it->second->ToC(taskType);
     result << "    }" << endl;
   }
-  result << "    else throw string(\"Unknown branch: \")+((libpi::String*)_task->tmp.get())->GetValue();" << endl;
+  result << "    else throw string(\"Unknown branch: \")+((libpi::String*)_task->tmp)->GetValue();" << endl;
   return result.str();
 } // }}}
 string MpsBranch::ToCHeader() const // {{{

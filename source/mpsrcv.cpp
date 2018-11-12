@@ -403,15 +403,15 @@ string MpsRcv::ToC(const std::string &taskType) const // {{{
     << ToC_Yield()
     << "    // " << myChannel.GetName() << "[" << myChannel.GetIndex() << "] >> " << myDest << ";" << endl
     << "    _task->SetLabel(&&" << rcvLabel << ");" << endl
-    << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Receive(" << myChannel.GetIndex()-1 << ",_task,_this->var_" << ToC_Name(myDest) << "))" << endl
+    << "    if (!((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ")->Receive(" << myChannel.GetIndex()-1 << ",_task,_this->var_" << ToC_Name(myDest) << "))" << endl
     << "      return false;" << endl
     << "    " << rcvLabel << ":" << endl;
   if (myFinal)
   {
     result
       << "    // Session complete" << endl
-      << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
-      << "    _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
+      << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ")->Close(true);" << endl
+      << "    _this->var_" << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
   }
   result << mySucc->ToC(taskType);
   return result.str();

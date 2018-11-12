@@ -147,7 +147,7 @@ string MpsFunction::ToC() const // {{{
   string taskType=ToC_Name(GetName());
   ss << "  method_" << taskType << ": // {{{" << endl
      << "  #undef _this" << endl
-     << "  #define _this ((Task_" << taskType << "*)_task.get())" << endl
+     << "  #define _this ((Task_" << taskType << "*)_task)" << endl
      << "  {" << endl;
   ss << GetBody().ToC(taskType)
      << "  } // }}}";
@@ -161,14 +161,24 @@ string MpsFunction::ToCTaskType() const // {{{
   stringstream ss;
   ss
   << "class Task_" << ToC_Name(GetName()) << " : public libpi::task::Task" << endl
-  << "{ public:" << endl;
+  << "{ public:" << endl
+  << "    Task_" << ToC_Name(GetName()) << "(libpi::task::Worker *worker) : libpi::task::Task(worker) { SetWorker(worker); }" << endl
+  << endl;
   for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
-    ss << "    shared_ptr<libpi::Value> var_" << ToC_Name(*id) << ";" << endl;
+    ss << "    libpi::Value *var_" << ToC_Name(*id) << ";" << endl;
   for (vector<string>::const_iterator arg=GetStateArgs().begin(); arg!=GetStateArgs().end(); ++arg)
-    ss << "    inline void SetStateArg" << std::distance(GetStateArgs().begin(),arg) << "(const shared_ptr<libpi::Value> &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
+    ss << "    inline void SetStateArg" << std::distance(GetStateArgs().begin(),arg) << "(libpi::Value *val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
   for (vector<string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg)
-    ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(const shared_ptr<libpi::Value> &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
+    ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(libpi::Value *val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
   ss
+  << "    void Mark(std::unordered_set<Value*> &marks)" << endl
+  << "    {" << endl
+  << "      if (marks.count(this)>0)" << endl
+  << "        return;" << endl;
+  for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+    ss << "      if (var_" << ToC_Name(*id) << "!=NULL) var_" << ToC_Name(*id) << "->Mark(marks);" << endl;
+  ss
+  << "    }" << endl
   << "};" << endl;
   return ss.str();
 } // }}}
