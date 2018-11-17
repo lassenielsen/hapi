@@ -323,11 +323,12 @@ string MpsLink::ToC(const string &taskType) const // {{{
     << "      // Send sessions" << endl;
     for (size_t i=1; i<myMaxpid; ++i)
       result
-      << "      { libpi::Session *_s(new libpi::Session(" << i << "," << myMaxpid << ", inChannels[" << i << "], outChannels[" << i << "],_this));" << endl
+      << "      { libpi::Session *_s(new libpi::Session(" << i << "," << myMaxpid << ", inChannels[" << i << "], outChannels[" << i << "],&_task->GetWorker()));" << endl
       << "        ((libpi::Channel*)_task->tmps[" << i-1 << "])->Send(_task,_s);" << endl
-      << "        _task->GetWorker().AddMark(_s);" << endl
+      << "        _task->GetWorker().GCMark(_s);" << endl
       << "      }" << endl;
     result
+    << "      _task->tmps.clear(); // Will be deleted by receivers" << endl
     << "      // Create local session" << endl
     << "      _this->var_" << ToC_Name(mySession) << "=new libpi::Session(0," << myMaxpid << ",inChannels[0],outChannels[0],&_task->GetWorker());" << endl
     << "    }" << endl;
@@ -336,13 +337,14 @@ string MpsLink::ToC(const string &taskType) const // {{{
   {
     string lblRcv(ToC_Name(MpsExp::NewVar(string("receive_")+taskType)));
     result
-    << "    { _task->tmp=new libpi::task::Channel(_task);" << endl
-    << "      _task->GetWorker().AddMark(_task->tmp);" << endl
+    << "    { _task->tmp=new libpi::task::Channel(NULL);" << endl
     << "      ((libpi::task::Link*)(_this->var_" << ToC_Name(myChannel) << "))->GetChannels()[" << myPid-2 << "]->Send(_task,_task->tmp);" << endl
     << "      _task->SetLabel(&&" << lblRcv << ");" << endl
-    << "      if (!((libpi::task::Channel*)_task->tmp)->Receive(_task,_this->var_" << ToC_Name(mySession) << ",&_task->GetWorker()))" << endl
+    << "      if (!((libpi::task::Channel*)_task->tmp)->Receive(_task,_this->var_" << ToC_Name(mySession) << "))" << endl
     << "        return false;" << endl
     << "      " << lblRcv << ":" << endl
+    << "      delete _task->tmp;" << endl
+    << "      _task->tmp=NULL;" << endl
     << "    }" << endl;
   }
   result << mySucc->ToC(taskType);

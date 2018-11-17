@@ -282,7 +282,7 @@ string MpsSnd::ToC(const string &taskType) const // {{{
            << valName << ");" << endl // Send computed value
          << "    }" << endl;
   // Mark all sent values
-  result << "  _task->GetWorker()->Mark(" << ToC_Name(valName) << ";" << endl;
+  result << "  _task->GetWorker().GCMark(" << ToC_Name(valName) << ");" << endl;
   if (delType!=NULL)
   { // Assume task or thread level
     // Otherwise need to close session

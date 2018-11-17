@@ -393,7 +393,9 @@ string MpsTerm::MakeC() const // {{{
   set<string> ids=main->EV();
   result
   << "class " << mainTask << " : public libpi::task::Task" << endl
-  << "{ public:" << endl;
+  << "{ public:" << endl
+  << "    " << mainTask << "(libpi::task::Worker *worker) : libpi::task::Task(worker) { SetWorker(worker); }" << endl
+  << endl;
   for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
     result << "    libpi::Value *var_" << ToC_Name(*id) << ";" << endl;
   result
@@ -424,8 +426,8 @@ string MpsTerm::MakeC() const // {{{
     << "        { myGCFlag=false;\n"
     << "          myGCValues=myGCNewValues;\n"
     << "          myGCMarks.clear();\n"
-    << "          for (std::queue<Task*>::const_iterator task=myActiveTasks.begin(); task!=myActiveTasks.end(); ++task)\n"
-    << "            task->Mark(myGCMarks)\n"
+    << "          for (std::list<Task*>::iterator task=myActiveTasks.begin(); task!=myActiveTasks.end(); ++task)\n"
+    << "            (*task)->Mark(myGCMarks);\n"
     << "          myGCLock.Release(); // GC results are ready\n"
     << "          myGCNewValues=myGCMarks;\n"
     << "        }\n"
@@ -451,7 +453,7 @@ string MpsTerm::MakeC() const // {{{
     << "        }\n"
     << "      }\n"
     << "      Task *task=myActiveTasks.front();\n"
-    << "      myActiveTasks.pop();\n"
+    << "      myActiveTasks.pop_front();\n"
     << "\n"
     << "      resume_task:\n"
     << "      if (!task)\n"
@@ -484,7 +486,7 @@ string MpsTerm::MakeC() const // {{{
     << "  { libpi::task::Worker *_worker=new libpi::task::Worker_Pool();\n"
     << "    if (wc==0)\n"
     << "    { // Create main task\n"
-    << "      libpi::task::Task *_main(new " << mainTask << "(&_worker));\n"
+    << "      libpi::task::Task *_main(new " << mainTask << "(_worker));\n"
     << "      _main->SetLabel(NULL);\n"
     << "      _worker->AddTask(_main);\n"
     << "    }\n"

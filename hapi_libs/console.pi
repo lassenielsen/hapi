@@ -21,15 +21,15 @@ local Console()
   ( s[2]>>
     {^str:
       s[2]>>str;
-      HOST("std::cout << ", str, "->GetValue() << std::flush;");
+      HOST("std::cout << ((libpi::String*)", str, ")->GetValue() << std::flush;");
       ConsoleSession(s);
      ^int:
       s[2]>>i;
-      HOST("std::cout << ", i, "->ToString() << std::flush;");
+      HOST("std::cout << ((libpi::Int*)", i, ")->ToString() << std::flush;");
       ConsoleSession(s);
      ^flt:
       s[2]>>f;
-      HOST("std::cout << ", f, "->ToString() << std::flush;");
+      HOST("std::cout << ((libpi::Float*)", f, ")->ToString() << std::flush;");
       ConsoleSession(s);
      ^nl:
       HOST("std::cout << std::endl;");
