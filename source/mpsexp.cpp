@@ -942,7 +942,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
-  if (myName=="=" || myName=="<=" || myName==">=" || myName=="!=")
+  if (myName=="=" || myName=="<=" || myName==">=" || myName=="!=" || myName=="<" || myName==">")
   { string opName=myName;
     if (opName=="=")
       opName="==";

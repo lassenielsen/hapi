@@ -325,17 +325,17 @@ string MpsNew::ToC(const string &taskType) const // {{{
   // Create all channels
   for (int i=0; i<myNames.size(); ++i)
     for (int j=0; j<myNames.size(); ++j)
-      result << "      _task->tmps.push_back(new libpi::task::Channel(_task->GetWorker()));" << endl;
+      result << "      _task->tmps.push_back(new libpi::task::Channel(&_task->GetWorker()));" << endl;
   // For each participant, create filtered channels vector, and create session
   for (int i=0; i<myNames.size(); ++i)
   { string sesInChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_in"));
     string sesOutChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_out"));
     result << "    vector<libpi::Channel*> " << sesInChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << sesInChannels << ".push_back(_task->tmps[" << (j+i*myNames.size()) << "]);" << endl;
+      result << "    " << sesInChannels << ".push_back((libpi::Channel*)_task->tmps[" << (j+i*myNames.size()) << "]);" << endl;
     result << "    vector<libpi::Channel*> " << sesOutChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << sesOutChannels << ".push_back(_task->tmps[" << (i+j*myNames.size()) << "]);" << endl;
+      result << "    " << sesOutChannels << ".push_back((libpi::Channel*)_task->tmps[" << (i+j*myNames.size()) << "]);" << endl;
   
     result << "      _this->var_" << ToC_Name(myNames[i]) << "=new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << ", &_task->GetWorker());" << endl;
   }
