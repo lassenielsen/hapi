@@ -1,6 +1,6 @@
 #include <console.pi>
 
-#define PRINT(x) HOST("std::cout << ((libpi::String*)", x, ".get())->GetValue() << std::endl;")
+#define PRINT(x) HOST("std::cout << ((libpi::String*)", x, ")->GetValue() << std::endl;")
 
 #define $a 1->2:Int;2->3:Int;3->1:Int;$end;
 global $a a(1,2,3);
@@ -11,9 +11,7 @@ PRINT("P1: SEND COMPLETE");
 s[3]>>x;
 PRINT("P1: RECEIVE COMPLETE");
 c = new console(2 of 2);
-c[1]<<^PutString<<"P1 received:"
-    <<^PutInt<<x
-    <<^End;
+c[1]<<^str<<"P1 received: "<<^int<<x<<^nl<<^end;
 |
 s=new a(2 of 3);
 PRINT("P2: LINK COMPLETE");
