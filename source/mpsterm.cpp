@@ -515,7 +515,7 @@ string MpsTerm::MakeC() const // {{{
     << "    { libpi::task::Worker::GetIdleWorkersLock().Lock();\n"
     << "      for (auto idleWorker=libpi::task::Worker::GetIdleWorkers().begin(); idleWorker!=libpi::task::Worker::GetIdleWorkers().end(); ++idleWorker)\n"
     << "      { while (idleWorker!=libpi::task::Worker::GetIdleWorkers().end())\n"
-    << "        { if (!gcready.count(*idleWorker)>0\n"
+    << "        { if (!gcready.count(*idleWorker)>0)\n"
     << "          { (*idleWorker)->Activate();\n"
     << "            idleWorker=libpi::task::Worker::GetIdleWorkers().erase(idleWorker);\n"
     << "            --libpi::task::Worker::GetIdleWorkersSize();\n"
