@@ -32,7 +32,9 @@ library_objects = \
   objects/mpsterm.o \
   objects/mpsend.o \
   objects/mpssnd.o \
+  objects/mpssndtype.o \
   objects/mpsrcv.o \
+  objects/mpsrcvtype.o \
   objects/mpsselect.o \
   objects/mpsbranch.o \
   objects/mpsnu.o \
@@ -118,7 +120,7 @@ install_stdlib:
 	@echo "Copying std-lib"
 	mkdir -p /opt/hapi
 	mkdir -p /opt/hapi/include
-	cp hapi_libs/*.pi /opt/hapi/include/
+	cp -r hapi_libs/* /opt/hapi/include/
 
 install: $(libname)$(libversion) install_gfx install_stdlib
 	@echo "Copying library"

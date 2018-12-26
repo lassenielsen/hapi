@@ -1,0 +1,34 @@
+// Example of functions in hapi
+#include <console.pi>
+local pure Int fib(Int n)
+( if n<=1
+  then return 1;
+  else f1=fib(n-1);
+       f2=fib(n-2);
+       return f1+f2;
+) |
+c = new console(2 of 2);
+c[1] << ^PutString << "What is n: " << ^GetInt >> n;
+c[1] << ^PutString << "Fib(" << ^PutInt << n << ^PutString << ") = "
+     << ^PutInt << fib(n) << ^NL
+     << ^End;
+
+// Syntactic sugar for
+// 2->1:Int;1->2:Int fib(1 pure, 2);
+// local pure service Fib(fib (1 of 2) s)
+// ( s[2]>>n;
+//   if n<=1
+//   then s[2]<<1;
+//   else _x1=new fib(2 of 2);
+//        _x1[1]<<n-1;
+//        _x1[1]>>f1;
+//        _x2=new fib(2 of 2);
+//        _x2[1]<<n-2;
+//        _x2[1]>>f2;
+//        s[2]<<f1+f2;
+// ) |
+// c = new console(2 of 2);
+// c[1] << ^PutString << "What is n: " << ^GetInt >> n;
+// c[1] << ^PutString << "Fib(" << ^PutInt << n << ^PutString << ") = "
+//      << ^PutInt << fib(n) << ^NL
+//      << ^End;

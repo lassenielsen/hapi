@@ -1,27 +1,26 @@
-// Example 3.1 - Introducing sys service
+// Example 3.1 - Introducing args service
 // Iterates over program arguments
 
 #include <console.pi>
 c = new console(2 of 2);
 // Include sys servicee
-#include <sys.pi>
+#include <sys/args.pi>
 // Connect to sys service
-s = new sys(2 of 2);
+s = new args(2 of 2);
 
 // Obtain and print the number of program arguments
-s[1]<<^CountArgs;
+s[1]<<^count;
 s[1]>>argc;
-c[1]<<^PutString<<"Number of args"<<^PutInt<<argc;
+c[1]<<^str<<"Number of args is "<<^int<<argc<<^nl;
 // Method taking open sessions as arguments
 // Method prints program args i, i+1, ..., argc-1
-local PrintArgs(Int i, $console(2 of 1,2) c, $sys(2 of 1 pure,2) s)
-( s[1]<<^GetArg<<i;
+local PrintArgs(Int i, $console(2 of 1,2) c, $args(2 of 1 pure,2) s)
+( s[1]<<^arg<<i;
   s[1]>>
-  {^Some: s[1]>>a;
-          c[1]<<^PutString<<a;
+  {^some: s[1]>>a;
           PrintArgs(i+1,c,s);
-   ^None: s[1]<<^End;
-          c[1]<<^End;
+   ^none: s[1]<<^end;
+          c[1]<<^end;
   }
 )
 PrintArgs(0,c,s); // Print all args

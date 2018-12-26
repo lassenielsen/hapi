@@ -34,6 +34,7 @@ class MpsHostStatement : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsHostStatement *PRename(const std::string &src, const std::string &dst) const;
     MpsHostStatement *ERename(const std::string &src, const std::string &dst) const;
+    MpsHostStatement *MRename(const std::string &src, const std::string &dst) const;
     MpsHostStatement *PSubst(const std::string &var,
                              const MpsTerm &exp,
                              const std::vector<std::string> &args,

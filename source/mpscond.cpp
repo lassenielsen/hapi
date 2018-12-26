@@ -108,6 +108,17 @@ MpsTerm *MpsCond::ERename(const string &src, const string &dst) const // {{{
   delete newFalseBranch;
   return result;
 } // }}}
+MpsTerm *MpsCond::MRename(const string &src, const string &dst) const // {{{
+{
+  //MpsExp *newCond = myCond->Rename(src,dst);
+  MpsTerm *newTrueBranch = myTrueBranch->MRename(src,dst);
+  MpsTerm *newFalseBranch = myFalseBranch->MRename(src,dst);
+  MpsCond *result = new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
+  //delete newCond;
+  delete newTrueBranch;
+  delete newFalseBranch;
+  return result;
+} // }}}
 MpsTerm *MpsCond::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   MpsTerm *newTrueBranch = myTrueBranch->ReIndex(session,pid,maxpid);

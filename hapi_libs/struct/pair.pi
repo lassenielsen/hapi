@@ -1,0 +1,51 @@
+#define $instpair(_fst,_snd) \
+  rec $instpair; \
+  2->1 \
+  {^get_fst: \
+    1->2: _fst; \
+    $instpair; \
+   ^set_fst: \
+    2->1: _fst; \
+    $instpair; \
+   ^get_snd: \
+    1->2: _snd; \
+    $instpair; \
+   ^set_snd: \
+    2->1: _snd; \
+    $instpair; \
+   ^end: \
+    $end; \
+  }
+#define $pair \
+  2: #fst; \
+  2: #snd; \
+  2->1: #fst; \
+  2->1: #snd; \
+  $instpair(#fst,#snd)
+
+global $pair pair(1 pure,2);
+local pure service Pair(pair (1 of 2) s)
+( s >> #fst;
+  s >> #snd;
+  s[2] >> fst;
+  s[2] >> snd;
+  local pure InstPair(#fst fst, #snd snd, $instpair(#fst,#snd)(1 of 1 pure, 2) this)
+  ( this[2]>>
+    {^get_fst:
+      this[2]<<fst;
+      InstPair(fst,snd,this);
+     ^get_snd:
+      this[2]<<snd;
+      InstPair(fst,snd,this);
+     ^set_fst:
+      this[2]>>x;
+      InstPair(x,snd,this);
+     ^set_snd:
+      this[2]>>x;
+      InstPair(fst,x,this);
+     ^end:
+    }
+  )
+  InstPair(fst,snd,s);
+)
+|

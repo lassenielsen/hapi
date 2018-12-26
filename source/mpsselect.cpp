@@ -40,32 +40,50 @@ void *MpsSelect::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, c
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
     return wrap_err(this,PrintTypeError((string)"Sending on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
-  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
+  MpsLocalType *localMsgType=msgType->CopyLocalType();
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(localMsgType);
   // Check if unfolding is necessary
   if (recType!=NULL)
+  { delete localMsgType;
     return TypeCheckRec(pre, wrap, wrap_err, Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
-  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
+  }
+  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(localMsgType);
   if (allType!=NULL)
+  { delete localMsgType;
     return TypeCheckForall(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
+  }
   // Check session has select type
-  const MpsLocalSelectType *selType = dynamic_cast<const MpsLocalSelectType*>(msgType->GetLocalType());
+  const MpsLocalSelectType *selType = dynamic_cast<const MpsLocalSelectType*>(localMsgType);
   if (selType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + msgType->GetLocalType()->ToString("           "),*this,Theta,Gamma,Omega),children);
+  { string msgTypeStr=localMsgType->ToString("           ");
+    delete localMsgType;
+    return wrap_err(this,PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + msgTypeStr,*this,Theta,Gamma,Omega),children);
+  }
   // Check channel index is correct
   if (myChannel.GetIndex() != selType->GetReceiver())
-    return wrap_err(this,PrintTypeError((string)"Typechecking error - Sending on session: " + myChannel.ToString() + "with type: " + selType->ToString("           "),*this,Theta,Gamma,Omega),children);
+  { string selTypeStr=selType->ToString("           ");
+    delete localMsgType;
+    return wrap_err(this,PrintTypeError((string)"Typechecking error - Sending on session: " + myChannel.ToString() + "with type: " + selTypeStr,*this,Theta,Gamma,Omega),children);
+  }
   // Check label ok
   map<string,MpsLocalType*>::const_iterator branch=selType->GetBranches().find(myLabel);
   if (branch==selType->GetBranches().end())
-    return wrap_err(this,PrintTypeError((string)"Typechecking error - Sending label: " + myLabel + "on session: " + myChannel.ToString() + "with type: " + selType->ToString("           "),*this,Theta,Gamma,Omega),children);
+  { string selTypeStr=selType->ToString("           ");
+    delete localMsgType;
+    return wrap_err(this,PrintTypeError((string)"Typechecking error - Sending label: " + myLabel + "on session: " + myChannel.ToString() + "with type: " + selTypeStr,*this,Theta,Gamma,Omega),children);
+  }
   // Check label is active (assertion valid)
   vector<const MpsExp*> hyps;
   hyps.push_back(&Theta);
   map<string,MpsExp*>::const_iterator assertion=selType->GetAssertions().find(myLabel);
   if (assertion==selType->GetAssertions().end())
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Label has no assertion",*this,Theta,Gamma,Omega),children);
+  }
   if (not assertion->second->ValidExp(hyps))
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Assertion not respected",*this,Theta,Gamma,Omega),children);
+  }
   
   // Make new environment
   MpsMsgEnv newGamma = Gamma;
@@ -79,6 +97,7 @@ void *MpsSelect::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, c
 
   // Clean up
   delete newGamma[myChannel.GetName()];
+  delete localMsgType;
 
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
@@ -116,6 +135,13 @@ MpsTerm *MpsSelect::ERename(const string &src, const string &dst) const // {{{
   MpsChannel newChannel=myChannel.Rename(src,dst);
   MpsTerm *newSucc = mySucc->ERename(src,dst);
   MpsTerm *result = new MpsSelect(newChannel, myLabel, *newSucc, GetFinal());
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsSelect::MRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
+  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc, GetFinal());
   delete newSucc;
   return result;
 } // }}}

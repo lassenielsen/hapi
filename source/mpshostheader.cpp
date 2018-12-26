@@ -66,6 +66,18 @@ MpsHostHeader *MpsHostHeader::ERename(const string &src, const string &dst) cons
 
   return result;
 } // }}}
+MpsHostHeader *MpsHostHeader::MRename(const string &src, const string &dst) const // {{{
+{
+  // Rename in succ
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
+
+  MpsHostHeader *result = new MpsHostHeader(myHeader, *newSucc);
+
+  // Clean up
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsHostHeader *MpsHostHeader::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   MpsTerm *newSucc = mySucc->ReIndex(session,pid,maxpid);

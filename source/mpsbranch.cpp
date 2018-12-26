@@ -47,20 +47,30 @@ void *MpsBranch::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, c
   const MpsDelegateMsgType *msgType = dynamic_cast<const MpsDelegateMsgType*>(session->second);
   if (msgType==NULL)
     return wrap_err(this,PrintTypeError((string)"Branching on non-session type: " + myChannel.GetName(),*this,Theta,Gamma,Omega),children);
-  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
+  MpsLocalType *localMsgType=msgType->CopyLocalType();
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(localMsgType);
   // Check if unfolding is necessary
   if (recType!=NULL)
+  { delete localMsgType;
     return TypeCheckRec(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
-  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
+  }
+  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(localMsgType);
   if (allType!=NULL)
+  { delete localMsgType;
     return TypeCheckForall(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, session->first);
+  }
   // Check session has select type
-  const MpsLocalBranchType *branchType = dynamic_cast<const MpsLocalBranchType*>(msgType->GetLocalType());
+  const MpsLocalBranchType *branchType = dynamic_cast<const MpsLocalBranchType*>(localMsgType);
   if (branchType==NULL)
-    return wrap_err(this,PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + msgType->GetLocalType()->ToString("           "),*this,Theta,Gamma,Omega),children);
+  { string msgTypeStr=localMsgType->ToString("           ");
+    delete localMsgType;
+    return wrap_err(this,PrintTypeError((string)"Typechecking error - Selecting on session: " + myChannel.GetName() + "with type: " + msgTypeStr,*this,Theta,Gamma,Omega),children);
+  }
   // Check channel index is correct
   if (myChannel.GetIndex() != branchType->GetSender())
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Branching on wrong index: " + myChannel.ToString(),*this,Theta,Gamma,Omega),children);
+  }
   // Check label ok
   const map<string,MpsLocalType*> &branches=branchType->GetBranches();
   for (map<string,MpsLocalType*>::const_iterator branch=branches.begin();branch!=branches.end();++branch)
@@ -74,11 +84,15 @@ void *MpsBranch::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, c
     newGamma[myChannel.GetName()] = new MpsDelegateLocalMsgType(*branch->second, msgType->GetPid(), msgType->GetParticipants());
     map<string,MpsTerm*>::const_iterator succ = myBranches.find(branch->first);
     if (succ==myBranches.end())
+    { delete localMsgType;
       return wrap_err(this,PrintTypeError((string)"Branching cannot receive label: " + branch->first,*this,Theta,Gamma,Omega),children);
+    }
     // Make new Theta
     map<string,MpsExp*>::const_iterator assertion=branchType->GetAssertions().find(branch->first);
     if (assertion==branchType->GetAssertions().end())
+    { delete localMsgType;
       return wrap_err(this,PrintTypeError((string)"Branch has no assertion: " + branch->first,*this,Theta,Gamma,Omega),children);
+    }
     MpsExp *newTheta = new MpsBinOpExp("and",Theta,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     // Typecheck Branch
     children[branch->first] = succ->second->TDCompile(pre,wrap,wrap_err,*newTheta,newGamma,Omega, pureStack, curPure, pureState, checkPure);
@@ -87,6 +101,8 @@ void *MpsBranch::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, c
     delete newTheta;
     delete newGamma[myChannel.GetName()];
   }
+  // Clean up
+  delete localMsgType;
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
@@ -140,6 +156,22 @@ MpsTerm *MpsBranch::ERename(const string &src, const string &dst) const // {{{
     newBranches[it->first] = newBranch;
   }
   MpsTerm *result = new MpsBranch(newChannel, newBranches, GetFinalBranches());
+  // Clean up
+  DeleteMap(newBranches);
+  return result;
+} // }}}
+MpsTerm *MpsBranch::MRename(const string &src, const string &dst) const // {{{
+{
+  //MpsChannel newChannel=myChannel.MRename(src,dst);
+  map<string, MpsTerm*> newBranches;
+  newBranches.clear();
+  // ERename each branch
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    MpsTerm *newBranch = it->second->MRename(src,dst);
+    newBranches[it->first] = newBranch;
+  }
+  MpsTerm *result = new MpsBranch(myChannel, newBranches, GetFinalBranches());
   // Clean up
   DeleteMap(newBranches);
   return result;
