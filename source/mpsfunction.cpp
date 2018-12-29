@@ -156,7 +156,7 @@ string MpsFunction::ToC() const // {{{
 string MpsFunction::ToCTaskType() const // {{{
 { set<string> ids=GetBody().EV();
   ids.insert(GetStateArgs().begin(),GetStateArgs().end());
-  ids.insert(GetStateArgs().begin(),GetStateArgs().end());
+  ids.insert(GetArgs().begin(),GetArgs().end());
 
   stringstream ss;
   ss

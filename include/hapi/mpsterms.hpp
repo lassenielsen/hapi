@@ -1,7 +1,9 @@
 #include<hapi/mpsterm.hpp>
 #include<hapi/mpsend.hpp>
 #include<hapi/mpssnd.hpp>
+#include<hapi/mpssndtype.hpp>
 #include<hapi/mpsrcv.hpp>
+#include<hapi/mpsrcvtype.hpp>
 #include<hapi/mpsselect.hpp>
 #include<hapi/mpsbranch.hpp>
 #include<hapi/mpscond.hpp>

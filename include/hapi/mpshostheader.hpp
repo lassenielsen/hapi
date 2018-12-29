@@ -38,6 +38,7 @@ class MpsHostHeader : public MpsTerm // {{{
                      int pid, int maxpid) const;
     MpsHostHeader *PRename(const std::string &src, const std::string &dst) const;
     MpsHostHeader *ERename(const std::string &src, const std::string &dst) const;
+    MpsHostHeader *MRename(const std::string &src, const std::string &dst) const;
     MpsHostHeader *PSubst(const std::string &var,
                              const MpsTerm &exp,
                              const std::vector<std::string> &args,

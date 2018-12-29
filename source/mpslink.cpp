@@ -64,16 +64,19 @@ void *MpsLink::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, con
   }
 
   // Check correct maxpid
-  if (myMaxpid != channel->GetGlobalType()->GetMaxPid())
-    return wrap_err(this,PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetGlobalType()->GetMaxPid()),*this,Theta,Gamma,Omega),children);
+  if (myMaxpid != channel->GetParticipants().size())
+    return wrap_err(this,PrintTypeError((string)"MaxPID is different from:" + int2string(channel->GetParticipants().size()),*this,Theta,Gamma,Omega),children);
 
   // Check that only completed sessions are hidden
   var=newGamma.find(mySession);
   if (var!=newGamma.end())
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
-    if (session!=NULL &&
-        !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return wrap_err(this,PrintTypeError((string)"Linking on open session:" + mySession,*this,Theta,Gamma,Omega),children);
+    if (session!=NULL)
+    { MpsLocalType *localSession=session->CopyLocalType();
+      bool isDone=localSession->IsDone();
+      if (!isDone)
+        return wrap_err(this,PrintTypeError((string)"Linking on open session:" + mySession,*this,Theta,Gamma,Omega),children);
+    }
 
     newGamma.erase(var);
   }
@@ -155,6 +158,14 @@ MpsTerm *MpsLink::ERename(const string &src, const string &dst) const // {{{
     newSucc = mySucc->ERename(src,dst);
 
   MpsTerm *result = new MpsLink(newChannel, newSession, myPid, myMaxpid, *newSucc, myPure);
+  delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsLink::MRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
+
+  MpsTerm *result = new MpsLink(myChannel, mySession, myPid, myMaxpid, *newSucc, myPure);
   delete newSucc;
   return result;
 } // }}}

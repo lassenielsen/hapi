@@ -20,12 +20,9 @@ local pure service Fib(fib (1 of 2) s)
 )
 |
 c = new console(2 of 2);
-c[1] << ^PutString << "What is n?"
-     << ^GetInt;
-c[1] >> v;
+c[1]<<^str<<"What is n? "<<^input<<^int;
+c[1]>>v;
 f = new fib(2 of 2);
-f[1] << v;
-f[1] >> r;
-c[1] << ^PutString << "Fib(n) is"
-     << ^PutInt << r
-     << ^Stop;
+f[1]<<v;
+f[1]>>r;
+c[1]<<^str<<"Fib("<<^int<<v<<^str<<")="<<^int<<r<<^nl<<^end;

@@ -6,7 +6,7 @@
 
 // Create console session (and get uninterupted access to console io)
 c=new console(2 of 2);
-// Print string
-c[1]<<^PutString<<"Hello World";
+// Print string and newline
+c[1]<<^str<<"Hello World"<<^nl;
 // Finish console session (and release console io)
-c[1]<<^End;
+c[1]<<^end;

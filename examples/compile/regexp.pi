@@ -1,0 +1,35 @@
+#include<struct/set.pi>
+#define $re \
+  rec $re; \
+  2->1 \
+  {^suffixes: \
+    2->1:String; \
+    1->2:$set(string)(2 of 1 pure,2); \
+    $re; \
+   ^end: \
+    $end; \
+  }
+
+global $re re_unit(1 pure,2);
+local pure service RE_Unit(re_unit (1 of 2) s)
+( local pure Unit($re(2 of 1 pure,2) this)
+  ( s[2]>>
+    {^suffixes:
+      s[2]>>str;
+      r=new set(2 of 2);
+      r<<String;
+      s[1]<<^insert<<str;
+      s[2]<<r;
+      Unit(s);
+     ^end
+    }
+  )
+  Unit(s);
+)
+|
+#include <console.pi>
+c=new console(2 of 2);
+c[1]<<^str<<"Input string"<<^input<<^str;
+c[1]>>str;
+
+

@@ -75,16 +75,19 @@ void *MpsPar::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
       rightGamma[var->first]=var->second;
     }
     else
-    { if (leftSessions.find(var->first)!=leftSessions.end())
+    { MpsLocalType *localDelType=delType->CopyLocalType();
+      bool isDone=localDelType->IsDone();
+      delete localDelType;
+      if (leftSessions.find(var->first)!=leftSessions.end())
       {
         leftGamma[var->first]=var->second;
-        if (!delType->GetLocalType()->IsDone())
+        if (!isDone)
           myRightFinal.push_back(var->first);
       }
       else
       {
         rightGamma[var->first]=var->second;
-        if (!delType->GetLocalType()->IsDone())
+        if (!isDone)
           myLeftFinal.push_back(var->first);
       }
     }
@@ -329,6 +332,15 @@ MpsTerm *MpsPar::ERename(const string &src, const string &dst) const // {{{
     else
       rightFinal.push_back(*it);
   MpsTerm *result = new MpsPar(*newLeft, *newRight, leftFinal, rightFinal); // Combine renamed terms
+  delete newLeft;
+  delete newRight;
+  return result;
+} // }}}
+MpsTerm *MpsPar::MRename(const string &src, const string &dst) const // {{{
+{
+  MpsTerm *newLeft = myLeft->MRename(src,dst); // Rename in left term
+  MpsTerm *newRight = myRight->MRename(src,dst); // Rename in right term
+  MpsTerm *result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal()); // Combine renamed terms
   delete newLeft;
   delete newRight;
   return result;

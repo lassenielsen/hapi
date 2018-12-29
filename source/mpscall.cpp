@@ -52,7 +52,7 @@ void *MpsCall::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, con
   }
   // Check correct number of arguments
   if (omega->second.stypes.size() != myState.size() ||
-      omega->second.stypes.size() != myState.size() ||
+      omega->second.snames.size() != myState.size() ||
       omega->second.types.size() != myArgs.size())
     return wrap_err(this,PrintTypeError((string)"Process Variable wrong argument-count: " + myName,*this,Theta,Gamma,Omega),children);
   // Check argument-types and remove used sessions from endGamma
@@ -106,9 +106,13 @@ void *MpsCall::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, con
   // Check that endGamma is completed
   for (MpsMsgEnv::const_iterator var=endGamma.begin();var!=endGamma.end();++var)
   { const MpsDelegateMsgType *session=dynamic_cast<const MpsDelegateMsgType*>(var->second);
-    if (session!=NULL &&
-        !session->GetLocalType()->Equal(Theta,MpsLocalEndType()))
-      return wrap_err(this,PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega),children);
+    if (session!=NULL)
+    { MpsLocalType *localSession=session->CopyLocalType();
+      bool isDone=localSession->IsDone();
+      delete localSession;
+      if (!isDone)
+        return wrap_err(this,PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega),children);
+    }
   }
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
@@ -161,6 +165,25 @@ MpsTerm *MpsCall::ERename(const string &src, const string &dst) const // {{{
   MpsTerm *result = new MpsCall(myName,newArgs,newState,newTypes,newStateTypes);
   DeleteVector(newArgs);
   DeleteVector(newState);
+  DeleteVector(newTypes);
+  DeleteVector(newStateTypes);
+  return result;
+} // }}}
+MpsTerm *MpsCall::MRename(const string &src, const string &dst) const // {{{
+{
+  //vector<MpsExp*> newArgs;
+  //for (vector<MpsExp*>::const_iterator it=myArgs.begin();it!=myArgs.end();++it)
+  //  newArgs.push_back((*it)->Rename(src,dst));
+  //vector<MpsExp*> newState;
+  //for (vector<MpsExp*>::const_iterator it=myState.begin();it!=myState.end();++it)
+  //  newState.push_back((*it)->Rename(src,dst));
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myTypes.begin();it!=myTypes.end();++it)
+    newTypes.push_back((*it)->MRename(src,dst));
+  vector<MpsMsgType*> newStateTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin();it!=myStateTypes.end();++it)
+    newStateTypes.push_back((*it)->MRename(src,dst));
+  MpsTerm *result = new MpsCall(myName,myArgs,myState,newTypes,newStateTypes);
   DeleteVector(newTypes);
   DeleteVector(newStateTypes);
   return result;

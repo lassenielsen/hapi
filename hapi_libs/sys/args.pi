@@ -1,0 +1,33 @@
+#pragma once
+#define $args rec $args; \
+  2->1 \
+  {^count: 1->2:Int; $args; \
+   ^arg: 2->1:Int; 1->2{^some: 1->2:String; $args; ^none: $args;} \
+   ^end: $end; \
+  }
+#define __ARGC(x) HOST("  ", x, ".reset(new libpi::Int(_args.size()));") pure
+#define __ARGV(x,i) HOST("  ", x, ".reset(new libpi::String(_args[ mpz_get_ui(((libpi::Int*)", i, ".get())->GetValue())]));") pure
+Int argc=0;
+__ARGC(argc);
+global $args args(1 pure, 2);
+local pure service ArgsService(args (1 of 2) s)
+( local pure ArgsSession($args(1 of 1 pure,2) s)
+  ( s[2]>>
+    {^count:
+      s[2]<<argc;
+      ArgsSession(s);
+     ^arg:
+      s[2]>>idx;
+      if (0<=idx) and (idx+1<=argc)
+      then s[2]<<^some;
+           String arg="";
+           __ARGV(arg,idx);
+           s[2]<<arg;
+           ArgsSession(s);
+      else s[2]<<^none;
+           ArgsSession(s);
+     ^end:
+    }
+  ) ArgsSession(s);
+)
+|

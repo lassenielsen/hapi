@@ -1,0 +1,17 @@
+#pragma once
+#define $fib \
+  2->1:Int;\
+  1->2:Int;\
+  $end;
+
+global $fib fib(1 pure,2);
+local pure service ExpFib(fib (1 of 2) s)
+( local pure Fib(1->2:Int;$end;(1 of 1 pure,2) return, Int n, Int f1, Int f2)
+  ( if n<=0
+    then return[2]<<f1;
+    else Fib(return,n-1,f2,f1+f2);
+  )
+  s[2]>>n;
+  Fib(s,n,1,1);
+)
+|

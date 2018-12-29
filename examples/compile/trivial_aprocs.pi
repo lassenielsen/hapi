@@ -1,16 +1,17 @@
 #include <console.pi>
-#include <timer.pi>
-local X(Int i)
-( if i<=0
+#include <sys/timer.pi>
+#include <debug/procs.pi>
+local X(Float i)
+( if i<=0.0
   then
   else
   ( t=new timer(2 of 2);
-    t[1]<<^WaitSeconds<<i;
+    t[1]<<^wait<<i;
     t[1]>>ready;
-    t[1]<<^End;
+    t[1]<<^end;
     c=new console(2 of 2);
-    c[1]<<^PutInt<<SYSTEM&"aprocs"<<^End;
-  | X(i-1);
+    c[1]<<^int<<SYSTEM&"aprocs"<<^nl<<^end;
+  | X(i-1.0);
   )
 )
-X(10);
+X(10.0);

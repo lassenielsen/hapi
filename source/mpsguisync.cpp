@@ -65,22 +65,33 @@ void *MpsGuiSync::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
     return wrap_err(this,PrintTypeError((string)"Synchronising on non-session type: " + mySession,*this,Theta,Gamma,Omega),children);
 
   // Check if unfolding is necessary
-  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(msgType->GetLocalType());
+  MpsLocalType *localMsgType=msgType->CopyLocalType();
+  const MpsLocalRecType *recType = dynamic_cast<const MpsLocalRecType*>(localMsgType);
   if (recType!=NULL)
+  { delete localMsgType;
     return TypeCheckRec(pre, wrap, wrap_err, Theta,Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
-  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(msgType->GetLocalType());
+  }
+  const MpsLocalForallType *allType = dynamic_cast<const MpsLocalForallType*>(localMsgType);
   if (allType!=NULL)
+  { delete localMsgType;
     return TypeCheckForall(pre, wrap, wrap_err, Theta, Gamma, Omega, pureStack, curPure, pureState, checkPure, *this, var->first);
+  }
 
   // Check session has sync type
-  const MpsLocalSyncType *syncType = dynamic_cast<const MpsLocalSyncType*>(msgType->GetLocalType());
+  const MpsLocalSyncType *syncType = dynamic_cast<const MpsLocalSyncType*>(localMsgType);
   if (syncType==NULL)
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Synchronising on non-sync session: " + mySession,*this,Theta,Gamma,Omega),children);
+  }
   // Check maxpid
   if (myMaxpid != msgType->GetMaxpid())
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Synchronising with wrong participant count",*this,Theta,Gamma,Omega),children);
+  }
   if (myPid != msgType->GetPid())
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Synchronising with wrong participant ID",*this,Theta,Gamma,Omega),children);
+  }
   // Check if mandatory labels are accepted
   const map<string,MpsLocalType*> &branches=syncType->GetBranches();
   const map<string,MpsExp*> &assertions=syncType->GetAssertions();
@@ -88,13 +99,15 @@ void *MpsGuiSync::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
   hyps.push_back(&Theta);
   MpsExp *mandatoryOr=new MpsBoolVal(false); // FIXME: This is necessary because Global Type Validity Check is Missing
   for (map<string,MpsLocalType*>::const_iterator branch=branches.begin();branch!=branches.end();++branch)
-  {
+  { string branchName=branch->first;
     if (branch->first[1]=='^') // Mandatory branch
     {
       map<string,inputbranch>::const_iterator myBranch=myBranches.find(branch->first);
       map<string,MpsExp*>::const_iterator assertion=assertions.find(branch->first);
       if (assertion==assertions.end())
-        return wrap_err(this,PrintTypeError((string)"Synchronisation type has no assertion for branch: " + branch->first,*this,Theta,Gamma,Omega),children);
+      { delete localMsgType;
+        return wrap_err(this,PrintTypeError((string)"Synchronisation type has no assertion for branch: " + branchName,*this,Theta,Gamma,Omega),children);
+      }
       MpsExp *tmpOr = new MpsBinOpExp("or",*mandatoryOr,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
       delete mandatoryOr;
       mandatoryOr=tmpOr;
@@ -104,7 +117,9 @@ void *MpsGuiSync::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
         bool inactive = notAssertion->ValidExp(hyps);
         delete notAssertion;
         if (not inactive)
-          return wrap_err(this,PrintTypeError((string)"Synchronisation missing mandatory branch: " + branch->first,*this,Theta,Gamma,Omega),children);
+        { delete localMsgType;
+          return wrap_err(this,PrintTypeError((string)"Synchronisation missing mandatory branch: " + branchName,*this,Theta,Gamma,Omega),children);
+        }
       }
       else
       {
@@ -115,48 +130,61 @@ void *MpsGuiSync::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
         bool checkImplication=implication->ValidExp(hyps);
         delete implication;
         if (not checkImplication)
-          return wrap_err(this,PrintTypeError((string)"Synchronisation may not accept mandatory branch: " + branch->first,*this,Theta,Gamma,Omega),children);
+        { delete localMsgType;
+          return wrap_err(this,PrintTypeError((string)"Synchronisation may not accept mandatory branch: " + branchName,*this,Theta,Gamma,Omega),children);
+        }
       }
     }
   }
   bool checkMandatory=mandatoryOr->ValidExp(hyps);
   delete mandatoryOr;
   if (not checkMandatory)
+  { delete localMsgType;
     return wrap_err(this,PrintTypeError((string)"Synchronisation may have no mandatory branches: " + mySession,*this,Theta,Gamma,Omega),children);
+  }
 
   // Check typing of all branches in the process
   for (map<string,inputbranch>::const_iterator myBranch=myBranches.begin();myBranch!=myBranches.end();++myBranch)
-  {
-    // Typecheck arguments
+  { // Typecheck arguments
     for (int brancharg=0; brancharg<myBranch->second.args.size(); ++brancharg)
     {
       MpsMsgType *branchargtype = myBranch->second.values[brancharg]->TypeCheck(Gamma);
       bool branchargtypematch = branchargtype->Equal(Theta,*myBranch->second.types[brancharg]);
       delete branchargtype;
       if (!branchargtypematch)
+      { delete localMsgType;
         return wrap_err(this,PrintTypeError((string)"Ill typed argument: " + myBranch->second.args[brancharg] + " in branch: " + myBranch->first,*this,Theta,Gamma,Omega),children);
+      }
     }
     // Check Label Inclusion
     map<string,MpsLocalType*>::const_iterator type=branches.find(myBranch->first);
     if (type==branches.end())
+    { delete localMsgType;
       return wrap_err(this,PrintTypeError((string)"Synchronisation accepts untyped label: " + myBranch->first,*this,Theta,Gamma,Omega),children);
+    }
     // TypeCheck Assertion
     MpsMsgType *assertionType=myBranch->second.assertion->TypeCheck(Gamma);
     bool checkAssertionType = dynamic_cast<MpsBoolMsgType*>(assertionType)!=NULL;
     delete assertionType;
     if (not checkAssertionType)
+    { delete localMsgType;
       return wrap_err(this,PrintTypeError((string)"Synchronisation has untyped assertion for branch: " + myBranch->first,*this,Theta,Gamma,Omega),children);
+    }
     // Check Assertion Implication
     map<string,MpsExp*>::const_iterator assertion=assertions.find(myBranch->first);
     if (assertion==assertions.end())
+    { delete localMsgType;
         return wrap_err(this,PrintTypeError((string)"Synchronisation type has no assertion for branch: " + myBranch->first,*this,Theta,Gamma,Omega),children);
+    }
     MpsExp *notAssertion = new MpsUnOpExp("not",*myBranch->second.assertion);
     MpsExp *implication = new MpsBinOpExp("or",*notAssertion,*assertion->second,MpsBoolMsgType(),MpsBoolMsgType());
     delete notAssertion;
     bool checkImplication = implication->ValidExp(hyps);
     delete implication;
     if (not checkImplication)
+    { delete localMsgType;
         return wrap_err(this,PrintTypeError((string)"Synchronisation may accept inactive branch: " + myBranch->first,*this,Theta,Gamma,Omega),children);
+    }
     // Make new Gamma
     // Prepare renaming
     map<string,string> renaming;
@@ -172,7 +200,7 @@ void *MpsGuiSync::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
         if (gamma->first==mySession) // Use branch type for mySession
           tmp1 = type->second->Copy();
         else
-          tmp1 = gammaDel->GetLocalType()->Copy();
+          tmp1 = gammaDel->CopyLocalType();
         for (map<string,string>::const_iterator tr=renaming.begin(); tr!=renaming.end(); ++tr)
         { MpsLocalType *tmp2=tmp1->ERename(tr->first,tr->second);
           delete tmp1;
@@ -187,7 +215,9 @@ void *MpsGuiSync::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
     // Check argument cont
     if (myBranch->second.args.size() != myBranch->second.types.size() ||
         myBranch->second.args.size() != myBranch->second.names.size())
+    { delete localMsgType;
       return wrap_err(this,PrintTypeError((string)"Number of arguments, types and names inconsistent in branch: " + myBranch->first,*this,Theta,Gamma,Omega),children);
+    }
     // Add argument types
     for (int i=0; i<myBranch->second.args.size(); ++i)
       newGamma[myBranch->second.args[i] ] = myBranch->second.types[i]; // Only simple types
@@ -209,6 +239,8 @@ void *MpsGuiSync::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
       newGamma.erase(newGamma.begin());
     }
   }
+  // Clean up
+  delete localMsgType;
   // Wrap result
   return wrap(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure,children);
 } // }}}
@@ -379,6 +411,55 @@ MpsTerm *MpsGuiSync::ERename(const string &src, const string &dst) const // {{{
       delete newBranch.term;
       newBranch.term=tmpTerm;
     }
+
+    newBranches[it->first] = newBranch;
+  }
+  MpsGuiSync *result = new MpsGuiSync(myMaxpid, newSession, myPid, newBranches);
+
+  // Clean up
+  while (newBranches.size() > 0)
+  {
+    delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    while (newBranches.begin()->second.types.size()>0)
+    {
+      delete *newBranches.begin()->second.types.begin();
+      newBranches.begin()->second.types.erase(newBranches.begin()->second.types.begin());
+    }
+    while (newBranches.begin()->second.values.size()>0)
+    {
+      delete *newBranches.begin()->second.values.begin();
+      newBranches.begin()->second.values.erase(newBranches.begin()->second.values.begin());
+    }
+    newBranches.erase(newBranches.begin());
+  }
+
+  return result;
+} // }}}
+MpsTerm *MpsGuiSync::MRename(const string &src, const string &dst) const // {{{
+{
+  map<string, inputbranch> newBranches;
+  newBranches.clear();
+  string newSession=mySession==src?dst:mySession;
+  // ERename each branch
+  for (map<string,inputbranch>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    inputbranch newBranch;
+    newBranch.term = it->second.term->Copy(); // Copy branch-term
+    newBranch.assertion = it->second.assertion->Copy();
+    newBranch.names = it->second.names;
+    newBranch.types.clear();
+    for (vector<MpsMsgType*>::const_iterator type=it->second.types.begin(); type!=it->second.types.end(); ++type)
+      newBranch.types.push_back((*type)->MRename(src,dst));
+    newBranch.values.clear();
+    for (vector<MpsExp*>::const_iterator value=it->second.values.begin(); value!=it->second.values.end(); ++value)
+      newBranch.values.push_back((*value)->Copy());
+    // vector<string>::find
+    // Find new arguments, and rename if necessary
+    newBranch.args=it->second.args;
+    MpsTerm *tmpTerm = newBranch.term->MRename(src,dst); // Make substitution in body
+    delete newBranch.term;
+    newBranch.term=tmpTerm;
 
     newBranches[it->first] = newBranch;
   }

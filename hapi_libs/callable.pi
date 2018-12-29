@@ -1,0 +1,11 @@
+#pragma once
+#define $callable(_arg,_res) \
+  rec $x; \
+  2->1 \
+  {^call: /* call method */ \
+    2->1: _arg; /* send arg */ \
+    1->2: _res; /* receive result */ \
+    $x; \
+   ^end: /* no more calls */ \
+    $end; \
+  }

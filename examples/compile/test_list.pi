@@ -1,0 +1,35 @@
+#include<console.pi>
+#include<struct/list.pi>
+#include<math/fib.pi>
+
+global PrintIntList($list(Int)(2 of 1 pure,2) l)
+( c=new console(2 of 2);
+  c[1]<<^str<<"[";
+  local X($list(Int)(2 of 1 pure,2) l, $console(2 of 1,2) c)
+  ( l[1]<<^pop;
+    l[1]>>
+    {^cons:
+      l[1]>>v>>tail;
+      c[1]<<^int<<v<<^str<<", ";
+      X(tail,c);
+     ^nil:
+      c[1]<<^str<<"]"<<^nl<<^end;
+    }
+  )
+  X(l,c);
+)
+#define $intlistresult 2->1:$list(Int)(2 of 1 pure,2); $end;
+global RangeIntList(Int idx, $list(Int)(2 of 1 pure,2) dest, $intlistresult(2 of 1,2) return)
+( if idx<=0
+  then return[1]<<dest;
+  else dest[1]<<^cons<<idx-20*(idx/20);
+       RangeIntList(idx-1,dest,return);
+)
+ilist=new list(2 of 2);
+ilist<<Int;
+global $intlistresult r1,r2;
+RangeIntList(1000,ilist,r2);
+|
+r1[2]>>ilist;
+ilist[1]<<^apply<<fib;
+PrintIntList(ilist);

@@ -121,6 +121,16 @@ MpsAssign *MpsAssign::ERename(const string &src, const string &dst) const // {{{
   delete newExp;
   return result;
 } // }}}
+MpsAssign *MpsAssign::MRename(const string &src, const string &dst) const // {{{
+{
+  // assert mySucc != NULL
+  MpsTerm *newSucc = mySucc->MRename(src,dst);
+  //MpsExp *newExp = myExp->MRename(src,dst);
+  MpsAssign *result = new MpsAssign(myId, *myExp, *myType, *newSucc);
+  delete newSucc;
+  //delete newExp;
+  return result;
+} // }}}
 MpsAssign *MpsAssign::ReIndex(const string &session, int pid, int maxpid) const // {{{
 {
   // assert mySucc != NULL

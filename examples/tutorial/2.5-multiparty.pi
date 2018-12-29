@@ -22,11 +22,11 @@ global $rr4 a(1,2,3,4);
 // First process implementation
 s=new a(1 of 4); // Connect on channel a as participant 1 of 4, resulting in session s
 c=new console(2 of 2);
-c[1]<<^PutString<<"1: Sending value"<<^PutInt<<5<<^End;
+c[1]<<^str<<"1: Sending value: "<<^int<<5<<^nl<<^end;
 s[2]<<5;
 s[4]>>x;
 c=new console(2 of 2);
-c[1]<<^PutString<<"1: Received value"<<^PutInt<<x<<^End;
+c[1]<<^str<<"1: Received value: "<<^int<<x<<^nl<<^end;
 
 | // Fork
 
@@ -34,8 +34,8 @@ c[1]<<^PutString<<"1: Received value"<<^PutInt<<x<<^End;
 s=new a(2 of 4); // Connect on channel a as participant 2 of 4, resulting in session s
 s[1]>>x;
 c=new console(2 of 2);
-c[1]<<^PutString<<"2:Received value"<<^PutInt<<x
-    <<^PutString<<"2:Sending value"<<^PutInt<<x<<^End;
+c[1]<<^str<<"2: Received value: "<<^int<<x<<^nl
+    <<^str<<"2: Sending value: "<<^int<<x<<^nl<<^end;
 s[3]<<x;
 
 | // Fork
@@ -44,8 +44,8 @@ s[3]<<x;
 s=new a(3 of 4); // Connect on channel a as participant 3 of 4, resulting in session s
 s[2]>>x;
 c=new console(2 of 2);
-c[1]<<^PutString<<"3:Received value"<<^PutInt<<x
-    <<^PutString<<"3:Sending value"<<^PutInt<<x<<^End;
+c[1]<<^str<<"3: Received value: "<<^int<<x<<^nl
+    <<^str<<"3: Sending value: "<<^int<<x<<^nl<<^end;
 s[4]<<x;
 
 | // Fork
@@ -54,6 +54,6 @@ s[4]<<x;
 s=new a(4 of 4); // Connect on channel a as participant 4 of 4, resulting in session s
 s[3]>>x;
 c=new console(2 of 2);
-c[1]<<^PutString<<"4:Received value"<<^PutInt<<x
-    <<^PutString<<"4:Sending value"<<^PutInt<<x<<^End;
+c[1]<<^str<<"4: Received value: "<<^int<<x<<^nl
+    <<^str<<"4: Sending value: "<<^int<<x<<^nl<<^end;
 s[1]<<x;

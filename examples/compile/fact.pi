@@ -35,12 +35,12 @@ local pure StartProdseq(Int c)
 StartProdseq(SYSTEM&"tprocs");
 |
 c = new console(2 of 2);
-c[1] << ^PutString << "What is n?"
-     << ^GetInt;
+c[1] << ^str << "What is n? "
+     << ^input << ^int;
 c[1] >> v;
 s = new prodseq(2 of 2);
 s[1] << 1 << v;
 s[1] >> r;
-c[1] << ^PutString << "Fact of n is"
-     << ^PutInt << r
-     << ^Stop;
+c[1] << ^str << "Fact(n) = "
+     << ^int << r << ^nl
+     << ^end;

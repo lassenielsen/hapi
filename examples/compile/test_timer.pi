@@ -1,20 +1,19 @@
 #include <console.pi>
-#include <timer.pi>
+#include <sys/timer.pi>
 c = new console(2 of 2);
 t = new timer(2 of 2);
 
 // Start message
-c[1]<<^PutString<<"Waiting 5 seconds";
+c[1]<<^str<<"Waiting "<<^flt<<5.0<<^str<<" seconds";
 // Wait 5 secs
-t[1]<<^WaitSeconds<<5;
+t[1]<<^wait<<5.0;
 t[1]>>x;
+c[1]<<^nl;
 // Read timer (should be 5 seconds)
-t[1]<<^ReadSeconds;
+t[1]<<^read;
 t[1]>>secs;
 // Print result
-c[1]<<^PutString<<"Timer says the wait took"
-    <<^PutInt<<secs
-    <<^PutString<<"seconds";
+c[1]<<^str<<"Timer says the wait took: "<<^flt<<secs<<^str<<" seconds."<<^nl;
 // Clean up
-t[1]<<^End;
-c[1]<<^Stop;
+t[1]<<^end;
+c[1]<<^end;

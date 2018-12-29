@@ -10,7 +10,7 @@
 # FIXME: Add expression operations (<,>,<=,>=,s1++s2,head,tail) [+,-,*,/,and,or,not,=]
 
 # Whitespace and comments are ignored
- := "[ \n\r\t][ \n\r\t]*+//[^\n]*"
+ := "[ \n\r\t][ \n\r\t]*+//[^\n]*+/\*([^*]*|\*[^/])*\*/"
 
 # KEYWORD tokens
 & := "&"
@@ -48,7 +48,6 @@ guivalue := "guivalue"
 if := "if"
 impure := "impure"
 service := "service"
-in := "in"
 new := "new"
 not := "not"
 of := "of"
@@ -66,12 +65,13 @@ where := "where"
 # Expression value domains
 int := "(~)?[0-9][0-9]*"
 float := "(~)?[0-9][0-9]*[.][0-9][0-9]*"
-string := "\"[^\"]*\""
+string := "\"([^\"]+\\[^])*\""
 
 # Names
 id   :=_1 "[a-z][a-zA-Z0-9_]*"
 lvar :=_1 "%[a-zA-Z0-9_][a-zA-Z0-9_]*"
 gvar :=_1 "$[a-zA-Z0-9_][a-zA-Z0-9_]*"
+nlvar :=_1 "#[a-zA-Z0-9_][a-zA-Z0-9_]*"
 bid  :=   "\^{1,2}[a-zA-Z0-9_][a-zA-Z0-9_]*"
 pvar :=_1 "[A-Z][a-zA-Z0-9_]*"
 
@@ -103,8 +103,11 @@ PiEActs ::= ::pieacts_end PiEAct
 # Process Statements
 PiAct ::= ::piact_sends Ch Sends ;
         | ::piact_recvs Ch Recvs ;
+        | ::piact_tsnd  id << Mtype ;
+        | ::piact_trcv  id >> nlvar ;
+        | ::piact_ltrcv id >> lvar ;
         | ::piact_link  id = new id ( int of int ) ;
-        | ::piact_new   Gtype Ids ;
+        | ::piact_new   Gtype Ids ( Participants ) ;
         | ::piact_ch    Gtype id ( Participants ) ;
         | ::piact_ass   Mtype id = Exp ;
         | ::piact_a_ass id = Exp ;
@@ -117,7 +120,7 @@ PiAct ::= ::piact_sends Ch Sends ;
 
 # Extended statements (for associativity)
 PiEAct ::= ::pieact_link  global id = new id ( int of int ) ; Pi2
-         | ::pieact_new   global Gtype Ids ; Pi2
+         | ::pieact_new   global Gtype Ids ( Participants ) ; Pi2
          | ::pieact_ch    global Gtype id ( Participants ) ; Pi2
          | ::pieact_ass   global Mtype id = Exp ; Pi2
          | ::pieact_a_ass global id = Exp ; Pi2
@@ -137,8 +140,10 @@ PiTerm ::= ::piterm_pi   ( Pi )
 # Global Types
 Gtype ::= ::gtype_term Gterm
         | ::gtype_act  Gact Gtype
-Gact ::= ::gact_msg int -> int COLON Mtype NamedAssertion ;
-       | ::gact_rec rec gvar Targs ;
+Gact ::= ::gact_msg    int -> int COLON Mtype NamedAssertion ;
+       | ::gact_rec    rec gvar Targs ;
+       | ::gact_nltmsg int COLON nlvar ;
+       | ::gact_ltmsg  int COLON lvar ;
 Gterm ::= ::gterm_end    $end ;
         | ::gterm_call   gvar Tvals ;
         | ::gterm_branch int -> int { Gbranches }
@@ -152,6 +157,10 @@ Ltype ::= ::ltype_term Lterm
 Lact ::= ::lact_snd    int << Mtype NamedAssertion ;
        | ::lact_rcv    int >> Mtype NamedAssertion ;
        | ::lact_forall forall id where Exp ;
+       | ::lact_nltsnd << nlvar ;
+       | ::lact_nltrcv >> nlvar ;
+       | ::lact_ltsnd  << lvar ;
+       | ::lact_ltrcv  >> lvar ;
        | ::lact_rec    rec lvar Targs ;
 Lterm ::= ::lterm_bsnd int << { Lbranches } 
         | ::lterm_brcv int >> { Lbranches } 
@@ -162,8 +171,9 @@ Lbranches ::= ::lbranches_end  bid Assertion COLON Ltype
             | ::lbranches_cont bid Assertion COLON Ltype Lbranches 
 
 # Message (value) Types
-Mtype ::= ::mtype_stype Stype 
+Mtype ::= ::mtype_stype Stype
         | ::mtype_gtype Gtype ( Participants )
+        | ::mtype_nlvar nlvar
         | ::mtype_ltype Ltype ( int of Participants )
         | ::mtype_ptype Gtype ( int of Participants )
 Stype ::= ::type_int    Int 
@@ -182,6 +192,8 @@ Exp  ::= ::exp_if      if Exp then Exp else Exp
 Exp2 ::= ::exp_eq      Exp3 = Exp2
        | ::exp_lvl     Exp3
 Exp3 ::= ::exp_leq     Exp4 <= Exp3
+       | ::exp_geq     Exp4 >= Exp3
+       | ::exp_lt      Exp4 < Exp3
        | ::exp_lvl     Exp4
 Exp4 ::= ::exp_plus    Exp5 + Exp4
        | ::exp_lvl     Exp5
