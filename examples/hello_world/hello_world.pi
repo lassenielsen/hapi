@@ -1,6 +1,5 @@
 #include <console.pi>
-
-c=new console(2 of 2); // Get (uninterupted) access to console
-c[1]<<^PutString;      // Choose to write a string to the console
-c[1]<<"Hello World";   // Provide string to be written
-c[1]<<^Stop;           // Stop console process
+c=new console(2 of 2);    // Get (uninterupted) access to console
+c[1]<<^str;               // Choose to write a string to the console
+c[1]<<"Hello World"<<^nl; // Provide string to be written
+c[1]<<^end;               // End console session
