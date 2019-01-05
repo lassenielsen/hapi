@@ -69,15 +69,15 @@ std_example "4.1 Pairs" 4.1-pairs
 std_example "4.2 Lists" 4.2-lists
 #std_example "4.3 Sets" 4.3-sets
 echo "=== 5 Standard libraries ==="
-arg_example "5.1 Args" 3.1-args arg
-slw_example "5.2 Timer" 3.2-timer 6
-std_example "5.3 File" 3.3-file
-std_example "5.4 Convert" 3.4-convert
+arg_example "5.1 Args" 5.1-args arg
+slw_example "5.2 Timer" 5.2-timer 6
+std_example "5.3 File" 5.3-file
+std_example "5.4 Convert" 5.4-convert
 echo "=== 6 Purity ==="
-std_example "6.1 Purity" 4.1-purity
-inp_example "6.2 Fib" 4.2-fib 30
-inp_example "6.3 Fib Time" 4.3-fib_time 30
-inp_example "6.4 Fact" 4.4-fact 30
+std_example "6.1 Purity" 6.1-purity
+inp_example "6.2 Fib" 6.2-fib 30
+inp_example "6.3 Fib Time" 6.3-fib_time 30
+inp_example "6.4 Fact" 6.4-fact 30
 echo "=== 7 Extras ==="
-inp_example "7.1 Assertions" 5.1-assertions true
-std_example "7.2 Host" 5.2-host
+inp_example "7.1 Assertions" 7.1-assertions true
+std_example "7.2 Host" 7.2-host
