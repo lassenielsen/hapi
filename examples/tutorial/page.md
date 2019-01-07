@@ -54,10 +54,10 @@ c[1]<<^int<<5<<^nl<<^end;
 <pre>
 >./1.2-fork
 1
-3
-4
 2
+4
 5
+3
 </pre>
 ==== 1.3 Methods ====
 '''Source code'''<br/>
@@ -302,23 +302,23 @@ ReceiveInts(s);
 <pre>
 >./2.4-recursion
 Sending value: 10
-Received value: 10
 Sending value: 9
 Sending value: 8
-Received value: 9
 Sending value: 7
-Received value: 8
 Sending value: 6
-Received value: 7
 Sending value: 5
-Received value: 6
 Sending value: 4
-Received value: 5
 Sending value: 3
-Received value: 4
 Sending value: 2
-Received value: 3
 Sending value: 1
+Received value: 10
+Received value: 9
+Received value: 8
+Received value: 7
+Received value: 6
+Received value: 5
+Received value: 4
+Received value: 3
 Received value: 2
 Received value: 1
 </pre>
@@ -555,6 +555,7 @@ local PrintArgs(Int i, $console(2 of 1,2) c, $args(2 of 1 pure,2) s)
 ( s[1]<<^arg<<i;
   s[1]>>
   {^some: s[1]>>a;
+          c[1]<<^str<<a<<^nl;
           PrintArgs(i+1,c,s);
    ^none: s[1]<<^end;
           c[1]<<^end;
@@ -566,6 +567,8 @@ PrintArgs(0,c,s); // Print all args
 <pre>
 >./5.1-args arg
 Number of args is 2
+./5.1-args
+arg
 </pre>
 ==== 5.2 Timer ====
 '''Source code'''<br/>
@@ -837,8 +840,9 @@ c[1]<<^end;                              // Release access to console
 </pre>
 '''Output'''<br/>
 <pre>
->echo 30 | ./6.2-fib
-Input n: </pre>
+>echo 20 | ./6.2-fib
+Input n: Fib(n)=10946
+</pre>
 ==== 6.3 Fib Time ====
 '''Source code'''<br/>
 <pre>
@@ -912,8 +916,10 @@ c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl      // Print result
 </pre>
 '''Output'''<br/>
 <pre>
->echo 30 | ./6.3-fib_time
-Input n: </pre>
+>echo 20 | ./6.3-fib_time
+Input n: Fib(n)=10946
+Time: 0.00839998722076416015625
+</pre>
 ==== 6.4 Fact ====
 '''Source code'''<br/>
 <pre>
@@ -961,8 +967,8 @@ c[1] << ^str << "Fact of n is"
 </pre>
 '''Output'''<br/>
 <pre>
->echo 30 | ./6.4-fact
-What is n? Fact of n is265252859812191058636308480000000
+>echo 20 | ./6.4-fact
+What is n? Fact of n is2432902008176640000
 </pre>
 === 7 Extras ===
 ==== 7.1 Assertions ====
@@ -1053,11 +1059,11 @@ Bool x9=true;
 '''Output'''<br/>
 <pre>
 >./7.2-host
-Hello World
-12true
-4785truefalse
-
+Hello World4
+51false
 1
 5
-7
+2787
+true
+true
 </pre>
