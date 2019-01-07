@@ -18,6 +18,7 @@ local PrintArgs(Int i, $console(2 of 1,2) c, $args(2 of 1 pure,2) s)
 ( s[1]<<^arg<<i;
   s[1]>>
   {^some: s[1]>>a;
+          c[1]<<^str<<a<<^nl;
           PrintArgs(i+1,c,s);
    ^none: s[1]<<^end;
           c[1]<<^end;
