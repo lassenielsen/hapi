@@ -1,0 +1,19 @@
+#include<console.pi>
+#include<struct/list.pi>
+#include<math/fib.pi>
+#include<convert.pi>
+#include<succ.pi>
+
+// Working with lists
+ilist=new range(2 of 2);
+ilist<<Int;
+isucc=new stdsucc_Int(2 of 2);
+iorder=new stdorder_Int(2 of 2);
+ilist[1]<<isucc<<iorder<<0<<20; // ilist is now the range [1;20]
+ilist[1]<<^apply<<fib;          // ilist is now contains the 20 first fibonacci numbers
+// Print list
+print=new printlist(2 of 2);
+print<<Int;
+print[1]<<int2string<<ilist;
+c=new console(2 of 2);
+print[1]<<c;

@@ -1,7 +1,17 @@
-// Example 4.2 - Calculating fibonacchi numbers
-// Utilizinf pure services to automatically obtain concurrency
+// Example 6.3 - Calculating fibonacchi numbers, and measuring the time used
+// Utilizing pure services to automatically obtain concurrency
+// Avoid optimization corrupting time measurements
 // Include console functionality like printing
 #include <console.pi>
+// Include timer functionality like measuring time spent
+#include <sys/timer.pi>
+
+// Macro that pretends to use n in an impure way.
+// This stops impure actions, and actions using n
+// to be moved across here,
+// Ensuring that n is available before any of the
+// impure actions below this one is performed.
+#define require(n) HOST("/* ",n," */")
 
 // Define api for service
 #define $fib \
@@ -28,7 +38,7 @@ local pure Fib()
        f2[1]>>r2;                        // r2 = fib(n-2)
        s[2]<<r1+r2;                      // return r1+r2
 )
-local pure StartFib(Int n)               // Start n copies of service
+local pure StartFib(Int n)
 ( if n<=0
   then Fib();
   else ( Fib(); | StartFib(n-1); )
@@ -41,9 +51,17 @@ c=new console(2 of 2);                   // Get access to console
 c[1]<<^str<<"Input n: "<<^input<<^int;   // Ask for n
 c[1]>>n;                                 // Read n
 c[1]<<^end;                              // Release access to console
+
+t=new timer(2 of 2);                     // Start timer
 s=new fib(2 of 2);                       // Call fib(n)
 s[1]<<n;
 s[1]>>f;                                 // Get result
+t[1]<<^sync;t<<Int;t[1]<<f;              // Make timer wait for result (avoids optimizing timer to not wait for result)
+//require(f);                            // A more generic method to avoid optimizing timer, but also avoids other optimizations
+t[1]<<^read;                             // Get used time
+t[1]>>secs;                              // secs = used time
+t[1]<<^end;                              // Stop / release timer
 c=new console(2 of 2);
-c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl;     // Print result
-c[1]<<^end;                              // Release access to console
+c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl      // Print result
+    <<^str<<"Time: "<<^flt<<secs<<^nl    // Print time used
+    <<^end;

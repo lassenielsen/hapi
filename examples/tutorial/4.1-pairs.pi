@@ -1,0 +1,16 @@
+// Same as tutorial 3.1, but using struct from library
+#include<console.pi>
+#include<struct/pair.pi>
+// Testing pair
+p=new pair(2 of 2);
+p<<Int;
+p<<String;
+p[1]<<5<<"five";
+p[1]<<^get_fst;
+p[1]>>p_fst;
+p[1]<<^set_snd<<"six"<<^get_snd;
+p[1]>>p_snd;
+c=new console(2 of 2);
+c[1]<<^str<<"p=("<<^int<<p_fst<<^str<<","<<^str<<p_snd<<^str<<")"<<^nl<<^end;
+// Remember to delete objects, or type checker will tell you!
+p[1]<<^end;

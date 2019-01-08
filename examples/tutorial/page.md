@@ -66,7 +66,7 @@ c[1]<<^int<<5<<^nl<<^end;
 // Declares method, and uses it.
 // Note that methods can only be applied tail-recursively,
 // if non-tail recursive functionality is required, use a
-// service as introduced in tutorial 2.1.
+// service as introduced in tutorial 2.2.
 
 #include <console.pi>
 
@@ -97,8 +97,8 @@ PrintInts(10);
 8
 7
 6
-5
 4
+5
 3
 2
 1
@@ -302,8 +302,8 @@ ReceiveInts(s);
 <pre>
 >./2.4-recursion
 Sending value: 10
-Sending value: 9
 Received value: 10
+Sending value: 9
 Sending value: 8
 Received value: 9
 Sending value: 7
@@ -397,8 +397,142 @@ s[1]<<x;
 4: Sending value: 5
 1: Received value: 5
 </pre>
-=== 3 Standard libraries ===
-==== 3.1 Args ====
+=== 3 Polymorphism ===
+==== 3.1 Pair Service ====
+'''Source code'''<br/>
+<pre>
+// This serves as an instructive example, but definition, decleration and
+// implementation can also be included from strct/pair.pi,
+// as shown in tutorial 4.1.
+#include<console.pi>
+// Definition of abstract pair as protocol
+#define $instpair(_fst,_snd) \
+  rec $instpair; \
+  2->1 \
+  {^get_fst: \
+    1->2: _fst; \
+    $instpair; \
+   ^set_fst: \
+    2->1: _fst; \
+    $instpair; \
+   ^get_snd: \
+    1->2: _snd; \
+    $instpair; \
+   ^set_snd: \
+    2->1: _snd; \
+    $instpair; \
+   ^end: \
+    $end; \
+  }
+#define $pair \
+  2: #fst; \
+  2: #snd; \
+  2->1: #fst; \
+  2->1: #snd; \
+  $instpair(#fst,#snd)
+// Declaration of abstract pair service
+global $pair pair(1 pure,2);
+// Implementation of abstract pair
+local pure service Pair(pair (1 of 2) s)
+( s >> #fst;
+  s >> #snd;
+  s[2] >> fst;
+  s[2] >> snd;
+  local pure InstPair(#fst fst, #snd snd, $instpair(#fst,#snd)(1 of 1 pure, 2) this)
+  ( this[2]>>
+    {^get_fst:
+      this[2]<<fst;
+      InstPair(fst,snd,this);
+     ^get_snd:
+      this[2]<<snd;
+      InstPair(fst,snd,this);
+     ^set_fst:
+      this[2]>>x;
+      InstPair(x,snd,this);
+     ^set_snd:
+      this[2]>>x;
+      InstPair(fst,x,this);
+     ^end:
+    }
+  )
+  InstPair(fst,snd,s);
+)
+|
+// Testing pair
+p=new pair(2 of 2);
+p<<Int;
+p<<String;
+p[1]<<5<<"five";
+p[1]<<^get_fst;
+p[1]>>p_fst;
+p[1]<<^set_snd<<"six"<<^get_snd;
+p[1]>>p_snd;
+c=new console(2 of 2);
+c[1]<<^str<<"p=("<<^int<<p_fst<<^str<<","<<^str<<p_snd<<^str<<")"<<^nl<<^end;
+// Remember to delete objects, or type checker will tell you!
+p[1]<<^end;
+</pre>
+'''Output'''<br/>
+<pre>
+>./3.1-pair
+p=(5,six)
+</pre>
+=== 4 Structs ===
+==== 4.1 Pairs ====
+'''Source code'''<br/>
+<pre>
+// Same as tutorial 3.1, but using struct from library
+#include<console.pi>
+#include<struct/pair.pi>
+// Testing pair
+p=new pair(2 of 2);
+p<<Int;
+p<<String;
+p[1]<<5<<"five";
+p[1]<<^get_fst;
+p[1]>>p_fst;
+p[1]<<^set_snd<<"six"<<^get_snd;
+p[1]>>p_snd;
+c=new console(2 of 2);
+c[1]<<^str<<"p=("<<^int<<p_fst<<^str<<","<<^str<<p_snd<<^str<<")"<<^nl<<^end;
+// Remember to delete objects, or type checker will tell you!
+p[1]<<^end;
+</pre>
+'''Output'''<br/>
+<pre>
+>./4.1-pairs
+p=(5,six)
+</pre>
+==== 4.2 Lists ====
+'''Source code'''<br/>
+<pre>
+#include<console.pi>
+#include<struct/list.pi>
+#include<math/fib.pi>
+#include<convert.pi>
+#include<succ.pi>
+
+// Working with lists
+ilist=new range(2 of 2);
+ilist<<Int;
+isucc=new stdsucc_Int(2 of 2);
+iorder=new stdorder_Int(2 of 2);
+ilist[1]<<isucc<<iorder<<0<<20; // ilist is now the range [1;20]
+ilist[1]<<^apply<<fib;          // ilist is now contains the 20 first fibonacci numbers
+// Print list
+print=new printlist(2 of 2);
+print<<Int;
+print[1]<<int2string<<ilist;
+c=new console(2 of 2);
+print[1]<<c;
+</pre>
+'''Output'''<br/>
+<pre>
+>./4.2-lists
+[1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946]
+</pre>
+=== 5 Standard libraries ===
+==== 5.1 Args ====
 '''Source code'''<br/>
 <pre>
 // Example 3.1 - Introducing args service
@@ -421,6 +555,7 @@ local PrintArgs(Int i, $console(2 of 1,2) c, $args(2 of 1 pure,2) s)
 ( s[1]<<^arg<<i;
   s[1]>>
   {^some: s[1]>>a;
+          c[1]<<^str<<a<<^nl;
           PrintArgs(i+1,c,s);
    ^none: s[1]<<^end;
           c[1]<<^end;
@@ -430,10 +565,12 @@ PrintArgs(0,c,s); // Print all args
 </pre>
 '''Output'''<br/>
 <pre>
->./3.1-args arg
+>./5.1-args arg
 Number of args is 2
+./5.1-args
+arg
 </pre>
-==== 3.2 Timer ====
+==== 5.2 Timer ====
 '''Source code'''<br/>
 <pre>
 // Example 3.2 - Introducing timer service
@@ -462,11 +599,11 @@ c[1]<<^end;
 </pre>
 '''Output'''<br/>
 <pre>
->./3.2-timer
+>./5.2-timer
 Waiting 5 seconds
-Timer says the wait took 5.0010001659393310546875 seconds.
+Timer says the wait took 5.000999927520751953125 seconds.
 </pre>
-==== 3.3 File ====
+==== 5.3 File ====
 '''Source code'''<br/>
 <pre>
 // Example 3.3 - Introducing the file service
@@ -516,12 +653,12 @@ f[1]>>
 </pre>
 '''Output'''<br/>
 <pre>
->./3.3-file
+>./5.3-file
 File written with content: Hello World
 Read content: Hello World
 Remove Error:: Not implemented
 </pre>
-==== 3.4 Convert ====
+==== 5.4 Convert ====
 '''Source code'''<br/>
 <pre>
 // Exampe 3.4 - Introduconig the convert service
@@ -546,14 +683,14 @@ s[1]>>
 </pre>
 '''Output'''<br/>
 <pre>
->./3.4-convert
+>./5.4-convert
 The result of converting 123 to an integer is: 123
 </pre>
-=== 4 Purity ===
-==== 4.1 Purity ====
+=== 6 Purity ===
+==== 6.1 Purity ====
 '''Source code'''<br/>
 <pre>
-// Example 4.1 - Introducing notion of purity
+// Example 6.1 - Introducing notion of purity
 // Pure methods and services separate functionality by guaranteeing not to
 // change the imparative state of other processes and services.
 // This is useful in testing and debugging, and allows automatic optimization
@@ -646,12 +783,12 @@ StartFact(1);
 </pre>
 '''Output'''<br/>
 <pre>
->./4.1-purity
+>./6.1-purity
 </pre>
-==== 4.2 Fib ====
+==== 6.2 Fib ====
 '''Source code'''<br/>
 <pre>
-// Example 4.2 - Calculating fibonacchi numbers
+// Example 6.2 - Calculating fibonacchi numbers
 // Utilizinf pure services to automatically obtain concurrency
 // Include console functionality like printing
 #include <console.pi>
@@ -703,12 +840,13 @@ c[1]<<^end;                              // Release access to console
 </pre>
 '''Output'''<br/>
 <pre>
->echo 30 | ./4.2-fib
-Input n: </pre>
-==== 4.3 Fib Time ====
+>echo 20 | ./6.2-fib
+Input n: Fib(n)=10946
+</pre>
+==== 6.3 Fib Time ====
 '''Source code'''<br/>
 <pre>
-// Example 4.3 - Calculating fibonacchi numbers, and measuring the time used
+// Example 6.3 - Calculating fibonacchi numbers, and measuring the time used
 // Utilizing pure services to automatically obtain concurrency
 // Avoid optimization corrupting time measurements
 // Include console functionality like printing
@@ -778,12 +916,14 @@ c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl      // Print result
 </pre>
 '''Output'''<br/>
 <pre>
->echo 30 | ./4.3-fib_time
-Input n: </pre>
-==== 4.4 Fact ====
+>echo 20 | ./6.3-fib_time
+Input n: Fib(n)=10946
+Time: 0.00480000972747802734375
+</pre>
+==== 6.4 Fact ====
 '''Source code'''<br/>
 <pre>
-// Example 4.4 - Factorial service
+// Example 6.4 - Factorial service
 // Implement pure prodseq service, and use to compute factorial.
 
 #include <console.pi>
@@ -827,14 +967,14 @@ c[1] << ^str << "Fact of n is"
 </pre>
 '''Output'''<br/>
 <pre>
->echo 30 | ./4.4-fact
-What is n? Fact of n is265252859812191058636308480000000
+>echo 20 | ./6.4-fact
+What is n? Fact of n is2432902008176640000
 </pre>
-=== 5 Extras ===
-==== 5.1 Assertions ====
+=== 7 Extras ===
+==== 7.1 Assertions ====
 '''Source code'''<br/>
 <pre>
-// Example 5.1 - Assertions
+// Example 7.1 - Assertions
 // Create session with assertions, and observe the sent messages respect them
 // - trying to change program to break them would result in typechecking errors.
 
@@ -874,14 +1014,14 @@ s[1]<<q1 or q2;
 </pre>
 '''Output'''<br/>
 <pre>
->echo true | ./5.1-assertions
+>echo true | ./7.1-assertions
 Input bool x: We know that z is true - it has been proven!
 z=true
 </pre>
-==== 5.2 Host ====
+==== 7.2 Host ====
 '''Source code'''<br/>
 <pre>
-// Example 5.2 - The HOST and HOSTHEADER statements.
+// Example 7.2 - The HOST and HOSTHEADER statements.
 // Hoists the full power of the host language (c++), mixing hapi and host
 // language statements and data.
 
@@ -918,12 +1058,12 @@ Bool x9=true;
 </pre>
 '''Output'''<br/>
 <pre>
->./5.2-host
-12trueHello World
-
-457false8
+>./7.2-host
+Hello World7
+45false
+812true
 true
-51
+1
 7
-
+5
 </pre>

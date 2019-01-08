@@ -1,4 +1,4 @@
-// Example 4.1 - Introducing notion of purity
+// Example 6.1 - Introducing notion of purity
 // Pure methods and services separate functionality by guaranteeing not to
 // change the imparative state of other processes and services.
 // This is useful in testing and debugging, and allows automatic optimization
