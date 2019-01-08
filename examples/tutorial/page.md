@@ -55,9 +55,9 @@ c[1]<<^int<<5<<^nl<<^end;
 >./1.2-fork
 1
 2
+3
 4
 5
-3
 </pre>
 ==== 1.3 Methods ====
 '''Source code'''<br/>
@@ -66,7 +66,7 @@ c[1]<<^int<<5<<^nl<<^end;
 // Declares method, and uses it.
 // Note that methods can only be applied tail-recursively,
 // if non-tail recursive functionality is required, use a
-// service as introduced in tutorial 2.1.
+// service as introduced in tutorial 2.2.
 
 #include <console.pi>
 
@@ -97,8 +97,8 @@ PrintInts(10);
 8
 7
 6
-5
 4
+5
 3
 2
 1
@@ -302,23 +302,23 @@ ReceiveInts(s);
 <pre>
 >./2.4-recursion
 Sending value: 10
+Received value: 10
 Sending value: 9
 Sending value: 8
-Sending value: 7
-Sending value: 6
-Sending value: 5
-Sending value: 4
-Sending value: 3
-Sending value: 2
-Sending value: 1
-Received value: 10
 Received value: 9
+Sending value: 7
 Received value: 8
+Sending value: 6
 Received value: 7
+Sending value: 5
 Received value: 6
+Sending value: 4
 Received value: 5
+Sending value: 3
 Received value: 4
+Sending value: 2
 Received value: 3
+Sending value: 1
 Received value: 2
 Received value: 1
 </pre>
@@ -601,7 +601,7 @@ c[1]<<^end;
 <pre>
 >./5.2-timer
 Waiting 5 seconds
-Timer says the wait took 5.0 seconds.
+Timer says the wait took 5.000999927520751953125 seconds.
 </pre>
 ==== 5.3 File ====
 '''Source code'''<br/>
@@ -690,7 +690,7 @@ The result of converting 123 to an integer is: 123
 ==== 6.1 Purity ====
 '''Source code'''<br/>
 <pre>
-// Example 4.1 - Introducing notion of purity
+// Example 6.1 - Introducing notion of purity
 // Pure methods and services separate functionality by guaranteeing not to
 // change the imparative state of other processes and services.
 // This is useful in testing and debugging, and allows automatic optimization
@@ -788,7 +788,7 @@ StartFact(1);
 ==== 6.2 Fib ====
 '''Source code'''<br/>
 <pre>
-// Example 4.2 - Calculating fibonacchi numbers
+// Example 6.2 - Calculating fibonacchi numbers
 // Utilizinf pure services to automatically obtain concurrency
 // Include console functionality like printing
 #include <console.pi>
@@ -846,7 +846,7 @@ Input n: Fib(n)=10946
 ==== 6.3 Fib Time ====
 '''Source code'''<br/>
 <pre>
-// Example 4.3 - Calculating fibonacchi numbers, and measuring the time used
+// Example 6.3 - Calculating fibonacchi numbers, and measuring the time used
 // Utilizing pure services to automatically obtain concurrency
 // Avoid optimization corrupting time measurements
 // Include console functionality like printing
@@ -918,12 +918,12 @@ c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl      // Print result
 <pre>
 >echo 20 | ./6.3-fib_time
 Input n: Fib(n)=10946
-Time: 0.00839998722076416015625
+Time: 0.00480000972747802734375
 </pre>
 ==== 6.4 Fact ====
 '''Source code'''<br/>
 <pre>
-// Example 4.4 - Factorial service
+// Example 6.4 - Factorial service
 // Implement pure prodseq service, and use to compute factorial.
 
 #include <console.pi>
@@ -974,7 +974,7 @@ What is n? Fact of n is2432902008176640000
 ==== 7.1 Assertions ====
 '''Source code'''<br/>
 <pre>
-// Example 5.1 - Assertions
+// Example 7.1 - Assertions
 // Create session with assertions, and observe the sent messages respect them
 // - trying to change program to break them would result in typechecking errors.
 
@@ -1021,7 +1021,7 @@ z=true
 ==== 7.2 Host ====
 '''Source code'''<br/>
 <pre>
-// Example 5.2 - The HOST and HOSTHEADER statements.
+// Example 7.2 - The HOST and HOSTHEADER statements.
 // Hoists the full power of the host language (c++), mixing hapi and host
 // language statements and data.
 
@@ -1059,11 +1059,11 @@ Bool x9=true;
 '''Output'''<br/>
 <pre>
 >./7.2-host
-Hello World4
-51false
+Hello World7
+45false
+812true
+true
 1
+7
 5
-2787
-true
-true
 </pre>

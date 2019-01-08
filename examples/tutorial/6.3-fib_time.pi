@@ -1,4 +1,4 @@
-// Example 4.3 - Calculating fibonacchi numbers, and measuring the time used
+// Example 6.3 - Calculating fibonacchi numbers, and measuring the time used
 // Utilizing pure services to automatically obtain concurrency
 // Avoid optimization corrupting time measurements
 // Include console functionality like printing

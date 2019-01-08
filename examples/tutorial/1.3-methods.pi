@@ -2,7 +2,7 @@
 // Declares method, and uses it.
 // Note that methods can only be applied tail-recursively,
 // if non-tail recursive functionality is required, use a
-// service as introduced in tutorial 2.1.
+// service as introduced in tutorial 2.2.
 
 #include <console.pi>
 

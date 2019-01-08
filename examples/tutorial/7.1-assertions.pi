@@ -1,4 +1,4 @@
-// Example 5.1 - Assertions
+// Example 7.1 - Assertions
 // Create session with assertions, and observe the sent messages respect them
 // - trying to change program to break them would result in typechecking errors.
 

@@ -1,4 +1,4 @@
-// Example 5.2 - The HOST and HOSTHEADER statements.
+// Example 7.2 - The HOST and HOSTHEADER statements.
 // Hoists the full power of the host language (c++), mixing hapi and host
 // language statements and data.
 

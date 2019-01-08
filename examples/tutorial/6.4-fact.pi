@@ -1,4 +1,4 @@
-// Example 4.4 - Factorial service
+// Example 6.4 - Factorial service
 // Implement pure prodseq service, and use to compute factorial.
 
 #include <console.pi>

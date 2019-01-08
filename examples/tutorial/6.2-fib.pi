@@ -1,4 +1,4 @@
-// Example 4.2 - Calculating fibonacchi numbers
+// Example 6.2 - Calculating fibonacchi numbers
 // Utilizinf pure services to automatically obtain concurrency
 // Include console functionality like printing
 #include <console.pi>
