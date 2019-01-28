@@ -162,7 +162,13 @@ string MpsFunction::ToCTaskType() const // {{{
   ss
   << "class Task_" << ToC_Name(GetName()) << " : public libpi::task::Task" << endl
   << "{ public:" << endl
-  << "    Task_" << ToC_Name(GetName()) << "(libpi::task::Worker *worker) : libpi::task::Task(worker) { SetWorker(worker); }" << endl
+  << "    Task_" << ToC_Name(GetName()) << "(libpi::task::Worker *worker)" << endl
+  << "    : libpi::task::Task(worker)" << endl;
+  for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+    ss << "    , var_" << ToC_Name(*id) << "(NULL)" << endl;
+ 
+  ss
+  << "    { SetWorker(worker); }" << endl
   << endl;
   for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
     ss << "    libpi::Value *var_" << ToC_Name(*id) << ";" << endl;
@@ -174,7 +180,8 @@ string MpsFunction::ToCTaskType() const // {{{
   << "    void Mark(std::unordered_set<Value*> &marks)" << endl
   << "    {" << endl
   << "      if (marks.count(this)>0)" << endl
-  << "        return;" << endl;
+  << "        return;" << endl
+  << "      libpi::task::Task::Mark(marks);" << endl;
   for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
     ss << "      if (var_" << ToC_Name(*id) << "!=NULL) var_" << ToC_Name(*id) << "->Mark(marks);" << endl;
   ss
