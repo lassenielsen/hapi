@@ -315,7 +315,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
         if (i>0 && j==0)
           result << "      inChannels[" << i << "][" << j << "]=((libpi::Channel*)_task->tmps[" << i-1 << "]);" << endl;
         else
-          result << "      inChannels[" << i << "][" << j<< "]=new libpi::task::Channel(&_task->GetWorker());" << endl;
+          result << "      inChannels[" << i << "][" << j<< "]=new libpi::task::Channel(NULL);" << endl;
     for (size_t i=0; i<myMaxpid; ++i)
       for (size_t j=0; j<myMaxpid; ++j)
         result << "      outChannels[" << i << "][" << j << "]=inChannels[" << j << "][" << i << "];" << endl;
@@ -337,7 +337,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
   {
     string lblRcv(ToC_Name(MpsExp::NewVar(string("receive_")+taskType)));
     result
-    << "    { _task->tmp=new libpi::task::Channel(&_task->GetWorker());" << endl
+    << "    { _task->tmp=new libpi::task::Channel(NULL); //Channel will be in session, and deleted when session is deleted" << endl
     << "      ((libpi::task::Link*)(_this->var_" << ToC_Name(myChannel) << "))->GetChannels()[" << myPid-2 << "]->Send(_task,_task->tmp);" << endl
     << "      _task->SetLabel(&&" << lblRcv << ");" << endl
     << "      if (!((libpi::task::Channel*)_task->tmp)->Receive(_task,_this->var_" << ToC_Name(mySession) << "))" << endl

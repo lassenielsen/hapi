@@ -2,9 +2,12 @@
 #define $re \
   rec $re; \
   2->1 \
-  {^suffixes: \
+  {^detect: \
     2->1:String; \
-    1->2:$set(string)(2 of 1 pure,2); \
+    1->2:Bool; \
+   ^match: \
+    2->1:String; \
+    1->2:$map(String,String)(2 of 1 pure,2); \
     $re; \
    ^end: \
     $end; \

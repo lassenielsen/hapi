@@ -951,14 +951,14 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
     else if (opName=="and")
       opName="&&";
     dest << "      " << typeName << " *" << varName << "="
-         << "(*dynamic_cast<" << myLeftType->ToC() << "*>(" << leftName << "))"
+         << "(*(" << myLeftType->ToC() << "*)" << leftName << ")"
          << " " << opName << " "
-         << "(*dynamic_cast<" << myRightType->ToC() << "*>(" << rightName << "));";
+         << "(*(" << myRightType->ToC() << "*)" << rightName << ");";
   }
   else 
   { dest << "      " << typeName << " *" << varName << "(new " << typeName << "("
-         << "*dynamic_cast<" << myLeftType->ToC() << "*>(" << leftName << "), "
-         << "*dynamic_cast<" << myRightType->ToC() << "*>(" << rightName << "), ";
+         << "(*(" << myLeftType->ToC() << "*)" << leftName << "), "
+         << "(*(" << myRightType->ToC() << "*)" << rightName << "), ";
     if (myName=="+")
       dest << typeName << "::OP_ADD";
     else if (myName=="-")
@@ -1004,7 +1004,8 @@ void MpsIntVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std
 { // Add int const with name including value
   string val=ToString();
   stringstream ss;
-  ss << "libpi::Int *intval_" << val << "(new libpi::Int(\"" << val << "\", NULL));" << endl;
+  ss << "libpi::Int var_intval_" << val << "(\"" << val << "\", NULL);" << endl
+     << "libpi::Int *intval_" << val << "(&var_intval_" << val <<");" << endl;
   string def= ss.str();
   AddConstDef(def);
 } // }}}
@@ -1012,14 +1013,16 @@ void MpsFloatVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<s
 { // Add float const with name including md5 of value
   string val=ToString();
   stringstream ss;
-  ss << "libpi::Float *floatval_" << md5(val) << "(new libpi::Float(\"" << val << "\", NULL));" << endl;
+  ss << "libpi::Float var_floatval_" << md5(val) << "(\"" << val << "\", NULL);" << endl;
+  ss << "libpi::Float *floatval_" << md5(val) << "(&var_floatval_" << md5(val) << ");" << endl;
   string def=ss.str();
   AddConstDef(def);
 } // }}}
 void MpsStringVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
 { // Add string const with name including md5 of value
   stringstream ss;
-  ss << "libpi::String *stringval_" << md5(myValue) << "(new libpi::String(\"" << stuff_string(myValue) << "\", NULL));" << endl;
+  ss << "libpi::String var_stringval_" << md5(myValue) << "(\"" << stuff_string(myValue) << "\", NULL);" << endl;
+  ss << "libpi::String *stringval_" << md5(myValue) << "(&var_stringval_" << md5(myValue) << ");" << endl;
   string def=ss.str();
   AddConstDef(def);
 } // }}}
