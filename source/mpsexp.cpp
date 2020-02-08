@@ -942,7 +942,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
-  if (myName=="=" || myName=="<=" || myName==">=" || myName=="!=" || myName=="<" || myName==">")
+  if (myName=="=" || myName=="<=" || myName==">=" || myName=="!=" || myName=="<" || myName==">" || myName=="or" || myName=="and")
   { string opName=myName;
     if (opName=="=")
       opName="==";
@@ -967,6 +967,8 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
       dest << typeName << "::OP_MULT";
     else if (myName=="/")
       dest << typeName << "::OP_DIV";
+    else
+      dest << typeName << "::UNKNOWN_OP_" << myName;
     dest << ",&_task->GetWorker()));" << endl;
   }
   return varName;
