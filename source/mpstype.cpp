@@ -7075,6 +7075,7 @@ TypeArg &TypeArg::operator=(const TypeArg &rhs) // {{{
   myName = rhs.myName;
   myType = rhs.myType->Copy();
   myValue = rhs.myValue->Copy();
+  return *this;
 } // }}}
 TypeArg::~TypeArg() // {{{
 {

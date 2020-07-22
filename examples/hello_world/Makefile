@@ -15,7 +15,8 @@ name = hello_world
 
 CPP = cpp
 HAPI = hapi
-Copt = -g
+Copt = -O3
+Cdbg = -g3
 CC = g++ -std=c++11
 
 default: build
@@ -29,6 +30,10 @@ build: $(name)
 $(name): $(name).cpp
 	@echo "=== Building executable from C++ code in $(name).cpp"
 	$(CC) $(Copt) $(name).cpp -o $(name) -lpi -lpthread
+
+$(name)_debug: $(name).cpp
+	@echo "=== Building executable from C++ code in $(name).cpp"
+	$(CC) $(Cdbg) $(name).cpp -o $(name)_debug -lpi_debug -lpthread
 
 $(name).cpp: $(name).pip
 	@echo "=== Compiling $(name).pip to $(name).cpp"

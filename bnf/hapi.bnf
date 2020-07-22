@@ -10,14 +10,14 @@
 # FIXME: Add expression operations (<,>,<=,>=,s1++s2,head,tail) [+,-,*,/,and,or,not,=]
 
 # Whitespace and comments are ignored
- := "[ \n\r\t][ \n\r\t]*+//[^\n]*+/\*([^*]*|\*[^/])*\*/"
+ := "[ \\n\\r\\t][ \\n\\r\\t]*+//[^\\n]*+/\\*([^*]*|\*[^/])*\\*/"
 
 # KEYWORD tokens
 & := "&"
-( := "\("
-) := "\)"
-* := "\*"
-+ := "\+"
+( := "\\("
+) := "\\)"
+* := "\\*"
++ := "\\+"
 , := ","
 - := "-"
 -> := "->"
@@ -36,7 +36,7 @@ Int := "Int"
 Float := "Float"
 %end := "%end"
 String := "String"
-[ :=_1 "\["
+[ :=_1 "\\["
 ] :=_1 "]"
 and := "and"
 as := "as"
@@ -58,26 +58,26 @@ sync := "sync"
 then := "then"
 true := "true"
 where := "where"
-{ := "\{"
+{ := "\\{"
 } := "}"
 
 # NON-KEYWORD tokens
 # Expression value domains
 int := "(~)?[0-9][0-9]*"
 float := "(~)?[0-9][0-9]*[.][0-9][0-9]*"
-string := "\"([^\"]+\\[^])*\""
+string := "\"([^\"]+\\\\[^])*\""
 
 # Names
 id   :=_1 "[a-z][a-zA-Z0-9_]*"
 lvar :=_1 "%[a-zA-Z0-9_][a-zA-Z0-9_]*"
 gvar :=_1 "$[a-zA-Z0-9_][a-zA-Z0-9_]*"
 nlvar :=_1 "#[a-zA-Z0-9_][a-zA-Z0-9_]*"
-bid  :=   "\^{1,2}[a-zA-Z0-9_][a-zA-Z0-9_]*"
+bid  :=   "\\^{1,2}[a-zA-Z0-9_][a-zA-Z0-9_]*"
 pvar :=_1 "[A-Z][a-zA-Z0-9_]*"
 
 # Term tokens
-par := "\|"
-ppar :=_1 "\|\|"
+par := "\\|"
+ppar :=_1 "\\|\\|"
 COLON := ":"
 host := "HOST"
 hostheader := "HOSTHEADER"

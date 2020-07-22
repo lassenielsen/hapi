@@ -47,6 +47,7 @@ MpsEvent &MpsEvent::operator=(const MpsEvent &rhs) // {{{
   myMaxpid = rhs.myMaxpid;
   myPid = rhs.myPid;
   myName = rhs.myName;
+  return *this;
 } // }}}
 string MpsEvent::ToString() const // {{{
 {

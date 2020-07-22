@@ -85,6 +85,7 @@ MpsFunction &MpsFunction::operator=(const MpsFunction &rhs) // {{{
     myStateTypes.push_back((*it)->Copy());
   for (vector<MpsMsgType*>::const_iterator it=rhs.GetTypes().begin(); it!=rhs.GetTypes().end(); ++it)
     myTypes.push_back((*it)->Copy());
+  return *this;
 } // }}}
 const string &MpsFunction::GetName() const // {{{
 { return myName;

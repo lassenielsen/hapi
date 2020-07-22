@@ -1096,14 +1096,14 @@ void CountHypConnectives(const vector<const MpsExp*> &hyps, int &ands, int &ors,
     CountConnectives(hyps[i],ands,ors,nots);
   return;
 } // }}}
-double gettime() // {{{
-{ struct timeb tb;
-  ftime(&tb);
-  double result = tb.millitm;
-  result /= 1000;
-  result+= (tb.time % (60*60));
-  return result;
-} // }}}
+//double gettime() // {{{
+//{ struct timeb tb;
+//  ftime(&tb);
+//  double result = tb.millitm;
+//  result /= 1000;
+//  result+= (tb.time % (60*60));
+//  return result;
+//} // }}}
 bool MpsExp::ValidExp(vector<const MpsExp*> hyps) const // {{{
 {
 //  // STATISTICS {{{
