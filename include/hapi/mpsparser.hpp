@@ -69,6 +69,7 @@ namespace hapi
       static void Targ(const dpl::parsetree *tree, std::vector<std::string> &names, std::vector<MpsMsgType*> &types, std::vector<MpsExp*> &values);
       static void Targs(const dpl::parsetree *tree, std::vector<TypeArg> &dest);
       static void Targs(const dpl::parsetree *tree, std::vector<std::string> &names, std::vector<MpsMsgType*> &types, std::vector<MpsExp*> &values);
+      static bool Modal(const dpl::parsetree *tree);
 
       // DOCUMENTATION: Pi {{{
       /*!

@@ -462,6 +462,7 @@ string MpsTerm::MakeC() const // {{{
     << "{ libpi::task::Worker *worker=(libpi::task::Worker*)arg;\n"
     << "  worker->Work();\n"
     << "  delete worker;\n"
+    << "  return NULL;\n"
     << "} // }}}\n"
     << "inline void _start_workers() // {{{\n"
     << "{ pthread_t x[libpi::task::Worker::TargetTasks];\n"

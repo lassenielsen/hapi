@@ -91,15 +91,7 @@ MpsTerm *MpsParser::PiAct(const parsetree *tree, MpsTerm *succ) // {{{
     delete succ;
     return result;
   } // }}}
-  else if (tree->Case() == "piact_trcv") // id >> nlvar ; {{{
-  { MpsTerm *result = new MpsRcvType(tree->Child(0)->Token().Content(),
-                                     tree->Child(2)->Token().Content(),
-                                     *succ,
-                                     false);
-    delete succ;
-    return result;
-  } // }}}
-  else if (tree->Case() == "piact_ltrcv") // id >> lvar ; {{{
+  else if (tree->Case() == "piact_trcv") // id >> avar ; {{{
   { MpsTerm *result = new MpsRcvType(tree->Child(0)->Token().Content(),
                                      tree->Child(2)->Token().Content(),
                                      *succ,
@@ -535,17 +527,10 @@ MpsGlobalType *MpsParser::Gact(const parsetree *tree, MpsGlobalType *succ) { // 
     delete succ;
     return result;
   } // }}}
-  if (tree->Case() == "gact_nltmsg") // int : nlvar ; {{{
-  { 
+  if (tree->Case() == "gact_tmsg") // int : avar Modal ; {{{
+  { bool linear=Modal(tree->Child(3));
     int from = stoi(tree->Child(0)->Token().Content());
-    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ, false);
-    delete succ;
-    return result;
-  } // }}}
-  if (tree->Case() == "gact_ltmsg") // int : lvar ; {{{
-  { 
-    int from = stoi(tree->Child(0)->Token().Content());
-    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ, true);
+    MpsGlobalType *result = new MpsGlobalTypeMsgType(from,tree->Child(2)->Token().Content(), *succ, linear);
     delete succ;
     return result;
   } // }}}
@@ -665,27 +650,15 @@ MpsLocalType *MpsParser::Lact(const parsetree *tree, MpsLocalType *succ) // {{{
     delete assertion;
     return result;
   } // }}}
-  else if (tree->Case() == "lact_nltsnd") //  << nlvar ; {{{
-  {
-    MpsLocalType *result = new MpsLocalTypeSendType(tree->Child(1)->Token().Content(),*succ,false);
+  else if (tree->Case() == "lact_tsnd") //  << avar Modal ; {{{
+  { bool linear=Modal(tree->Child(2));
+    MpsLocalType *result = new MpsLocalTypeSendType(tree->Child(1)->Token().Content(),*succ,linear);
     delete succ;
     return result;
   } // }}}
-  else if (tree->Case() == "lact_nltrcv") //  >> nlvar ; {{{
-  {
-    MpsLocalType *result = new MpsLocalTypeRcvType(tree->Child(1)->Token().Content(),*succ,false);
-    delete succ;
-    return result;
-  } // }}}
-  else if (tree->Case() == "lact_ltsnd") //  << lvar ; {{{
-  {
-    MpsLocalType *result = new MpsLocalTypeSendType(tree->Child(1)->Token().Content(),*succ,true);
-    delete succ;
-    return result;
-  } // }}}
-  else if (tree->Case() == "lact_ltrcv") //  >> lvar ; {{{
-  {
-    MpsLocalType *result = new MpsLocalTypeRcvType(tree->Child(1)->Token().Content(),*succ,true);
+  else if (tree->Case() == "lact_trcv") //  >> avar Modal ; {{{
+  { bool linear=Modal(tree->Child(2));
+    MpsLocalType *result = new MpsLocalTypeRcvType(tree->Child(1)->Token().Content(),*succ,linear);
     delete succ;
     return result;
   } // }}}
@@ -795,8 +768,9 @@ MpsMsgType *MpsParser::Mtype(const parsetree *tree) // {{{
 
     return result;
   } // }}}
-  else if (tree->Case() == "mtype_nlvar") // nlvar {{{
-  { return new MpsVarMsgType(tree->Child(0)->Token().Content());
+  else if (tree->Case() == "mtype_avar") // avar Modal {{{
+  { bool linear=Modal(tree->Child(1));
+    return new MpsVarMsgType(tree->Child(0)->Token().Content(), linear);
   } // }}}
   else if (tree->Case() == "mtype_ltype") // Ltype ( int of Participants ) {{{
   {
@@ -1402,6 +1376,15 @@ void MpsParser::Targs(const parsetree *tree, vector<string> &names, vector<MpsMs
   } // }}}
 
   throw string("Unknown Targs constructor: ") + tree->Type() + "." + tree->Case();
+} // }}}
+bool MpsParser::Modal(const parsetree *tree) // {{{
+{
+  if (tree->Case() == "mod_lin") // linear
+    return true;
+  else if (tree->Case()== "mod_alin") //  alinear
+    return false;
+
+  throw string("Unknown Modal constructor: ") + tree->Type() + "." + tree->Case();
 } // }}}
 
 MpsTerm *MpsParser::Pi(const std::string &str) // {{{

@@ -1,0 +1,94 @@
+#pragma once
+#define $abslinlist \
+  2: #elt linear; \
+  $linlist(#elt)
+#define $linlist(_elt) \
+  rec $linlist; \
+  2->1 \
+  {^length: \
+    1->2: Int; \
+    $linlist; \
+   ^cons: \
+    2->1: _elt; \
+    $linlist; \
+   ^snoc: \
+    2->1: _elt; \
+    $linlist; \
+   ^pop: \
+    1->2 \
+    {^nil: \
+      $end; \
+     ^cons: \
+      1->2: _elt; \
+      $linlist; \
+    } \
+   ^append: \
+    2->1: $linlist;(2 of 1 pure,2); \
+    $linlist; \
+   ^takeover: \
+    2->1: $linlist;(1 of 1 pure,2); \
+    $end; \
+  }
+
+global $abslinlist linlist(1 pure,2);
+local pure service LinList(linlist (1 of 2) s)
+( s>>#elt;
+  local pure Nil($linlist(#elt)(1 of 1 pure, 2) this)
+  ( global pure Cons(#elt head, $linlist(#elt)(2 of 1 pure, 2) tail, $linlist(#elt)(1 of 1 pure,2) this)
+    ( this[2]>>
+      {^length:
+        tail[1]<<^length;
+        tail[1]>>l;
+        this[2]<<l+1;
+        Cons(head,tail,this);
+       ^cons:
+        this[2]>>h;
+        global $linlist(#elt) l1, l2(1 pure,2);
+        Cons(h,l2,this);
+        |
+        Cons(head,tail,l1);
+       ^snoc:
+        this[2]>>h;
+        tail[1]<<^snoc<<h;
+        Cons(head,tail,this);
+       ^pop:
+        this[2]<<^cons<<head;
+        tail[1]<<^takeover<<this;
+       ^append:
+        this[2]>>l;
+        tail[1]<<^append<<l;
+        Cons(head,tail,this);
+       ^takeover:
+        this[2]>>that;
+        Cons(head,tail,that);
+      }
+    )
+    this[2]>>
+    {^length:
+      this[2]<<0;
+      Nil(this);
+     ^cons:
+      this[2]>>head;
+      global $linlist(#elt) l1,l2(1 pure,2);
+      Cons(head,l2,this);
+      |
+      Nil(l1);
+     ^snoc:
+      this[2]>>head;
+      global $linlist(#elt) l1,l2(1 pure,2);
+      Cons(head,l2,this);
+      |
+      Nil(l1);
+     ^pop:
+      this[2]<<^nil;
+     ^append:
+      this[2]>>l;
+      l[1]<<^takeover<<this;
+     ^takeover:
+      this[2]>>that;
+      Nil(that);
+    }
+  )
+  Nil(s);
+)
+|

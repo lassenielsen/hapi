@@ -884,7 +884,7 @@ class MpsMsgNoType : public MpsMsgType // {{{
 class MpsVarMsgType : public MpsMsgType // {{{
 {
   public:
-    MpsVarMsgType(const std::string &name);
+    MpsVarMsgType(const std::string &name, bool linear);
     virtual ~MpsVarMsgType();
     MpsVarMsgType *Copy() const;
     bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
@@ -909,9 +909,11 @@ class MpsVarMsgType : public MpsMsgType // {{{
     std::string ToC() const;
 
     const std::string &Name() const { return myName; }
+    bool IsLinear() const { return myLinear; }
 
   private:
     std::string myName;
+    bool myLinear;
 }; // }}}
 class MpsIntMsgType : public MpsMsgType // {{{
 {

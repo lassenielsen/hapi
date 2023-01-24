@@ -1,0 +1,16 @@
+#pragma once
+#include<callable.pi>
+global $callable(Int,Int) stdsucc_Int(1 pure,2);
+local pure service StdSucc_Int(stdsucc_Int (1 of 2) s)
+( local pure X($callable(Int,Int)(1 of 1 pure,2) this)
+  ( this[2]>>
+    {^call:
+      this[2]>>n;
+      this[2]<<n+1;
+      X(this);
+     ^end:
+    }
+  )
+  X(s);
+)
+|

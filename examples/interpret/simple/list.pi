@@ -98,9 +98,9 @@ local pure service NIL(list (1 of 2) this) // {{{
   myList[1]<<^Lookup << 2;  // Retrieve element with index 2
   myList[1]>>               // Returns ^SOME, 5
   {^NONE: myList[1]<<^Delete;
-          //c=new console(2 of 2); c[1]<<^PutString<<"ERROR: Returned NONE" << ^Stop;
+          //c=new console(2 of 2); c[1]<<^str<<"ERROR: Returned NONE" << ^nl << ^end;
    ^SOME: myList[1]>>val; myList[1]<<^Delete;
           //if val=5
-          //then c=new console(2 of 2); c[1]<<^PutString<<"SUCCESS"<<^Stop;
-          //else c=new console(2 of 2); c[1]<<^PutString<<"ERROR: Did not return 5"<<^Stop;
+          //then c=new console(2 of 2); c[1]<<^str<<"SUCCESS"<<^nl<<^end;
+          //else c=new console(2 of 2); c[1]<<^str<<"ERROR: Did not return 5"<<^nl<<^end;
   }

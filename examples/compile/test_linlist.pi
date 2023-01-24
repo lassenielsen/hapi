@@ -1,0 +1,63 @@
+#include<console.pi>
+#include<struct/list.pi>
+#include<struct/linlist.pi>
+#include<callable.pi>
+#include<succ.pi>
+#include<math/fib.pi>
+
+global PrintIntList($list(Int)(2 of 1 pure,2) l)
+( c=new console(2 of 2);
+  c[1]<<^str<<"[";
+  local X($list(Int)(2 of 1 pure,2) l, $console(2 of 1,2) c)
+  ( l[1]<<^pop;
+    l[1]>>
+    {^cons:
+      l[1]>>v>>tail;
+      c[1]<<^int<<v<<^str<<", ";
+      X(tail,c);
+     ^nil:
+      c[1]<<^str<<"]"<<^nl<<^end;
+    }
+  )
+  X(l,c);
+)
+global PrintIntLists($linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2) l)
+( l[1]<<^pop;
+  l[1]>>
+  {^nil:
+   ^cons:
+    l[1]>>elt;
+    ( PrintIntList(elt);
+    | PrintIntLists(l);
+    )
+  }
+)
+
+llist=new linlist(2 of 2);
+llist<<$list(Int)(2 of 1 pure,2);
+
+ilist1=new range(2 of 2);
+ilist1<<Int;
+isucc=new stdsucc_Int(2 of 2);
+iorder=new stdorder_Int(2 of 2);
+ilist1[1]<<isucc<<iorder<<1<<100;
+ilist1[1]<<^apply<<fib;
+llist[1]<<^cons<<ilist1;
+
+ilist2=new range(2 of 2);
+ilist2<<Int;
+isucc=new stdsucc_Int(2 of 2);
+iorder=new stdorder_Int(2 of 2);
+ilist2[1]<<isucc<<iorder<<101<<200;
+ilist2[1]<<^apply<<fib;
+llist[1]<<^cons<<ilist2;
+
+ilist3=new range(2 of 2);
+ilist3<<Int;
+isucc=new stdsucc_Int(2 of 2);
+iorder=new stdorder_Int(2 of 2);
+ilist3[1]<<isucc<<iorder<<201<<300;
+ilist3[1]<<^apply<<fib;
+llist[1]<<^cons<<ilist3;
+
+PrintIntLists(llist);
