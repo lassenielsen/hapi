@@ -176,6 +176,16 @@ MpsTerm *MpsSelect::ESubst(const string &source, const MpsExp &dest) const // {{
   delete newSucc;
   return result;
 } // }}}
+MpsTerm *MpsSelect::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MSubst(source,dest);
+  MpsTerm *result = new MpsSelect(myChannel, myLabel, *newSucc, GetFinal());
+
+  // Clean Up
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsTerm *MpsSelect::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);

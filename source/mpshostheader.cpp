@@ -103,6 +103,15 @@ MpsHostHeader *MpsHostHeader::ESubst(const string &source, const MpsExp &dest) c
 
   return result;
 } // }}}
+MpsHostHeader *MpsHostHeader::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MSubst(source,dest);
+  MpsHostHeader *result = new MpsHostHeader(myHeader, *newSucc);
+  // Clean up
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsHostHeader *MpsHostHeader::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);

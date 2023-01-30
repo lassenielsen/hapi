@@ -331,6 +331,23 @@ MpsTerm *MpsSync::ESubst(const string &source, const MpsExp &dest) const // {{{
 
   return result;
 } // }}}
+MpsTerm *MpsSync::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  // GSubst each branch
+  map<string, MpsTerm*> newBranches;
+  for (map<string,MpsTerm*>::const_iterator it=myBranches.begin(); it!=myBranches.end(); ++it)
+  {
+    MpsTerm *newBranch = it->second->MSubst(source,dest);
+    newBranches[it->first] = newBranch;
+  }
+
+  MpsTerm *result = new MpsSync(myMaxpid, mySession, newBranches, myAssertions);
+
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
 MpsTerm *MpsSync::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   // GSubst each branch

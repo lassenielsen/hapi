@@ -1821,9 +1821,11 @@ string MpsGlobalSyncType::ToString(const string &indent) const// {{{
 } // }}}
 string MpsGlobalTypeMsgType::ToString(const string &indent) const// {{{
 {
-  string result
-    = int2string(mySender) + ":" + myDest + ";\n"
-    + indent + mySucc->ToString(indent);
+  string result = int2string(mySender) + ":" + myDest;
+  if (IsLinear())
+    result += " linear";
+  result += ";\n"
+          + indent + mySucc->ToString(indent);
   return result;
 } // }}}
 
@@ -1930,9 +1932,11 @@ string MpsGlobalSyncType::ToTex(int indent, int sw) const// {{{
 } // }}}
 string MpsGlobalTypeMsgType::ToTex(int indent, int sw) const// {{{
 {
-  string result
-    = ToTex_PP(mySender) + ":" + ToTex_Var(myDest) + ";\\newline\n"
-    + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
+  string result = ToTex_PP(mySender) + ":" + ToTex_Var(myDest);
+  if (IsLinear())
+  result += " " + ToTex_KW("linear");
+  result += ";\\newline\n"
+          + ToTex_Hspace(indent,sw) + mySucc->ToTex(indent,sw);
   return result;
 } // }}}
 
@@ -5031,13 +5035,19 @@ string MpsLocalSyncType::ToString(const string &indent) const // {{{
 } // }}}
 string MpsLocalTypeRcvType::ToString(const string &indent) const // {{{
 {
-  string result = string(" >> ") + myDest + "\n"
+  string result = string(" >> ") + myDest;
+  if (IsLinear())
+    result += " linear";
+  result += "\n"
     + indent + mySucc->ToString(indent);
   return result;
 } // }}}
 string MpsLocalTypeSendType::ToString(const string &indent) const // {{{
 {
-  string result = string(" << ") + myDest + "\n"
+  string result = string(" << ") + myDest;
+  if (IsLinear())
+    result += " linear";
+  result += "\n"
     + indent + mySucc->ToString(indent);
   return result;
 } // }}}

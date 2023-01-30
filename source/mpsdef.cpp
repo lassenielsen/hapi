@@ -443,6 +443,30 @@ MpsTerm *MpsDef::ESubst(const string &source, const MpsExp &dest) const // {{{
   DeleteVector(newStateTypes);
   return result;
 } // }}}
+MpsTerm *MpsDef::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MSubst(source,dest);
+  MpsTerm *newBody = myBody->MSubst(source,dest);
+
+  vector<MpsMsgType*> newStateTypes;
+  newStateTypes.clear();
+  for (vector<MpsMsgType*>::const_iterator type=myStateTypes.begin(); type!=myStateTypes.end(); ++type)
+    newStateTypes.push_back((*type)->MSubst(source,dest));
+  vector<MpsMsgType*> newTypes;
+  newTypes.clear();
+  for (vector<MpsMsgType*>::const_iterator type=myTypes.begin(); type!=myTypes.end(); ++type)
+    newTypes.push_back((*type)->MSubst(source,dest));
+  
+  MpsTerm *result = new MpsDef(myName,myArgs,newTypes,myStateArgs,newStateTypes,*newBody,*newSucc,myPure);
+
+  // Clean Up
+  DeleteVector(newStateTypes);
+  DeleteVector(newTypes);
+  delete newBody;
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsTerm *MpsDef::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);

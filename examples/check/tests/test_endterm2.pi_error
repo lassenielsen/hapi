@@ -1,0 +1,8 @@
+#define $type \
+  2:#elt linear; \
+  2->1:#elt; \
+  $end;
+global $type a(1,2);
+s=new a(1 of 2);
+s>>#t;
+s[2]>>x;

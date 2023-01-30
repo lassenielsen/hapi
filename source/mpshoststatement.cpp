@@ -136,6 +136,21 @@ MpsHostStatement *MpsHostStatement::ESubst(const string &source, const MpsExp &d
 
   return result;
 } // }}}
+MpsHostStatement *MpsHostStatement::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MSubst(source,dest);
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator tit=myTypes.begin(); tit!=myTypes.end(); ++tit)
+    newTypes.push_back((*tit)->MSubst(source,dest));
+
+  MpsHostStatement *result = new MpsHostStatement(myHostParts, myExpParts, *newSucc,newTypes, myPure);
+
+  // Clean up
+  delete newSucc;
+  DeleteVector(newTypes);
+
+  return result;
+} // }}}
 MpsHostStatement *MpsHostStatement::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);

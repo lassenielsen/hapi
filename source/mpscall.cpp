@@ -293,12 +293,25 @@ MpsTerm *MpsCall::ESubst(const string &source, const MpsExp &dest) const // {{{
   DeleteVector(newStateTypes);
   return result;
 } // }}}
-MpsTerm *MpsCall::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
+MpsTerm *MpsCall::MSubst(const string &source, const MpsMsgType &dest) const // {{{
 {
+  vector<MpsMsgType*> newTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myTypes.begin();it!=myTypes.end();++it)
+    newTypes.push_back((*it)->MSubst(source,dest));
+  vector<MpsMsgType*> newStateTypes;
+  for (vector<MpsMsgType*>::const_iterator it=myStateTypes.begin();it!=myStateTypes.end();++it)
+    newStateTypes.push_back((*it)->MSubst(source,dest));
+  MpsTerm *result = new MpsCall(myName,myArgs,myState,newTypes,newStateTypes);
+  DeleteVector(newTypes);
+  DeleteVector(newStateTypes);
+  return result;
+} // }}}
+MpsTerm *MpsCall::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
+{ // FIXME: SUBST IN TYPES
   return Copy();
 } // }}}
 MpsTerm *MpsCall::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
-{
+{ // FIXME: SUBST IN TYPES
   return Copy();
 } // }}}
 set<string> MpsCall::FPV() const // {{{

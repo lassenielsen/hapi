@@ -148,6 +148,15 @@ MpsTerm *MpsCond::ESubst(const string &source, const MpsExp &dest) const // {{{
   delete newFalseBranch;
   return result;
 } // }}}
+MpsTerm *MpsCond::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsTerm *newTrueBranch = myTrueBranch->MSubst(source,dest);
+  MpsTerm *newFalseBranch = myFalseBranch->MSubst(source,dest);
+  MpsCond *result = new MpsCond(*myCond, *newTrueBranch, *newFalseBranch);
+  delete newTrueBranch;
+  delete newFalseBranch;
+  return result;
+} // }}}
 MpsTerm *MpsCond::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newTrueBranch = myTrueBranch->GSubst(source,dest,args);

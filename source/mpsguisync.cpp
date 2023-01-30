@@ -656,6 +656,49 @@ MpsGuiSync *MpsGuiSync::ESubst(const string &source, const MpsExp &dest) const /
 
   return result;
 } // }}}
+MpsGuiSync *MpsGuiSync::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  map<string, inputbranch> newBranches;
+  newBranches.clear();
+  // GSubst each branch
+  for (map<string,inputbranch>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  {
+    inputbranch newBranch;
+    newBranch.term = it->second.term->MSubst(source,dest);
+    newBranch.assertion = it->second.assertion->Copy();
+    newBranch.names = it->second.names;
+    newBranch.args = it->second.args;
+    newBranch.types.clear();
+    for (vector<MpsMsgType*>::const_iterator type=it->second.types.begin(); type!=it->second.types.end(); ++type)
+      newBranch.types.push_back((*type)->MSubst(source,dest));
+    newBranch.values.clear();
+    for (vector<MpsExp*>::const_iterator value=it->second.values.begin(); value!=it->second.values.end(); ++value)
+      newBranch.values.push_back((*value)->Copy());
+
+    newBranches[it->first] = newBranch;
+  }
+  MpsGuiSync *result = new MpsGuiSync(myMaxpid, mySession, myPid, newBranches);
+
+  // Clean up
+  while (newBranches.size() > 0)
+  {
+    delete newBranches.begin()->second.term;
+    delete newBranches.begin()->second.assertion;
+    while (newBranches.begin()->second.types.size()>0)
+    {
+      delete *newBranches.begin()->second.types.begin();
+      newBranches.begin()->second.types.erase(newBranches.begin()->second.types.begin());
+    }
+    while (newBranches.begin()->second.values.size()>0)
+    {
+      delete *newBranches.begin()->second.values.begin();
+      newBranches.begin()->second.values.erase(newBranches.begin()->second.values.begin());
+    }
+    newBranches.erase(newBranches.begin());
+  }
+
+  return result;
+} // }}}
 MpsGuiSync *MpsGuiSync::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   map<string, inputbranch> newBranches;

@@ -235,6 +235,20 @@ MpsTerm *MpsBranch::ESubst(const string &source, const MpsExp &dest) const // {{
   }
   return result;
 } // }}}
+MpsTerm *MpsBranch::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  map<string, MpsTerm*> newBranches;
+  newBranches.clear();
+  // GSubst each branch
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+    newBranches[it->first] = it->second->MSubst(source,dest);
+  MpsTerm *result = new MpsBranch(myChannel, newBranches, GetFinalBranches());
+
+  // Clean up
+  DeleteMap(newBranches);
+
+  return result;
+} // }}}
 MpsTerm *MpsBranch::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   map<string, MpsTerm*> newBranches;

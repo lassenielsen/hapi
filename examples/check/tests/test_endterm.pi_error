@@ -1,0 +1,5 @@
+#define $type \
+  2->1:Bool; \
+  $end;
+global $type a(1,2);
+s=new a(1 of 2);

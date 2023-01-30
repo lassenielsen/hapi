@@ -101,7 +101,10 @@ void *MpsSnd::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
     }
   }
   // If delegating remove delegated session
+  const MpsVarMsgType *varMsgType=dynamic_cast<const MpsVarMsgType*>(sndType->GetMsgType());
   if (dynamic_cast<const MpsDelegateMsgType*>(sndType->GetMsgType())!=NULL)
+    newGamma.erase(newGamma.find(myExp->ToString()));
+  else if (varMsgType!=NULL && varMsgType->IsLinear())
     newGamma.erase(newGamma.find(myExp->ToString()));
   // Check rest of program
   children["succ"]=mySucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
@@ -193,6 +196,18 @@ MpsTerm *MpsSnd::ESubst(const string &source, const MpsExp &dest) const // {{{
   delete newType;
   delete newSucc;
   delete newExp;
+  return result;
+} // }}}
+MpsTerm *MpsSnd::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MSubst(source,dest);
+  MpsMsgType *newType = GetMsgType().MSubst(source,dest);
+  MpsTerm *result = new MpsSnd(myChannel, *myExp, *newSucc, *newType, GetFinal());
+
+  // Clean Up
+  delete newType;
+  delete newSucc;
+
   return result;
 } // }}}
 MpsTerm *MpsSnd::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{

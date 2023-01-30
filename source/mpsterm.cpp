@@ -41,7 +41,8 @@ void* MpsTerm::TDCompile(tdc_pre pre, // {{{
                          const std::string &curPure,
                          PureState pureState,
                          bool checkPure)
-{ MpsTerm *tmp=pre(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure);
+{ // DEBUG cout << PrintTypeError("MpsEnd::TDCompile",*this,Theta,Gamma,Omega) << endl;
+  MpsTerm *tmp=pre(this,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure);
   //try
   { void *result=tmp->TDCompileMain(pre,post,error,Theta,Gamma,Omega,pureStack,curPure,pureState,checkPure);
     if (tmp!=NULL && tmp!=this)

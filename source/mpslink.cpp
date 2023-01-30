@@ -215,6 +215,16 @@ MpsTerm *MpsLink::ESubst(const string &source, const MpsExp &dest) const // {{{
   delete newSucc;
   return result;
 } // }}}
+MpsTerm *MpsLink::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MSubst(source,dest);
+  MpsTerm *result = new MpsLink(myChannel,mySession,myPid,myMaxpid,*newSucc, myPure);
+
+  // Clean Up
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsTerm *MpsLink::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);

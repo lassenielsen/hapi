@@ -318,6 +318,8 @@ class MpsTerm // {{{
                             const std::vector<std::string> &stateargs) const = 0;
     //! Expression variable substitution
     virtual MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const = 0;
+    //! Messagetype variable substitution
+    virtual MpsTerm *MSubst(const std::string &source, const MpsMsgType &dest) const = 0;
     //! Global type variable substitution
     virtual MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const = 0;
     //! Local type variable substitution

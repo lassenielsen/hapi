@@ -36,6 +36,7 @@ class MpsNu : public MpsTerm // {{{
                     const std::vector<std::pair<int,int> > &argpids,
                     const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsTerm *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     std::set<std::string> FPV() const;

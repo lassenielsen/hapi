@@ -70,14 +70,16 @@ void *MpsPar::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
   for (MpsMsgEnv::const_iterator var=Gamma.begin(); var!=Gamma.end(); ++var)
   {
     const MpsDelegateMsgType *delType=dynamic_cast<const MpsDelegateMsgType*>(var->second);
-    if (delType==NULL) // Is not session type
+    const MpsVarMsgType *mvarType=dynamic_cast<const MpsVarMsgType*>(var->second);
+    if (delType==NULL && (mvarType==NULL || !mvarType->IsLinear())) // Is not session or linear type
     { leftGamma[var->first]=var->second;
       rightGamma[var->first]=var->second;
     }
-    else
+    else if (delType!=NULL)
     { MpsLocalType *localDelType=delType->CopyLocalType();
       bool isDone=localDelType->IsDone();
       delete localDelType;
+
       if (leftSessions.find(var->first)!=leftSessions.end())
       {
         leftGamma[var->first]=var->second;
@@ -89,6 +91,16 @@ void *MpsPar::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
         rightGamma[var->first]=var->second;
         if (!isDone)
           myLeftFinal.push_back(var->first);
+      }
+    }
+    else // mvarType!=NULL and mvarType->IsLinear
+    { if (leftSessions.find(var->first)!=leftSessions.end())
+      { leftGamma[var->first]=var->second;
+        myRightFinal.push_back(var->first);
+      }
+      else
+      { rightGamma[var->first]=var->second;
+        myLeftFinal.push_back(var->first);
       }
     }
   }
@@ -374,6 +386,18 @@ MpsTerm *MpsPar::ESubst(const string &source, const MpsExp &dest) const // {{{
   MpsTerm *result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal()); // Combine substituted terms
   delete newLeft;
   delete newRight;
+  return result;
+} // }}}
+MpsTerm *MpsPar::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsTerm *newLeft = myLeft->MSubst(source,dest); // Substitute left term
+  MpsTerm *newRight = myRight->MSubst(source,dest); // Substitute right term
+  MpsTerm *result = new MpsPar(*newLeft, *newRight, GetLeftFinal(), GetRightFinal()); // Combine substituted terms
+
+  // Clean Up
+  delete newLeft;
+  delete newRight;
+
   return result;
 } // }}}
 MpsTerm *MpsPar::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{

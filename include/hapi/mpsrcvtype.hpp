@@ -5,7 +5,10 @@
 namespace hapi {
 // DOCUMENTATION: MpsRcvType {{{
 /*!
- * MpsRcvType is a message-receiving process.
+ * MpsRcvType is a no-action process binding an abstract type parameter that
+ * can be used in the session.
+ *
+ * This corresponds to a parametric polymorphic type in functional programming.
  */
 // }}}
 class MpsRcvType : public MpsTerm // {{{
@@ -37,6 +40,7 @@ class MpsRcvType : public MpsTerm // {{{
                     const std::vector<std::pair<int,int> > &argpids,
                     const std::vector<std::string> &stateargs) const;
     MpsTerm *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsTerm *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsTerm *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
     MpsTerm *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
     std::set<std::string> FPV() const;
@@ -67,7 +71,7 @@ class MpsRcvType : public MpsTerm // {{{
   private:
     //! \brief myChannel holds the channel to send on.
     std::string mySession;
-    //! \brief myDest holds the name of the variable to be created and store the received value.
+    //! \brief myDest holds the name of the abstract type to receive.
     std::string myDest;
     //! \brief mySucc holds the actions following the message
     //! transmission.

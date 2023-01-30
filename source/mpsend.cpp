@@ -32,6 +32,11 @@ void *MpsEnd::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
       if (!sessionEqual)
         return wrap_err(this,PrintTypeError((string)"Unfinished Session: " + var->first,*this,Theta,Gamma,Omega),children);
     }
+    // Check linear msg types
+    const MpsVarMsgType *varType=dynamic_cast<const MpsVarMsgType*>(var->second);
+    if (varType!=NULL && varType->IsLinear()) // Is linear type
+    { return wrap_err(this,PrintTypeError("Terminating with linear var " + var->first,*this,Theta,Gamma,Omega),children);
+    }
   }
 
   // Wrap result
@@ -62,6 +67,10 @@ MpsTerm *MpsEnd::PSubst(const string &var, const MpsTerm &exp, const vector<stri
   return Copy();
 } // }}}
 MpsTerm *MpsEnd::ESubst(const string &source, const MpsExp &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsTerm *MpsEnd::MSubst(const string &source, const MpsMsgType &dest) const // {{{
 {
   return Copy();
 } // }}}

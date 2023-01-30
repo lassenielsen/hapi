@@ -160,6 +160,15 @@ MpsAssign *MpsAssign::ESubst(const string &source, const MpsExp &dest) const // 
   delete newSucc;
   return result;
 } // }}}
+MpsAssign *MpsAssign::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsMsgType *newType=myType->MSubst(source,dest);
+  MpsTerm *newSucc = mySucc->MSubst(source,dest);
+  MpsAssign *result = new MpsAssign(myId, *myExp, *newType, *newSucc);
+  delete newType;
+  delete newSucc;
+  return result;
+} // }}}
 MpsAssign *MpsAssign::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsMsgType *newType=myType->GSubst(source,dest,args);

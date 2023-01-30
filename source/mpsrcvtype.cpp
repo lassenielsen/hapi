@@ -63,7 +63,8 @@ void *MpsRcvType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
       newGamma[it->first]=it->second;
   }
   // Now instantiate mySession in newGamma
-  MpsLocalType *newType=rcvType->GetSucc()->MRename(rcvType->GetDest(),newDest);
+  MpsVarMsgType newDestVar(newDest,rcvType->IsLinear());
+  MpsLocalType *newType=rcvType->GetSucc()->MSubst(rcvType->GetDest(),newDestVar);
   { // Store if this is final action in session
     myFinal=newType->IsDone();
   }
@@ -73,7 +74,7 @@ void *MpsRcvType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
 
   // Check rest of program
   // Preform subst in succ
-  MpsTerm *chkSucc=mySucc->MRename(myDest,newDest);
+  MpsTerm *chkSucc=mySucc->MSubst(myDest,newDestVar);
   children["succ"] = chkSucc->TDCompile(pre,wrap,wrap_err,Theta,newGamma,Omega,pureStack,curPure,pureState,checkPure);
   delete chkSucc;
   // Clean Up
@@ -159,6 +160,24 @@ MpsTerm *MpsRcvType::ESubst(const string &source, const MpsExp &dest) const // {
   MpsTerm *newSucc=mySucc->ESubst(source,dest);
   MpsTerm *result=new MpsRcvType(newSession, myDest, *newSucc, GetFinal());
   delete newSucc;
+  return result;
+} // }}}
+MpsTerm *MpsRcvType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  if (myDest==source)
+    return Copy();
+
+  // FIXME: Check if myDest is in dest.FMV(), but requires implementation of FMV
+  // Rename myDest
+  string newDest=MpsMsgType::NewMVar(myDest);
+  MpsTerm *tmpSucc= mySucc->MRename(myDest,newDest);
+  MpsTerm *newSucc = tmpSucc->MSubst(source,dest);
+  MpsTerm *result = new MpsRcvType(mySession, myDest, *newSucc, GetFinal());
+
+  // Clean Up
+  delete tmpSucc;
+  delete newSucc;
+
   return result;
 } // }}}
 MpsTerm *MpsRcvType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{

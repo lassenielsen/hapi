@@ -143,6 +143,18 @@ MpsTerm *MpsSndType::ESubst(const string &source, const MpsExp &dest) const // {
   delete newSucc;
   return result;
 } // }}}
+MpsTerm *MpsSndType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MSubst(source,dest);
+  MpsMsgType *newType = myType->MSubst(source,dest);
+  MpsTerm *result = new MpsSndType(mySession, *newType, *newSucc, GetFinal());
+
+  // Clean Up
+  delete newType;
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsTerm *MpsSndType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);

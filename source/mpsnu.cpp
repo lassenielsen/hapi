@@ -187,6 +187,18 @@ MpsTerm *MpsNu::ESubst(const string &source, const MpsExp &dest) const // {{{
   delete newSucc;
   return result;
 } // }}}
+MpsTerm *MpsNu::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsGlobalType *newType = myType->MSubst(source,dest);
+  MpsTerm *newSucc = mySucc->MSubst(source,dest);
+  MpsTerm *result =  new MpsNu(myParticipants, myChannel, *newSucc, *newType);
+
+  // Clean Up
+  delete newType;
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsTerm *MpsNu::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsGlobalType *newType = myType->GSubst(source,dest,args);

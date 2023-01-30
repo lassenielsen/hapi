@@ -156,6 +156,16 @@ MpsGuiValue *MpsGuiValue::ESubst(const string &source, const MpsExp &dest) const
 
   return result;
 } // }}}
+MpsGuiValue *MpsGuiValue::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  MpsTerm *newSucc = mySucc->MSubst(source,dest);
+  MpsGuiValue *result = new MpsGuiValue(myMaxpid, mySession, myPid, *myName, *myValue, *newSucc);
+
+  // Clean up
+  delete newSucc;
+
+  return result;
+} // }}}
 MpsGuiValue *MpsGuiValue::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   MpsTerm *newSucc = mySucc->GSubst(source,dest,args);
