@@ -1,7 +1,4 @@
 #include<console.pi>
-#define PROCMONWAIT 0.1
-#include<debug/procmon.pi>
-#define require(x) HOST("/*",x,"*/") pure
 #include<order.pi>
 #include<struct/list.pi>
 #include<succ.pi>

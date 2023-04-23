@@ -255,11 +255,12 @@ string MpsCond::ToC(const string &taskType) const // {{{
          << "    {" << endl;
   string newName = myCond->ToC(result,"libpi::Bool");
   result << "      if (((libpi::Bool*)" << newName << ".get())->GetValue())" << endl
-         << "        goto " << trueLabel << ";" << endl
+         << "        _task->SetLabel(&&" << trueLabel << ");" << endl
          << "      else" << endl
-         << "        goto " << falseLabel << ";" << endl
-         << "    }" << endl;
-  result << "    " << trueLabel << ":" << endl
+         << "        _task->SetLabel(&&" << falseLabel << ");" << endl
+         << "    }" << endl
+         << "    goto *_task->GetLabel();" << endl
+         << "    " << trueLabel << ":" << endl
          << myTrueBranch->ToC(taskType)
          << "    " << falseLabel << ":" << endl
          << myFalseBranch->ToC(taskType);

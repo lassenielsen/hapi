@@ -354,6 +354,7 @@ class MpsLocalType // {{{
     virtual ~MpsLocalType();
     virtual MpsLocalType *Copy() const=0;
     virtual bool Equal(const MpsExp &Theta, const MpsLocalType &rhs) const=0;
+    //virtual bool Subtype(const std::vector<std::pair<MpsLocalType*,MpsLocalType*> > &pyotheses, const MpsExp &Theta, const MpsLocalType &rhs) const=0;
     //! \brief IsDone determines if the local type is equivalent to
     //! Lend.
     virtual bool IsDone() const=0;
