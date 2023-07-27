@@ -7,4 +7,4 @@ def eratosthenes(n):
       for j in range(i*i, n+1, i):
         multiples.append(j)
 
-eratosthenes(20000)
+eratosthenes(input(""))

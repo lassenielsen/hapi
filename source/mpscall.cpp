@@ -409,13 +409,17 @@ string MpsCall::ToC_prepare(const string &dest) const // {{{
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
   { string name=(*it)->ToC(result, (*tit)->ToC());
-    result << "      " << dest << "->SetStateArg" << distance(myState.begin(),it) << "(" << name << ");" << endl;
+    result << "      shared_ptr<libpi::Value> sarg" << distance(myState.begin(),it) << "(" << name << ");" << endl;
   }
   tit=myTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it, ++tit)
   { string name=(*it)->ToC(result, (*tit)->ToC());
-    result << "      " << dest << "->SetArg" << myState.size()+distance(myArgs.begin(),it) << "(" << name << ");" << endl;
+    result << "      shared_ptr<libpi::Value> arg" << distance(myArgs.begin(),it) << "(" << name << ");" << endl;
   }
+  for (size_t i=0; i<myState.size(); ++i)
+    result << "      " << dest << "->SetStateArg" << i << "( sarg" << i << ");" << endl;
+  for (size_t i=0; i<myArgs.size(); ++i)
+    result << "      " << dest << "->SetArg" << i << "( arg" << i << ");" << endl;
   result << "      " << dest << "->SetLabel(&&method_" << ToC_Name(myName) << ");" << endl;
 
   return result.str();
@@ -424,6 +428,11 @@ string MpsCall::ToC(const string &taskType) const // {{{
 { string newName = ToC_Name(MpsExp::NewVar("task")); // Create variable name foor the new state
   stringstream result;
   result << ToC_Yield()
+         << "    if (dynamic_cast<Task_" << ToC_Name(myName) << "*>(_task.get())!=NULL) // Recursive call" << endl
+         << "    { Task_" << ToC_Name(myName) << "* _taskref=(Task_" << ToC_Name(myName) << "*)_task.get();" << endl
+         << ToC_prepare("_taskref") << endl
+         << "    }" << endl
+         << "    else" << endl
          << "    { Task_" << ToC_Name(myName) << " *" << newName << " = new Task_" << ToC_Name(myName) << "();" << endl
          << "      " << newName << "->SetWorker(&_task->GetWorker());" << endl
          << ToC_prepare(newName)

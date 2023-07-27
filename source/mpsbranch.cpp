@@ -368,6 +368,10 @@ string MpsBranch::ToTex(int indent, int sw) const // {{{
 string MpsBranch::ToC(const string &taskType) const // {{{
 {
   stringstream result;
+  map<string,string> labels;
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+    labels[it->first]=ToC_Name(MpsExp::NewVar(taskType+it->first.substr(1)));
+  
   string lblRcvName = ToC_Name(MpsExp::NewVar(string("checkpoint_")+taskType));
   result
     << ToC_Yield()
@@ -384,13 +388,18 @@ string MpsBranch::ToC(const string &taskType) const // {{{
            << "    {" << endl
            << "      _task->tmp.reset();" << endl;
     if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
-      result << "    ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
-             << "    _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
+      result << "      ((libpi::Session*)_this->var_" << ToC_Name(myChannel.GetName()) << ".get())->Close(true);" << endl
+             << "      _this->var_" << ToC_Name(myChannel.GetName()) << ".reset();" << endl;
     }
-    result << it->second->ToC(taskType);
-    result << "    }" << endl;
+    result << "      _this->SetLabel(&&" << labels[it->first] << ");" << endl
+           << "    }" << endl;
   }
-  result << "    else throw string(\"Unknown branch: \")+((libpi::String*)_task->tmp.get())->GetValue();" << endl;
+  result << "    else throw string(\"Unknown branch: \")+((libpi::String*)_task->tmp.get())->GetValue();" << endl
+         << "    goto *_this->GetLabel();" << endl;
+  for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)
+  { result << labels[it->first] << ":" << endl;
+    result << it->second->ToC(taskType);
+  }
   return result.str();
 } // }}}
 string MpsBranch::ToCHeader() const // {{{

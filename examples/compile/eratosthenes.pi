@@ -36,9 +36,13 @@ global Eratosthenes($list(Int)(2 of 1 pure,2) list)
     Eratosthenes(tail);
   }
 )
+c=new console(2 of 2);
+c[1]<<^input<<^int;
+c[1]>>x;
+c[1]<<^end;
 ilist=new range(2 of 2);
 ilist<<Int;
 isucc=new stdsucc_Int(2 of 2);
 iorder=new stdorder_Int(2 of 2);
-ilist[1]<<isucc<<iorder<<2<<20000;
+ilist[1]<<isucc<<iorder<<2<<x;
 Eratosthenes(ilist);
