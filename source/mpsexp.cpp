@@ -1380,7 +1380,7 @@ bool LK_Axiom(vector<MpsExp*> &exps, set<string> pos, set<string> neg) // {{{
               return false;
           }
           else
-          { cerr << "LK_Axiom: Unknown Binary Operator " << binexp->GetOp() << endl;
+          { cerr << "LK_Axiom: Unknown Binary Operator " << negbinexp->GetOp() << endl;
             return false;
           }
         } // }}}
