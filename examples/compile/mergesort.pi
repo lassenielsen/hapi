@@ -3,89 +3,6 @@
 #include<order.pi>
 #include<succ.pi>
 
-#define $unziplistresult(_elt) \
-  1->2:$list(_elt)(2 of 1 pure,2); \
-  1->2:$list(_elt)(2 of 1 pure,2); \
-  $end;
-#define $unziplist(_elt) \
-  2->1:$list(_elt)(2 of 1 pure,2); \
-  $unziplistresult(_elt)
-#define $absunziplist \
-  2: #elt; \
-  $unziplist(#elt)
-global $absunziplist unziplist(1 pure,2);
-local pure service UnziplistService(unziplist (1 of 2) this) // {{{
-( this>>#elt;
-  local pure UnziplistSession($unziplistresult(#elt)(1 of 1 pure,2) this, $list(#elt)(2 of 1 pure,2) src, $list(#elt)(2 of 1 pure,2) dst1, $list(#elt)(2 of 1 pure,2) dst2) // {{{
-  ( src[1]<<^pop;
-    src[1]>>
-    {^nil:
-      this[2]<<dst1<<dst2;
-     ^cons:
-      src[1]>>v>>srctail;
-      dst1[1]<<^cons<<v;
-      UnziplistSession(this,srctail,dst2,dst1);
-    }
-  ) // }}}
-  this[2]>>src;
-  dst1=new list(2 of 2);
-  dst1<<#elt;
-  dst2=new list(2 of 2);
-  dst2<<#elt;
-  UnziplistSession(this,src,dst1,dst2);
-) // }}}
-|
-#define $mergelists \
-  2: #elt; \
-  2->1:$order(#elt)(2 of 1 pure,2); \
-  2->1:$list(#elt)(2 of 1 pure,2); \
-  2->1:$list(#elt)(2 of 1 pure,2); \
-  1->2:Bool; \
-  $list(#elt)
-global $mergelists mergelists(1 pure,2);
-local pure service MergelistsService(mergelists (1 of 2) this) // {{{
-( this>>#elt;
-  local pure Merge($list(#elt)(2 of 1 pure,2) src1, $list(#elt)(2 of 1 pure,2) src2, $order(#elt)(2 of 1 pure,2) cmp, 1->2:Bool;$list(#elt)(1 of 1 pure,2) this) // {{{
-  ( src1[1]<<^pop;
-    src1[1]>>
-    {^cons:
-      src1[1]>>h1>>t1;
-      src2[1]<<^pop;
-      src2[1]>>
-      {^cons:
-        src2[1]>>h2>>t2;
-        cmp[1]<<^leq<<h1<<h2;
-        cmp[1]>>leq;
-        local pure SubMerge($list(#elt)(2 of 1 pure,2) src1, $list(#elt)(2 of 1 pure,2) src2, $order(#elt)(2 of 1 pure,2) cmp, 1->2:Bool;$list(#elt)(1 of 1 pure,2) this, #elt head) // {{{
-        ( merge=new mergelists(2 of 2);
-          merge<<#elt;
-          merge[1]<<cmp<<src1<<src2;
-          merge[1]>>done;
-          this[2]<<true;
-          merge[1]<<^cons<<head<<^takeover<<this;
-        ) // }}}
-        if leq
-        then t2[1]<<^cons<<h2;
-             SubMerge(t1,t2,cmp,this,h1);
-        else t1[1]<<^cons<<h1;
-             SubMerge(t1,t2,cmp,this,h2);
-       ^nil:
-        this[2]<<true;
-        t1[1]<<^cons<<h1<<^takeover<<this;
-        cmp[1]<<^end;
-      }
-     ^nil:
-      this[2]<<true;
-      src2[1]<<^takeover<<this;
-      cmp[1]<<^end;
-    }
-  ) // }}}
-  this[2]>>cmp;
-  this[2]>>l1;
-  this[2]>>l2;
-  Merge(l1,l2,cmp,this);
-) // }}}
-|
 #define $abslistfun \
   2:#elt; \
   2->1:$order(#elt)(1 pure,2); \
@@ -96,40 +13,59 @@ global $abslistfun mergesort(1 pure,2);
 local pure service MergesortService(mergesort (1 of 2) this) // {{{
 ( this>>#elt;
   this[2]>>cmp_ch;
-  local pure MergesortSession(1->2:Bool;$list(#elt)(1 of 1 pure,2) this, $list(#elt)(2 of 1 pure,2) src)
-  ( src[1]<<^get<<1;
-    src[1]>>
-    {^val: // at least 2 elements
-      src[1]>>x;
-      unzip=new unziplist(2 of 2);
-      unzip<<#elt;
-      unzip[1]<<src;
-      unzip[1]>>src1>>src2;
-      sort1=new mergesort(2 of 2);
-      sort1<<#elt;
-      sort2=new mergesort(2 of 2);
-      sort2<<#elt;
-      sort1[1]<<cmp_ch;
-      sort1[1]<<src1;
-      sort1[1]>>done1;
-      sort2[1]<<cmp_ch;
-      sort2[1]<<src2;
-      sort2[1]>>done2;
-      merge=new mergelists(2 of 2);
-      merge<<#elt;
-      cmp=new cmp_ch(2 of 2);
-      merge[1]<<cmp<<sort1<<sort2;
-      merge[1]>>done;
-      this[2]<<true;
-      merge[1]<<^takeover<<this;
-     ^err: // less than 2 elements, hence ordered
-      src[1]>>x;
-      this[2]<<true;
-      src[1]<<^takeover<<this;
-    }
-  )
   this[2]>>src;
-  MergesortSession(this,src);
+  src[1]<<^get<<1;
+  src[1]>>
+  {^err: // Less than 2 elements - so already sorted!
+    src[1]>>msg;
+    this[2]<<true;
+    src[1]<<^takeover<<this;
+   ^val:
+    // Split
+    src[1]>>v;
+    src[1]<<^unzip;
+    src[1]>>src2;
+    // Sort parts
+    sort1=new mergesort(2 of 2);
+    sort1<<#elt;
+    sort2=new mergesort(2 of 2);
+    sort2<<#elt;
+    sort1[1]<<cmp_ch<<src;
+    sort1[1]>>done1;
+    sort2[1]<<cmp_ch<<src2;
+    sort2[1]>>done2;
+    // Merge
+    sort1[1]<<^get<<0;
+    sort1[1]>>
+    {^err:
+      sort1[1]>>msg;
+      sort1[1]<<^end;
+      this[2]<<true;
+      sort2[1]<<^takeover<<this;
+     ^val:
+      sort1[1]>>v1;
+      sort2[1]<<^get<<0;
+      sort2[1]>>
+      {^err:
+        sort2[1]>>msg;
+        sort2[1]<<^end;
+        this[2]<<true;
+        sort1[1]<<^takeover<<this;
+       ^val:
+        sort2[1]>>v2;
+        cmp=new cmp_ch(2 of 2);
+        cmp[1]<<^leq<<v1<<v2;
+        cmp[1]>>leq;
+        if leq
+        then sort1[1]<<^merge<<cmp<<sort2;
+             this[2]<<true;
+             sort1[1]<<^takeover<<this;
+        else sort2[1]<<^merge<<cmp<<sort1;
+             this[2]<<true;
+             sort2[1]<<^takeover<<this;
+      }
+    }
+  }
 ) // }}}
 |
 x=new range(2 of 2);

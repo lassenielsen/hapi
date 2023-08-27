@@ -56,6 +56,13 @@
    ^append: \
     2->1: $list;(2 of 1 pure,2); \
     $list; \
+   ^unzip: \
+    1->2: $list;(2 of 1 pure,2); \
+    $list; \
+   ^merge: \
+    2->1: $order(_elt)(2 of 1 pure,2); \
+    2->1: $list;(2 of 1 pure,2); \
+    $list; \
    ^copy: \
     1->2: $list;(2 of 1 pure,2); \
     $list; \
@@ -161,6 +168,41 @@ local pure service List(list (1 of 2) s)
         this[2]>>l;
         tail[1]<<^append<<l;
         Cons(head,tail,this);
+       ^unzip:
+        tail[1]<<^unzip;
+        tail[1]>>t;
+        this[2]<<tail;
+        Cons(head,t,this);
+       ^merge:
+        this[2]>>cmp;
+        this[2]>>that;
+        that[1]<<^get<<0;
+        that[1]>>
+        {^err:
+          that[1]>>msg;
+          that[1]<<^end;
+          cmp[1]<<^end;
+          Cons(head,tail,this);
+         ^val:
+          that[1]>>v1;
+          tail[1]<<^get<<0;
+          tail[1]>>
+          {^err:
+            tail[1]>>msg;
+            tail[1]<<^end;
+            cmp[1]<<^end;
+            Cons(head,that,this);
+           ^val:
+             tail[1]>>v2;
+             cmp[1]<<^leq<<v1<<v2;
+             cmp[1]>>res;
+             if res
+             then that[1]<<^merge<<cmp<<tail;
+                  Cons(head,that,this);
+             else tail[1]<<^merge<<cmp<<that;
+                  Cons(head,tail,this);
+          }
+        }
        ^copy:
         tail[1]<<^copy;
         tail[1]>>t;
@@ -223,6 +265,17 @@ local pure service List(list (1 of 2) s)
      ^append:
       this[2]>>l;
       l[1]<<^takeover<<this;
+     ^unzip:
+      global $list(#elt) l1,l2(1 pure,2);
+      this[2]<<l2;
+      Nil(this);
+      |
+      Nil(l1);
+     ^merge:
+      this[2]>>cmp;
+      cmp[1]<<^end;
+      this[2]>>that;
+      that[1]<<^takeover<<this;
      ^copy:
       cpy = new list(2 of 2);
       cpy<<#elt;

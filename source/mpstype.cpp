@@ -5266,8 +5266,8 @@ MpsLocalType *MpsLocalSendType::Merge(MpsLocalType &rhs) const // {{{
   }
 
   MpsLocalType *result = NULL;
-  if (not (lhsAssertion == rhsAssertion))
-    return MERGE_ERROR(*this,rhs,"MergeError");
+  if (not (*lhsAssertion == *rhsAssertion))
+    return MERGE_ERROR(*this,rhs,"Assertions differ");
   else
   { MpsLocalType *newSucc = lhsSucc->Merge(*rhsSucc);
     if (myAssertionType)
@@ -5322,8 +5322,8 @@ MpsLocalType *MpsLocalRcvType::Merge(MpsLocalType &rhs) const // {{{
   }
 
   MpsLocalType *result = NULL;
-  if (not (lhsAssertion == rhsAssertion))
-    result = MERGE_ERROR(*this,rhs,"MergeError");
+  if (not ((*lhsAssertion) == (*rhsAssertion)))
+    result = MERGE_ERROR(*this,rhs,"Assertions differ");
   else
   { MpsLocalType *newSucc = lhsSucc->Merge(*rhsSucc);
     if (myAssertionType)
@@ -5366,8 +5366,8 @@ MpsLocalType *MpsLocalForallType::Merge(MpsLocalType &rhs) const // {{{
   }
 
   MpsLocalType *result = NULL;
-  if (not (lhsAssertion == rhsAssertion))
-    result = MERGE_ERROR(*this,rhs,"MergeError");
+  if (not (*lhsAssertion == *rhsAssertion))
+    result = MERGE_ERROR(*this,rhs,"Assertions differ");
   else
   {
     MpsLocalType *succ = lhsSucc->Merge(*rhsSucc);
@@ -5405,7 +5405,7 @@ MpsLocalType *MpsLocalSelectType::Merge(MpsLocalType &rhs) const // {{{
     else if (as1!=myAssertions.end() && as2!=rhsptr->myAssertions.end() && (*as1->second)==(*as2->second))
       assertions[as1->first] = as1->second->Copy();
     else
-      assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
+      assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"Assertions differ");
   }
   MpsLocalSelectType *result = new MpsLocalSelectType(myReceiver,branches,assertions);
 
@@ -5437,12 +5437,11 @@ MpsLocalType *MpsLocalBranchType::Merge(MpsLocalType &rhs) const // {{{
       map<string,MpsExp*>::const_iterator ass1=myAssertions.find(it->first);
       map<string,MpsExp*>::const_iterator ass2=rhsptr->myAssertions.find(it->first);
       if (ass1 == myAssertions.end()) // LHS: No assertion given for branch
-        if (ass2 != rhsptr->myAssertions.end()) // RHS: Assertion given for branch
-          assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
+        assertions[it->first]=MERGE_ERROR_EXP(*this,rhs,"MergeError");
       else // LHS: Assertion given for branch
         if (ass2 == rhsptr->myAssertions.end()) // RHS: No assertion given for branch
           assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
-        else if (ass1->second == ass2->second) // Assertion on LHS and RHS is the same
+        else if (*ass1->second == *ass2->second) // Assertion on LHS and RHS is the same
           assertions[it->first] = ass1->second->Copy();
         else
           assertions[it->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
@@ -5453,6 +5452,8 @@ MpsLocalType *MpsLocalBranchType::Merge(MpsLocalType &rhs) const // {{{
       map<string,MpsExp*>::const_iterator ass1=myAssertions.find(it->first);
       if (ass1!=myAssertions.end())
         assertions[ass1->first] = ass1->second->Copy();
+      else
+        assertions[ass1->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
     }
   }
   // Insert branches from rhs not in this
@@ -5465,6 +5466,8 @@ MpsLocalType *MpsLocalBranchType::Merge(MpsLocalType &rhs) const // {{{
       map<string,MpsExp*>::const_iterator ass2=rhsptr->myAssertions.find(it2->first);
       if (ass2!=rhsptr->myAssertions.end())
         assertions[ass2->first] = ass2->second->Copy();
+      else
+        assertions[it2->first] = MERGE_ERROR_EXP(*this,rhs,"MergeError");
     }
   }
   MpsLocalBranchType *result = new MpsLocalBranchType(mySender,branches,assertions);
