@@ -1338,7 +1338,6 @@ bool LK_Axiom(vector<MpsExp*> &exps, set<string> pos, set<string> neg) // {{{
     else if (unexp!=NULL) // Expression is a unary operation {{{
     { if (unexp->GetOp()=="not") // Not expression
       {
-        
         MpsVarExp *negvarexp=dynamic_cast<MpsVarExp*>(&unexp->GetRight());
         MpsBoolVal *negvalexp=dynamic_cast<MpsBoolVal*>(&unexp->GetRight());
         MpsBinOpExp *negbinexp=dynamic_cast<MpsBinOpExp*>(&unexp->GetRight());
@@ -1380,7 +1379,7 @@ bool LK_Axiom(vector<MpsExp*> &exps, set<string> pos, set<string> neg) // {{{
               return false;
           }
           else
-          { cerr << "LK_Axiom: Unknown Binary Operator " << binexp->GetOp() << endl;
+          { cerr << "LK_Axiom: Unknown Unary subexpression " << unexp->GetRight().ToString() << endl;
             return false;
           }
         } // }}}
