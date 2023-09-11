@@ -32,6 +32,10 @@ MpsIntVal::MpsIntVal(const mpz_t &value) // {{{
   mpz_init_set(myValue,value);
   //myValue = value;
 } // }}}
+MpsUnsafeIntVal::MpsUnsafeIntVal(long int value) // {{{
+{
+  myValue = value;
+} // }}}
 MpsFloatVal::MpsFloatVal(const mpf_t &value) // {{{
 {
   mpf_init_set(myValue,value);
@@ -86,6 +90,9 @@ MpsVarExp::~MpsVarExp() // {{{
 MpsIntVal::~MpsIntVal() // {{{
 {
   mpz_clear(myValue);
+} // }}}
+MpsUnsafeIntVal::~MpsUnsafeIntVal() // {{{
+{
 } // }}}
 MpsFloatVal::~MpsFloatVal() // {{{
 {
@@ -416,6 +423,9 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
   { if (dynamic_cast<MpsIntMsgType*>(myLeftType) &&
         dynamic_cast<MpsIntMsgType*>(myRightType))
       return new MpsIntMsgType();
+    if (dynamic_cast<MpsUnsafeIntMsgType*>(myLeftType) &&
+        dynamic_cast<MpsUnsafeIntMsgType*>(myRightType))
+      return new MpsUnsafeIntMsgType();
     if (dynamic_cast<MpsFloatMsgType*>(myLeftType) &&
         dynamic_cast<MpsFloatMsgType*>(myRightType))
       return new MpsFloatMsgType();
@@ -443,6 +453,9 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
       myName=="<")
   { if (dynamic_cast<MpsIntMsgType*>(myLeftType) &&
         dynamic_cast<MpsIntMsgType*>(myRightType))
+      return new MpsBoolMsgType();
+    else if (dynamic_cast<MpsUnsafeIntMsgType*>(myLeftType) &&
+             dynamic_cast<MpsUnsafeIntMsgType*>(myRightType))
       return new MpsBoolMsgType();
     else if (dynamic_cast<MpsFloatMsgType*>(myLeftType) &&
              dynamic_cast<MpsFloatMsgType*>(myRightType))

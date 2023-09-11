@@ -141,6 +141,32 @@ class MpsIntVal : public MpsExp // {{{
     mpz_t myValue;
 
 }; // }}}
+class MpsUnsafeIntVal : public MpsExp // {{{
+{
+  public:
+    MpsUnsafeIntVal(long int value);
+    virtual ~MpsUnsafeIntVal();
+    MpsUnsafeIntVal *Copy() const;
+    MpsUnsafeIntVal *Eval() const;
+    MpsMsgType *TypeCheck(const MpsMsgEnv &Gamma);
+    bool operator==(const MpsExp &rhs) const;
+    std::set<std::string> FV() const;
+    MpsUnsafeIntVal *Rename(const std::string &src, const std::string &dst) const;
+    MpsUnsafeIntVal *Subst(const std::string &source, const MpsExp &dest) const;
+    std::string ToString() const;
+    std::string ToC(std::stringstream &dest, const std::string &typeName) const;
+    void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
+    const mpz_t &GetValue() const;
+
+    MpsExp *Negate() const;
+    MpsExp *MakeNNF(bool negate=false) const;
+    MpsExp *MakeCNF() const;
+    bool ValidOR(std::set<std::string> &lits, std::set<std::string> &neglits) const;
+    bool ValidCNF() const;
+
+  private:
+    long int myValue;
+}; // }}}
 class MpsFloatVal : public MpsExp // {{{
 {
   public:

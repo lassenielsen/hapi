@@ -842,7 +842,7 @@ class MpsMsgType // {{{
     virtual std::string ToString(const std::string &indent="") const = 0;
     virtual std::string ToTex(int indent=0, int sw=2) const = 0;
     virtual std::string ToC() const = 0;
-    virtual std::string ToCPtr() const { return std::string("shared_ptr<" + ToC() + " >"); }
+    virtual std::string ToCPtr() const { return std::string(ToC() + "*"); }
     static std::string NewMVar(std::string basename="#id");
 
     // Grammar
@@ -942,6 +942,34 @@ class MpsIntMsgType : public MpsMsgType // {{{
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
+}; // }}}
+class MpsUnsafeIntMsgType : public MpsMsgType // {{{
+{
+  public:
+    MpsUnsafeIntMsgType();
+    virtual ~MpsUnsafeIntMsgType();
+    MpsUnsafeIntMsgType *Copy() const;
+    bool Equal(const MpsExp &Theta, const MpsMsgType &rhs) const;
+    //bool operator==(const MpsMsgType &rhs) const;
+
+    std::set<std::string> FGV() const;
+    std::set<std::string> FLV() const;
+    std::set<std::string> FEV() const;
+    std::set<std::string> FMV() const;
+    MpsUnsafeIntMsgType *GRename(const std::string &source, const std::string &dest) const;
+    MpsUnsafeIntMsgType *LRename(const std::string &source, const std::string &dest) const;
+    MpsUnsafeIntMsgType *ERename(const std::string &source, const std::string &dest) const;
+    MpsUnsafeIntMsgType *MRename(const std::string &source, const std::string &dest) const;
+    MpsUnsafeIntMsgType *GSubst(const std::string &source, const MpsGlobalType &dest, const std::vector<std::string> &args) const;
+    MpsUnsafeIntMsgType *LSubst(const std::string &source, const MpsLocalType &dest, const std::vector<std::string> &args) const;
+    MpsUnsafeIntMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
+    MpsUnsafeIntMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
+    MpsUnsafeIntMsgType *RenameAll() const;
+
+    std::string ToString(const std::string &indent="") const;
+    std::string ToTex(int indent=0, int sw=2) const;
+    std::string ToC() const;
+    std::string ToCPtr() const { return ToC(); }
 }; // }}}
 class MpsFloatMsgType : public MpsMsgType // {{{
 {

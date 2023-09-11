@@ -809,6 +809,11 @@ MpsMsgType *MpsParser::Stype(const parsetree *tree) // {{{
     MpsIntMsgType *result = new MpsIntMsgType();
     return result;
   } // }}}
+  if (tree->Case() == "type_unsafeint") // Int {{{
+  {
+    MpsUnsafeIntMsgType *result = new MpsUnsafeIntMsgType();
+    return result;
+  } // }}}
   if (tree->Case() == "type_float") // Int {{{
   {
     MpsFloatMsgType *result = new MpsFloatMsgType();
@@ -1003,11 +1008,21 @@ MpsExp *MpsParser::Exp(const parsetree *tree) // {{{
   {
     mpz_t val;
     string strval=tree->Child(0)->Token().Content();
-    if (strval[0]=='"')
+    if (strval[0]=='~')
       strval[0]='-';
     mpz_init_set_str(val,strval.c_str(),10);
     MpsExp *exp=new MpsIntVal(val);
     mpz_clear(val);
+    return exp;
+  } // }}}
+  else if (tree->Case() == "exp_uint") // int {{{
+  {
+    long int val;
+    string strval=tree->Child(0)->Token().Content();
+    if (strval[0]=='~')
+      strval[0]='-';
+    val=atol(strval.c_str());
+    MpsExp *exp=new MpsUnsafeIntVal(val);
     return exp;
   } // }}}
   else if (tree->Case() == "exp_float") // float {{{

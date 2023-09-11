@@ -5802,6 +5802,9 @@ MpsVarMsgType::MpsVarMsgType(const string &name, bool linear) // {{{
 MpsIntMsgType::MpsIntMsgType() // {{{
 {
 } // }}}
+MpsUnsafeIntMsgType::MpsUnsafeIntMsgType() // {{{
+{
+} // }}}
 MpsFloatMsgType::MpsFloatMsgType() // {{{
 {
 } // }}}
@@ -5851,6 +5854,9 @@ MpsVarMsgType::~MpsVarMsgType() // {{{
 MpsIntMsgType::~MpsIntMsgType() // {{{
 {
 } // }}}
+MpsUnsafeIntMsgType::~MpsUnsafeIntMsgType() // {{{
+{
+} // }}}
 MpsFloatMsgType::~MpsFloatMsgType() // {{{
 {
 } // }}}
@@ -5892,6 +5898,10 @@ MpsVarMsgType *MpsVarMsgType::Copy() const // {{{
 MpsIntMsgType *MpsIntMsgType::Copy() const // {{{
 {
   return new MpsIntMsgType();
+} // }}}
+MpsUnsafeIntMsgType *MpsUnsafeIntMsgType::Copy() const // {{{
+{
+  return new MpsUnsafeIntMsgType();
 } // }}}
 MpsFloatMsgType *MpsFloatMsgType::Copy() const // {{{
 {
@@ -5945,6 +5955,10 @@ bool MpsVarMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {
 bool MpsIntMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
   return dynamic_cast<const MpsIntMsgType*>(&rhs) != NULL;
+} // }}}
+bool MpsUnsafeIntMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
+{
+  return dynamic_cast<const MpsUnsafeIntMsgType*>(&rhs) != NULL;
 } // }}}
 bool MpsFloatMsgType::Equal(const MpsExp &Theta, const MpsMsgType &rhs) const // {{{
 {
@@ -6044,6 +6058,10 @@ set<string> MpsIntMsgType::FGV() const // {{{
 {
   return set<string>();
 } // }}}
+set<string> MpsUnsafeIntMsgType::FGV() const // {{{
+{
+  return set<string>();
+} // }}}
 set<string> MpsFloatMsgType::FGV() const // {{{
 {
   return set<string>();
@@ -6092,6 +6110,10 @@ set<string> MpsIntMsgType::FLV() const // {{{
 {
   return set<string>();
 } // }}}
+set<string> MpsUnsafeIntMsgType::FLV() const // {{{
+{
+  return set<string>();
+} // }}}
 set<string> MpsFloatMsgType::FLV() const // {{{
 {
   return set<string>();
@@ -6137,6 +6159,10 @@ set<string> MpsVarMsgType::FEV() const // {{{
   return set<string>();
 } // }}}
 set<string> MpsIntMsgType::FEV() const // {{{
+{
+  return set<string>();
+} // }}}
+set<string> MpsUnsafeIntMsgType::FEV() const // {{{
 {
   return set<string>();
 } // }}}
@@ -6190,6 +6216,10 @@ set<string> MpsIntMsgType::FMV() const // {{{
 {
   return set<string>();
 } // }}}
+set<string> MpsUnsafeIntMsgType::FMV() const // {{{
+{
+  return set<string>();
+} // }}}
 set<string> MpsFloatMsgType::FMV() const // {{{
 {
   return set<string>();
@@ -6235,6 +6265,10 @@ MpsVarMsgType *MpsVarMsgType::GRename(const string &source, const string &dest) 
   return Copy();
 } // }}}
 MpsIntMsgType *MpsIntMsgType::GRename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsUnsafeIntMsgType *MpsUnsafeIntMsgType::GRename(const string &source, const string &dest) const // {{{
 {
   return Copy();
 } // }}}
@@ -6293,6 +6327,10 @@ MpsIntMsgType *MpsIntMsgType::LRename(const string &source, const string &dest) 
 {
   return Copy();
 } // }}}
+MpsUnsafeIntMsgType *MpsUnsafeIntMsgType::LRename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
 MpsFloatMsgType *MpsFloatMsgType::LRename(const string &source, const string &dest) const // {{{
 {
   return Copy();
@@ -6345,6 +6383,10 @@ MpsVarMsgType *MpsVarMsgType::ERename(const string &source, const string &dest) 
   return Copy();
 } // }}}
 MpsIntMsgType *MpsIntMsgType::ERename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsUnsafeIntMsgType *MpsUnsafeIntMsgType::ERename(const string &source, const string &dest) const // {{{
 {
   return Copy();
 } // }}}
@@ -6404,6 +6446,10 @@ MpsIntMsgType *MpsIntMsgType::MRename(const string &source, const string &dest) 
 {
   return Copy();
 } // }}}
+MpsUnsafeIntMsgType *MpsUnsafeIntMsgType::MRename(const string &source, const string &dest) const // {{{
+{
+  return Copy();
+} // }}}
 MpsFloatMsgType *MpsFloatMsgType::MRename(const string &source, const string &dest) const // {{{
 {
   return Copy();
@@ -6456,6 +6502,10 @@ MpsVarMsgType *MpsVarMsgType::GSubst(const string &source, const MpsGlobalType &
   return Copy();
 } // }}}
 MpsIntMsgType *MpsIntMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
+{
+  return Copy();
+} // }}}
+MpsUnsafeIntMsgType *MpsUnsafeIntMsgType::GSubst(const string &source, const MpsGlobalType &dest, const vector<string> &args) const // {{{
 {
   return Copy();
 } // }}}
@@ -6528,6 +6578,10 @@ MpsIntMsgType *MpsIntMsgType::LSubst(const string &source, const MpsLocalType &d
 {
   return Copy();
 } // }}}
+MpsUnsafeIntMsgType *MpsUnsafeIntMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
+{
+  return Copy();
+} // }}}
 MpsFloatMsgType *MpsFloatMsgType::LSubst(const string &source, const MpsLocalType &dest, const vector<string> &args) const // {{{
 {
   return Copy();
@@ -6594,6 +6648,10 @@ MpsVarMsgType *MpsVarMsgType::ESubst(const string &source, const MpsExp &dest) c
   return Copy();
 } // }}}
 MpsIntMsgType *MpsIntMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
+{
+  return Copy();
+} // }}}
+MpsUnsafeIntMsgType *MpsUnsafeIntMsgType::ESubst(const string &source, const MpsExp &dest) const // {{{
 {
   return Copy();
 } // }}}
@@ -6667,6 +6725,10 @@ MpsIntMsgType *MpsIntMsgType::MSubst(const string &source, const MpsMsgType &des
 {
   return Copy();
 } // }}}
+MpsUnsafeIntMsgType *MpsUnsafeIntMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
+{
+  return Copy();
+} // }}}
 MpsFloatMsgType *MpsFloatMsgType::MSubst(const string &source, const MpsMsgType &dest) const // {{{
 {
   return Copy();
@@ -6733,6 +6795,10 @@ MpsVarMsgType *MpsVarMsgType::RenameAll() const // {{{
   return Copy();
 } // }}}
 MpsIntMsgType *MpsIntMsgType::RenameAll() const // {{{
+{
+  return Copy();
+} // }}}
+MpsUnsafeIntMsgType *MpsUnsafeIntMsgType::RenameAll() const // {{{
 {
   return Copy();
 } // }}}
@@ -6808,6 +6874,11 @@ string MpsVarMsgType::ToString(const string &indent) const // {{{
 string MpsIntMsgType::ToString(const string &indent) const // {{{
 {
   string result="Int";
+  return result;
+} // }}}
+string MpsUnsafeIntMsgType::ToString(const string &indent) const // {{{
+{
+  string result="UnsafeInt";
   return result;
 } // }}}
 string MpsFloatMsgType::ToString(const string &indent) const // {{{
@@ -6895,6 +6966,11 @@ string MpsIntMsgType::ToTex(int indent, int sw) const // {{{
   string result=ToTex_KW("Int");
   return result;
 } // }}}
+string MpsUnsafeIntMsgType::ToTex(int indent, int sw) const // {{{
+{
+  string result=ToTex_KW("UnsafeInt");
+  return result;
+} // }}}
 string MpsFloatMsgType::ToTex(int indent, int sw) const // {{{
 {
   string result=ToTex_KW("Float");
@@ -6952,6 +7028,10 @@ string MpsVarMsgType::ToC() const // {{{
 string MpsIntMsgType::ToC() const // {{{
 {
   return "libpi::Int";
+} // }}}
+string MpsUnsafeIntMsgType::ToC() const // {{{
+{
+  return "long int";
 } // }}}
 string MpsFloatMsgType::ToC() const // {{{
 {

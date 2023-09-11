@@ -27,6 +27,11 @@ void *MpsSndType::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, 
       return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
   }
 
+  // Check myType is not unsafe
+  const MpsUnsafeIntMsgType *myUnsafeIntType = dynamic_cast<const MpsUnsafeIntMsgType*>(myType);
+  if (myUnsafeIntType!=NULL)
+    return wrap_err(this,PrintTypeError((string)"Sending unsafe type on session: " + mySession,*this,Theta,Gamma,Omega),children);
+
   // Verify snd
   MpsMsgEnv::const_iterator session=Gamma.find(mySession);
   // Check session is open
