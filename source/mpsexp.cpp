@@ -139,6 +139,10 @@ MpsIntVal *MpsIntVal::Copy() const // {{{
 {
   return new MpsIntVal(myValue);
 } // }}}
+MpsUnsafeIntVal *MpsUnsafeIntVal::Copy() const // {{{
+{
+  return new MpsUnsafeIntVal(myValue);
+} // }}}
 MpsFloatVal *MpsFloatVal::Copy() const // {{{
 {
   return new MpsFloatVal(myValue);
@@ -179,6 +183,10 @@ MpsVarExp *MpsVarExp::Eval() const // {{{
   return Copy();
 } // }}}
 MpsIntVal *MpsIntVal::Eval() const// {{{
+{
+  return Copy();
+} // }}}
+MpsUnsafeIntVal *MpsUnsafeIntVal::Eval() const// {{{
 {
   return Copy();
 } // }}}
@@ -359,6 +367,10 @@ MpsMsgType *MpsIntVal::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   return new MpsIntMsgType();
 } // }}}
+MpsMsgType *MpsUnsafeIntVal::TypeCheck(const MpsMsgEnv &Gamma) // {{{
+{
+  return new MpsUnsafeIntMsgType();
+} // }}}
 MpsMsgType *MpsFloatVal::TypeCheck(const MpsMsgEnv &Gamma) // {{{
 {
   return new MpsFloatMsgType();
@@ -406,6 +418,26 @@ MpsMsgType *MpsUnOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
     { delete argtype;
       return new MpsMsgNoType();
     }
+  } // }}}
+  else if (myName == "unsafe") // converstion [Int -> unsafe Int] // {{{
+  { MpsMsgType *argtype = myRight->TypeCheck(Gamma);
+    MpsMsgType *res;
+    if (dynamic_cast<MpsIntMsgType*>(argtype)!=NULL) 
+      res=new MpsUnsafeIntMsgType();
+    else
+      res=new MpsMsgNoType();
+    delete argtype;
+    return res;
+  } // }}}
+  else if (myName == "safe") // converstion [unsafe Int -> Int] // {{{
+  { MpsMsgType *argtype = myRight->TypeCheck(Gamma);
+    MpsMsgType *res;
+    if (dynamic_cast<MpsUnsafeIntMsgType*>(argtype)!=NULL) 
+      res=new MpsIntMsgType();
+    else
+      res=new MpsMsgNoType();
+    delete argtype;
+    return res;
   } // }}}
   else // Unknown operator
     return new MpsMsgNoType();
@@ -534,6 +566,18 @@ bool MpsIntVal::operator==(const MpsExp &rhs) const // {{{
   MpsIntVal *rhsptr=(MpsIntVal*)&rhs;
   return (mpz_cmp(myValue,rhsptr->myValue)==0);
 } // }}}
+bool MpsUnsafeIntVal::operator==(const MpsExp &rhs) const // {{{
+{
+  if (typeid(rhs) == typeid(MpsUnsafeIntVal))
+  { MpsUnsafeIntVal *rhsptr=(MpsUnsafeIntVal*)&rhs;
+    return myValue==rhsptr->GetValue();
+  }
+  else if (typeid(rhs) == typeid(MpsIntVal))
+  { MpsIntVal *rhsptr=(MpsIntVal*)&rhs;
+    return (mpz_cmp_si(rhsptr->GetValue(),myValue)==0);
+  }
+  return false;
+} // }}}
 bool MpsFloatVal::operator==(const MpsExp &rhs) const // {{{
 {
   if (typeid(rhs) != typeid(MpsFloatVal))
@@ -619,6 +663,12 @@ set<string> MpsIntVal::FV() const// {{{
   result.clear();
   return result;
 } // }}}
+set<string> MpsUnsafeIntVal::FV() const// {{{
+{
+  set<string> result;
+  result.clear();
+  return result;
+} // }}}
 set<string> MpsFloatVal::FV() const// {{{
 {
   set<string> result;
@@ -692,6 +742,10 @@ MpsIntVal *MpsIntVal::Rename(const string &src, const string &dst) const // {{{
 {
   return Copy();
 } // }}}
+MpsUnsafeIntVal *MpsUnsafeIntVal::Rename(const string &src, const string &dst) const // {{{
+{
+  return Copy();
+} // }}}
 MpsFloatVal *MpsFloatVal::Rename(const string &src, const string &dst) const // {{{
 {
   return Copy();
@@ -761,6 +815,10 @@ MpsExp *MpsVarExp::Subst(const string &source, const MpsExp &dest) const// {{{
   return Copy();
 } // }}}
 MpsIntVal *MpsIntVal::Subst(const string &source, const MpsExp &dest) const// {{{
+{
+  return Copy();
+} // }}}
+MpsUnsafeIntVal *MpsUnsafeIntVal::Subst(const string &source, const MpsExp &dest) const// {{{
 {
   return Copy();
 } // }}}
@@ -841,6 +899,11 @@ string MpsIntVal::ToString() const // {{{
   free(str);
   return result;
 } // }}}
+string MpsUnsafeIntVal::ToString() const // {{{
+{ stringstream ss;
+  ss << myValue;
+  return ss.str();
+} // }}}
 string MpsFloatVal::ToString() const // {{{
 { stringstream dest;
   
@@ -910,6 +973,11 @@ string MpsIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
   string val=ToString();
   return string("intval_")+val;
 } // }}}
+string MpsUnsafeIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
+{ 
+  string val=ToString();
+  return string("unsafeintval_")+val;
+} // }}}
 string MpsFloatVal::ToC(stringstream &dest, const string &typeName) const // {{{
 { 
   return string("floatval_")+md5(ToString());
@@ -947,24 +1015,45 @@ string MpsUnOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
     dest << "      shared_ptr<" << typeName << "> " << varName << "=libpi::Bool::GetInstance(!((libpi::Bool*)" << subName << ".get())->GetValue());" << endl;
     return varName;
   } // }}}
+  else if (myName=="unsafe" && typeName=="long int") // {{{
+  { string subName = myRight->ToC(dest, "libpi::Int");
+    dest << "      long int " << varName << "=mpz_get_ui(((libpi::Int*)" << subName << ".get())->GetValue()); " << endl;
+    return varName;
+  } // }}}
+  else if (myName=="safe" && typeName=="libpi::Int") // {{{
+  { string subName = myRight->ToC(dest, "long int");
+    dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(" << subName << "));" << endl;
+    return varName;
+  } // }}}
   else
-    throw (string)"MpsUnOpExp::ToC: Unknown operation " + myName;
+    throw (string)"MpsUnOpExp::ToC: Unknown operation " + myName + " with typeName=" + typeName;
 } // }}}
 string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
-  dest << "      shared_ptr<" << typeName << "> " << varName << "((*((" << myLeftType->ToC() << "*)" << leftName << ".get())) ";
-  if (myName=="=")
-    dest << "==";
-  else if (myName=="or")
-    dest << "||";
-  else if (myName=="and")
-    dest << "&&";
+  if ((myName=="+" || myName=="-" || myName=="*" || myName=="/") && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
+  { dest << "      long int " << varName << " = " << leftName << " " << myName << " " << rightName << ";" << endl;
+  }
+  else if (myName=="=" && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
+  { dest << "      shared_ptr<" << typeName << "> " << varName << "(" << leftName << " == " << rightName << ");" << endl;
+  }
+  else if ((myName=="<=" || myName==">=" || myName=="<" || myName==">") && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
+  { dest << "      shared_ptr<" << typeName << "> " << varName << "(" << leftName << " " << myName << " " << rightName << ");" << endl;
+  }
   else
-    dest << myName;
-  dest << " (*((" << myRightType->ToC() << "*)" << rightName << ".get())));" << endl;
+  { dest << "      shared_ptr<" << typeName << "> " << varName << "((*((" << myLeftType->ToC() << "*)" << leftName << ".get())) ";
+    if (myName=="=")
+      dest << "==";
+    else if (myName=="or")
+      dest << "||";
+    else if (myName=="and")
+      dest << "&&";
+    else
+      dest << myName;
+    dest << " (*((" << myRightType->ToC() << "*)" << rightName << ".get())));" << endl;
+  }
   return varName;
 } // }}}
 string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
@@ -1001,6 +1090,14 @@ void MpsIntVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std
   string val=ToString();
   stringstream ss;
   ss << "shared_ptr<libpi::Int> intval_" << val << "(new libpi::Int(\"" << val << "\"));" << endl;
+  string def= ss.str();
+  AddConstDef(def);
+} // }}}
+void MpsUnsafeIntVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
+{ // Add int const with name including value
+  string val=ToString();
+  stringstream ss;
+  ss << "long int unsafeintval_" << val << "(" << val << ");" << endl;
   string def= ss.str();
   AddConstDef(def);
 } // }}}
@@ -1393,7 +1490,7 @@ bool LK_Axiom(vector<MpsExp*> &exps, set<string> pos, set<string> neg) // {{{
               return false;
           }
           else
-          { cerr << "LK_Axiom: Unknown Binary Operator " << binexp->GetOp() << endl;
+          { cerr << "LK_Axiom: Unknown Binary Operator " << negbinexp->GetOp() << endl;
             return false;
           }
         } // }}}
@@ -1462,6 +1559,10 @@ MpsExp *MpsVarExp::Negate() const// {{{
   return result;
 } // }}}
 MpsExp *MpsIntVal::Negate() const// {{{
+{ throw (string)"ERROR: Negate applied to Integer Value";
+  return new MpsVarExp("ERROR: Negate applied to Integer Value",MpsMsgNoType());
+} // }}}
+MpsExp *MpsUnsafeIntVal::Negate() const// {{{
 { throw (string)"ERROR: Negate applied to Integer Value";
   return new MpsVarExp("ERROR: Negate applied to Integer Value",MpsMsgNoType());
 } // }}}
@@ -1539,6 +1640,10 @@ MpsExp *MpsVarExp::MakeCNF() const// {{{
 { return Copy();
 } // }}}
 MpsExp *MpsIntVal::MakeCNF() const// {{{
+{ throw (string)"ERROR: MakeCNF applied to Integer Value";
+  return new MpsVarExp("ERROR: MakeCNF applied to Integer Value",MpsMsgNoType());
+} // }}}
+MpsExp *MpsUnsafeIntVal::MakeCNF() const// {{{
 { throw (string)"ERROR: MakeCNF applied to Integer Value";
   return new MpsVarExp("ERROR: MakeCNF applied to Integer Value",MpsMsgNoType());
 } // }}}
@@ -1664,6 +1769,10 @@ MpsExp *MpsIntVal::MakeNNF(bool negate) const// {{{
 { //cerr << (string)"WARNING: MakeNNF applied to Integer Value: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
 } // }}}
+MpsExp *MpsUnsafeIntVal::MakeNNF(bool negate) const// {{{
+{ //cerr << (string)"WARNING: MakeNNF applied to Integer Value: " + ToString() + " - approximating as false!" << endl;
+  return new MpsBoolVal(false);
+} // }}}
 MpsExp *MpsFloatVal::MakeNNF(bool negate) const// {{{
 { //cerr << (string)"WARNING: MakeNNF applied to Float Value: " + ToString() + " - approximating as false!" << endl;
   return new MpsBoolVal(false);
@@ -1732,6 +1841,10 @@ bool MpsIntVal::ValidCNF() const// {{{
 { throw (string)"ERROR: ValidCNF applied to Integer Value";
   return false;
 } // }}}
+bool MpsUnsafeIntVal::ValidCNF() const// {{{
+{ throw (string)"ERROR: ValidCNF applied to Integer Value";
+  return false;
+} // }}}
 bool MpsFloatVal::ValidCNF() const// {{{
 { throw (string)"ERROR: ValidCNF applied to Float Value";
   return false;
@@ -1786,6 +1899,10 @@ bool MpsIntVal::ValidOR(set<string> &pos, set<string> &neg) const// {{{
 { throw (string)"ERROR: ValidOR applied to Integer Value";
   return false;
 } // }}}
+bool MpsUnsafeIntVal::ValidOR(set<string> &pos, set<string> &neg) const// {{{
+{ throw (string)"ERROR: ValidOR applied to Integer Value";
+  return false;
+} // }}}
 bool MpsFloatVal::ValidOR(set<string> &pos, set<string> &neg) const// {{{
 { throw (string)"ERROR: ValidOR applied to Float Value";
   return false;
@@ -1831,6 +1948,10 @@ bool MpsSystemExp::ValidOR(set<string> &pos, set<string> &neg) const// {{{
 /* Subclass specific methods
  */
 const mpz_t &MpsIntVal::GetValue() const // {{{
+{
+  return myValue;
+} // }}}
+long int MpsUnsafeIntVal::GetValue() const // {{{
 {
   return myValue;
 } // }}}

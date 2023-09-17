@@ -6878,7 +6878,7 @@ string MpsIntMsgType::ToString(const string &indent) const // {{{
 } // }}}
 string MpsUnsafeIntMsgType::ToString(const string &indent) const // {{{
 {
-  string result="UnsafeInt";
+  string result="unsafe Int";
   return result;
 } // }}}
 string MpsFloatMsgType::ToString(const string &indent) const // {{{

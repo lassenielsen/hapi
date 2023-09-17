@@ -1,0 +1,28 @@
+#include <console.pi>
+
+#define $fib \
+  2->1:unsafe Int;\
+  1->2:unsafe Int;\
+  $end;
+
+global $fib fib(1 pure,2);
+local pure service Fib(fib (1 of 2) s)
+( s[2]>>x;
+  if x <= 1u
+  then s[2]<<1u;
+  else s1 = new fib(2 of 2);
+       s1[1]<<x-1u;
+       s1[1]>>f1;
+       s2=new fib(2 of 2);
+       s2[1]<<x-2u;
+       s2[1]>>f2;
+       s[2]<<f1+f2;
+)
+|
+c = new console(2 of 2);
+c[1]<<^str<<"What is n? "<<^input<<^int;
+c[1]>>v;
+f = new fib(2 of 2);
+f[1]<<unsafe v;
+f[1]>>r;
+c[1]<<^str<<"Fib("<<^int<<v<<^str<<")="<<^int<<safe r<<^nl<<^end;

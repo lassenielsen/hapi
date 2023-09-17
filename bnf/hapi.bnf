@@ -33,7 +33,8 @@
 Bool := "Bool"
 $end := "$end"
 Int := "Int"
-UnsafeInt := "UnsafeInt"
+unsafe := "unsafe"
+safe := "safe"
 Float := "Float"
 %end := "%end"
 String := "String"
@@ -176,7 +177,7 @@ Mtype ::= ::mtype_stype Stype
         | ::mtype_ltype Ltype ( int of Participants )
         | ::mtype_ptype Gtype ( int of Participants )
 Stype ::= ::type_int    Int 
-        | ::type_unsafeint    UnsafeInt 
+        | ::type_unsafeint    unsafe Int 
         | ::type_float  Float 
         | ::type_string String 
         | ::type_bool   Bool 
@@ -210,6 +211,8 @@ Exp9 ::= ::exp_or      Exp10 or Exp9
 Exp10 ::= ::exp_amp    Exp10 & int
         | ::exp_lvl    Exp11
 Exp11 ::= ::exp_not    not Exp11
+        | ::exp_unsafe unsafe Exp11
+        | ::exp_safe   safe Exp11
         | ::exp_lvl    Exp12
 Exp12 ::= ::exp_id     id 
         | ::exp_int    int 

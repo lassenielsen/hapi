@@ -993,10 +993,24 @@ MpsExp *MpsParser::Exp(const parsetree *tree) // {{{
     delete right;
     return result;
   } // }}}
-  else if (tree->Case() == "exp_not") // not Exp12 {{{
+  else if (tree->Case() == "exp_not") // not Exp11 {{{
   {
     MpsExp *sub = Exp(tree->Child(1));
     MpsExp *result = new MpsUnOpExp("not",*sub);
+    delete sub;
+    return result;
+  } // }}}
+  else if (tree->Case() == "exp_unsafe") // unsafe Exp11 {{{
+  {
+    MpsExp *sub = Exp(tree->Child(1));
+    MpsExp *result = new MpsUnOpExp("unsafe",*sub);
+    delete sub;
+    return result;
+  } // }}}
+  else if (tree->Case() == "exp_safe") // safe Exp11 {{{
+  {
+    MpsExp *sub = Exp(tree->Child(1));
+    MpsExp *result = new MpsUnOpExp("safe",*sub);
     delete sub;
     return result;
   } // }}}
@@ -1015,12 +1029,13 @@ MpsExp *MpsParser::Exp(const parsetree *tree) // {{{
     mpz_clear(val);
     return exp;
   } // }}}
-  else if (tree->Case() == "exp_uint") // int {{{
+  else if (tree->Case() == "exp_uint") // unsafe_int {{{
   {
     long int val;
     string strval=tree->Child(0)->Token().Content();
     if (strval[0]=='~')
       strval[0]='-';
+    strval=strval.substr(0,strval.size()-1); // Remove last 'u'
     val=atol(strval.c_str());
     MpsExp *exp=new MpsUnsafeIntVal(val);
     return exp;

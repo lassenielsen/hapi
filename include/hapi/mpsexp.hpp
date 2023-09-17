@@ -156,7 +156,7 @@ class MpsUnsafeIntVal : public MpsExp // {{{
     std::string ToString() const;
     std::string ToC(std::stringstream &dest, const std::string &typeName) const;
     void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
-    const mpz_t &GetValue() const;
+    long int GetValue() const;
 
     MpsExp *Negate() const;
     MpsExp *MakeNNF(bool negate=false) const;
