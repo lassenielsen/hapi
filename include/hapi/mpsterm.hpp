@@ -269,6 +269,7 @@ class MpsTerm // {{{
      */
     // }}}
     virtual bool SubSteps(std::vector<MpsStep> &dest) = 0;
+    std::map<std::string,MpsMsgType*> TypedEV(MpsMsgEnv Gamma);
 
     //! Apply a receive-message step.
     virtual MpsTerm *ApplyRcv(const std::string &path, const MpsExp *val) const; // Receive val at path
@@ -352,7 +353,7 @@ class MpsTerm // {{{
      *    process as the function 'main'.
      */
     // }}}
-    std::string MakeC() const;
+    std::string MakeC();
     // DOCUMENTATION: MpsTerm::FlattenFork {{{
     /*!
      * FlattenFork rewrites terms like P1 | P2 to P1 | (def X() (P2) X()).
@@ -604,19 +605,19 @@ typedef MpsTerm *(*wraptype)(
   bool checkPure,
   std::map<std::string,void*> &children);
 #define predecl(name) MpsTerm *name(MpsTerm *term,const MpsExp &Theta,const MpsMsgEnv &Gamma,const MpsProcEnv &Omega,const std::set<std::pair<std::string,int> > &pureStack,const std::string &curPure,MpsTerm::PureState pureState,bool checkPure)
-#define wrapdecl(name) void *name(MpsTerm *term,const MpsExp &Theta,const MpsMsgEnv &Gamma,const MpsProcEnv &Omega,const std::set<std::pair<std::string,int> > &pureStack,const std::string &curPure,MpsTerm::PureState pureState,bool checkPure,std::map<std::string,void*> &children)
 predecl(pre_void);
 predecl(pre_closedefs);
+#define wrapdecl(name) void *name(MpsTerm *term,const MpsExp &Theta,const MpsMsgEnv &Gamma,const MpsProcEnv &Omega,const std::set<std::pair<std::string,int> > &pureStack,const std::string &curPure,MpsTerm::PureState pureState,bool checkPure,std::map<std::string,void*> &children)
 wrapdecl(wrap_vector);
+wrapdecl(wrap_vars);
 wrapdecl(wrap_copy);
+wrapdecl(wrap_typedev);
 //wrapdecl(wrap_consts);
 //wrapdecl(wrap_genc);
-void *error_vector(MpsTerm *term,
-                   std::string msg,
-                   std::map<std::string,void*> &children);
-void *error_throw(MpsTerm *term,
-                  std::string msg,
-                  std::map<std::string,void*> &children);
+#define errordecl(name) void *name(MpsTerm *term, std::string msg, std::map<std::string,void*> &children)
+errordecl(error_vector);
+errordecl(error_throw);
+errordecl(error_null);
 } // }}}
 }
 

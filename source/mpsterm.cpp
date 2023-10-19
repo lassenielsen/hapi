@@ -301,6 +301,24 @@ void MpsTerm::Steps(MpsEnv &env, const vector<MpsFunction> &defs, vector<MpsStep
   }
 } // }}}
 
+MpsMsgEnv MpsTerm::TypedEV(MpsMsgEnv Gamma) // {{{
+{
+  // Create environments
+  MpsBoolVal Theta(true);
+  MpsProcEnv Omega;
+  tdc_pre pre=tdc_wrap::pre_void;
+  tdc_post wrap=tdc_wrap::wrap_typedev;
+  tdc_error wrap_err=tdc_wrap::error_null;
+  MpsMsgEnv *typedev=(MpsMsgEnv*)TDCompile(pre,wrap,wrap_err,Theta,Gamma,Omega,set<pair<string,int> >(),"",CPS_IMPURE,false);
+  bool success=true;
+
+  MpsMsgEnv result;
+  if (typedev!=NULL)
+  { result=*typedev;
+    delete typedev;
+  }
+  return result;
+} // }}}
 /* Applying Steps
  */
 MpsTerm *MpsTerm::ApplyRcv(const std::string &path, const MpsExp *val) const // {{{
@@ -340,7 +358,7 @@ MpsTerm *MpsTerm::ApplyOther(const std::string &path) const // {{{
 int _compile_id=0;
 /* Make executable C++ code for processes
  */
-string MpsTerm::MakeC() const // {{{
+string MpsTerm::MakeC() // {{{
 { _compile_id=1;
   stringstream result;
   result << "/* ==== ORIGINAL ====\n" << ToString() << "\n*/\n";
@@ -391,15 +409,16 @@ string MpsTerm::MakeC() const // {{{
   result
     << "// }}}\n"
     << "// Task Types {{{\n";
-  set<string> ids=main->EV();
+  MpsMsgEnv Gamma;
+  map<string,MpsMsgType*> ids=main->TypedEV(Gamma);
   result
   << "class " << mainTask << " : public libpi::task::Task" << endl
   << "{ public:" << endl;
-  for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
-    result << "    shared_ptr<libpi::Value> var_" << ToC_Name(*id) << ";" << endl;
+  for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+    result << "    " << id->second->ToC() << " var_" << ToC_Name(id->first) << ";" << endl;
   result
   << "};" << endl;
-  for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
+  for (MpsFunctionEnv::iterator def=defs.begin(); def!=defs.end(); ++def)
     result << def->ToCTaskType();
   result
     << "// }}}\n"
@@ -575,6 +594,76 @@ void *wrap_vector(MpsTerm *term, // {{{
   }
   return result;
 } // }}}
+void *wrap_typedev(MpsTerm *term, // {{{
+                   const MpsExp &Theta,
+                   const MpsMsgEnv &Gamma,
+                   const MpsProcEnv &Omega, 
+                   const std::set<std::pair<std::string,int> > &pureStack,
+                   const std::string &curPure,
+                   MpsTerm::PureState pureState,
+                   bool checkPure,
+                   std::map<std::string,void*> &children)
+{ MpsMsgEnv *result=new MpsMsgEnv();
+  // Cleanup
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+  { if (child->second!=NULL)
+    { MpsMsgEnv *sub=(MpsMsgEnv*)child->second;
+      for (MpsMsgEnv::iterator tev=sub->begin(); tev!=sub->end(); ++tev)
+      { if (result->find(tev->first)!=result->end()) // Multiple decls?
+          delete tev->second;
+        else
+          (*result)[tev->first]=tev->second;
+      }
+      delete sub;
+    }
+  }
+
+  // Handle additions
+  if (dynamic_cast<MpsAssign*>(term)) // {{{
+  { MpsAssign *t=dynamic_cast<MpsAssign*>(term);
+    if (result->find(t->GetId())!=result->end())
+      delete (*result)[t->GetId()]; // Exists already
+    (*result)[t->GetId()]=t->GetExpType().Copy();
+  } // }}}
+  else if (dynamic_cast<MpsLink*>(term)) // {{{
+  { MpsLink *t=dynamic_cast<MpsLink*>(term);
+    if (result->find(t->GetSession())!=result->end())
+      delete (*result)[t->GetSession()]; // Exists already
+    auto tt=Gamma.find(t->GetChannel());
+    MpsGlobalType *tgt;
+    vector<MpsParticipant> tps;
+    if (tt!=Gamma.end() && dynamic_cast<const MpsChannelMsgType*>(tt->second))
+    { tgt=dynamic_cast<const MpsChannelMsgType*>(tt->second)->GetGlobalType()->Copy();
+      tps=dynamic_cast<const MpsChannelMsgType*>(tt->second)->GetParticipants();
+    }
+    else
+      tgt=new MpsGlobalEndType();
+    (*result)[t->GetSession()]=new MpsDelegateGlobalMsgType(*tgt,t->GetPid(),tps);
+    delete tgt;
+  } // }}}
+  else if (dynamic_cast<MpsNew*>(term)) // {{{
+  { MpsNew *t=dynamic_cast<MpsNew*>(term);
+    for (size_t n=0; n<t->GetNames().size(); ++n)
+    { if (result->find(t->GetNames()[n])!=result->end())
+        delete (*result)[t->GetNames()[n]]; // Exists already
+      (*result)[t->GetNames()[n]]=new MpsDelegateGlobalMsgType(t->GetType(),n+1,t->GetParticipants());
+    }
+  } // }}}
+  else if (dynamic_cast<MpsNu*>(term)) // {{{
+  { MpsNu *t=dynamic_cast<MpsNu*>(term);
+    if (result->find(t->GetChannel())!=result->end())
+      delete (*result)[t->GetChannel()]; // Exists already
+    (*result)[t->GetChannel()]=new MpsChannelMsgType(t->GetType(),t->GetParticipants());
+  } // }}}
+  else if (dynamic_cast<MpsRcv*>(term)) // {{{
+  { MpsRcv *t=dynamic_cast<MpsRcv*>(term);
+    if (result->find(t->GetDest())!=result->end())
+      delete (*result)[t->GetDest()]; // Exists already
+    (*result)[t->GetDest()]=t->GetMsgType().Copy();
+  } // }}}
+
+  return result;
+} // }}}
 void *wrap_copy(MpsTerm *term, // {{{
                 const MpsExp &Theta,
                 const MpsMsgEnv &Gamma,
@@ -639,6 +728,14 @@ void *error_throw(MpsTerm *term, // {{{
   for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
     delete ((std::vector<std::string>*)child->second);
   throw msg;
+} // }}}
+void *error_null(MpsTerm *term, // {{{
+                 std::string msg,
+                 std::map<std::string,void*> &children)
+{ // Cleanup
+  for (std::map<std::string,void*>::iterator child=children.begin(); child!=children.end(); ++child)
+    delete ((std::vector<std::string>*)child->second);
+  return NULL;
 } // }}}
 }
 }

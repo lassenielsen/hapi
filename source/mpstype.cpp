@@ -7023,11 +7023,11 @@ string MpsMsgNoType::ToC() const // {{{
 } // }}}
 string MpsVarMsgType::ToC() const // {{{
 {
-  return "libpi::Value"; //Use supertype
+  return "std::shared_ptr<libpi::Value>"; //Use supertype
 } // }}}
 string MpsIntMsgType::ToC() const // {{{
 {
-  return "libpi::Int";
+  return "std::shared_ptr<libpi::Int>";
 } // }}}
 string MpsUnsafeIntMsgType::ToC() const // {{{
 {
@@ -7035,27 +7035,27 @@ string MpsUnsafeIntMsgType::ToC() const // {{{
 } // }}}
 string MpsFloatMsgType::ToC() const // {{{
 {
-  return "libpi::Float";
+  return "std::shared_ptr<libpi::Float>";
 } // }}}
 string MpsStringMsgType::ToC() const // {{{
 {
-  return "libpi::String";
+  return "std::shared_ptr<libpi::String>";
 } // }}}
 string MpsBoolMsgType::ToC() const // {{{
 {
-  return "libpi::Bool";
+  return "std::shared_ptr<libpi::Bool>";
 } // }}}
 string MpsTupleMsgType::ToC() const // {{{
 {
-  return "libpi::Tuple";
+  return "std::shared_ptr<libpi::Tuple>";
 } // }}}
 string MpsChannelMsgType::ToC() const // {{{
 {
-  return "libpi::thread::Link";
+  return "std::shared_ptr<libpi::task::Link>";
 } // }}}
 string MpsDelegateMsgType::ToC() const // {{{
 {
-  return "libpi::Session";
+  return "std::shared_ptr<libpi::Session>";
 } // }}}
 
 // Individual accesors

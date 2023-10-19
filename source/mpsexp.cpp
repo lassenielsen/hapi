@@ -1037,13 +1037,13 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   { dest << "      long int " << varName << " = " << leftName << " " << myName << " " << rightName << ";" << endl;
   }
   else if (myName=="=" && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
-  { dest << "      shared_ptr<" << typeName << "> " << varName << "(" << leftName << " == " << rightName << ");" << endl;
+  { dest << "      " << typeName << " " << varName << "(" << leftName << " == " << rightName << ");" << endl;
   }
   else if ((myName=="<=" || myName==">=" || myName=="<" || myName==">") && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
-  { dest << "      shared_ptr<" << typeName << "> " << varName << "(" << leftName << " " << myName << " " << rightName << ");" << endl;
+  { dest << "      " << typeName << " " << varName << "(" << leftName << " " << myName << " " << rightName << ");" << endl;
   }
   else
-  { dest << "      shared_ptr<" << typeName << "> " << varName << "((*((" << myLeftType->ToC() << "*)" << leftName << ".get())) ";
+  { dest << "      " << typeName << " " << varName << "((*" << leftName << ".get()) ";
     if (myName=="=")
       dest << "==";
     else if (myName=="or")
@@ -1052,7 +1052,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
       dest << "&&";
     else
       dest << myName;
-    dest << " (*((" << myRightType->ToC() << "*)" << rightName << ".get())));" << endl;
+    dest << " (*" << rightName << ".get()));" << endl;
   }
   return varName;
 } // }}}
@@ -1184,14 +1184,14 @@ void CountHypConnectives(const vector<const MpsExp*> &hyps, int &ands, int &ors,
     CountConnectives(hyps[i],ands,ors,nots);
   return;
 } // }}}
-double gettime() // {{{
-{ struct timeb tb;
-  ftime(&tb);
-  double result = tb.millitm;
-  result /= 1000;
-  result+= (tb.time % (60*60));
-  return result;
-} // }}}
+//double gettime() // {{{
+//{ struct timeb tb;
+//  ftime(&tb);
+//  double result = tb.millitm;
+//  result /= 1000;
+//  result+= (tb.time % (60*60));
+//  return result;
+//} // }}}
 bool MpsExp::ValidExp(vector<const MpsExp*> hyps) const // {{{
 {
 //  // STATISTICS {{{

@@ -154,23 +154,47 @@ string MpsFunction::ToC() const // {{{
      << "  } // }}}";
   return ss.str();
 } // }}}
-string MpsFunction::ToCTaskType() const // {{{
-{ set<string> ids=GetBody().EV();
-  ids.insert(GetStateArgs().begin(),GetStateArgs().end());
-  ids.insert(GetArgs().begin(),GetArgs().end());
+string MpsFunction::ToCTaskType() // {{{
+{ MpsMsgEnv Gamma;
+  for (size_t i=0; i<myArgs.size(); ++i)
+  { // Add args to gamma
+    Gamma[myArgs[i]]=myTypes[i];
+  }
+  for (size_t i=0; i<myStateArgs.size(); ++i)
+  { // Add state args to gamme
+    Gamma[myStateArgs[i]]=myStateTypes[i];
+  }
+  map<string,MpsMsgType*> ids=myBody->TypedEV(Gamma);
+
+  vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
+  for (vector<string>::const_iterator nit=myStateArgs.begin(); nit!=myStateArgs.end() && tit!=myStateTypes.end(); ++nit,++tit)
+  { if (ids.find(*nit)==ids.end())
+      ids[*nit]=(*tit)->Copy();
+  }
+
+  tit=myTypes.begin();
+  for (vector<string>::const_iterator nit=myArgs.begin(); nit!=myArgs.end() && tit!=myTypes.end(); ++nit,++tit)
+  { if (ids.find(*nit)==ids.end())
+      ids[*nit]=(*tit)->Copy();
+  }
 
   stringstream ss;
   ss
   << "class Task_" << ToC_Name(GetName()) << " : public libpi::task::Task" << endl
   << "{ public:" << endl;
-  for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
-    ss << "    shared_ptr<libpi::Value> var_" << ToC_Name(*id) << ";" << endl;
+  for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+    ss << "    " << id->second->ToC() << " var_" << ToC_Name(id->first) << ";" << endl;
   for (vector<string>::const_iterator arg=GetStateArgs().begin(); arg!=GetStateArgs().end(); ++arg)
-    ss << "    inline void SetStateArg" << std::distance(GetStateArgs().begin(),arg) << "(const shared_ptr<libpi::Value> &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
+    ss << "    inline void SetStateArg" << std::distance(GetStateArgs().begin(),arg) << "(const " << ids[*arg]->ToC() << " &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
   for (vector<string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg)
-    ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(const shared_ptr<libpi::Value> &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
+    ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(const " << ids[*arg]->ToC() << " &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
   ss
   << "};" << endl;
+
+  // Clean up
+  for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+  { delete id->second;
+  }
   return ss.str();
 } // }}}
 }

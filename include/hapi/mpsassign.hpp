@@ -66,6 +66,7 @@ class MpsAssign : public MpsTerm // {{{
     void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
 
     const MpsMsgType &GetExpType() const;
+    const std::string &GetId() const { return myId; }
 
   private:
     std::string myId;

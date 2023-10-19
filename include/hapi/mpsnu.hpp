@@ -60,6 +60,8 @@ class MpsNu : public MpsTerm // {{{
     void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const;
 
     const std::vector<MpsParticipant> &GetParticipants() const { return myParticipants; }
+    const std::string &GetChannel() const { return myChannel; }
+    const MpsGlobalType &GetType() const { return *myType; }
 
   private:
     std::string myChannel;

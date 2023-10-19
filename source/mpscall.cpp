@@ -409,12 +409,12 @@ string MpsCall::ToC_prepare(const string &dest) const // {{{
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myState.begin(); it!=myState.end(); ++it, ++tit)
   { string name=(*it)->ToC(result, (*tit)->ToC());
-    result << "      shared_ptr<libpi::Value> sarg" << distance(myState.begin(),it) << "(" << name << ");" << endl;
+    result << "      " << (*tit)->ToC() << " sarg" << distance(myState.begin(),it) << "(" << name << ");" << endl;
   }
   tit=myTypes.begin();
   for (vector<MpsExp*>::const_iterator it=myArgs.begin(); it!=myArgs.end(); ++it, ++tit)
   { string name=(*it)->ToC(result, (*tit)->ToC());
-    result << "      shared_ptr<libpi::Value> arg" << distance(myArgs.begin(),it) << "(" << name << ");" << endl;
+    result << "      " << (*tit)->ToC() << " arg" << distance(myArgs.begin(),it) << "(" << name << ");" << endl;
   }
   for (size_t i=0; i<myState.size(); ++i)
     result << "      " << dest << "->SetStateArg" << i << "( sarg" << i << ");" << endl;

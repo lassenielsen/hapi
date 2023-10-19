@@ -62,6 +62,7 @@ class MpsRcv : public MpsTerm // {{{
 
     const MpsMsgType &GetMsgType() const;
     void SetMsgType(const MpsMsgType &type);
+    const std::string &GetDest() { return myDest; }
 
     bool GetFinal() const;
 
