@@ -242,7 +242,7 @@ string MpsAssign::ToC(const string &taskType) const // {{{
   stringstream result;
   result << ToC_Yield()
          << "    {" << endl;
-  string varName = myExp->ToC(result,GetExpType().ToC());
+  string varName = myExp->ToC(result,GetExpType().ToCPtr());
   result << "      _this->var_" << ToC_Name(myId) << "=" << varName << ";" << endl
          << "    }" << endl
          << mySucc->ToC(taskType);

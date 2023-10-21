@@ -250,7 +250,7 @@ string MpsHostStatement::ToC(const string &taskType) const // {{{
   for (int i=0; i<myHostParts.size(); ++i)
   { stmt << myHostParts[i];
     if (i<myExpParts.size())
-    { string newName = myExpParts[i]->ToC(prestmt, myTypes[i]->ToC());
+    { string newName = myExpParts[i]->ToC(prestmt, myTypes[i]->ToCPtr());
       stmt << " " << newName << " ";
     }
   }

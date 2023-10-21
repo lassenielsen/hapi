@@ -407,9 +407,11 @@ class MpsTerm // {{{
     std::string ToC_Yield() const // {{{
     { std::string yieldLabel = ToC_Name(MpsExp::NewVar("checkpoint_"));
       return std::string("\n")
-      + "    _task->SetLabel(&&" + yieldLabel + ");\n"
-      + "    if (++_steps>=libpi::task::Task::MaxSteps) return true;\n"
-      + "    " + yieldLabel + ":\n\n";
+      + "    if (++_steps>=libpi::task::Task::MaxSteps)\n"
+      + "    { _task->SetLabel(&&" + yieldLabel + ");\n"
+      + "      return true;\n"
+      + "    }\n"
+      + yieldLabel + ":\n";
     } // }}}
     virtual std::string ToCHeader() const=0;
     virtual void ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const=0;

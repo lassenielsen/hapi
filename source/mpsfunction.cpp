@@ -148,7 +148,7 @@ string MpsFunction::ToC() const // {{{
   string taskType=ToC_Name(GetName());
   ss << "  method_" << taskType << ": // {{{" << endl
      << "  #undef _this" << endl
-     << "  #define _this ((Task_" << taskType << "*)_task.get())" << endl
+     << "  #define _this ((Task_" << taskType << "*)_task)" << endl
      << "  {" << endl;
   ss << GetBody().ToC(taskType)
      << "  } // }}}";
@@ -181,13 +181,22 @@ string MpsFunction::ToCTaskType() // {{{
   stringstream ss;
   ss
   << "class Task_" << ToC_Name(GetName()) << " : public libpi::task::Task" << endl
-  << "{ public:" << endl;
+  << "{ public:" << endl
+  << "    virtual ~Task_" << ToC_Name(GetName()) << "()" << endl
+  << "    {" << endl;
   for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
-    ss << "    " << id->second->ToC() << " var_" << ToC_Name(id->first) << ";" << endl;
+    ss << "      if (var_" << ToC_Name(id->first) << ")" << endl
+       << "      { var_" << ToC_Name(id->first) << "->RemoveRef();" << endl
+       << "        var_" << ToC_Name(id->first) << "=NULL;" << endl
+       << "      }" << endl;
+  ss
+  << "    }" << endl;
+  for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+    ss << "    " << id->second->ToCPtr() << " var_" << ToC_Name(id->first) << ";" << endl;
   for (vector<string>::const_iterator arg=GetStateArgs().begin(); arg!=GetStateArgs().end(); ++arg)
-    ss << "    inline void SetStateArg" << std::distance(GetStateArgs().begin(),arg) << "(const " << ids[*arg]->ToC() << " &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
+    ss << "    inline void SetStateArg" << std::distance(GetStateArgs().begin(),arg) << "(" << ids[*arg]->ToCPtr() << " &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
   for (vector<string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg)
-    ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(const " << ids[*arg]->ToC() << " &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
+    ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(" << ids[*arg]->ToCPtr() << " val) { var_" << ToC_Name(*arg) << "=val; var_" << ToC_Name(*arg) << "->AddRef(); }" << endl;
   ss
   << "};" << endl;
 

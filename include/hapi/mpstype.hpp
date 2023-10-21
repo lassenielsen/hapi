@@ -969,7 +969,7 @@ class MpsUnsafeIntMsgType : public MpsMsgType // {{{
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
-    std::string ToCPtr() const { return ToC(); }
+    std::string ToCPtr() const { return ToC(); } // No pointer!
 }; // }}}
 class MpsFloatMsgType : public MpsMsgType // {{{
 {

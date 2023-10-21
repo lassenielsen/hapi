@@ -993,9 +993,9 @@ string MpsBoolVal::ToC(stringstream &dest, const string &typeName) const // {{{
 string MpsCondExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("ifval"));
-  string condVar = myCond->ToC(dest, "libpi::Bool");
-  dest << "      shared_ptr<libpi::Value> " << varName << ";" << endl
-       << "      if (((libpi::Bool*)" << condVar << ".get())->GetValue())" << endl
+  string condVar = myCond->ToC(dest, "libpi::Bool*");
+  dest << "      " << typeName << " " << varName << "=NULL;" << endl
+       << "      if (" << condVar << "->GetValue())" << endl
        << "      {" << endl;
   string trueVar = myTrueBranch->ToC(dest, typeName);
   dest << "      " << varName << " = " << trueVar << ";" << endl
@@ -1012,17 +1012,17 @@ string MpsUnOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("unop"));
   if (myName == "not") // {{{
   { string subName = myRight->ToC(dest, typeName);
-    dest << "      shared_ptr<" << typeName << "> " << varName << "=libpi::Bool::GetInstance(!((libpi::Bool*)" << subName << ".get())->GetValue());" << endl;
+    dest << "      " << typeName << " " << varName << "=libpi::Bool::GetInstance(!" << subName << "->GetValue());" << endl;
     return varName;
   } // }}}
   else if (myName=="unsafe" && typeName=="long int") // {{{
-  { string subName = myRight->ToC(dest, "libpi::Int");
-    dest << "      long int " << varName << "=mpz_get_ui(((libpi::Int*)" << subName << ".get())->GetValue()); " << endl;
+  { string subName = myRight->ToC(dest, "libpi::Int*");
+    dest << "      long int " << varName << "=mpz_get_ui(" << subName << "->GetValue()); " << endl;
     return varName;
   } // }}}
-  else if (myName=="safe" && typeName=="libpi::Int") // {{{
+  else if (myName=="safe" && typeName=="libpi::Int*") // {{{
   { string subName = myRight->ToC(dest, "long int");
-    dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(" << subName << "));" << endl;
+    dest << "      " << typeName << " " << varName << "(new libpi::Int(" << subName << "));" << endl;
     return varName;
   } // }}}
   else
@@ -1031,8 +1031,8 @@ string MpsUnOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
 string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("binop"));
-  string leftName = myLeft->ToC(dest, myLeftType->ToC());
-  string rightName = myRight->ToC(dest, myRightType->ToC());
+  string leftName = myLeft->ToC(dest, myLeftType->ToCPtr());
+  string rightName = myRight->ToC(dest, myRightType->ToCPtr());
   if ((myName=="+" || myName=="-" || myName=="*" || myName=="/") && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
   { dest << "      long int " << varName << " = " << leftName << " " << myName << " " << rightName << ";" << endl;
   }
@@ -1043,7 +1043,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   { dest << "      " << typeName << " " << varName << "(" << leftName << " " << myName << " " << rightName << ");" << endl;
   }
   else
-  { dest << "      " << typeName << " " << varName << "((*" << leftName << ".get()) ";
+  { dest << "      " << typeName << " " << varName << "((*" << leftName << ") ";
     if (myName=="=")
       dest << "==";
     else if (myName=="or")
@@ -1052,7 +1052,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
       dest << "&&";
     else
       dest << myName;
-    dest << " (*" << rightName << ".get()));" << endl;
+    dest << " (*" << rightName << "));" << endl;
   }
   return varName;
 } // }}}
@@ -1060,7 +1060,7 @@ string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   // FIXME: Test if const, and return name if it is
   string varName = ToC_Name(MpsExp::NewVar("tupleval"));
-  dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Tuple());" << endl;
+  dest << "      " << typeName << " " << varName << "(new libpi::Tuple());" << endl;
   for (vector<MpsExp*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
   { dest << "      {" << endl;
     string eltName = (*it)->ToC(dest,"Unknown");
@@ -1073,9 +1073,9 @@ string MpsSystemExp::ToC(stringstream &dest, const string &typeName) const // {{
 {
   string varName = ToC_Name(MpsExp::NewVar("systemexp"));
   if (myField=="aprocs")
-    dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(libpi::task::Worker::ActiveTasks));" << endl;
+    dest << "      " << typeName << " " << varName << "(new libpi::Int(libpi::task::Worker::ActiveTasks));" << endl;
   else if (myField=="tprocs")
-    dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(libpi::task::Worker::TargetTasks));" << endl;
+    dest << "      " << typeName << " " << varName << "(new libpi::Int(libpi::task::Worker::TargetTasks));" << endl;
   else
     throw (string)"MpsSystemExp::ToC: Unknown field " + myField;
   return varName;
@@ -1089,7 +1089,7 @@ void MpsIntVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std
 { // Add int const with name including value
   string val=ToString();
   stringstream ss;
-  ss << "shared_ptr<libpi::Int> intval_" << val << "(new libpi::Int(\"" << val << "\"));" << endl;
+  ss << "libpi::Int* intval_" << val << "(new libpi::Int(\"" << val << "\"));" << endl;
   string def= ss.str();
   AddConstDef(def);
 } // }}}
@@ -1105,14 +1105,14 @@ void MpsFloatVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<s
 { // Add float const with name including md5 of value
   string val=ToString();
   stringstream ss;
-  ss << "shared_ptr<libpi::Float> floatval_" << md5(val) << "(new libpi::Float(\"" << val << "\"));" << endl;
+  ss << "libpi::Float* floatval_" << md5(val) << "(new libpi::Float(\"" << val << "\"));" << endl;
   string def=ss.str();
   AddConstDef(def);
 } // }}}
 void MpsStringVal::ToCConsts(std::vector<std::string> &dest, std::unordered_set<std::string> &existing) const // {{{
 { // Add string const with name including md5 of value
   stringstream ss;
-  ss << "shared_ptr<libpi::String> stringval_" << md5(myValue) << "(new libpi::String(\"" << stuff_string(myValue) << "\"));" << endl;
+  ss << "libpi::String* stringval_" << md5(myValue) << "(new libpi::String(\"" << stuff_string(myValue) << "\"));" << endl;
   string def=ss.str();
   AddConstDef(def);
 } // }}}
