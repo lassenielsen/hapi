@@ -839,6 +839,7 @@ class MpsMsgType // {{{
     virtual MpsMsgType *RenameAll() const=0;
 
     // Other methods
+    virtual bool IsSimple() const = 0;
     virtual std::string ToString(const std::string &indent="") const = 0;
     virtual std::string ToTex(int indent=0, int sw=2) const = 0;
     virtual std::string ToC() const = 0;
@@ -878,6 +879,7 @@ class MpsMsgNoType : public MpsMsgType // {{{
     MpsMsgNoType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsMsgNoType *RenameAll() const;
 
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
@@ -905,6 +907,7 @@ class MpsVarMsgType : public MpsMsgType // {{{
     MpsMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsVarMsgType *RenameAll() const;
 
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
@@ -939,6 +942,7 @@ class MpsIntMsgType : public MpsMsgType // {{{
     MpsIntMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsIntMsgType *RenameAll() const;
 
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
@@ -966,6 +970,7 @@ class MpsUnsafeIntMsgType : public MpsMsgType // {{{
     MpsUnsafeIntMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsUnsafeIntMsgType *RenameAll() const;
 
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
@@ -994,6 +999,7 @@ class MpsFloatMsgType : public MpsMsgType // {{{
     MpsFloatMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsFloatMsgType *RenameAll() const;
 
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
@@ -1021,6 +1027,7 @@ class MpsStringMsgType : public MpsMsgType // {{{
     MpsStringMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsStringMsgType *RenameAll() const;
 
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
@@ -1048,9 +1055,11 @@ class MpsBoolMsgType : public MpsMsgType // {{{
     MpsBoolMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsBoolMsgType *RenameAll() const;
 
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
+    std::string ToCPtr() const { return ToC(); } // No pointer!
 }; // }}}
 class MpsTupleMsgType : public MpsMsgType // {{{
 {
@@ -1075,6 +1084,7 @@ class MpsTupleMsgType : public MpsMsgType // {{{
     MpsTupleMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsTupleMsgType *RenameAll() const;
 
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
@@ -1108,6 +1118,7 @@ class MpsChannelMsgType : public MpsMsgType // {{{
     MpsChannelMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsChannelMsgType *RenameAll() const;
 
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
     std::string ToC() const;
@@ -1144,6 +1155,7 @@ class MpsDelegateMsgType : public MpsMsgType // {{{
     virtual MpsDelegateMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const=0;
     virtual MpsDelegateMsgType *RenameAll() const=0;
 
+    virtual bool IsSimple() const=0;
     virtual std::string ToString(const std::string &indent="") const=0;
     std::string ToTex(int indent=0, int sw=2) const=0;
     std::string ToC() const;
@@ -1178,6 +1190,8 @@ class MpsDelegateLocalMsgType : public MpsDelegateMsgType // {{{
     MpsDelegateLocalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsDelegateLocalMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsDelegateLocalMsgType *RenameAll() const;
+
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
 
@@ -1209,6 +1223,8 @@ class MpsDelegateGlobalMsgType : public MpsDelegateMsgType // Represents Delegat
     MpsDelegateGlobalMsgType *ESubst(const std::string &source, const MpsExp &dest) const;
     MpsDelegateGlobalMsgType *MSubst(const std::string &source, const MpsMsgType &dest) const;
     MpsDelegateGlobalMsgType *RenameAll() const;
+
+    bool IsSimple() const;
     std::string ToString(const std::string &indent="") const;
     std::string ToTex(int indent=0, int sw=2) const;
 

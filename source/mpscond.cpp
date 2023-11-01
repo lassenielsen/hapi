@@ -253,8 +253,8 @@ string MpsCond::ToC(const string &taskType) const // {{{
   string falseLabel = ToC_Name(MpsExp::NewVar(taskType+"_false"));
   result << ToC_Yield()
          << "    {" << endl;
-  string newName = myCond->ToC(result,"libpi::Bool*");
-  result << "      if (" << newName << "->GetValue())" << endl
+  string newName = myCond->ToC(result,"bool");
+  result << "      if (" << newName << ")" << endl
          << "        _task->SetLabel(&&" << trueLabel << ");" << endl
          << "      else" << endl
          << "        _task->SetLabel(&&" << falseLabel << ");" << endl

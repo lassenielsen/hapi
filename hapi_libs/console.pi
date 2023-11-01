@@ -21,15 +21,15 @@ local Console()
   ( s[2]>>
     {^str:
       s[2]>>str;
-      HOST("std::cout << ((libpi::String*)", str, ".get())->GetValue() << std::flush;");
+      HOST("std::cout << ", str, "->GetValue() << std::flush;");
       ConsoleSession(s);
      ^int:
       s[2]>>i;
-      HOST("std::cout << ((libpi::Int*)", i, ".get())->ToString() << std::flush;");
+      HOST("std::cout << ", i, "->ToString() << std::flush;");
       ConsoleSession(s);
      ^flt:
       s[2]>>f;
-      HOST("std::cout << ((libpi::Float*)", f, ".get())->ToString() << std::flush;");
+      HOST("std::cout << ", f, "->ToString() << std::flush;");
       ConsoleSession(s);
      ^nl:
       HOST("std::cout << std::endl;");
@@ -38,12 +38,12 @@ local Console()
       s[2]>>
       {^str:
         String val="";
-        HOST("{ std::string _s; std::cin >> _s; ", val, "=shared_ptr<libpi::String>(new libpi::String(_s)); }");
+        HOST("{ std::string _s; std::cin >> _s; ", val, "=new libpi::String(_s); }");
         s[2]<<val;
         ConsoleSession(s);
        ^int:
         Int val=0;
-        HOST("{ long _l; std::cin >> _l; ", val, "=shared_ptr<libpi::Int>(new libpi::Int(_l)); }");
+        HOST("{ long _l; std::cin >> _l; ", val, "=new libpi::Int(_l); }");
         s[2]<<val;
         ConsoleSession(s);
       }

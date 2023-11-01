@@ -1,16 +1,15 @@
-#include<console.pi>
-
 #define $bt 1->2{^X: $end; ^Y: $end;}
+#define PRINT(x) HOST("cout << ",x,"->GetValue() << endl;")
 global $bt a(1,2);
 s=new a(1 of 2);
-c=new console(2 of 2);
-c[1] << ^PutString << "Sending Y" << ^End;
+String msg1="Sending Y";
+PRINT(msg1);
 s[2]<<^Y;
 |
 s=new a(2 of 2);
-c=new console(2 of 2);
-c[1]<<^PutString;
 s[1]>>
-{ ^X: c[1]<<"Received X"<<^Stop;
-  ^Y: c[1]<<"Received Y"<<^Stop;
+{ ^X: String msg2="Received X";
+      PRINT(msg2);
+  ^Y: String msg3="Received Y";
+      PRINT(msg3);
 }

@@ -988,14 +988,14 @@ string MpsStringVal::ToC(stringstream &dest, const string &typeName) const // {{
 } // }}}
 string MpsBoolVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  return string("libpi::Bool::GetInstance(")+ToString()+")";
+  return ToString();
 } // }}}
 string MpsCondExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("ifval"));
-  string condVar = myCond->ToC(dest, "libpi::Bool*");
+  string condVar = myCond->ToC(dest, "bool");
   dest << "      " << typeName << " " << varName << "=NULL;" << endl
-       << "      if (" << condVar << "->GetValue())" << endl
+       << "      if (" << condVar << ")" << endl
        << "      {" << endl;
   string trueVar = myTrueBranch->ToC(dest, typeName);
   dest << "      " << varName << " = " << trueVar << ";" << endl
@@ -1012,7 +1012,7 @@ string MpsUnOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("unop"));
   if (myName == "not") // {{{
   { string subName = myRight->ToC(dest, typeName);
-    dest << "      " << typeName << " " << varName << "=libpi::Bool::GetInstance(!" << subName << "->GetValue());" << endl;
+    dest << "      " << typeName << " " << varName << "= !" << subName << ";" << endl;
     return varName;
   } // }}}
   else if (myName=="unsafe" && typeName=="long int") // {{{
@@ -1033,17 +1033,20 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToCPtr());
   string rightName = myRight->ToC(dest, myRightType->ToCPtr());
-  if ((myName=="+" || myName=="-" || myName=="*" || myName=="/") && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
-  { dest << "      long int " << varName << " = " << leftName << " " << myName << " " << rightName << ";" << endl;
-  }
-  else if (myName=="=" && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
-  { dest << "      " << typeName << " " << varName << "(" << leftName << " == " << rightName << ");" << endl;
-  }
-  else if ((myName=="<=" || myName==">=" || myName=="<" || myName==">") && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
-  { dest << "      " << typeName << " " << varName << "(" << leftName << " " << myName << " " << rightName << ");" << endl;
-  }
-  else
-  { dest << "      " << typeName << " " << varName << "((*" << leftName << ") ";
+  //if ((myName=="+" || myName=="-" || myName=="*" || myName=="/") && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
+  //{ dest << "      long int " << varName << " = " << leftName << " " << myName << " " << rightName << ";" << endl;
+  //}
+  //else if (myName=="=" && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
+  //{ dest << "      " << typeName << " " << varName << "(" << leftName << " == " << rightName << ");" << endl;
+  //}
+  //else if ((myName=="<=" || myName==">=" || myName=="<" || myName==">") && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
+  //{ dest << "      " << typeName << " " << varName << "=" << leftName << " " << myName << " " << rightName << ";" << endl;
+  //}
+  //else
+  { dest << "      " << typeName << " " << varName << "((";
+    if (!myLeftType->IsSimple())
+      dest << "*";
+    dest << leftName << ") ";
     if (myName=="=")
       dest << "==";
     else if (myName=="or")
@@ -1052,7 +1055,10 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
       dest << "&&";
     else
       dest << myName;
-    dest << " (*" << rightName << "));" << endl;
+    dest << " (";
+    if (!myRightType->IsSimple())
+      dest << "*";
+    dest << rightName << "));" << endl;
   }
   return varName;
 } // }}}

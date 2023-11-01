@@ -6858,6 +6858,41 @@ MpsDelegateGlobalMsgType *MpsDelegateGlobalMsgType::RenameAll() const // {{{
   return result;
 } // }}}
 
+// Is simple - use simpel type in c++?
+bool MpsMsgNoType::IsSimple() const // {{{
+{ return false;
+} // }}}
+bool MpsVarMsgType::IsSimple() const // {{{
+{ return false;
+} // }}}
+bool MpsIntMsgType::IsSimple() const // {{{
+{ return false;
+} // }}}
+bool MpsUnsafeIntMsgType::IsSimple() const // {{{
+{ return true;
+} // }}}
+bool MpsFloatMsgType::IsSimple() const // {{{
+{ return false;
+} // }}}
+bool MpsStringMsgType::IsSimple() const // {{{
+{ return false;
+} // }}}
+bool MpsBoolMsgType::IsSimple() const // {{{
+{ return true;
+} // }}}
+bool MpsTupleMsgType::IsSimple() const // {{{
+{ return false;
+} // }}}
+bool MpsChannelMsgType::IsSimple() const // {{{
+{ return false;
+} // }}}
+bool MpsDelegateLocalMsgType::IsSimple() const // {{{
+{ return false;
+} // }}}
+bool MpsDelegateGlobalMsgType::IsSimple() const // {{{
+{ return false;
+} // }}}
+
 // Make parsable string representation
 string MpsMsgNoType::ToString(const string &indent) const // {{{
 {
@@ -7043,7 +7078,7 @@ string MpsStringMsgType::ToC() const // {{{
 } // }}}
 string MpsBoolMsgType::ToC() const // {{{
 {
-  return "libpi::Bool";
+  return "bool";
 } // }}}
 string MpsTupleMsgType::ToC() const // {{{
 {

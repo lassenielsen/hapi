@@ -41,9 +41,3 @@ local pure service EratosthenesService(eratosthenes (1 of 2) s)
     Eratosthenes(tail);
   }
 )
-ilist=new range(2 of 2);
-ilist<<Int;
-isucc=new stdsucc_Int(2 of 2);
-iorder=new stdorder_Int(2 of 2);
-ilist[1]<<isucc<<iorder<<2<<20000;
-Eratosthenes(ilist);

@@ -1,2 +1,2 @@
 String str = "Hello World";
-HOST("std::cout << ((libpi::String*)", str, ".get())->GetValue() << std::endl;");
+HOST("std::cout << ", str, "->GetValue() << std::endl;");

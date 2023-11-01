@@ -376,7 +376,7 @@ string MpsBranch::ToC(const string &taskType) const // {{{
   result
     << ToC_Yield()
     << "    _task->SetLabel(&&" << lblRcvName << ");" << endl
-    << "    if (!_this->var_" << ToC_Name(myChannel.GetName()) << "->Receive(" << myChannel.GetIndex()-1 << ",_task,_task->tmp)) // Receive label to tmp" << endl
+    << "    if (!_this->var_" << ToC_Name(myChannel.GetName()) << "->Receive(" << myChannel.GetIndex()-1 << ",_task,&_task->tmp)) // Receive label to tmp" << endl
     << "      return false;" << endl
     << "    " << lblRcvName << ":" << endl;
   for (map<string,MpsTerm*>::const_iterator it = myBranches.begin(); it != myBranches.end(); ++it)

@@ -166,6 +166,7 @@ string MpsFunction::ToCTaskType() // {{{
   }
   map<string,MpsMsgType*> ids=myBody->TypedEV(Gamma);
 
+
   vector<MpsMsgType*>::const_iterator tit=myStateTypes.begin();
   for (vector<string>::const_iterator nit=myStateArgs.begin(); nit!=myStateArgs.end() && tit!=myStateTypes.end(); ++nit,++tit)
   { if (ids.find(*nit)==ids.end())
@@ -182,21 +183,44 @@ string MpsFunction::ToCTaskType() // {{{
   ss
   << "class Task_" << ToC_Name(GetName()) << " : public libpi::task::Task" << endl
   << "{ public:" << endl
+  << "    Task_" << ToC_Name(GetName()) << "()" << endl
+  << "    { " << endl;
+  for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+  { if (!id->second->IsSimple())
+      ss << "      var_" << ToC_Name(id->first) << "=NULL;" << endl;
+  }
+  ss
+  << "    }" << endl
   << "    virtual ~Task_" << ToC_Name(GetName()) << "()" << endl
   << "    {" << endl;
   for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
-    ss << "      if (var_" << ToC_Name(id->first) << ")" << endl
-       << "      { var_" << ToC_Name(id->first) << "->RemoveRef();" << endl
-       << "        var_" << ToC_Name(id->first) << "=NULL;" << endl
-       << "      }" << endl;
+  { if (!id->second->IsSimple())
+    { ss << "      if (var_" << ToC_Name(id->first) << ")" << endl
+         << "      { var_" << ToC_Name(id->first) << "->RemoveRef();" << endl
+         << "        var_" << ToC_Name(id->first) << "=NULL;" << endl
+         << "      }" << endl;
+    }
+  }
   ss
   << "    }" << endl;
   for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
     ss << "    " << id->second->ToCPtr() << " var_" << ToC_Name(id->first) << ";" << endl;
   for (vector<string>::const_iterator arg=GetStateArgs().begin(); arg!=GetStateArgs().end(); ++arg)
-    ss << "    inline void SetStateArg" << std::distance(GetStateArgs().begin(),arg) << "(" << ids[*arg]->ToCPtr() << " &val) {var_" << ToC_Name(*arg) << "=val;}" << endl;
+  { ss << "    inline void SetStateArg" << std::distance(GetStateArgs().begin(),arg) << "(" << ids[*arg]->ToCPtr() << " &val)" << endl
+       << "    { " << endl;
+    if (!ids[*arg]->IsSimple())
+      ss << "      var_" << ToC_Name(*arg) << "->RemoveRef();" << endl;
+    ss << "      var_" << ToC_Name(*arg) << "=val;" << endl;
+    if (!ids[*arg]->IsSimple())
+      ss << "      var_" << ToC_Name(*arg) << "->AddRef();" << endl;
+    ss << "    }" << endl;
+  }
   for (vector<string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg)
-    ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(" << ids[*arg]->ToCPtr() << " val) { var_" << ToC_Name(*arg) << "=val; var_" << ToC_Name(*arg) << "->AddRef(); }" << endl;
+  { ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(" << ids[*arg]->ToCPtr() << " val) { var_" << ToC_Name(*arg) << "=val; ";
+    if (!ids[*arg]->IsSimple())
+      ss << "var_" << ToC_Name(*arg) << "->AddRef(); ";
+    ss << "}" << endl;
+  }
   ss
   << "};" << endl;
 

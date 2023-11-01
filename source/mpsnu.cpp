@@ -279,7 +279,7 @@ string MpsNu::ToC(const string &taskType) const // {{{
 {
   stringstream result;
   result << ToC_Yield()
-         << "    _this->var_" << ToC_Name(myChannel) << "=new libpi::task::Link(" << myParticipants.size() << "));" << endl;
+         << "    _this->var_" << ToC_Name(myChannel) << "=new libpi::task::Link(" << myParticipants.size() << ");" << endl;
   result << mySucc->ToC(taskType);
   return result.str();
 } // }}}

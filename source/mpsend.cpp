@@ -119,7 +119,7 @@ string MpsEnd::ToTex(int indent, int sw) const // {{{
 } // }}}
 string MpsEnd::ToC(const string &taskType) const // {{{
 {
-  return "    return false;\n\n";
+  return "    _task->RemoveRef();\n    return false;\n\n";
 } // }}}
 string MpsEnd::ToCHeader() const // {{{
 {

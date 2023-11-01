@@ -8,7 +8,7 @@
 global $fib fib(1 pure,2);
 local pure service Fib(fib (1 of 2) s)
 ( s[2]>>x;
-  if x <= 1u
+  if x <=1u
   then s[2]<<1u;
   else s1 = new fib(2 of 2);
        s1[1]<<x-1u;

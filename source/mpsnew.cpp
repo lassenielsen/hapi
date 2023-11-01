@@ -25,15 +25,15 @@ void *MpsNew::TDCompileMain(tdc_pre pre, tdc_post wrap, tdc_error wrap_err, cons
       return wrap_err(this,PrintTypeError("Implementation of pure participant " + int2string(pureStack.begin()->second) + "@" + pureStack.begin()->first + " must be immediately after its decleration",*this,Theta,Gamma,Omega),children);
      if (pureState!=CPS_IMPURE && pureState!=CPS_PURE)
       return wrap_err(this,PrintTypeError("Error in implementation of pure participant " + curPure + ". Pure implementations must conform with the structure \n     *   local X()\n	   *   ( global s=new ch(p of n);\n		 *     X();\n		 *     |\n		 *     P\n		 *   )\n		 *   local StartX(Int i)\n		 *   ( if i<=0\n		 *     then X();\n		 *     else X(); | StartX(i-1);\n		 *   )\n		 *   StartX( E ); |" ,*this,Theta,Gamma,Omega),children);
-  }
 
-  // Check pure context if pure participant is used
-  bool hasPure=false;
-  for (int i=0;i<myParticipants.size() && !hasPure; ++i)
-    if (myParticipants[i].IsPure())
-      hasPure=true;
-  if (hasPure && pureState!=CPS_PURE)
-    return wrap_err(this,PrintTypeError((string)"Creating pure participants in an impure state",*this,Theta,Gamma,Omega),children);
+    // Check pure context if pure participant is used
+    bool hasPure=false;
+    for (int i=0;i<myParticipants.size() && !hasPure; ++i)
+      if (myParticipants[i].IsPure())
+        hasPure=true;
+    if (hasPure && pureState!=CPS_PURE)
+      return wrap_err(this,PrintTypeError((string)"Creating pure participants in an impure state",*this,Theta,Gamma,Omega),children);
+  }
   // Check correct number of participants
   if (myNames.size()!=myType->GetMaxPid() || myNames.size()!=myParticipants.size())
     return wrap_err(this,PrintTypeError((string)"Number of participants mismatch",*this,Theta,Gamma,Omega),children);

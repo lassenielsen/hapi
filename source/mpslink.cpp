@@ -305,7 +305,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
     for (size_t i=0; i<myMaxpid-1; ++i)
       result
       << "        _task->SetLabel(&&" << rcvLabels[i] << ");" << endl
-      << "        if (!_this->var_" << ToC_Name(myChannel) << "->GetChannels()[" << i << "]->Receive(_task,_task->tmp))" << endl
+      << "        if (!_this->var_" << ToC_Name(myChannel) << "->GetChannels()[" << i << "]->Receive(_task,&_task->tmp))" << endl
       << "          return false;" << endl
       << "        " << rcvLabels[i] << ":" << endl
       << "        _task->tmps.push_back(_task->tmp);" << endl;
@@ -323,7 +323,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
     for (size_t i=0; i<myMaxpid; ++i)
       for (size_t j=0; j<myMaxpid; ++j)
         if (i>0 && j==0)
-          result << "      inChannels[" << i << "][" << j << "]=dynamic_pointer_cast<libpi::Channel>(_task->tmps[" << i-1 << "]);" << endl;
+          result << "      inChannels[" << i << "][" << j << "]=dynamic_cast<libpi::Channel*>(_task->tmps[" << i-1 << "]);" << endl;
         else
           result << "      inChannels[" << i << "][" << j<< "]=new libpi::task::Channel();" << endl;
     for (size_t i=0; i<myMaxpid; ++i)
@@ -348,7 +348,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
     << "    { _task->tmp=new libpi::task::Channel();" << endl
     << "      _this->var_" << ToC_Name(myChannel) << "->GetChannels()[" << myPid-2 << "]->Send(_task,_task->tmp);" << endl
     << "      _task->SetLabel(&&" << lblRcv << ");" << endl
-    << "      if (!((libpi::task::Channel*)_task->tmp)->Receive(_task,_this->var_" << ToC_Name(mySession) << "))" << endl
+    << "      if (!((libpi::task::Channel*)_task->tmp)->Receive(_task,(libpi::Value**)&_this->var_" << ToC_Name(mySession) << "))" << endl
     << "        return false;" << endl
     << "      " << lblRcv << ":" << endl
     << "      _task->tmp->RemoveRef();" << endl
