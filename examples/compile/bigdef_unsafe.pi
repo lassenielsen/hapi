@@ -1,0 +1,11 @@
+global X(unsafe Int i)
+( if i<=0u
+  then
+  else X(i-1u);
+)
+
+X(10000000u); |
+X(10000000u); |
+X(10000000u); |
+X(10000000u);
+
