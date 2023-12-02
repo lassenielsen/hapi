@@ -1,0 +1,40 @@
+#include<struct/list.pi>
+#include<callable.pi>
+#include<succ.pi>
+HOSTHEADER("#include<iostream>");
+#define $filtermultipla \
+  2->1:Int; \
+  $callable(Int,Bool)
+global $filtermultipla filtermultipla(1 pure,2);
+local pure service FilterMultipla(filtermultipla (1 of 2) s)
+( s[2]>>d;
+  local pure Filter($callable(Int,Bool)(1 of 1 pure,2) this)
+  ( this[2]>>
+    {^call:
+      this[2]>>n;
+      this[2]<<not ((n/d)*d=n);
+      Filter(this);
+     ^end:
+    }
+  )
+  Filter(s);
+)
+|
+global Eratosthenes($list(Int)(2 of 1 pure,2) numbers)
+( numbers[1]<<^pop;
+  numbers[1]>>
+  {^nil:
+   ^cons:
+    numbers[1]>>p>>tail;
+    HOST("cout << ((libpi::Int*)", p, ".get())->ToString() << endl;");
+    filter=new filtermultipla(2 of 2);
+    filter[1]<<p;
+    tail[1]<<^filter<<filter;
+    Eratosthenes(tail);
+  }
+)
+Int n=0;
+HOST("{ long _l; std::cin >> _l; ", n, "=shared_ptr<libpi::Int>(new libpi::Int(_l)); }");
+numbers=new range(2 of 2);
+numbers[1]<<2<<n;
+Eratosthenes(numbers);

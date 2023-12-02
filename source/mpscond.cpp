@@ -257,8 +257,8 @@ string MpsCond::ToC(const string &taskType) const // {{{
   result << "      if (" << newName << ")" << endl
          << "        _task->SetLabel(&&" << trueLabel << ");" << endl
          << "      else" << endl
-         << "        _task->SetLabel(&&" << falseLabel << ");" << endl
-         << "    }" << endl
+         << "        _task->SetLabel(&&" << falseLabel << ");" << endl;
+  result << "    }" << endl
          << "    goto *_task->GetLabel();" << endl
          << "    " << trueLabel << ":" << endl
          << myTrueBranch->ToC(taskType)

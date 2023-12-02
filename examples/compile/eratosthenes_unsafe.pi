@@ -1,0 +1,43 @@
+#include<console.pi>
+#include<struct/intlist.pi>
+#include<callable.pi>
+
+#define $filtermultipla \
+  2->1:unsafe Int; \
+  $callable(unsafe Int,Bool)
+global $filtermultipla filtermultipla(1 pure,2);
+local pure service FilterMultipla(filtermultipla (1 of 2) s)
+( s[2]>>d;
+  local pure Filter($callable(unsafe Int,Bool)(1 of 1 pure,2) this)
+  ( this[2]>>
+    {^call:
+      this[2]>>n;
+      this[2]<<not ((n/d)*d=n);
+      Filter(this);
+     ^end:
+    }
+  )
+  Filter(s);
+)
+|
+global Eratosthenes($intlist(2 of 1 pure,2) list)
+( list[1]<<^pop;
+  list[1]>>
+  {^nil:
+   ^cons:
+    list[1]>>p>>tail;
+    c=new console(2 of 2);
+    c[1]<<^int<<safe p<<^nl<<^end;
+    filter=new filtermultipla(2 of 2);
+    filter[1]<<p;
+    tail[1]<<^filter<<filter;
+    Eratosthenes(tail);
+  }
+)
+c=new console(2 of 2);
+c[1]<<^input<<^int;
+c[1]>>x;
+c[1]<<^end;
+ilist=new intrange(2 of 2);
+ilist[1]<<2u<<unsafe x;
+Eratosthenes(ilist);

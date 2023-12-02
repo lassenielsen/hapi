@@ -1,0 +1,10 @@
+local X(unsafe Int x)
+( global 1->2:unsafe Int;$end; a1,a2(1,2);
+  a1[2]<<5u;
+  |
+  a2[1]>>y;
+  if 1u<=x
+  then X(x-1u);
+  else
+)
+X(10000u);

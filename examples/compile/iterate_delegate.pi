@@ -1,0 +1,28 @@
+#define $t1 \
+  1->2:Int; \
+  $end;
+#define $t2 \
+  1->2: $t1(2 of 1,2); \
+  $end;
+global $t2 t2(1,2);
+local service T2(t2 (1 of 2) s) // {{{
+( global $t1 a1,a2(1,2);
+  s[2]<<a2;
+  a1[2]<<5;
+) // }}}
+|
+global X(Int x)
+( if 1<=x
+  then s=new t2(2 of 2);
+       s[1]>>q;
+       q[1]>>y;
+       X(x-1);
+  else
+)
+X(1000);
+|
+X(1000);
+|
+X(1000);
+|
+X(1000);

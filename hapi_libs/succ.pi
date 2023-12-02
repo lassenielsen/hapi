@@ -14,3 +14,17 @@ local pure service StdSucc_Int(stdsucc_Int (1 of 2) s)
   X(s);
 )
 |
+global $callable(unsafe Int,unsafe Int) stdsucc_uInt(1 pure,2);
+local pure service StdSucc_uInt(stdsucc_uInt (1 of 2) s)
+( local pure X($callable(unsafe Int,unsafe Int)(1 of 1 pure,2) this)
+  ( this[2]>>
+    {^call:
+      this[2]>>n;
+      this[2]<<n+1u;
+      X(this);
+     ^end:
+    }
+  )
+  X(s);
+)
+|

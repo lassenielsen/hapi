@@ -1,0 +1,8 @@
+local X(unsafe Int x)
+( Int y=5;
+  Int z=safe x;
+  if 1u<=x
+  then X(x-1u);
+  else
+)
+X(10000u);

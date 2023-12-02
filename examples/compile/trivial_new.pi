@@ -1,0 +1,4 @@
+global 1->2:unsafe Int;$end; a1,a2(1,2);
+a1[2]<<5u;
+|
+a2[1]>>x;

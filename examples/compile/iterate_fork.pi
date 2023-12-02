@@ -1,0 +1,16 @@
+global X(unsafe Int x)
+( //HOST("cout << \"x=\" << ",x," << endl;");
+  if x<=0u
+  then
+  else ( X(0u);
+         |
+         X(x-1u);
+       )
+)
+X(1000u);
+|
+X(1000u);
+|
+X(1000u);
+|
+X(1000u);

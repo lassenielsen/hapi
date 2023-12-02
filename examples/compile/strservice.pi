@@ -1,0 +1,38 @@
+#pragma once
+#define $strobj \
+  2->1: String; \
+  $ss
+
+#define $ss \
+  rec $ss; \
+  2->1 \
+  {^at: \
+    1->2: Int; \
+    $ss; \
+   ^substr: \
+    2->1: Int; \
+    2->1: Int; \
+    2->1: String; \
+    $ss;\
+   ^end: \
+  }
+global $strobj stringobj(1 pure,2);
+local pure service StringObj(stringobj (1 of 2) s) // {{{
+( s[2]>>str;
+  local StrObj($ss(1 of 1 pure,2) s, String str)
+  ( s[2]>>
+    {^at:
+     ^substr:
+      s[2]>>from;
+      s[2]>>to;
+      Strinag res="";
+      HOST("{ size_t _from=mps_get_ui(*",from,"->get());") pure;
+      HOST("  size_t _to=mps_get_ui(*",to,"->get());") pure;
+      HOST("  ",res,".reset(new string(",str,".get()->substr(_from,_to)));") pure;
+      s[2]<<res;
+     ^end:
+    }
+  )
+  StrObj(s,str);
+)
+|

@@ -293,7 +293,8 @@ string MpsLink::ToTex(int indent, int sw) const // {{{
 string MpsLink::ToC(const string &taskType) const // {{{
 {
   stringstream result;
-  result << ToC_Yield();
+  result << "    // " << mySession << " = new " << myChannel << "(" << myPid << " of " << myMaxpid << ")" << endl
+         << ToC_Yield();
   if (myPid==1) // Orchestrate linking
   {
     vector<string> rcvLabels;
@@ -310,8 +311,8 @@ string MpsLink::ToC(const string &taskType) const // {{{
       << "        " << rcvLabels[i] << ":" << endl
       << "        _task->tmps.push_back(_task->tmp);" << endl;
     result
-    << "      vector<vector<libpi::Channel*> > inChannels(" << myMaxpid << ");" << endl
-    << "      vector<vector<libpi::Channel*> > outChannels(" << myMaxpid << ");" << endl
+    << "      vector<vector<libpi::task::Channel*> > inChannels(" << myMaxpid << ");" << endl
+    << "      vector<vector<libpi::task::Channel*> > outChannels(" << myMaxpid << ");" << endl
     << "      // Optimize vector inserts" << endl;
     for (size_t i=0; i<myMaxpid; ++i)
     { result
@@ -323,7 +324,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
     for (size_t i=0; i<myMaxpid; ++i)
       for (size_t j=0; j<myMaxpid; ++j)
         if (i>0 && j==0)
-          result << "      inChannels[" << i << "][" << j << "]=dynamic_cast<libpi::Channel*>(_task->tmps[" << i-1 << "]);" << endl;
+          result << "      inChannels[" << i << "][" << j << "]=dynamic_cast<libpi::task::Channel*>(_task->tmps[" << i-1 << "]);" << endl;
         else
           result << "      inChannels[" << i << "][" << j<< "]=new libpi::task::Channel();" << endl;
     for (size_t i=0; i<myMaxpid; ++i)
@@ -334,11 +335,22 @@ string MpsLink::ToC(const string &taskType) const // {{{
     for (size_t i=1; i<myMaxpid; ++i)
       result
       << "      { libpi::Session* _s(new libpi::Session(" << i << "," << myMaxpid << ", inChannels[" << i << "], outChannels[" << i << "]));" << endl
-      << "        ((libpi::Channel*)_task->tmps[" << i-1 << "])->Send(_task,_s);" << endl
+      << "        ((libpi::task::Channel*)_task->tmps[" << i-1 << "])->Send(_task,_s);" << endl
+      << "        RemoveRef(_s);" << endl
       << "      }" << endl;
     result
     << "      // Create local session" << endl
-    << "      _this->var_" << ToC_Name(mySession) << "=new libpi::Session(0," << myMaxpid << ",inChannels[0],outChannels[0]);" << endl
+    << "      AssignNewValue((libpi::Value**)&_this->var_" << ToC_Name(mySession) << ",new libpi::Session(0," << myMaxpid << ",inChannels[0],outChannels[0]));" << endl
+    << "      // Clean up" << endl
+    << "      while (!inChannels.empty())" << endl
+    << "      { while (!inChannels.back().empty())" << endl
+    << "        { RemoveRef(inChannels.back().back());" << endl
+    << "          inChannels.back().pop_back();" << endl
+    << "        }" << endl
+    << "        inChannels.pop_back();" << endl
+    << "      }" << endl
+    << "      // outChannels refs inChannels and should not be unreferenced" << endl
+    << "      _task->tmps.clear();" << endl
     << "    }" << endl;
   }
   else // Send Channel and receive session
@@ -351,7 +363,7 @@ string MpsLink::ToC(const string &taskType) const // {{{
     << "      if (!((libpi::task::Channel*)_task->tmp)->Receive(_task,(libpi::Value**)&_this->var_" << ToC_Name(mySession) << "))" << endl
     << "        return false;" << endl
     << "      " << lblRcv << ":" << endl
-    << "      _task->tmp->RemoveRef();" << endl
+    << "      RemoveRef(_task->tmp);" << endl
     << "      _task->tmp=NULL;" << endl
     << "    }" << endl;
   }

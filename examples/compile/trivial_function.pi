@@ -2,13 +2,13 @@
 global X(Int i)
 ( if i<=0
   then c=new console(2 of 2);
-       c[1]<<^PutString;
+       c[1]<<^str;
        c[1]<<"Process Complete";
-       c[1]<<^End;
+       c[1]<<^end;
   else X(i-1);
 )
 c=new console(2 of 2);
-c[1]<<^PutString<<"Starting 2 processes"<<^End;
+c[1]<<^str<<"Starting 2 processes"<<^end;
 ( X(100000);
 | X(100000);
 )

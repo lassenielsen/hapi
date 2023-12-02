@@ -15,7 +15,7 @@
 // string2int conversion of base 10 string representation of integers to their ordinal values
 #define $string2int $convert(String,Int)
 global $string2int string2int(1 pure, 2);
-#define STRING2INT(str,val) HOST("{ ", val, "->RemoveRef(); ", val, "=new libpi::Int(", str, "->GetValue()); }")
+#define STRING2INT(str,val) HOST("{ if (", val, ") ", val, "->RemoveRef(); ", val, "=new libpi::Int(", str, "->GetValue()); }")
 local pure service ServiceString2Int(string2int (1 of 2) s)
 ( s[2]>>str;
   Int val=0;
@@ -26,7 +26,7 @@ local pure service ServiceString2Int(string2int (1 of 2) s)
 // string2int conversion of ordinal values to their base 10 string representation of integers
 #define $int2string $convert(Int,String)
 global $int2string int2string(1 pure, 2);
-#define INT2STRING(i,val) HOST("{ ", val, "->RemoveRef(); ", val, "=new libpi::String(", i, "->ToString()); }")
+#define INT2STRING(i,val) HOST("{ if (", val, ") ", val, "->RemoveRef(); ", val, "=new libpi::String(", i, "->ToString()); }")
 local pure service ServiceInt2String(int2string (1 of 2) s)
 ( s[2]>>i;
   String val="";

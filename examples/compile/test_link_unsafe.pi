@@ -1,0 +1,26 @@
+#define PRINT(x) HOST("std::cout << ", x, "->GetValue() << std::endl;")
+#define PRINTINT(x) HOST("std::cout << ", x, " << std::endl;")
+
+#define $a 1->2:unsafe Int;2->3:unsafe Int;3->1:unsafe Int;$end;
+global $a a(1,2,3);
+s = new a(1 of 3);
+PRINT("P1: LINK COMPLETE");
+s[2]<<5u;
+PRINT("P1: SEND COMPLETE");
+s[3]>>x;
+PRINT("P1: RECEIVE COMPLETE");
+PRINTINT(x);
+|
+s=new a(2 of 3);
+PRINT("P2: LINK COMPLETE");
+s[1]>>x;
+PRINT("P2: RECEIVE COMPLETE");
+s[3]<<x;
+PRINT("P2: SEND COMPLETE");
+|
+s = new a(3 of 3);
+PRINT("P3: LINK COMPLETE");
+s[2]>>x;
+PRINT("P3: RECEIVE COMPLETE");
+s[1]<<x;
+PRINT("P3: SEND COMPLETE");

@@ -1,0 +1,13 @@
+#define $proto \
+  1->2:Bool; \
+  2->1:Bool; \
+  $end;
+
+global $proto a(1,2);
+s=new a(1 of 2);
+s[2]<<true;
+s[2]>>b;
+|
+t=new a(2 of 2);
+t[1]>>c;
+t[1]<<not c;

@@ -262,7 +262,7 @@ string MpsSelect::ToC(const std::string &taskType) const // {{{
   if (myFinal)
   {
     result << "    _this->var_" << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-           << "    _this->var_" << ToC_Name(myChannel.GetName()) << "->RemoveRef();" << endl
+           << "    RemoveRef(_this->var_" << ToC_Name(myChannel.GetName()) << ");" << endl
            << "    _this->var_" << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
   }
   result << mySucc->ToC(taskType);

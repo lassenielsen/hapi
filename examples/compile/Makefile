@@ -13,7 +13,7 @@
 SHELL = /bin/bash
 CPP = cpp
 HAPI = hapi
-Copt = -O3 -std=c++11
+Copt = -g -std=c++11
 CC = g++
 
 OK_PI_FILES = $(shell ls *.pi)
@@ -46,7 +46,7 @@ $(OK_EXE_FILES): % : %.cpp
 
 $(OK_DBG_FILES): %.dbg : %.cpp
 	@echo "=== Building debug executable from C++ code in $(@:.dbg=.cpp)"
-	@($(CC) $(Copt) $(@:.dbg=.cpp) -o $@ -pg -lpi_debug -lpthread -lgmp) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
+	@($(CC) $(Copt) $(@:.dbg=.cpp) -o $@ -lpi_debug -lpthread -lgmp) ; if [ "$$?" = "0" ]; then echo "OK"; exit 0; else echo "ERROR"; exit 0; fi
 
 $(OK_MON_FILES): %.mon : %.dbg
 	@echo "=== Starting debug executable $(@:.mon=.dbg)"

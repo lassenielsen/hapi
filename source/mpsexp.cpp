@@ -966,11 +966,14 @@ string MpsSystemExp::ToString() const // {{{
 string MpsVarExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   // No evaluation necessary
+  if (typeName!="long int" && typeName!="bool")
+    dest << "      " << string("_this->var_")+ToC_Name(myName) << "->AddRef();" << endl;
   return string("_this->var_")+ToC_Name(myName);
 } // }}}
 string MpsIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
 { 
   string val=ToString();
+  dest << "      " << string("intval_")+val << "->AddRef();" << endl;
   return string("intval_")+val;
 } // }}}
 string MpsUnsafeIntVal::ToC(stringstream &dest, const string &typeName) const // {{{
@@ -980,11 +983,15 @@ string MpsUnsafeIntVal::ToC(stringstream &dest, const string &typeName) const //
 } // }}}
 string MpsFloatVal::ToC(stringstream &dest, const string &typeName) const // {{{
 { 
-  return string("floatval_")+md5(ToString());
+  string val=md5(ToString());
+  dest << "      " << string("floatval_")+val << "->AddRef();" << endl;
+  return string("floatval_")+val;
 } // }}}
 string MpsStringVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
-  return string("stringval_")+md5(myValue);
+  string val=md5(myValue);
+  dest << "      " << string("stringval_")+val << "->AddRef();" << endl;
+  return string("stringval_")+val;
 } // }}}
 string MpsBoolVal::ToC(stringstream &dest, const string &typeName) const // {{{
 {
@@ -993,31 +1000,36 @@ string MpsBoolVal::ToC(stringstream &dest, const string &typeName) const // {{{
 string MpsCondExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("ifval"));
-  string condVar = myCond->ToC(dest, "bool");
-  dest << "      " << typeName << " " << varName << "=NULL;" << endl
+  string condVar = myCond->ToC(dest, "bool"); // bool does not need RemoveRef
+  dest << "      " << typeName << " " << varName << ";" << endl
        << "      if (" << condVar << ")" << endl
        << "      {" << endl;
   string trueVar = myTrueBranch->ToC(dest, typeName);
-  dest << "      " << varName << " = " << trueVar << ";" << endl
-       << "      }" << endl
+  dest << "      " << varName << " = " << trueVar << ";" << endl;
+  // allready addref by ToC if (typeName!="bool" && typeName!="long int")
+  // allready addref by ToC   dest << "      " << varName << "->AddRef();" << endl;
+  dest << "      }" << endl
        << "      else" << endl
        << "      {" << endl;
   string falseVar = myFalseBranch->ToC(dest, typeName);
-  dest << "      " << varName << " = " << falseVar << ";" << endl
-       << "      }" << endl;
+  dest << "      " << varName << " = " << falseVar << ";" << endl;
+  // allready addref by Toc if (typeName!="bool" && typeName!="long int")
+  // allready addref by Toc   dest     << "      " << varName << "->AddRef();" << endl;
+  dest << "      }" << endl;
   return varName;
 } // }}}
 string MpsUnOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   string varName = ToC_Name(MpsExp::NewVar("unop"));
-  if (myName == "not") // {{{
+  if (myName == "not" && typeName=="bool") // {{{
   { string subName = myRight->ToC(dest, typeName);
     dest << "      " << typeName << " " << varName << "= !" << subName << ";" << endl;
     return varName;
   } // }}}
   else if (myName=="unsafe" && typeName=="long int") // {{{
   { string subName = myRight->ToC(dest, "libpi::Int*");
-    dest << "      long int " << varName << "=mpz_get_ui(" << subName << "->GetValue()); " << endl;
+    dest << "      long int " << varName << "=mpz_get_ui(" << subName << "->GetValue()); " << endl
+         << "      RemoveRef(" << subName << ");" << endl;
     return varName;
   } // }}}
   else if (myName=="safe" && typeName=="libpi::Int*") // {{{
@@ -1033,16 +1045,6 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToCPtr());
   string rightName = myRight->ToC(dest, myRightType->ToCPtr());
-  //if ((myName=="+" || myName=="-" || myName=="*" || myName=="/") && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
-  //{ dest << "      long int " << varName << " = " << leftName << " " << myName << " " << rightName << ";" << endl;
-  //}
-  //else if (myName=="=" && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
-  //{ dest << "      " << typeName << " " << varName << "(" << leftName << " == " << rightName << ");" << endl;
-  //}
-  //else if ((myName=="<=" || myName==">=" || myName=="<" || myName==">") && dynamic_cast<const MpsUnsafeIntMsgType*>(myLeftType) && dynamic_cast<const MpsUnsafeIntMsgType*>(myRightType))
-  //{ dest << "      " << typeName << " " << varName << "=" << leftName << " " << myName << " " << rightName << ";" << endl;
-  //}
-  //else
   { dest << "      " << typeName << " " << varName << "((";
     if (!myLeftType->IsSimple())
       dest << "*";
@@ -1059,12 +1061,17 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
     if (!myRightType->IsSimple())
       dest << "*";
     dest << rightName << "));" << endl;
+    if (!myLeftType->IsSimple())
+      dest << "      RemoveRef(" << leftName << ");" << endl;
+    if (!myRightType->IsSimple())
+      dest << "      RemoveRef(" << rightName << ");" << endl;
   }
   return varName;
 } // }}}
 string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
 {
   // FIXME: Test if const, and return name if it is
+  // FIXME: Save element types and use them
   string varName = ToC_Name(MpsExp::NewVar("tupleval"));
   dest << "      " << typeName << " " << varName << "(new libpi::Tuple());" << endl;
   for (vector<MpsExp*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)

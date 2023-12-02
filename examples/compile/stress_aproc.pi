@@ -1,5 +1,6 @@
 #include <console.pi>
-#include <timer.pi>
+#include <sys/timer.pi>
+#include<debug/procmon.pi>
 local Seq(Int i)
 ( if i<=0
   then
@@ -9,20 +10,20 @@ local Seq(Int i)
 )
 
 c=new console(2 of 2);
-c[1]<<^PutInt;
+c[1]<<^int;
 c[1]<<SYSTEM&"aprocs";
-c[1]<<^End;
+c[1]<<^end;
 ( Seq(100);
 | Seq(100);
 | Seq(100);
 | Seq(100);
 | t=new timer(2 of 2);
-  t[1]<<^WaitSeconds;
-  t[1]<<10;
+  t[1]<<^wait;
+  t[1]<<10.0;
   t[1]>>ready;
-  t[1]<<^End;
+  t[1]<<^end;
   c=new console(2 of 2);
-  c[1]<<^PutInt;
+  c[1]<<^int;
   c[1]<<SYSTEM&"aprocs";
-  c[1]<<^Stop;
+  c[1]<<^end;
 )

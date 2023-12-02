@@ -1,0 +1,16 @@
+#define $bt 1->2:String;$end;
+#define PRINT(x) HOST("cout << ",x,"->GetValue() << endl;")
+global $bt a(1,2);
+local service A(a (2 of 2) s)
+( s[1]>>str;
+  PRINT(str);
+)
+|
+local X(unsafe Int x)
+( if x<=0u
+  then
+  else s=new a(1 of 2);
+       s[2]<<"and another thing";
+       X(x-1u);
+)
+X(100u);

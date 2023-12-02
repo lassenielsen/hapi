@@ -293,22 +293,18 @@ string MpsSnd::ToC(const string &taskType) const // {{{
          << "    { " << endl;
   string valName=myExp->ToC(result, GetMsgType().ToCPtr()); // Compute message and store in variable valName
   result << "      _this->var_" << ToC_Name(myChannel.GetName()) << "->Send("
-           << myChannel.GetIndex()-1 << ",_task,";
+         << myChannel.GetIndex()-1 << ",_task,";
   if (GetMsgType().IsSimple())
     result << "(long int)";
   result << valName << ");" << endl; // Send computed value
   if (!GetMsgType().IsSimple())
-  { // Assume task or thread level
-    // Otherwise need to close session
-    result << "      " << ToC_Name(valName) << "->RemoveRef();" << endl;
-    // FIXME: Not good for consts! result << "      " << ToC_Name(valName) << "=NULL;" << endl;
-  }
+    result << "      RemoveRef(" << valName << ");" << endl;
   result << "    }" << endl;
 
   if (myFinal)
   {
     result << "  _this->var_" << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-           << "  _this->var_" << ToC_Name(myChannel.GetName()) << "->RemoveRef();" << endl
+           << "  RemoveRef(_this->var_" << ToC_Name(myChannel.GetName()) << ");" << endl
            << "  _this->var_" << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
   }
   result << mySucc->ToC(taskType);

@@ -386,11 +386,12 @@ string MpsBranch::ToC(const string &taskType) const // {{{
     // Fixme: Use goto *branchmap[((libpi::String*)_task->tmp)->GetValue()];
     result << "    if (((libpi::String*)_task->tmp)->GetValue()==\"" << it->first << "\")" << endl
            << "    {" << endl
-           << "      _task->tmp->RemoveRef();" << endl
+           << "      RemoveRef(_task->tmp);" << endl
            << "      _task->tmp=NULL;" << endl;
     if (find(myFinalBranches.begin(),myFinalBranches.end(),it->first)!=myFinalBranches.end()) {
       result << "      _this->var_" << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-             << "      _this->var_" << ToC_Name(myChannel.GetName()) << "->RemoveRef();" << endl;
+             << "      RemoveRef(_this->var_" << ToC_Name(myChannel.GetName()) << ");" << endl
+             << "      _this->var_" << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
     }
     result << "      _this->SetLabel(&&" << labels[it->first] << ");" << endl
            << "    }" << endl;

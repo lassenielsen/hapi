@@ -30,9 +30,9 @@
    ^end: \
     $end; \
   }
-#define stdorder(TYPE) \
-global $order(TYPE) stdorder_ ## TYPE (1 pure,2); \
-local pure service StdOrder ## TYPE (stdorder_ ## TYPE (1 of 2) s) \
+#define stdorder(TYPE,NAME) \
+global $order(TYPE) stdorder_ ## NAME (1 pure,2); \
+local pure service StdOrder ## NAME (stdorder_ ## NAME (1 of 2) s) \
 ( local pure X($order(TYPE)(1 of 1 pure,2) s) \
   ( s[2]>> \
     {^eq: \
@@ -62,9 +62,10 @@ local pure service StdOrder ## TYPE (stdorder_ ## TYPE (1 of 2) s) \
 ) \
 |
 
-stdorder(Int)
+stdorder(Int,Int)
 
-stdorder(Float)
+stdorder(Float,Float)
 
-stdorder(String)
+stdorder(String,String)
 
+stdorder(unsafe Int,uInt)

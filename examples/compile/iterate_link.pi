@@ -1,0 +1,13 @@
+global X(unsafe Int x)
+( $end; a(1,2);
+  if 1u<=x
+  then X(x-1u);
+  else
+)
+X(1000u);
+|
+X(1000u);
+|
+X(1000u);
+|
+X(1000u);

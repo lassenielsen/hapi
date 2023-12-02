@@ -419,6 +419,9 @@ string MpsRcv::ToC(const std::string &taskType) const // {{{
   if (!GetMsgType().IsSimple())
   { result << "(libpi::Value**)&_this->var_" << ToC_Name(myDest) << "))" << endl;
   }
+  else if (GetMsgType().ToString()=="Bool")
+  { result << "(long int*)&_this->tmpInt))" << endl;
+  }
   else
   { result << "(long int*)&_this->var_" << ToC_Name(myDest) << "))" << endl;
   }
@@ -430,8 +433,11 @@ string MpsRcv::ToC(const std::string &taskType) const // {{{
     result
       << "    // Session complete" << endl
       << "    _this->var_" << ToC_Name(myChannel.GetName()) << "->Close(true);" << endl
-      << "    _this->var_" << ToC_Name(myChannel.GetName()) << "->RemoveRef();" << endl
+      << "    RemoveRef(_this->var_" << ToC_Name(myChannel.GetName()) << ");" << endl
       << "    _this->var_" << ToC_Name(myChannel.GetName()) << "=NULL;" << endl;
+  }
+  if (GetMsgType().ToString()=="Bool")
+  { result << "    _this->var_" << ToC_Name(myDest) << "=(bool)_this->tmpInt;" << endl;
   }
   result << mySucc->ToC(taskType);
   return result.str();

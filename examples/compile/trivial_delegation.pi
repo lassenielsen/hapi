@@ -9,18 +9,18 @@ global $msg b(1,2);
 s=new a(1 of 2);
 t=new b(1 of 2);
 c=new console(2 of 2);
-c[1]<<^PutString<<"Sending Channel"<<^End;
+c[1]<<^str<<"Sending Channel"<<^nl<<^end;
 s[2]<<t;
 |
 t=new b(2 of 2);
 t[1]>>val;
 c=new console(2 of 2);
-c[1]<<^PutString<<"Received Value"<<^PutInt<<val<<^End;
+c[1]<<^str<<"Received Value "<<^int<<val<<^nl<<^end;
 |
 s=new a(2 of 2);
 s[1]>>t(1 of 2);
 Int v=5;
 c=new console(2 of 2);
-c[1]<<^PutString<<"Received Channel, Sending Value"
-    <<^PutInt<<v<<^End;
+c[1]<<^str<<"Received Channel, Sending Value "
+    <<^int<<v<<^nl<<^end;
 t[2]<<v;

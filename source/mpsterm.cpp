@@ -413,7 +413,18 @@ string MpsTerm::MakeC() // {{{
   map<string,MpsMsgType*> ids=main->TypedEV(Gamma);
   result
   << "class " << mainTask << " : public libpi::task::Task" << endl
-  << "{ public:" << endl;
+  << "{ public:" << endl
+  << "    ~" << mainTask << "()" << endl
+  << "    {" << endl;
+  for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
+  { if (!id->second->IsSimple())
+      result << "      if ( var_" << ToC_Name(id->first) << ")" << endl
+             << "      { RemoveRef(var_" << ToC_Name(id->first) << ");" << endl
+             << "        var_" << ToC_Name(id->first) << "=NULL;" << endl
+             << "      }" << endl;
+  }
+  result
+  << "    }" << endl;
   for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
     result << "    " << id->second->ToCPtr() << " var_" << ToC_Name(id->first) << ";" << endl;
   result

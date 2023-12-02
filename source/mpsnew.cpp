@@ -332,8 +332,8 @@ string MpsNew::ToC(const string &taskType) const // {{{
 {
   stringstream result;
   result << ToC_Yield()
-         << "    {" << endl;
-  result << "      _task->tmps.clear();" << endl;
+         << "    {" << endl
+         << "      _task->tmps.clear();" << endl;
   // Create all channels
   for (int i=0; i<myNames.size(); ++i)
     for (int j=0; j<myNames.size(); ++j)
@@ -342,16 +342,19 @@ string MpsNew::ToC(const string &taskType) const // {{{
   for (int i=0; i<myNames.size(); ++i)
   { string sesInChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_in"));
     string sesOutChannels = ToC_Name(MpsExp::NewVar(myNames[i]+"_out"));
-    result << "    vector<libpi::Channel*> " << sesInChannels << ";" << endl;
+    result << "    vector<libpi::task::Channel*> " << sesInChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << sesInChannels << ".push_back(dynamic_cast<libpi::Channel*>(_task->tmps[" << (j+i*myNames.size()) << "]));" << endl;
-    result << "    vector<libpi::Channel*> " << sesOutChannels << ";" << endl;
+      result << "    " << sesInChannels << ".push_back(dynamic_cast<libpi::task::Channel*>(_task->tmps[" << (j+i*myNames.size()) << "]));" << endl;
+    result << "    vector<libpi::task::Channel*> " << sesOutChannels << ";" << endl;
     for (int j=0; j<myNames.size(); ++j)
-      result << "    " << sesOutChannels << ".push_back(dynamic_cast<libpi::Channel*>(_task->tmps[" << (i+j*myNames.size()) << "]));" << endl;
+      result << "    " << sesOutChannels << ".push_back(dynamic_cast<libpi::task::Channel*>(_task->tmps[" << (i+j*myNames.size()) << "]));" << endl;
   
-    result << "      _this->var_" << ToC_Name(myNames[i]) << "=new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << ");" << endl;
+    result << "      AssignNewValue((libpi::Value**)&_this->var_" << ToC_Name(myNames[i]) << ",new libpi::Session(" << (i+1) << ", " << myNames.size() << ", " << sesInChannels << "," << sesOutChannels << "));" << endl;
   }
-  result << "      _this->tmps.clear();" << endl
+  result << "      while (!_task->tmps.empty())" << endl
+         << "      { RemoveRef(_task->tmps.back());" << endl
+         << "        _task->tmps.pop_back();" << endl
+         << "      }" << endl
          << "    }" << endl;
 
   result << mySucc->ToC(taskType);

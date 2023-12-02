@@ -1,0 +1,117 @@
+#define $type \
+  rec $x; \
+  1->2 \
+  {^more: $x; \
+   ^end: $end; \
+  }
+
+local X($type(2 of 1,2) s)
+( s[1]>>
+  {^more: X(s);
+   ^end:
+  }
+)
+global $type s1,s2(1,2);
+X(s2);
+|
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^more;
+s1[2]<<^end;

@@ -196,7 +196,7 @@ string MpsFunction::ToCTaskType() // {{{
   for (map<string,MpsMsgType*>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
   { if (!id->second->IsSimple())
     { ss << "      if (var_" << ToC_Name(id->first) << ")" << endl
-         << "      { var_" << ToC_Name(id->first) << "->RemoveRef();" << endl
+         << "      { RemoveRef(var_" << ToC_Name(id->first) << ");" << endl
          << "        var_" << ToC_Name(id->first) << "=NULL;" << endl
          << "      }" << endl;
     }
@@ -209,17 +209,21 @@ string MpsFunction::ToCTaskType() // {{{
   { ss << "    inline void SetStateArg" << std::distance(GetStateArgs().begin(),arg) << "(" << ids[*arg]->ToCPtr() << " &val)" << endl
        << "    { " << endl;
     if (!ids[*arg]->IsSimple())
-      ss << "      var_" << ToC_Name(*arg) << "->RemoveRef();" << endl;
-    ss << "      var_" << ToC_Name(*arg) << "=val;" << endl;
-    if (!ids[*arg]->IsSimple())
-      ss << "      var_" << ToC_Name(*arg) << "->AddRef();" << endl;
-    ss << "    }" << endl;
+      ss << "      val->AddRef();" << endl
+         << "      if (var_" << ToC_Name(*arg) << ")" << endl
+         << "        RemoveRef(var_" << ToC_Name(*arg) << ");" << endl;
+    ss << "      var_" << ToC_Name(*arg) << "=val;" << endl
+       << "    }" << endl;
   }
   for (vector<string>::const_iterator arg=GetArgs().begin(); arg!=GetArgs().end(); ++arg)
-  { ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(" << ids[*arg]->ToCPtr() << " val) { var_" << ToC_Name(*arg) << "=val; ";
+  { ss << "    inline void SetArg" << std::distance(GetArgs().begin(),arg) << "(" << ids[*arg]->ToCPtr() << " val)" << endl
+       << "    {" << endl;
     if (!ids[*arg]->IsSimple())
-      ss << "var_" << ToC_Name(*arg) << "->AddRef(); ";
-    ss << "}" << endl;
+      ss << "      val->AddRef();" << endl
+         << "      if (var_" << ToC_Name(*arg) << ")" << endl
+         << "        RemoveRef(var_" << ToC_Name(*arg) << ");" << endl;
+    ss << "      var_" << ToC_Name(*arg) << "=val; " << endl
+       << "    }" << endl;
   }
   ss
   << "};" << endl;
