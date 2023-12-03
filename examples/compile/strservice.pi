@@ -28,7 +28,11 @@ local pure service StringObj(stringobj (1 of 2) s) // {{{
       Strinag res="";
       HOST("{ size_t _from=mps_get_ui(*",from,"->get());") pure;
       HOST("  size_t _to=mps_get_ui(*",to,"->get());") pure;
-      HOST("  ",res,".reset(new string(",str,".get()->substr(_from,_to)));") pure;
+      HOST("  AssignValue((libpi::Value**)&",res,",new String(",str,"->GetValue().substr(_from,_to)));") pure;
+      s[2]<<res;
+     ^length:
+      Int res=0;
+      HOST("AssignNewValue((libpi::Value**)&",res,",new libpi::Int(",str,"->GetValue().length()));") pure;
       s[2]<<res;
      ^end:
     }
