@@ -14,6 +14,7 @@
 
 # KEYWORD tokens
 & := "&"
+% := "%"
 ( := "\\("
 ) := "\\)"
 * := "\\*"
@@ -199,12 +200,14 @@ Exp5 ::= ::exp_minus   Exp6 - Exp5
 Exp6 ::= ::exp_mult    Exp7 * Exp6
        | ::exp_lvl     Exp7
 Exp7 ::= ::exp_div     Exp8 / Exp7
+       | ::exp_mod     Exp8 % Exp7
        | ::exp_lvl     Exp8
 Exp8 ::= ::exp_and     Exp9 and Exp8
        | ::exp_lvl     Exp9
 Exp9 ::= ::exp_or      Exp10 or Exp9
        | ::exp_lvl     Exp10
-Exp10 ::= ::exp_amp    Exp10 & int
+Exp10 ::= ::exp_idx    Exp10 & int
+        | ::exp_att    Exp10 & bid
         | ::exp_lvl    Exp11
 Exp11 ::= ::exp_not    not Exp11
         | ::exp_lvl    Exp12

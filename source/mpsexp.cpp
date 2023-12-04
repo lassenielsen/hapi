@@ -416,9 +416,12 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
   { if (dynamic_cast<MpsIntMsgType*>(myLeftType) &&
         dynamic_cast<MpsIntMsgType*>(myRightType))
       return new MpsIntMsgType();
-    if (dynamic_cast<MpsFloatMsgType*>(myLeftType) &&
-        dynamic_cast<MpsFloatMsgType*>(myRightType))
+    else if (dynamic_cast<MpsFloatMsgType*>(myLeftType) &&
+             dynamic_cast<MpsFloatMsgType*>(myRightType))
       return new MpsFloatMsgType();
+    else if (dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+             dynamic_cast<MpsIntMsgType*>(myRightType))
+      return new MpsStringMsgType();
     else
       return new MpsMsgNoType();
   } // }}}
@@ -464,6 +467,13 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
     unsigned long int idx = mpz_get_ui(index->GetValue());
     MpsMsgType *result = lhsptr->GetElement(idx)->Copy();
     return result;
+  } // }}}
+  if (myName == "%") // String tail {{{
+  {
+    if (dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+        dynamic_cast<MpsIntMsgType*>(myRightType))
+      return new MpsStringMsgType();
+    new MpsMsgNoType();
   } // }}}
   else // Unknown operator
     return new MpsMsgNoType();
@@ -942,16 +952,39 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
-  dest << "      shared_ptr<" << typeName << "> " << varName << "((*((" << myLeftType->ToC() << "*)" << leftName << ".get())) ";
-  if (myName=="=")
-    dest << "==";
-  else if (myName=="or")
-    dest << "||";
-  else if (myName=="and")
-    dest << "&&";
+  if (myName=="&" && myRight->ToString()=="\"^length\"")
+  { dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(" <<ToC_Name(leftName) << ".get()->GetValue().length()));" << endl;
+  }
+  else if (myName=="&" && myRightType->ToString()=="Int")
+  { dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl
+         << "      { " << "long _l=mpz_get_si(" << ToC_Name(rightName) << ".get()->GetValue());" << endl
+         << "        " << ToC_Name(varName) << ".reset(new libpi::Int(" <<ToC_Name(leftName) << ".get()->GetValue()[_l]));" << endl
+         << "      }" << endl;
+  }
+  else if (myName=="/" && myLeftType->ToString()=="String" && myRightType->ToString()=="Int")
+  { dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl
+         << "      { " << "long _l=mpz_get_si(" << ToC_Name(rightName) << ".get()->GetValue());" << endl
+         << "        " << ToC_Name(varName) << ".reset(new libpi::String(((libpi::String*)" << ToC_Name(leftName) << ".get())->GetValue().substr(0,_l)));" << endl
+         << "      }" << endl;
+  }
+  else if (myName=="%" && myLeftType->ToString()=="String" && myRightType->ToString()=="Int")
+  { dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl
+         << "      { " << "long _l=mpz_get_si(((libpi::Int*)" << ToC_Name(rightName) << ".get())->GetValue());" << endl
+         << "        " << ToC_Name(varName) << ".reset(new libpi::String(((libpi::String*)" << ToC_Name(leftName) << ".get())->GetValue().substr(_l)));" << endl
+         << "      }" << endl;
+  }
   else
-    dest << myName;
-  dest << " (*((" << myRightType->ToC() << "*)" << rightName << ".get())));" << endl;
+  { dest << "      shared_ptr<" << typeName << "> " << varName << "((*((" << myLeftType->ToC() << "*)" << leftName << ".get())) ";
+    if (myName=="=")
+      dest << "==";
+    else if (myName=="or")
+      dest << "||";
+    else if (myName=="and")
+      dest << "&&";
+    else
+      dest << myName;
+    dest << " (*((" << myRightType->ToC() << "*)" << rightName << ".get())));" << endl;
+  }
   return varName;
 } // }}}
 string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{

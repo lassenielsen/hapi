@@ -958,6 +958,15 @@ MpsExp *MpsParser::Exp(const parsetree *tree) // {{{
     delete right;
     return result;
   } // }}}
+  else if (tree->Case() == "exp_mod") // Exp8 / Exp7 {{{
+  {
+    MpsExp *left = Exp(tree->Child(0));
+    MpsExp *right = Exp(tree->Child(2));
+    MpsExp *result = new MpsBinOpExp("%",*left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
   else if (tree->Case() == "exp_and") // Exp9 and Exp8 {{{
   {
     MpsExp *left = Exp(tree->Child(0));
@@ -976,13 +985,22 @@ MpsExp *MpsParser::Exp(const parsetree *tree) // {{{
     delete right;
     return result;
   } // }}}
-  else if (tree->Case() == "exp_amp") // Exp10 & int {{{
+  else if (tree->Case() == "exp_idx") // Exp10 & int {{{
   {
     MpsExp *left=Exp(tree->Child(0));
     mpz_t val;
     mpz_init_set_str(val,tree->Child(2)->Token().Content().c_str(),10);
     MpsExp *right=new MpsIntVal(val);
     mpz_clear(val);
+    MpsExp *result = new MpsBinOpExp("&", *left, *right, MpsMsgNoType(), MpsMsgNoType());
+    delete left;
+    delete right;
+    return result;
+  } // }}}
+  else if (tree->Case() == "exp_att") // Exp10 & int {{{
+  {
+    MpsExp *left=Exp(tree->Child(0));
+    MpsExp *right=new MpsStringVal(tree->Child(2)->Token().Content());
     MpsExp *result = new MpsBinOpExp("&", *left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;
