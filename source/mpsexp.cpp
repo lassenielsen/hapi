@@ -419,8 +419,13 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
     else if (dynamic_cast<MpsFloatMsgType*>(myLeftType) &&
              dynamic_cast<MpsFloatMsgType*>(myRightType))
       return new MpsFloatMsgType();
-    else if (dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+    else if (myName=="/" &&
+             dynamic_cast<MpsStringMsgType*>(myLeftType) &&
              dynamic_cast<MpsIntMsgType*>(myRightType))
+      return new MpsStringMsgType();
+    else if (myName=="+" &&
+             dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+             dynamic_cast<MpsStringMsgType*>(myRightType))
       return new MpsStringMsgType();
     else
       return new MpsMsgNoType();
@@ -457,16 +462,19 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
       return new MpsMsgNoType();
   } // }}}
   if (myName == "&") // Untupeling [(_,...,_,X,_,...,_] -> idx -> X {{{
-  {
-    MpsTupleMsgType *lhsptr = dynamic_cast<MpsTupleMsgType*>(myLeftType);
-    if (lhsptr==NULL)
+  { if (dynamic_cast<MpsTupleMsgType*>(myLeftType) &&
+        dynamic_cast<MpsIntVal*>(myRight))
+    { unsigned long int idx = mpz_get_ui(dynamic_cast<MpsIntVal*>(myRight)->GetValue());
+      MpsMsgType *result = dynamic_cast<MpsTupleMsgType*>(myLeftType)->GetElement(idx)->Copy();
+      return result;
+    }
+    else if (dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+             dynamic_cast<MpsStringVal*>(myRight) &&
+             dynamic_cast<MpsStringVal*>(myRight)->GetValue()=="^length")
+    { return new MpsIntMsgType();
+    }
+    else
       return new MpsMsgNoType();
-    MpsIntVal *index = dynamic_cast<MpsIntVal*>(myRight);
-    if (index==NULL)
-      return new MpsMsgNoType();
-    unsigned long int idx = mpz_get_ui(index->GetValue());
-    MpsMsgType *result = lhsptr->GetElement(idx)->Copy();
-    return result;
   } // }}}
   if (myName == "%") // String tail {{{
   {
@@ -953,7 +961,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
   if (myName=="&" && myRight->ToString()=="\"^length\"")
-  { dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(" <<ToC_Name(leftName) << ".get()->GetValue().length()));" << endl;
+  { dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(((libpi::String*)" <<ToC_Name(leftName) << ".get())->GetValue().length()));" << endl;
   }
   else if (myName=="&" && myRightType->ToString()=="Int")
   { dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl

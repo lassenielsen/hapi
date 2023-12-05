@@ -3,6 +3,7 @@
 c=new console(2 of 2);
 String s="Hello World";
 c[1]<<^str<<"String s: "<<^str<<s<<^nl;
+c[1]<<^str<<"s&^length: "<<^int<<s&^length<<^nl;
 c[1]<<^str<<"s/5:"<<^str<<s/5<<^nl;
 c[1]<<^str<<"s%6:"<<^str<<s%6<<^nl;
 c[1]<<^str<<"(s/5)+(s%6):"<<^str<<(s/5)+(s%6)<<^nl;
