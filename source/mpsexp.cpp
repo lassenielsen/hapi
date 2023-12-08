@@ -485,7 +485,7 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
     if (dynamic_cast<MpsStringMsgType*>(myLeftType) &&
         dynamic_cast<MpsIntMsgType*>(myRightType))
       return new MpsStringMsgType();
-    new MpsMsgNoType();
+    return new MpsMsgNoType();
   } // }}}
   else // Unknown operator
     return new MpsMsgNoType();
@@ -964,7 +964,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
-  if (myName=="&" && myRight->ToString()=="\"^length\"")
+  if (myName=="&" && myLeftType->ToString()=="String" && myRight->ToString()=="\"^length\"")
   { dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(((libpi::String*)" <<ToC_Name(leftName) << ".get())->GetValue().length()));" << endl;
   }
   else if (myName=="&" && myRightType->ToString()=="Int")
@@ -975,7 +975,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   }
   else if (myName=="/" && myLeftType->ToString()=="String" && myRightType->ToString()=="Int")
   { dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl
-         << "      { " << "long _l=mpz_get_si(" << ToC_Name(rightName) << ".get()->GetValue());" << endl
+         << "      { " << "long _l=mpz_get_si(((libpi::Int*)" << ToC_Name(rightName) << ".get())->GetValue());" << endl
          << "        " << ToC_Name(varName) << ".reset(new libpi::String(((libpi::String*)" << ToC_Name(leftName) << ".get())->GetValue().substr(0,_l)));" << endl
          << "      }" << endl;
   }
@@ -1425,7 +1425,7 @@ bool LK_Axiom(vector<MpsExp*> &exps, set<string> pos, set<string> neg) // {{{
               return false;
           }
           else
-          { cerr << "LK_Axiom: Unknown Binary Operator " << binexp->GetOp() << endl;
+          { cerr << "LK_Axiom: Unknown Binary Operator " << negbinexp->GetOp() << endl;
             return false;
           }
         } // }}}
