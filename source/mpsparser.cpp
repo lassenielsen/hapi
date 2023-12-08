@@ -985,13 +985,11 @@ MpsExp *MpsParser::Exp(const parsetree *tree) // {{{
     delete right;
     return result;
   } // }}}
-  else if (tree->Case() == "exp_idx") // Exp10 & int {{{
+  else if (tree->Case() == "exp_idx") // Exp10 & Exp11 {{{
   {
     MpsExp *left=Exp(tree->Child(0));
     mpz_t val;
-    mpz_init_set_str(val,tree->Child(2)->Token().Content().c_str(),10);
-    MpsExp *right=new MpsIntVal(val);
-    mpz_clear(val);
+    MpsExp *right=Exp(tree->Child(2));
     MpsExp *result = new MpsBinOpExp("&", *left, *right, MpsMsgNoType(), MpsMsgNoType());
     delete left;
     delete right;

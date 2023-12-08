@@ -473,6 +473,10 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
              dynamic_cast<MpsStringVal*>(myRight)->GetValue()=="^length")
     { return new MpsIntMsgType();
     }
+    else if (dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+             dynamic_cast<MpsIntMsgType*>(myRightType))
+    { return new MpsIntMsgType();
+    }
     else
       return new MpsMsgNoType();
   } // }}}
@@ -965,8 +969,8 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   }
   else if (myName=="&" && myRightType->ToString()=="Int")
   { dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl
-         << "      { " << "long _l=mpz_get_si(" << ToC_Name(rightName) << ".get()->GetValue());" << endl
-         << "        " << ToC_Name(varName) << ".reset(new libpi::Int(" <<ToC_Name(leftName) << ".get()->GetValue()[_l]));" << endl
+         << "      { " << "long _l=mpz_get_si(((libpi::Int*)" << ToC_Name(rightName) << ".get())->GetValue());" << endl
+         << "        " << ToC_Name(varName) << ".reset(new libpi::Int((long)((libpi::String*)" <<ToC_Name(leftName) << ".get())->GetValue()[_l]));" << endl
          << "      }" << endl;
   }
   else if (myName=="/" && myLeftType->ToString()=="String" && myRightType->ToString()=="Int")

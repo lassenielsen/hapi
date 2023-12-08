@@ -206,7 +206,7 @@ Exp8 ::= ::exp_and     Exp9 and Exp8
        | ::exp_lvl     Exp9
 Exp9 ::= ::exp_or      Exp10 or Exp9
        | ::exp_lvl     Exp10
-Exp10 ::= ::exp_idx    Exp10 & int
+Exp10 ::= ::exp_idx    Exp10 & Exp11
         | ::exp_att    Exp10 & bid
         | ::exp_lvl    Exp11
 Exp11 ::= ::exp_not    not Exp11
