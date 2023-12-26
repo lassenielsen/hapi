@@ -340,25 +340,24 @@ MpsTerm *MpsTerm::ApplyOther(const std::string &path) const // {{{
 int _compile_id=0;
 /* Make executable C++ code for processes
  */
-string MpsTerm::MakeC() const // {{{
+void MpsTerm::MakeC(ostream &out) const // {{{
 { _compile_id=1;
-  stringstream result;
-  result << "/* ==== ORIGINAL ====\n" << ToString() << "\n*/\n";
+  //out << "/* ==== ORIGINAL ====\n" << ToString() << "\n*/\n";
   MpsTerm *step1=RenameAll();
-  result << "/* ==== RENAMED ====\n" << step1->ToString() << "\n*/\n";
+  //out << "/* ==== RENAMED ====\n" << step1->ToString() << "\n*/\n";
   MpsTerm *step2=step1->FlattenFork(false,true,false);
   delete step1;
-  result << "/* ==== FLATTENFORKED ====\n" << step2->ToString() << "\n*/\n";
+  //out << "/* ==== FLATTENFORKED ====\n" << step2->ToString() << "\n*/\n";
   MpsTerm *step3=step2->CloseDefs();
   delete step2;
-  result << "/* ==== CLOSEDEFED ====\n" << step3->ToString() << "\n*/\n";
+  //out << "/* ==== CLOSEDEFED ====\n" << step3->ToString() << "\n*/\n";
   MpsFunctionEnv defs;
   // Move definitions to global env
   MpsTerm *main=step3->ExtractDefinitions(defs);
   delete step3;
   // Ready to generate code
   string mainTask="TaskMain";
-  result
+  out
     << "#include <libpi/value.hpp>\n"
     << "#include <libpi/bool.hpp>\n"
     << "#include <libpi/int.hpp>\n"
@@ -373,8 +372,8 @@ string MpsTerm::MakeC() const // {{{
     << "// HEADERS {{{\n"
     << main->ToCHeader();
   for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
-    result << def->GetBody().ToCHeader();
-  result
+    out << def->GetBody().ToCHeader();
+  out
     << "// }}}\n"
     << "// Value declerations {{{\n"
     << "std::vector<char*> _args;\n";
@@ -386,22 +385,22 @@ string MpsTerm::MakeC() const // {{{
     def->GetBody().ToCConsts(consts,existing);
   // Add const defs to result
   for (std::vector<std::string>::const_iterator c=consts.begin(); c!=consts.end(); ++c)
-    result << *c;
+    out << *c;
   // Add framework to result
-  result
+  out
     << "// }}}\n"
     << "// Task Types {{{\n";
   set<string> ids=main->EV();
-  result
+  out
   << "class " << mainTask << " : public libpi::task::Task" << endl
   << "{ public:" << endl;
   for (set<string>::const_iterator id=ids.begin(); id!=ids.end(); ++id)
-    result << "    shared_ptr<libpi::Value> var_" << ToC_Name(*id) << ";" << endl;
-  result
+    out << "    shared_ptr<libpi::Value> var_" << ToC_Name(*id) << ";" << endl;
+  out
   << "};" << endl;
   for (MpsFunctionEnv::const_iterator def=defs.begin(); def!=defs.end(); ++def)
-    result << def->ToCTaskType();
-  result
+    out << def->ToCTaskType();
+  out
     << "// }}}\n"
     << "// All Methods {{{\n"
     << "inline bool _methods(shared_ptr<libpi::task::Task> &_task)\n"
@@ -511,7 +510,7 @@ string MpsTerm::MakeC() const // {{{
     << "  return 0;\n"
     << "} // }}}";
   delete main;
-  return result.str();
+  return;
 } // }}}
 MpsTerm *MpsTerm::Parallelize() const // {{{
 { MpsTerm *seqTerm;
