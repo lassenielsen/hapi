@@ -436,11 +436,11 @@ string MpsCall::ToC(const string &taskType) const // {{{
 { string newName = ToC_Name(MpsExp::NewVar("task")); // Create variable name foor the new state
   stringstream result;
   result << ToC_Yield()
-//         << "    if (dynamic_cast<Task_" << ToC_Name(myName) << "*>(_task)!=NULL) // Recursive call" << endl
-//         << "    { Task_" << ToC_Name(myName) << "* _taskref=(Task_" << ToC_Name(myName) << "*)_task;" << endl
-//         << ToC_prepare("_taskref") << endl
-//         << "    }" << endl
-//         << "    else" << endl
+         << "    if (dynamic_cast<Task_" << ToC_Name(myName) << "*>(_task)!=NULL) // Recursive call" << endl
+         << "    { Task_" << ToC_Name(myName) << "* _taskref=(Task_" << ToC_Name(myName) << "*)_task;" << endl
+         << ToC_prepare("_taskref") << endl
+         << "    }" << endl
+         << "    else" << endl
          << "    { Task_" << ToC_Name(myName) << " *" << newName << " = new Task_" << ToC_Name(myName) << "();" << endl
          << "      " << newName << "->SetWorker(&_task->GetWorker());" << endl
          << ToC_prepare(newName)

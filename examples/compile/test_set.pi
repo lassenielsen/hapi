@@ -10,7 +10,7 @@ global PrintIntSet($set(Int)(2 of 1 pure,2) s)
     l[1]>>
     {^NonEmpty:
       l[1]>>v>>lt>>rt;
-      global $xreturn r1,r2;
+      global $xreturn r1,r2(1,2);
       ( X(lt,c,first,r1);
       | r2[1]>>c>>first;
         String sep=if first then "" else ",";
@@ -23,7 +23,7 @@ global PrintIntSet($set(Int)(2 of 1 pure,2) s)
   )
   c=new console(2 of 2);
   c[1]<<^str<<"{";
-  global $xreturn r1,r2;
+  global $xreturn r1,r2(1,2);
   X(s,c,true,r1);
   |
   r2[1]>>c>>empty;
@@ -39,7 +39,7 @@ global RangeIntSet(Int idx, $set(Int)(2 of 1 pure,2) dest, $intsetresult(2 of 1,
 iset=new set(2 of 2);
 iset<<Int;
 iset[1]<<stdorder_Int;
-global $intsetresult r1,r2;
+global $intsetresult r1,r2(1,2);
 RangeIntSet(10000,iset,r2);
 |
 r1[2]>>iset;
