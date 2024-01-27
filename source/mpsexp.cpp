@@ -970,7 +970,7 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   else if (myName=="&" && myRightType->ToString()=="Int")
   { dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl
          << "      { " << "long _l=mpz_get_si(((libpi::Int*)" << ToC_Name(rightName) << ".get())->GetValue());" << endl
-         << "        " << ToC_Name(varName) << ".reset(new libpi::Int((long)((libpi::String*)" <<ToC_Name(leftName) << ".get())->GetValue()[_l]));" << endl
+         << "        " << ToC_Name(varName) << ".reset(new "<< typeName << "(((libpi::String*)" <<ToC_Name(leftName) << ".get())->GetValue()[_l]));" << endl
          << "      }" << endl;
   }
   else if (myName=="/" && myLeftType->ToString()=="String" && myRightType->ToString()=="Int")
@@ -1007,7 +1007,7 @@ string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
   for (vector<MpsExp*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
   { dest << "      {" << endl;
     string eltName = (*it)->ToC(dest,"Unknown");
-    dest << "        " << varName << ".AddValue(" << eltName << ");" << endl
+    dest << "        " << varName << "->AddValue(" << eltName << ");" << endl
          << "      }" << endl;
   }
   return varName;
