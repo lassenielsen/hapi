@@ -1,0 +1,121 @@
+// oAuth protocol: Participants: 1 is Server, 2 is Authenticator and 3 is client
+#define $oauth_req \
+  rec $oauth_req; \
+  3->1: String; /* ressource */ \
+  3->1: Int; /* token */ \
+  1->3 \
+  {^retry: \
+    1->2 \
+    {^retry: \
+      $oauth_req; \
+    } \
+   ^ok: \
+    1->2 \
+    {^ok: \
+      1->3: String; /* data */ \
+      $end; \
+    } \
+   ^fail: \
+    1->2 \
+    {^fail: \
+      $end; \
+    } \
+  }
+
+#define $oauth \
+  rec $oauth; \
+  3->2: String; /* client id */ \
+  3->2: String; /* secret */ \
+  2->3 \
+  {^ok: \
+    2->1 \
+    {^ok: \
+      2->3: Int; /* token */ \
+      $oauth_req \
+    } \
+   ^retry: \
+    2->1 \
+    {^retry: \
+      $oauth; \
+    } \
+   ^fail: \
+    2->1 \
+    {^fail: \
+      $end; \
+    } \
+  }
+
+global $oauth oauth(1,2,3);
+local Client($oauth(3 of 1,2,3) this) // {{{
+( this[2]<<"username"<<"password";
+  this[2]>>
+  {^fail:
+   ^retry:
+    Client(this);
+   ^ok:
+    local ClientReq($oauth_req(3 of 1,2,3) this, Int token) // {{{
+    ( this[1]<<"/everything"<<token;
+      this[1]>>
+      {^fail:
+       ^ok:
+        this[1]>>res; // Yay, we got the ressource
+       ^retry:
+        ClientReq(this,token+1); // If token didn't work, maybe token+1 will
+      }
+    ) // }}}
+    this[2]>>t;
+    ClientReq(this,t);
+  }
+) // }}}
+c = new oauth(3 of 3);
+Client(c);
+|
+local Server($oauth(1 of 1,2,3) this) // {{{
+( this[2]>>
+  {^ok:
+    local ServerReq($oauth_req(1 of 1,2,3) this, Int tries) // {{{
+    ( this[3]>>res>>token;
+      if 4<=token
+      then this[3]<<^ok;
+           this[2]<<^ok;
+           this[3]<<"Token accepted.";
+      else if 3<=tries
+           then this[3]<<^fail;
+                this[2]<<^fail;
+           else this[3]<<^retry;
+                this[2]<<^retry;
+                ServerReq(this,tries+1);
+    ) // }}}
+    ServerReq(this,0);
+   ^retry:
+    Server(this);
+   ^fail:
+  }
+) // }}}
+s = new oauth(1 of 3);
+Server(s);
+|
+local Authenticator($oauth(2 of 1,2,3) this, Int tries) // {{{
+( this[3]>>id>>secret;
+  if (id="username") and (secret="password")
+  then this[3]<<^ok;
+       this[1]<<^ok;
+       this[3]<<3;
+       local AuthenticatorReq($oauth_req(2 of 1,2,3) this) // {{{
+       ( this[1]>>
+         {^retry:
+           AuthenticatorReq(this);
+          ^ok:
+          ^fail:
+         }
+       ) // }}}
+       AuthenticatorReq(this);
+  else if 3<=tries
+       then this[3]<<^fail;
+            this[1]<<^fail;
+       else this[3]<<^retry;
+            this[1]<<^retry;
+            Authenticator(this,tries+1);
+) // }}}
+a = new oauth(2 of 3);
+Authenticator(a,0);

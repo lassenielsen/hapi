@@ -1,0 +1,54 @@
+// Video Stream protocol: Participants: 1 is Server, 2 is Authenticator and 3 is client
+#define $vStream \
+  rec $vStream; \
+    3->2 \
+    {^reqVideo: \
+      2->1 \
+      {^reqVideo: \
+        1->2: String; /* video */ \
+        2->3: String; /* video */ \
+        $vStream; \
+      } \
+     ^close: \
+      2->1 \
+      {^close: \
+        $end; \
+      } \
+    }
+
+global $vStream vStream(1,2,3);
+local Client($vStream(3 of 1,2,3) this, Int videos) // {{{
+( if 0<=videos
+  then this[2]<<^reqVideo;
+       this[2]>>video;
+       /* Watch video or whatever */
+       Client(this,videos-1);
+  else this[2]<<^close;
+) // }}}
+c = new vStream(3 of 3);
+Client(c,5);
+|
+local Authenticator($vStream(2 of 1,2,3) this) // {{{
+( this[3]>>
+  {^reqVideo:
+    this[1]<<^reqVideo;
+    this[1]>>video;
+    this[3]<<video;
+    Authenticator(this);
+   ^close:
+    this[1]<<^close;
+  }
+) // }}}
+a = new vStream(2 of 3);
+Authenticator(a);
+|
+local Server($vStream(1 of 1,2,3) this) // {{{
+( this[2]>>
+  {^reqVideo:
+    this[2]<<"video";
+    Server(this);
+   ^close:
+  }
+) // }}}
+s = new vStream(1 of 3);
+Server(s);

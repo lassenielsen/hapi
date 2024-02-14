@@ -1,0 +1,234 @@
+#include<console.pi>
+// smtp protocol: Participants: 1 is Server, 2 is Client {{{
+#define $smtp \
+  1->2 \
+  {^220_SERVICE_READY: \
+    1->2: String; /* Welcome message */ \
+    2->1 \
+    {^EHLO: \
+      2->1: String; /* Hostname */ \
+      $smtp_ehlo \
+     ^QUIT: \
+      $end; \
+    } \
+  }
+#define $smtp_ehlo \
+  rec $smtp_ehlo; \
+  1->2 \
+  {^250d: \
+    $smtp_ehlo; \
+   ^250: \
+    1->2: String; /* Hostname */ \
+    2->1 \
+    {^StartTLS: \
+      1->2 \
+      {^220: \
+        /* TLS Handshake not in application layer */ \
+        2->1 \
+        {^EHLO: \
+          $smtp_tls \
+         ^QUIT: \
+           $end; \
+        } \
+      } \
+     ^QUIT: \
+      $end; \
+    } \
+  }
+#define $smtp_tls \
+  rec $smtp_tls; \
+  1->2 \
+  {^250d: \
+    $smtp_tls; \
+   ^250: \
+    1->2: String; /* Hostname */ \
+    $smtp_cmd \
+  }
+#define $smtp_cmd \
+  rec $smtp_cmd; \
+  2->1 \
+  {^AUTH: \
+    1->2 \
+    {^235: \
+      $smtp_auth \
+     ^535: \
+      $smtp_cmd; \
+    } \
+   ^QUIT: \
+    $end; \
+  }
+#define $smtp_auth \
+  rec $smtp_auth; \
+  2->1 \
+  {^MAIL: \
+    2->1: String; /* FROM */ \
+    1->2 \
+    {^501: \
+      $smtp_auth; \
+     ^250: \
+      $smtp_mail($smtp_auth;) \
+    } \
+   ^QUIT: \
+    $end; \
+  }
+#define $smtp_mail($auth) \
+  rec $smtp_mail; \
+  2->1 \
+  {^RCPT: \
+    2->1: String; /* RECEIVER */ \
+    1->2 \
+    {^250: \
+      $smtp_mail; \
+    } \
+   ^DATA: \
+    1->2 \
+    {^354: \
+      2->1: String; /* TO */ \
+      2->1: String; /* FROM */ \
+      $smtp_data($auth) \
+    } \
+  }
+#define $smtp_data($auth) \
+  rec $smtp_data; \
+  2->1 \
+  {^DATALINE: \
+    2->1: String; /* DataLine */ \
+    2->1: String; /* DataLine */ \
+    $smtp_data; \
+   ^SUBJECT: \
+    2->1: String; /* Subject */ \
+    2->1: String; /* Subject */ \
+    $smtp_data; \
+   ^ENDOFDATA: \
+    $auth \
+  }
+// }}}
+global $smtp smtp(1,2);
+local service SmtpServer(smtp(1 of 2) this) // {{{
+( this[2]<<^220_SERVICE_READY;
+  this[2]<<"Welcome to the SMTP service!";
+  this[2]>>
+  {^QUIT:
+   ^EHLO:
+    this[2]>>msg;
+    this[2]<<^250;
+    this[2]<<"smtpservice.pi";
+    this[2]>>
+    {^QUIT:
+     ^StartTLS:
+      this[2]<<^220;
+      this[2]>>
+      {^QUIT:
+       ^EHLO:
+        this[2]<<^250;
+        this[2]<<"smtpservice.pi";
+        this[2]>>
+        {^QUIT:
+         ^AUTH:
+          this[2]<<^235;
+          local SmtpServerAuth($smtp_auth(1 of 1,2) this) // {{{
+          ( this[2]>>
+            {^QUIT:
+             ^MAIL:
+              this[2]>>from;
+              Bool valid_from=true; // Validate from address
+              if valid_from
+              then this[2]<<^250;
+                   local SmtpServerMail($smtp_mail($smtp_auth)(1 of 1,2) this, String rcpt) // {{{
+                   ( this[2]>>
+                     {^RCPT:
+                       this[2]>>r;
+                       this[2]<<^250; // Can only accept
+                       SmtpServerMail(this,r);
+                      ^DATA:
+                       this[2]<<^354;
+                       this[2]>>to>>from;
+                       local SmtpServerData($smtp_data($smtp_auth)(1 of 1,2) this, String subject, String data) // {{{
+                       ( this[2]>>
+                         {^DATALINE:
+                           this[2]>>line1>>line2;
+                           SmtpServerData(this,subject,line1);
+                          ^SUBJECT:
+                           this[2]>>s1>>s2;
+                           SmtpServerData(this,s1,data);
+                          ^ENDOFDATA:
+                           c=new console(2 of 2);
+                           c[1]<< ^str << "Server received mail" << ^nl
+                               << ^str << "FROM: " << ^str << from << ^nl
+                               << ^str << "RCPT: " << ^str << rcpt << ^nl
+                               << ^str << "SUBJ: " << ^str << subject << ^nl
+                               << ^end;
+                           SmtpServerAuth(this);
+                         }
+                       ) // }}}
+                       SmtpServerData(this,"","");
+                     }
+                   ) // }}}
+                   SmtpServerMail(this,"");
+              else this[2]<<^501;
+                   SmtpServerAuth(this);
+            }
+          ) // }}}
+          SmtpServerAuth(this);
+        }
+      }
+    }
+  }
+) // }}}
+|
+client=new smtp(2 of 2);
+client[1]>>
+{^220_SERVICE_READY:
+  client[1]>>msg;
+  client[1]<<^EHLO<<"user";
+  local SmtpClientEhlo($smtp_ehlo(2 of 1,2) this) // {{{
+  ( this[1]>>
+    {^250d:
+      SmtpClientEhlo(this);
+     ^250:
+      this[1]>>srv;
+      this[1]<<^StartTLS;
+      this[1]>>
+      {^220:
+        this[1]<<^EHLO;
+        local SmtpClientTls($smtp_tls(2 of 1,2) this) // {{{
+        ( this[1]>>
+          {^250d:
+            SmtpClientTls(this);
+           ^250:
+            this[1]>>srv;
+            this[1]<<^AUTH;
+            this[1]>>
+            {^235:
+              this[1]<<^MAIL<<"user@smtpserver.pi";
+              this[1]>>
+              {^501:
+                this[1]<<^QUIT;
+                // FROM INVALID
+               ^250:
+                this[1]<<^RCPT<<"friend@smtpserver.pi";
+                this[1]>>
+                {^250:
+                  this[1]<<^DATA;
+                  this[1]>>
+                  {^354:
+                    this[1]<<"friend@smtpserver.pi"<<"user@smtpserver.pi"
+                           <<^SUBJECT<<"SMTP MESSAGE"<<"SUBJECT"
+                           <<^DATALINE<<"MSG1"<<"MSG2"
+                           <<^ENDOFDATA<<^QUIT;
+                    // MESSAGE SENT
+                  }
+                }
+              }
+             ^535:
+              this[1]<<^QUIT;
+              //AUTH FAILED
+            }
+          }
+        ) // }}}
+        SmtpClientTls(this);
+      }
+    }
+  ) // }}}
+  SmtpClientEhlo(client);
+}

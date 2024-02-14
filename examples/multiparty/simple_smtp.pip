@@ -1,0 +1,172 @@
+       
+
+HOSTHEADER("#include <iostream>");
+global rec $console; 2->1 {^str: 2->1:String; $console; ^int: 2->1:Int; $console; ^flt: 2->1:Float; $console; ^nl: $console; ^input: 2->1 {^str: 1->2:String; $console; ^int: 1->2:Int; $console; } ^end: $end; } console(1,2);
+local Console()
+( s = new console(1 of 2);
+  local ConsoleSession(rec $console; 2->1 {^str: 2->1:String; $console; ^int: 2->1:Int; $console; ^flt: 2->1:Float; $console; ^nl: $console; ^input: 2->1 {^str: 1->2:String; $console; ^int: 1->2:Int; $console; } ^end: $end; }(1 of 1,2) s)
+  ( s[2]>>
+    {^str:
+      s[2]>>str;
+      HOST("std::cout << ", str, "->GetValue() << std::flush;");
+      ConsoleSession(s);
+     ^int:
+      s[2]>>i;
+      HOST("std::cout << ", i, "->ToString() << std::flush;");
+      ConsoleSession(s);
+     ^flt:
+      s[2]>>f;
+      HOST("std::cout << ", f, "->ToString() << std::flush;");
+      ConsoleSession(s);
+     ^nl:
+      HOST("std::cout << std::endl;");
+      ConsoleSession(s);
+     ^input:
+      s[2]>>
+      {^str:
+        String val="";
+        HOST("{ std::string _s; std::cin >> _s; ", val, "=new libpi::String(_s); }");
+        s[2]<<val;
+        ConsoleSession(s);
+       ^int:
+        Int val=0;
+        HOST("{ long _l; std::cin >> _l; ", val, "=new libpi::Int(_l); }");
+        s[2]<<val;
+        ConsoleSession(s);
+      }
+     ^end:
+      Console();
+    }
+  )
+  ConsoleSession(s);
+)
+Console(); |
+global 1->2 {^220_SERVICE_READY: 1->2: String; 2->1 {^EHLO: 2->1: String; rec $smtp_ehlo; 1->2 {^250d: $smtp_ehlo; ^250: 1->2: String; 2->1 {^StartTLS: 1->2 {^220: 2->1 {^EHLO: rec $smtp_tls; 1->2 {^250d: $smtp_tls; ^250: 1->2: String; rec $smtp_cmd; 2->1 {^AUTH: 1->2 {^235: rec $smtp_auth; 2->1 {^MAIL: 2->1: String; 1->2 {^501: $smtp_auth; ^250: rec $smtp_mail; 2->1 {^RCPT: 2->1: String; 1->2 {^250: $smtp_mail; } ^DATA: 1->2 {^354: 2->1: String; 2->1: String; rec $smtp_data; 2->1 {^DATALINE: 2->1: String; 2->1: String; $smtp_data; ^SUBJECT: 2->1: String; 2->1: String; $smtp_data; ^ENDOFDATA: $smtp_auth; } } } } ^QUIT: $end; } ^535: $smtp_cmd; } ^QUIT: $end; } } ^QUIT: $end; } } ^QUIT: $end; } } ^QUIT: $end; } } smtp(1,2);
+local service SmtpServer(smtp(1 of 2) this)
+( this[2]<<^220_SERVICE_READY;
+  this[2]<<"Welcome to the SMTP service!";
+  this[2]>>
+  {^QUIT:
+   ^EHLO:
+    this[2]>>msg;
+    this[2]<<^250;
+    this[2]<<"smtpservice.pi";
+    this[2]>>
+    {^QUIT:
+     ^StartTLS:
+      this[2]<<^220;
+      this[2]>>
+      {^QUIT:
+       ^EHLO:
+        this[2]<<^250;
+        this[2]<<"smtpservice.pi";
+        this[2]>>
+        {^QUIT:
+         ^AUTH:
+          this[2]<<^235;
+          local SmtpServerAuth(rec $smtp_auth; 2->1 {^MAIL: 2->1: String; 1->2 {^501: $smtp_auth; ^250: rec $smtp_mail; 2->1 {^RCPT: 2->1: String; 1->2 {^250: $smtp_mail; } ^DATA: 1->2 {^354: 2->1: String; 2->1: String; rec $smtp_data; 2->1 {^DATALINE: 2->1: String; 2->1: String; $smtp_data; ^SUBJECT: 2->1: String; 2->1: String; $smtp_data; ^ENDOFDATA: $smtp_auth; } } } } ^QUIT: $end; }(1 of 1,2) this)
+          ( this[2]>>
+            {^QUIT:
+             ^MAIL:
+              this[2]>>from;
+              Bool valid_from=true;
+              if valid_from
+              then this[2]<<^250;
+                   local SmtpServerMail(rec $smtp_mail; 2->1 {^RCPT: 2->1: String; 1->2 {^250: $smtp_mail; } ^DATA: 1->2 {^354: 2->1: String; 2->1: String; rec $smtp_data; 2->1 {^DATALINE: 2->1: String; 2->1: String; $smtp_data; ^SUBJECT: 2->1: String; 2->1: String; $smtp_data; ^ENDOFDATA: rec $smtp_auth; 2->1 {^MAIL: 2->1: String; 1->2 {^501: $smtp_auth; ^250: rec $smtp_mail; 2->1 {^RCPT: 2->1: String; 1->2 {^250: $smtp_mail; } ^DATA: 1->2 {^354: 2->1: String; 2->1: String; rec $smtp_data; 2->1 {^DATALINE: 2->1: String; 2->1: String; $smtp_data; ^SUBJECT: 2->1: String; 2->1: String; $smtp_data; ^ENDOFDATA: $smtp_auth; } } } } ^QUIT: $end; } } } }(1 of 1,2) this, String rcpt)
+                   ( this[2]>>
+                     {^RCPT:
+                       this[2]>>r;
+                       this[2]<<^250;
+                       SmtpServerMail(this,r);
+                      ^DATA:
+                       this[2]<<^354;
+                       this[2]>>to>>from;
+                       local SmtpServerData(rec $smtp_data; 2->1 {^DATALINE: 2->1: String; 2->1: String; $smtp_data; ^SUBJECT: 2->1: String; 2->1: String; $smtp_data; ^ENDOFDATA: rec $smtp_auth; 2->1 {^MAIL: 2->1: String; 1->2 {^501: $smtp_auth; ^250: rec $smtp_mail; 2->1 {^RCPT: 2->1: String; 1->2 {^250: $smtp_mail; } ^DATA: 1->2 {^354: 2->1: String; 2->1: String; rec $smtp_data; 2->1 {^DATALINE: 2->1: String; 2->1: String; $smtp_data; ^SUBJECT: 2->1: String; 2->1: String; $smtp_data; ^ENDOFDATA: $smtp_auth; } } } } ^QUIT: $end; } }(1 of 1,2) this, String subject, String data)
+                       ( this[2]>>
+                         {^DATALINE:
+                           this[2]>>line1>>line2;
+                           SmtpServerData(this,subject,line1);
+                          ^SUBJECT:
+                           this[2]>>s1>>s2;
+                           SmtpServerData(this,s1,data);
+                          ^ENDOFDATA:
+                           c=new console(2 of 2);
+                           c[1]<< ^str << "Server received mail" << ^nl
+                               << ^str << "FROM: " << ^str << from << ^nl
+                               << ^str << "RCPT: " << ^str << rcpt << ^nl
+                               << ^str << "SUBJ: " << ^str << subject << ^nl
+                               << ^end;
+                           SmtpServerAuth(this);
+                         }
+                       )
+                       SmtpServerData(this,"","");
+                     }
+                   )
+                   SmtpServerMail(this,"");
+              else this[2]<<^501;
+                   SmtpServerAuth(this);
+            }
+          )
+          SmtpServerAuth(this);
+        }
+      }
+    }
+  }
+)
+|
+client=new smtp(2 of 2);
+client[1]>>
+{^220_SERVICE_READY:
+  client[1]>>msg;
+  client[1]<<^EHLO<<"user";
+  local SmtpClientEhlo(rec $smtp_ehlo; 1->2 {^250d: $smtp_ehlo; ^250: 1->2: String; 2->1 {^StartTLS: 1->2 {^220: 2->1 {^EHLO: rec $smtp_tls; 1->2 {^250d: $smtp_tls; ^250: 1->2: String; rec $smtp_cmd; 2->1 {^AUTH: 1->2 {^235: rec $smtp_auth; 2->1 {^MAIL: 2->1: String; 1->2 {^501: $smtp_auth; ^250: rec $smtp_mail; 2->1 {^RCPT: 2->1: String; 1->2 {^250: $smtp_mail; } ^DATA: 1->2 {^354: 2->1: String; 2->1: String; rec $smtp_data; 2->1 {^DATALINE: 2->1: String; 2->1: String; $smtp_data; ^SUBJECT: 2->1: String; 2->1: String; $smtp_data; ^ENDOFDATA: $smtp_auth; } } } } ^QUIT: $end; } ^535: $smtp_cmd; } ^QUIT: $end; } } ^QUIT: $end; } } ^QUIT: $end; } }(2 of 1,2) this)
+  ( this[1]>>
+    {^250d:
+      SmtpClientEhlo(this);
+     ^250:
+      this[1]>>srv;
+      this[1]<<^StartTLS;
+      this[1]>>
+      {^220:
+        this[1]<<^EHLO;
+        local SmtpClientTls(rec $smtp_tls; 1->2 {^250d: $smtp_tls; ^250: 1->2: String; rec $smtp_cmd; 2->1 {^AUTH: 1->2 {^235: rec $smtp_auth; 2->1 {^MAIL: 2->1: String; 1->2 {^501: $smtp_auth; ^250: rec $smtp_mail; 2->1 {^RCPT: 2->1: String; 1->2 {^250: $smtp_mail; } ^DATA: 1->2 {^354: 2->1: String; 2->1: String; rec $smtp_data; 2->1 {^DATALINE: 2->1: String; 2->1: String; $smtp_data; ^SUBJECT: 2->1: String; 2->1: String; $smtp_data; ^ENDOFDATA: $smtp_auth; } } } } ^QUIT: $end; } ^535: $smtp_cmd; } ^QUIT: $end; } }(2 of 1,2) this)
+        ( this[1]>>
+          {^250d:
+            SmtpClientTls(this);
+           ^250:
+            this[1]>>srv;
+            this[1]<<^AUTH;
+            this[1]>>
+            {^235:
+              this[1]<<^MAIL<<"user@smtpserver.pi";
+              this[1]>>
+              {^501:
+                this[1]<<^QUIT;
+
+               ^250:
+                this[1]<<^RCPT<<"friend@smtpserver.pi";
+                this[1]>>
+                {^250:
+                  this[1]<<^DATA;
+                  this[1]>>
+                  {^354:
+                    this[1]<<"friend@smtpserver.pi"<<"user@smtpserver.pi"
+                           <<^SUBJECT<<"SMTP MESSAGE"<<"SUBJECT"
+                           <<^DATALINE<<"MSG1"<<"MSG2"
+                           <<^ENDOFDATA<<^QUIT;
+
+                  }
+                }
+              }
+             ^535:
+              this[1]<<^QUIT;
+
+            }
+          }
+        )
+        SmtpClientTls(this);
+      }
+    }
+  )
+  SmtpClientEhlo(client);
+}
