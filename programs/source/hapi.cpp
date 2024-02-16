@@ -151,8 +151,10 @@ int main(int argc, char **argv)
                << current->ToString() << endl;
     }
     if (cfgCompile)
-      (*out) << "*/" << endl
-             << current->MakeC() << endl;
+    { (*out) << "*/" << endl;
+      current->MakeC(*out);
+      (*out) << endl;
+    }
     if (cfgEval)
     { // Apply semantics repeatedly (evaluate)
       MpsTerm *next = current;

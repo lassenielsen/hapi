@@ -2,21 +2,24 @@
 #define $set(_t) \
   rec $set; \
   2->1 \
-  {^Delete: $end; \
-   ^Assign: 2->1: _t; 2->1: $set;(2 of 1 pure,2); 2->1: $set;(2 of 1 pure,2); $set; \
-   ^Insert: 2->1: _t; $set; \
-   ^Member: 2->1: _t; 1->2: Bool; $set; \
-   ^Size: 1->2: Int; $set; \
-   ^Height: 1->2: Int; $set; \
-   ^Dissolve: \
+  {^end: $end; \
+   ^assign: 2->1: _t; 2->1: $set;(2 of 1 pure,2); 2->1: $set;(2 of 1 pure,2); $set; \
+   ^insert: 2->1: _t; $set; \
+   ^member: 2->1: _t; 1->2: Bool; $set; \
+   ^size: 1->2: Int; $set; \
+   ^height: 1->2: Int; $set; \
+   ^pop: \
     1->2 \
-    {^Empty: $end; \
-     ^NonEmpty: \
+    {^nil: $end; \
+     ^tree: \
       1->2: _t; \
       1->2: $set;(2 of 1 pure, 2); \
       1->2: $set;(2 of 1 pure, 2); \
       $end; \
     } \
+   ^copy: \
+    1->2: $set;(2 of 1 pure,2); \
+    $set; \
   }
 #define $absset \
   2: #elt; \
@@ -27,118 +30,118 @@ global $absset set(1 pure, 2);
 local pure service SetService(set (1 of 2) s) // {{{
 ( s>>#t;
   s[2]>>chcmp;
-  local pure EmptySet($set(#t)(1 of 1 pure,2) this) // {{{
+  local pure NilSet($set(#t)(1 of 1 pure,2) this) // {{{
   ( local pure Set($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right, Int height, $order(#t)(2 of 1 pure,2) cmp) // {{{
     ( local pure RotateLeft($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right, $order(#t)(2 of 1 pure,2) cmp) // {{{
-      ( right[1]<<^Dissolve;
+      ( right[1]<<^pop;
         right[1]>>
-        {^Empty:
+        {^nil:
           // Cannot rotete
           right=new set(2 of 2);
           right<<#t;
           right[1]<<chcmp;
-          left[1]<<^Height;
+          left[1]<<^height;
           left[1]>>lh;
           Set(this,member,left,right,1+lh,cmp);
-         ^NonEmpty:
-          right[1]>>rMember;
+         ^tree:
+          right[1]>>rmember;
           right[1]>>rLeft;
           right[1]>>rRight;
           s=new set(2 of 2);
           s<<#t;
           s[1]<<chcmp;
-          s[1]<<^Assign<<member<<left<<rLeft;
-          s[1]<<^Height;
+          s[1]<<^assign<<member<<left<<rLeft;
+          s[1]<<^height;
           s[1]>>lh;
-          rRight[1]<<^Height;
+          rRight[1]<<^height;
           rRight[1]>>rh;
-          Set(this,rMember,s,rRight,if lh<=rh then 1+rh else 1+lh,cmp);
+          Set(this,rmember,s,rRight,if lh<=rh then 1+rh else 1+lh,cmp);
         }
       ) // }}}
       local pure RotateRight($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right, $order(#t)(2 of 1 pure,2) cmp) // {{{
-      ( left[1]<<^Dissolve;
+      ( left[1]<<^pop;
         left[1]>>
-        {^Empty:
+        {^nil:
           // Cannot rotate
           left=new set(2 of 2);
           left<<#t;
           left[1]<<chcmp;
-          right[1]<<^Height;
+          right[1]<<^height;
           right[1]>>rh;
           Set(this,member,left,right,1+rh,cmp);
-         ^NonEmpty:
-          left[1]>>lMember;
+         ^tree:
+          left[1]>>lmember;
           left[1]>>lLeft;
           left[1]>>lRight;
           s=new set(2 of 2);
           s<<#t;
           s[1]<<chcmp;
-          s[1]<<^Assign<<member<<lRight<<right;
-          lLeft[1]<<^Height;
+          s[1]<<^assign<<member<<lRight<<right;
+          lLeft[1]<<^height;
           lLeft[1]>>lh;
-          s[1]<<^Height;
+          s[1]<<^height;
           s[1]>>rh;
-          Set(this,lMember,lLeft,s,if lh<=rh then rh+1 else lh+1,cmp);
+          Set(this,lmember,lLeft,s,if lh<=rh then rh+1 else lh+1,cmp);
         }
       ) // }}}
       local pure Balance($set(#t)(1 of 1 pure, 2) this, #t member, $set(#t)(2 of 1 pure, 2) left, $set(#t)(2 of 1 pure, 2) right, $order(#t)(2 of 1 pure,2) cmp) // {{{
-      ( left[1]<<^Dissolve;
+      ( left[1]<<^pop;
         left[1]>>
-        {^Empty:
+        {^nil:
           left=new set(2 of 2);
           left<<#t;
           left[1]<<chcmp;
-          right[1]<<^Dissolve;
+          right[1]<<^pop;
           right[1]>>
-          {^Empty:
+          {^nil:
             right=new set(2 of 2);
             right<<#t;
             right[1]<<chcmp;
             Set(this,member,left,right,1,cmp);
-           ^NonEmpty:
-            right[1]>>rMember;
+           ^tree:
+            right[1]>>rmember;
             right[1]>>rLeft;
             right[1]>>rRight;
             s=new set(2 of 2);
             s<<#t;
             s[1]<<chcmp;
-            s[1]<<^Assign<<member<<left<<rLeft;
-            s[1]<<^Height;
+            s[1]<<^assign<<member<<left<<rLeft;
+            s[1]<<^height;
             s[1]>>lh;
-            rRight[1]<<^Height;
+            rRight[1]<<^height;
             rRight[1]>>rh;
-            Set(this,rMember,s,rRight,if lh<=rh then rh+1 else lh+1,cmp);
+            Set(this,rmember,s,rRight,if lh<=rh then rh+1 else lh+1,cmp);
           }
-         ^NonEmpty:
-          left[1]>>lMember;
+         ^tree:
+          left[1]>>lmember;
           left[1]>>lLeft;
           left[1]>>lRight;
-          right[1]<<^Dissolve;
+          right[1]<<^pop;
           right[1]>>
-          {^Empty:
+          {^nil:
             right=new set(2 of 2);
             right<<#t;
             right[1]<<chcmp;
             s=new set(2 of 2);
             s<<#t;
             s[1]<<chcmp;
-            s[1]<<^Assign<<member<<lRight<<right;
-            lLeft[1]<<^Height;
+            s[1]<<^assign<<member<<lRight<<right;
+            lLeft[1]<<^height;
             lLeft[1]>>lh;
-            s[1]<<^Height;
+            s[1]<<^height;
             s[1]>>rh;
-            Set(this,lMember,lLeft,s,if lh<=rh then rh+1 else lh+1,cmp);
-           ^NonEmpty:
-            right[1]>>rMember;
+            Set(this,lmember,lLeft,s,if lh<=rh then rh+1 else lh+1,cmp);
+           ^tree:
+            right[1]>>rmember;
             right[1]>>rLeft;
             right[1]>>rRight;
-            lLeft[1]<<^Height;
+            lLeft[1]<<^height;
             lLeft[1]>>hll;
-            lRight[1]<<^Height;
+            lRight[1]<<^height;
             lRight[1]>>hlr;
-            rLeft[1]<<^Height;
+            rLeft[1]<<^height;
             rLeft[1]>>hrl;
-            rRight[1]<<^Height;
+            rRight[1]<<^height;
             rRight[1]>>hrr;
             hl=if hll<=hlr then hlr else hll;
             hr=if hrl<=hrr then hrr else hrl;
@@ -149,44 +152,44 @@ local pure service SetService(set (1 of 2) s) // {{{
             s2<<#t;
             s2[1]<<chcmp;
             if (hll+1<=hlr) and (2+hr<=hl)
-            then s1[1]<<^Assign<<lMember<<lLeft<<lRight;
-                 s2[1]<<^Assign<<rMember<<rLeft<<rRight;
+            then s1[1]<<^assign<<lmember<<lLeft<<lRight;
+                 s2[1]<<^assign<<rmember<<rLeft<<rRight;
                  RotateRight(this,member,s1,s2,cmp);
             else if 2+hr<=hl
-            then s1[1]<<^Assign<<lMember<<lLeft<<lRight;
-                 s2[1]<<^Assign<<rMember<<rLeft<<rRight;
+            then s1[1]<<^assign<<lmember<<lLeft<<lRight;
+                 s2[1]<<^assign<<rmember<<rLeft<<rRight;
                  RotateRight(this,member,s1,s2,cmp);
             else if (hrr+1<=hrl) and (hl+2<=hr)
-            then s1[1]<<^Assign<<lMember<<lLeft<<lRight;
-                 s2[1]<<^Assign<<rMember<<rLeft<<rRight;
+            then s1[1]<<^assign<<lmember<<lLeft<<lRight;
+                 s2[1]<<^assign<<rmember<<rLeft<<rRight;
                  RotateLeft(this,member,s1,s2,cmp);
             else if hl+2<=hr
-            then s1[1]<<^Assign<<lMember<<lLeft<<lRight;
-                 s2[1]<<^Assign<<rMember<<rLeft<<rRight;
+            then s1[1]<<^assign<<lmember<<lLeft<<lRight;
+                 s2[1]<<^assign<<rmember<<rLeft<<rRight;
                  RotateLeft(this,member,s1,s2,cmp);
-            else s1[1]<<^Assign<<lMember<<lLeft<<lRight;
-                 s2[1]<<^Assign<<rMember<<rLeft<<rRight;
+            else s1[1]<<^assign<<lmember<<lLeft<<lRight;
+                 s2[1]<<^assign<<rmember<<rLeft<<rRight;
                  Set(this,member,s1,s2,if hl<=hr then hr+1 else hl+1,cmp);
           }
         }
       ) // }}}
       this[2]>>
-      { ^Delete:
-          left[1]<<^Delete;
-          right[1]<<^Delete;
+      { ^end:
+          left[1]<<^end;
+          right[1]<<^end;
           cmp[1]<<^end;
-        ^Assign:
+        ^assign:
           this[2]>>m;
           this[2]>>l;
           this[2]>>r;
-          left[1]<<^Delete;
-          right[1]<<^Delete;
-          l[1]<<^Height;
+          left[1]<<^end;
+          right[1]<<^end;
+          l[1]<<^height;
           l[1]>>hl;
-          r[1]<<^Height;
+          r[1]<<^height;
           r[1]>>hr;
           Set(this,m,l,r,if hr<=hl then 1+hl else 1+hr,cmp);
-        ^Insert:
+        ^insert:
           this[2]>>v;
           cmp[1]<<^eq<<v<<member;
           cmp[1]>>eq;
@@ -195,9 +198,9 @@ local pure service SetService(set (1 of 2) s) // {{{
           else cmp[1]<<^leq<<v<<member;
                cmp[1]>>leq;
                if leq
-               then left[1]<<^Insert<<v; Balance(this,member,left,right,cmp);
-               else right[1]<<^Insert<<v; Balance(this,member,left,right,cmp);
-        ^Member:
+               then left[1]<<^insert<<v; Balance(this,member,left,right,cmp);
+               else right[1]<<^insert<<v; Balance(this,member,left,right,cmp);
+        ^member:
           this[2]>>v;
           cmp[1]<<^eq<<v<<member;
           cmp[1]>>eq;
@@ -207,45 +210,56 @@ local pure service SetService(set (1 of 2) s) // {{{
           else cmp[1]<<^leq<<v<<member;
                cmp[1]>>leq;
                if leq
-               then left[1]<<^Member<<v;
+               then left[1]<<^member<<v;
                     left[1]>>r;
                     this[2]<<r;
                     Set(this,member,left,right,height,cmp);
-               else right[1]<<^Member<<v;
+               else right[1]<<^member<<v;
                     right[1]>>r;
                     this[2]<<r;
                     Set(this,member,left,right,height,cmp);
-        ^Size:
-          left[1]<<^Size;
+        ^size:
+          left[1]<<^size;
           left[1]>>ls;
-          right[1]<<^Size;
+          right[1]<<^size;
           right[1]>>rs;
           this[2]<<1+ls+rs;
           Set(this,member,left,right,height,cmp);
-        ^Height:
+        ^height:
           this[2]<<height;
           Set(this,member,left,right,height,cmp);
-        ^Dissolve:
-          this[2]<<^NonEmpty;
+        ^pop:
+          this[2]<<^tree;
           this[2]<<member;
           this[2]<<left;
           this[2]<<right;
           cmp[1]<<^end;
+         ^copy:
+          $set(#t) s1,s2(1 pure,2);
+          left[1]<<^copy;
+          left[1]>>leftcpy;
+          right[1]<<^copy;
+          right[1]>>rightcpy;
+          cmp2=new chcmp(2 of 2);
+          this[2]<<s2;
+          ( Set(s1,member,leftcpy,rightcpy,height,cmp2);
+          | Set(this,member,left,right,height,cmp);
+          )
       }
     ) // }}}
     this[2]>>
-    {^Delete:
-     ^Assign:
+    {^end:
+     ^assign:
       this[2]>>m;
       this[2]>>l;
       this[2]>>r;
-      l[1]<<^Height;
+      l[1]<<^height;
       l[1]>>lh;
-      r[1]<<^Height;
+      r[1]<<^height;
       r[1]>>rh;
       cmp=new chcmp(2 of 2);
       Set(this,m,l,r,if lh<=rh then 1+rh else 1+lh,cmp);
-     ^Insert:
+     ^insert:
       lft=new set(2 of 2);
       lft<<#t;
       lft[1]<<chcmp;
@@ -255,19 +269,25 @@ local pure service SetService(set (1 of 2) s) // {{{
       cmp=new chcmp(2 of 2);
       this[2]>>v;
       Set(this,v,lft,rgt,1,cmp);
-     ^Member:
+     ^member:
       this[2]>>q;
       this[2]<<false;
-      EmptySet(this);
-     ^Size:
+      NilSet(this);
+     ^size:
       this[2]<<0;
-      EmptySet(this);
-     ^Height:
+      NilSet(this);
+     ^height:
       this[2]<<0;
-      EmptySet(this);
-     ^Dissolve:
-      this[2]<<^Empty;
+      NilSet(this);
+     ^pop:
+      this[2]<<^nil;
+     ^copy:
+      $set(#t) s1,s2(1 pure,2);
+      this[2]<<s2;
+      ( NilSet(s1);
+      | NilSet(this);
+      )
     }
   ) // }}}
-  EmptySet(s);
+  NilSet(s);
 ) | // }}}

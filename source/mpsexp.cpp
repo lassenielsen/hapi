@@ -416,9 +416,17 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
   { if (dynamic_cast<MpsIntMsgType*>(myLeftType) &&
         dynamic_cast<MpsIntMsgType*>(myRightType))
       return new MpsIntMsgType();
-    if (dynamic_cast<MpsFloatMsgType*>(myLeftType) &&
-        dynamic_cast<MpsFloatMsgType*>(myRightType))
+    else if (dynamic_cast<MpsFloatMsgType*>(myLeftType) &&
+             dynamic_cast<MpsFloatMsgType*>(myRightType))
       return new MpsFloatMsgType();
+    else if (myName=="/" &&
+             dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+             dynamic_cast<MpsIntMsgType*>(myRightType))
+      return new MpsStringMsgType();
+    else if (myName=="+" &&
+             dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+             dynamic_cast<MpsStringMsgType*>(myRightType))
+      return new MpsStringMsgType();
     else
       return new MpsMsgNoType();
   } // }}}
@@ -454,16 +462,30 @@ MpsMsgType *MpsBinOpExp::TypeCheck(const MpsMsgEnv &Gamma) // {{{
       return new MpsMsgNoType();
   } // }}}
   if (myName == "&") // Untupeling [(_,...,_,X,_,...,_] -> idx -> X {{{
+  { if (dynamic_cast<MpsTupleMsgType*>(myLeftType) &&
+        dynamic_cast<MpsIntVal*>(myRight))
+    { unsigned long int idx = mpz_get_ui(dynamic_cast<MpsIntVal*>(myRight)->GetValue());
+      MpsMsgType *result = dynamic_cast<MpsTupleMsgType*>(myLeftType)->GetElement(idx)->Copy();
+      return result;
+    }
+    else if (dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+             dynamic_cast<MpsStringVal*>(myRight) &&
+             dynamic_cast<MpsStringVal*>(myRight)->GetValue()=="^length")
+    { return new MpsIntMsgType();
+    }
+    else if (dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+             dynamic_cast<MpsIntMsgType*>(myRightType))
+    { return new MpsIntMsgType();
+    }
+    else
+      return new MpsMsgNoType();
+  } // }}}
+  if (myName == "%") // String tail {{{
   {
-    MpsTupleMsgType *lhsptr = dynamic_cast<MpsTupleMsgType*>(myLeftType);
-    if (lhsptr==NULL)
-      return new MpsMsgNoType();
-    MpsIntVal *index = dynamic_cast<MpsIntVal*>(myRight);
-    if (index==NULL)
-      return new MpsMsgNoType();
-    unsigned long int idx = mpz_get_ui(index->GetValue());
-    MpsMsgType *result = lhsptr->GetElement(idx)->Copy();
-    return result;
+    if (dynamic_cast<MpsStringMsgType*>(myLeftType) &&
+        dynamic_cast<MpsIntMsgType*>(myRightType))
+      return new MpsStringMsgType();
+    return new MpsMsgNoType();
   } // }}}
   else // Unknown operator
     return new MpsMsgNoType();
@@ -942,16 +964,39 @@ string MpsBinOpExp::ToC(stringstream &dest, const string &typeName) const // {{{
   string varName = ToC_Name(MpsExp::NewVar("binop"));
   string leftName = myLeft->ToC(dest, myLeftType->ToC());
   string rightName = myRight->ToC(dest, myRightType->ToC());
-  dest << "      shared_ptr<" << typeName << "> " << varName << "((*((" << myLeftType->ToC() << "*)" << leftName << ".get())) ";
-  if (myName=="=")
-    dest << "==";
-  else if (myName=="or")
-    dest << "||";
-  else if (myName=="and")
-    dest << "&&";
+  if (myName=="&" && myLeftType->ToString()=="String" && myRight->ToString()=="\"^length\"")
+  { dest << "      shared_ptr<" << typeName << "> " << varName << "(new libpi::Int(((libpi::String*)" <<ToC_Name(leftName) << ".get())->GetValue().length()));" << endl;
+  }
+  else if (myName=="&" && myRightType->ToString()=="Int")
+  { dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl
+         << "      { " << "long _l=mpz_get_si(((libpi::Int*)" << ToC_Name(rightName) << ".get())->GetValue());" << endl
+         << "        " << ToC_Name(varName) << ".reset(new "<< typeName << "(((libpi::String*)" <<ToC_Name(leftName) << ".get())->GetValue()[_l]));" << endl
+         << "      }" << endl;
+  }
+  else if (myName=="/" && myLeftType->ToString()=="String" && myRightType->ToString()=="Int")
+  { dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl
+         << "      { " << "long _l=mpz_get_si(((libpi::Int*)" << ToC_Name(rightName) << ".get())->GetValue());" << endl
+         << "        " << ToC_Name(varName) << ".reset(new libpi::String(((libpi::String*)" << ToC_Name(leftName) << ".get())->GetValue().substr(0,_l)));" << endl
+         << "      }" << endl;
+  }
+  else if (myName=="%" && myLeftType->ToString()=="String" && myRightType->ToString()=="Int")
+  { dest << "      shared_ptr<" << typeName << "> " << varName << ";" << endl
+         << "      { " << "long _l=mpz_get_si(((libpi::Int*)" << ToC_Name(rightName) << ".get())->GetValue());" << endl
+         << "        " << ToC_Name(varName) << ".reset(new libpi::String(((libpi::String*)" << ToC_Name(leftName) << ".get())->GetValue().substr(_l)));" << endl
+         << "      }" << endl;
+  }
   else
-    dest << myName;
-  dest << " (*((" << myRightType->ToC() << "*)" << rightName << ".get())));" << endl;
+  { dest << "      shared_ptr<" << typeName << "> " << varName << "((*((" << myLeftType->ToC() << "*)" << leftName << ".get())) ";
+    if (myName=="=")
+      dest << "==";
+    else if (myName=="or")
+      dest << "||";
+    else if (myName=="and")
+      dest << "&&";
+    else
+      dest << myName;
+    dest << " (*((" << myRightType->ToC() << "*)" << rightName << ".get())));" << endl;
+  }
   return varName;
 } // }}}
 string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
@@ -962,7 +1007,7 @@ string MpsTupleExp::ToC(stringstream &dest, const string &typeName) const // {{{
   for (vector<MpsExp*>::const_iterator it=myElements.begin(); it!=myElements.end(); ++it)
   { dest << "      {" << endl;
     string eltName = (*it)->ToC(dest,"Unknown");
-    dest << "        " << varName << ".AddValue(" << eltName << ");" << endl
+    dest << "        " << varName << "->AddValue(" << eltName << ");" << endl
          << "      }" << endl;
   }
   return varName;
@@ -1379,7 +1424,7 @@ bool LK_Axiom(vector<MpsExp*> &exps, set<string> pos, set<string> neg) // {{{
               return false;
           }
           else
-          { cerr << "LK_Axiom: Unknown Binary Subexpression " << negbinexp->GetOp() << endl;
+          { cerr << "LK_Axiom: Unknown Binary Operator " << negbinexp->GetOp() << endl;
             return false;
           }
         } // }}}

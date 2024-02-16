@@ -1,4 +1,4 @@
-#include <hapi/piexp.hpp>
+#include <hapi/mpsparser.hpp>
 #include <iostream>
 
 #define REPEATFACTOR 1
@@ -7,9 +7,9 @@ using namespace std;
 using namespace hapi;
 int main(int argc, char **argv)
 {
-  PiExp *end = PiExp::Create("0");
-  cout << "PiEnd:\n  " << end->ToString("  ") << endl;
-  PiExp *snd = PiExp::Create("k!x.0");
+  MpsTerm *end = MpsParser::Pi("");
+  cout << "MpsEnd:\n  " << end->ToString("  ") << endl;
+  MpsTerm *snd = PiExp::Pi("k[1]<<x;");
   cout << "PiSnd:\n  " << snd->ToString("  ") << endl;
   PiExp *rcv = PiExp::Create("k?x.0");
   cout << "PiRcv:\n  " << rcv->ToString("  ") << endl;

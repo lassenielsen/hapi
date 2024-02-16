@@ -80,6 +80,7 @@
 
 #define MPSUSEGUI
 
+#include <ostream>
 #include <vector>
 #include <string>
 #include <map>
@@ -119,6 +120,7 @@ namespace hapi
 class MpsTerm // {{{
 {
   public:
+    virtual ~MpsTerm() {}
     //! Make a deep copy of the object
     virtual MpsTerm *Copy() const = 0; // Make a deep copy
 
@@ -352,7 +354,7 @@ class MpsTerm // {{{
      *    process as the function 'main'.
      */
     // }}}
-    std::string MakeC() const;
+    void MakeC(std::ostream &out) const;
     // DOCUMENTATION: MpsTerm::FlattenFork {{{
     /*!
      * FlattenFork rewrites terms like P1 | P2 to P1 | (def X() (P2) X()).
