@@ -11,9 +11,9 @@ PRINT("P1: SEND COMPLETE");
 s[3]>>x;
 PRINT("P1: RECEIVE COMPLETE");
 c = new console(2 of 2);
-c[1]<<^PutString<<"P1 received:"
-    <<^PutInt<<x
-    <<^End;
+c[1]<<^str<<"P1 received:"
+    <<^int<<x
+    <<^end;
 |
 s=new a(2 of 3);
 PRINT("P2: LINK COMPLETE");

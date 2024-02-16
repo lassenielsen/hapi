@@ -1,5 +1,5 @@
 #include <console.pi>
-#include <timer.pi>
+#include <sys/timer.pi>
 
 #define $fib \
   2->1:Int; \
@@ -9,7 +9,7 @@
 #define $fibtime \
   2->1:Int; \
   1->2:Int; \
-  1->2:Int; \
+  1->2:Float; \
   $end;
 
 global $fib fib(1 pure,2);
@@ -43,22 +43,23 @@ local TimeFib()
   f[1] << n;
   f[1] >> fn;
   s[2] << fn;
-  t[1] << ^ReadSeconds;
+  t[1] << ^read;
   t[1] >> secs;
-  t[1] << ^End;
+  t[1] << ^end;
   s[2] << secs;
 )
 TimeFib(); |
 c = new console(2 of 2);
-c[1] << ^PutString << "What is n?"
-     << ^GetInt;
+c[1] << ^str << "What is n? "
+     << ^input << ^int;
 c[1] >> v;
 f = new timefib(2 of 2);
 f[1] << v;
 f[1] >> r;
 f[1] >> secs;
-c[1] << ^PutString << "Fib(n) is"
-     << ^PutInt << r
-     << ^PutString << "Used time"
-     << ^PutInt << secs
-     << ^Stop;
+c[1] << ^str << "Fib(n) is "
+     << ^int << r << ^nl
+     << ^str << "Used time "
+     << ^flt << secs
+     << ^str << " seconds"
+     << ^nl << ^end;

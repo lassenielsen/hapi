@@ -1,19 +1,19 @@
 #include <console.pi>
-#include <sys.pi>
+#include <sys/args.pi>
 c = new console(2 of 2);
-s = new sys(2 of 2);
+s = new args(2 of 2);
 
-s[1]<<^CountArgs;
+s[1]<<^count;
 s[1]>>argc;
 c[1]<<^str;
 c[1]<<"Number of args: "<<^int<<argc<<^nl;
-local PrintArgs(Int i, $console(2 of 1,2) c, $sys(2 of 1 pure,2) s)
-( s[1]<<^GetArg<<i;
+local PrintArgs(Int i, $console(2 of 1,2) c, $args(2 of 1 pure,2) s)
+( s[1]<<^arg<<i;
   s[1]>>
-  {^Some: s[1]>>a;
+  {^some: s[1]>>a;
           c[1]<<^str<<a<<^nl;
           PrintArgs(i+1,c,s);
-   ^None: s[1]<<^End;
+   ^none: s[1]<<^end;
           c[1]<<^end;
   }
 )

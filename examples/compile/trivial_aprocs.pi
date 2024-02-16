@@ -1,6 +1,6 @@
 #include <console.pi>
 #include <sys/timer.pi>
-#include <debug/procs.pi>
+#include <debug/procmon.pi>
 local X(Float i)
 ( if i<=0.0
   then

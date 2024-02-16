@@ -4,13 +4,13 @@
 global $bt a(1,2);
 s=new a(1 of 2);
 c=new console(2 of 2);
-c[1] << ^PutString << "Sending Y" << ^End;
+c[1] << ^str << "Sending Y" << ^nl << ^end;
 s[2]<<^Y;
 |
 s=new a(2 of 2);
 c=new console(2 of 2);
-c[1]<<^PutString;
+c[1]<<^str;
 s[1]>>
-{ ^X: c[1]<<"Received X"<<^Stop;
-  ^Y: c[1]<<"Received Y"<<^Stop;
+{ ^X: c[1]<<"Received X"<<^nl<<^end;
+  ^Y: c[1]<<"Received Y"<<^nl<<^end;
 }
