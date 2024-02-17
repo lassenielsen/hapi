@@ -1,0 +1,264 @@
+#pragma once
+#include<callable.pi>
+#include<order.pi>
+#include<convert.pi>
+#define $intlist \
+  rec $intlist; \
+  2->1 \
+  {^get: \
+    2->1: unsafe Int; \
+    1->2 \
+    {^val: \
+      1->2: unsafe Int; \
+      $intlist; \
+     ^err: \
+      1->2: String; \
+      $intlist; \
+    } \
+   ^set: \
+    2->1: unsafe Int; \
+    2->1: unsafe Int; \
+    $intlist; \
+   ^length: \
+    1->2: unsafe Int; \
+    $intlist; \
+   ^apply: \
+    2->1: 2->1: unsafe Int; 1->2: unsafe Int; $end;(1 pure, 2); \
+    $intlist; \
+   ^insert: \
+    2->1: unsafe Int; \
+    2->1: unsafe Int; \
+    $intlist; \
+   ^erase: \
+    2->1: unsafe Int; \
+    $intlist; \
+   ^filter: \
+    2->1: $callable(unsafe Int,Bool)(2 of 1 pure,2); \
+    $intlist; \
+   ^cons: \
+    2->1: unsafe Int; \
+    $intlist; \
+   ^snoc: \
+    2->1: unsafe Int; \
+    $intlist; \
+   ^pop: \
+    1->2 \
+    {^nil: \
+      $end; \
+     ^cons: \
+      1->2: unsafe Int; \
+      1->2: $intlist;(2 of 1 pure,2); \
+      $end; \
+    } \
+   ^append: \
+    2->1: $intlist;(2 of 1 pure,2); \
+    $intlist; \
+   ^copy: \
+    1->2: $intlist;(2 of 1 pure,2); \
+    $intlist; \
+   ^takeover: \
+    2->1: $intlist;(1 of 1 pure,2); \
+    $end; \
+   ^end: \
+    $end; \
+  }
+
+global $intlist intlist(1 pure,2);
+local pure service ServiceIntList(intlist (1 of 2) s)
+( local pure Nil($intlist(1 of 1 pure, 2) this)
+  ( global pure Cons(unsafe Int head, $intlist(2 of 1 pure, 2) tail, $intlist(1 of 1 pure,2) this)
+    ( this[2]>>
+      {^get:
+        this[2]>>i;
+        if i<=0u
+        then this[2]<<^val<<head;
+             Cons(head,tail,this);
+        else tail[1]<<^get<<i-1u;
+             tail[1]>>
+             {^val:
+               tail[1]>>v;
+               this[2]<<^val<<v;
+               Cons(head,tail,this);
+              ^err:
+               tail[1]>>msg;
+               this[2]<<^err<<msg;
+               Cons(head,tail,this);
+             }
+       ^set:
+        this[2]>>i;
+        this[2]>>v;
+        if i<=0u
+        then Cons(v,tail,this);
+        else tail[1]<<^set<<i-1u<<v;
+             Cons(head,tail,this);
+       ^length:
+        tail[1]<<^length;
+        tail[1]>>l;
+        this[2]<<l+1u;
+        Cons(head,tail,this);
+       ^apply:
+        this[2]>>fc;
+        f = new fc(2 of 2);
+        f[1]<<head;
+        f[1]>>h;
+        tail[1]<<^apply<<fc;
+        Cons(h,tail,this);
+       ^insert:
+        this[2]>>i;
+        this[2]>>h;
+        if i<=0u
+        then global $intlist l1,l2(1 pure,2);
+             Cons(h,l2,this);
+             |
+             Cons(head,tail,l1);
+        else tail[1]<<^insert<<i-1u<<h;
+             Cons(head,tail,this);
+       ^erase:
+        this[2]>>i;
+        if i<=0u
+        then tail[1]<<^takeover<<this;
+        else tail[1]<<^erase<<i-1u;
+             Cons(head,tail,this);
+       ^filter:
+        this[2]>>filter;
+        filter[1]<<^call<<head;
+        filter[1]>>keep;
+        tail[1]<<^filter<<filter;
+        if keep
+        then Cons(head,tail,this);
+        else tail[1]<<^takeover<<this;
+       ^cons:
+        this[2]>>h;
+        global $intlist l1, l2(1 pure,2);
+        Cons(h,l2,this);
+        |
+        Cons(head,tail,l1);
+       ^snoc:
+        this[2]>>h;
+        tail[1]<<^snoc<<h;
+        Cons(head,tail,this);
+       ^pop:
+        this[2]<<^cons<<head<<tail;
+       ^append:
+        this[2]>>l;
+        tail[1]<<^append<<l;
+        Cons(head,tail,this);
+       ^copy:
+        tail[1]<<^copy;
+        tail[1]>>t;
+        t[1]<<^cons<<head;
+        this[2]<<t;
+        Cons(head,tail,this);
+       ^takeover:
+        this[2]>>that;
+        Cons(head,tail,that);
+       ^end:
+        tail[1]<<^end;
+      }
+    )
+    this[2]>>
+    {^get:
+      this[2]>>i;
+      this[2]<<^err<<"Index out of bounds";
+      Nil(this);
+     ^set:
+      this[2]>>i;
+      this[2]>>v;
+      Nil(this); // Report error requires subsequent get
+     ^length:
+      this[2]<<0u;
+      Nil(this);
+     ^apply:
+      this[2]>>f;
+      Nil(this);
+     ^insert:
+      this[2]>>i;
+      this[2]>>v;
+      if i<=0u
+      then tail = new intlist(2 of 2);
+           Cons(v,tail,this);
+      else Nil(this);
+     ^erase:
+      this[2]>>i;
+      Nil(this);
+     ^filter:
+      this[2]>>filter;
+      filter[1]<<^end;
+      Nil(this);
+     ^cons:
+      this[2]>>head;
+      global $intlist l1,l2(1 pure,2);
+      Cons(head,l2,this);
+      |
+      Nil(l1);
+     ^snoc:
+      this[2]>>head;
+      global $intlist l1,l2(1 pure,2);
+      Cons(head,l2,this);
+      |
+      Nil(l1);
+     ^pop:
+      this[2]<<^nil;
+     ^append:
+      this[2]>>l;
+      l[1]<<^takeover<<this;
+     ^copy:
+      cpy = new intlist(2 of 2);
+      this[2]<<cpy;
+      Nil(this);
+     ^takeover:
+      this[2]>>that;
+      Nil(that);
+     ^end:
+    }
+  )
+  Nil(s);
+)
+|
+// Definition of protocol for the range service
+#define $intrange \
+  2->1: unsafe Int; /* from */ \
+  2->1: unsafe Int; /* to */ \
+  $intlist
+global $intrange intrange(1 pure, 2);
+local pure service ServiceIntRange(intrange (1 of 2) s)
+( s[2]>>from;
+  s[2]>>to;
+  if from<=to
+  then tail=new intrange(2 of 2);
+       tail[1]<<from+1u<<to;
+       res=new intlist(2 of 2);
+       res[1]<<^cons<<from<<^append<<tail;
+       res[1]<<^takeover<<s;
+  else res=new intlist(2 of 2);
+       res[1]<<^takeover<<s;
+)
+|
+// Definition of protocol for the printlist service
+#define $printintlist \
+  2->1: $intlist(2 of 1 pure,2); \
+  2->1: $console(2 of 1,2); \
+  $end;
+// Decleration of the printlist service
+global $printintlist printintlist(1,2);
+// Implementation of the printlist service
+local service PrintIntList(printintlist (1 of 2) s)
+( s[2]>>l;
+  s[2]>>c;
+  c[1]<<^str<<"[";
+  local PrintElts($intlist(2 of 1 pure,2) l, $console(2 of 1,2) c, Bool first)
+  ( l[1]<<^pop;
+    l[1]>>
+    {^cons:
+      String sep=if first then "" else ", ";
+      c[1]<<^str<<sep;
+      l[1]>>v>>tail;
+      c[1]<<^int<<safe v;
+      PrintElts(tail,c,false);
+     ^nil:
+      c[1]<<^str<<"]"<<^nl<<^end;
+    }
+  )
+  PrintElts(l,c,true);
+)
+|

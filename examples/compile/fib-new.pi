@@ -15,16 +15,16 @@ local Fib()
   local CallFib(Int x, $fibres(1 of 1,2) s)
   ( if x <=1
     then s[2]<<1;
-    else $fibres t1,t2;
+    else $fibres t1,t2(1,2);
          ( CallFib(x-1,t1);
          | if (SYSTEM&"tprocs")<=(SYSTEM&"aprocs")
            then t2[1]>>f1;
-                $fibres u1,u2;
+                $fibres u1,u2(1,2);
                 ( CallFib(x-2,u1);
                 | u2[1]>>f2;
                   s[2]<<f1+f2;
                 )
-           else $fibres u1,u2;
+           else $fibres u1,u2(1,2);
                 ( CallFib(x-2,u1);
                 | t2[1]>>f1;
                   u2[1]>>f2;
@@ -39,12 +39,12 @@ local Fib()
 Fib(); |
 
 c = new console(2 of 2);
-c[1] << ^PutString << "What is n?"
-     << ^GetInt;
+c[1] << ^str << "What is n? "
+     << ^input << ^int;
 c[1] >> v;
 f = new fib(2 of 2);
 f[1] << v;
 f[1] >> r;
-c[1] << ^PutString << "Fib(n) is"
-     << ^PutInt << r
-     << ^Stop;
+c[1] << ^str << "Fib(n) is "
+     << ^int << r
+     << ^nl << ^end;

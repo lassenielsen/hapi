@@ -1,14 +1,14 @@
-#include <file.pi>
+#include <sys/file.pi>
 #include <console.pi>
 
 // Error handling
 local FError(String s, $console(2 of 1,2) c, 1->2:String;$end;(2 of 1,2) f)
 ( f[1]>>e;
-  c[1]<<^PutString;
+  c[1]<<^str;
   c[1]<<s;
-  c[1]<<^PutString;
+  c[1]<<^str;
   c[1]<<e;
-  c[1]<<^End;
+  c[1]<<^nl<<^end;
 )
  
 c = new console(2 of 2);
@@ -23,8 +23,8 @@ f[1]>>
   f[1]<<^Write;
   f[1]<<"Hello World";
   f[1]<<^Close;
-  c[1]<<^PutString;
-  c[1]<<"File written with content: Hello World";
+  c[1]<<^str;
+  c[1]<<"File written with content: Hello World"<<^nl;
   f = new file(2 of 2);
   f[1]<<^Read;
   f[1]<<"test.txt";
@@ -34,20 +34,20 @@ f[1]>>
    ^OK:
     f[1]<<^All;
     f[1]>>s;
-    c[1]<<^PutString;
-    c[1]<<"Read content";
-    c[1]<<^PutString;
-    c[1]<<s;
+    c[1]<<^str;
+    c[1]<<"Read content ";
+    c[1]<<^str;
+    c[1]<<s<<^nl;
     f = new file(2 of 2);
     f[1]<<^Remove;
     f[1]<<"file.txt";
     f[1]>>
     {^Error:
-      FError("Remove Error:",c,f);
+      FError("Remove Error: ",c,f);
      ^OK:
-      c[1]<<^PutString;
-      c[1]<<"Removed file";
-      c[1]<<^End;
+      c[1]<<^str;
+      c[1]<<"Removed file"<<^nl;
+      c[1]<<^end;
     }
   }
 }
