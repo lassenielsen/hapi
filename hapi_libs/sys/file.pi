@@ -85,7 +85,7 @@ local FileServer()
              HOST("{ char *buf = new char[ mpz_get_ui(", chunksize, "->GetValue()) +1 ];");
              HOST("  ((ifstream*)mpz_get_ui(", fptr, "->GetValue()))->read(buf, mpz_get_ui(", chunksize, "->GetValue()));");
              HOST("  buf[ mpz_get_ui(", chunksize, "->GetValue()) ] = 0;");
-             HOST("  RemoveRef(", chunk, "); ", chunk, "=new libpi::String(std::string(buf));");
+             HOST("  libpi::AssignNewValue((libpi::Value**)&", chunk, ",new libpi::String(std::string(buf)));");
              HOST("  delete [] buf;");
              HOST("{}}");
              f[2]<<chunk;
@@ -101,7 +101,7 @@ local FileServer()
              String chunk="";
              HOST("{ std::string line;");
              HOST("  std::getline(*((ifstream*)mpz_get_ui(", fptr, "->GetValue())), line);");
-             HOST("  RemoveRef(", chunk, "); ", chunk, "=new libpi::String(line);");
+             HOST("  libpi::AssignNewValue((libpi::Value**)&", chunk, ", new libpi::String(line));");
              HOST("{}}");
              f[2]<<chunk;
              InFileSession(f,fptr,chunksize);
@@ -120,7 +120,7 @@ local FileServer()
              HOST("  ((ifstream*)mpz_get_ui(", fptr, "->GetValue()))->seekg(pos);");
              HOST("  str.reserve(size-pos+1);");
              HOST("  str.assign((std::istreambuf_iterator<char>(*((ifstream*)mpz_get_ui(", fptr, "->GetValue())))),std::istreambuf_iterator<char>());");
-             HOST("  RemoveRef(", chunk, "); ", chunk, "=new libpi::String(str);");
+             HOST("  libpi::AssignNewValue((libpi::Value**)&", chunk, ", new libpi::String(str));");
              HOST("{}}");
              f[2]<<chunk;
              HOST( CloseIFP(fptr) );
@@ -132,7 +132,7 @@ local FileServer()
     )
     f[2]>>path;
     Int fptr=0;
-    HOST("RemoveRef(", fptr, "); ", fptr, "= new libpi::Int((unsigned long)(new ifstream( ", path, "->GetValue().c_str())));");
+    HOST("libpi::AssignNewValue((libpi::Value**)&", fptr, ", new libpi::Int((unsigned long)(new ifstream( ", path, "->GetValue().c_str()))));");
     Bool t=true;
     HOST("", t, " = libpi::Bool::GetInstance(((ifstream*)mpz_get_ui(", fptr, "->GetValue()))->is_open());");
     if t
@@ -157,7 +157,7 @@ local FileServer()
     )
     f[2]>>path;
     Int fptr=0;
-    HOST("RemoveRef(", fptr, "); ", fptr, "=new libpi::Int((unsigned long)(new ofstream( ", path, "->GetValue().c_str())));");
+    HOST("libpi::AssignNewValue((libpi::Value**)&", fptr, ", new libpi::Int((unsigned long)(new ofstream( ", path, "->GetValue().c_str()))));");
     Bool t=true;
     HOST("", t, "=((ofstream*)mpz_get_ui(", fptr, "->GetValue()))->is_open();");
     if t

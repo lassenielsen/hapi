@@ -30,11 +30,11 @@ local service TimeService(timer (1 of 2) t)
 ( local TimeSession($timer(1 of 1,2) t, Float start)
   ( t[2]>>
     {^reset:
-      HOST("",start,"->RemoveRef(); ", start, "=new libpi::Float(gettime());");
+      HOST("libpi::AssignNewValue(&",start,",new libpi::Float(gettime()));");
       TimeSession(t,start);
      ^read:
       Float now=0.0;
-      HOST("",now,"->RemoveRef(); ", now, "=new libpi::Float(gettime());");
+      HOST("libpi::AssignNewValue(&",now,",new libpi::Float(gettime()));");
       t[2]<<now-start;
       TimeSession(t,start);
      ^wait:  t[2]>>wait;
@@ -43,7 +43,7 @@ local service TimeService(timer (1 of 2) t)
       TimeSession(t,start);
      ^timestamp:
       Float now=0.0;
-      HOST("",now,"->RemoveRef(); ", now, "=new libpi::Float(gettime());");
+      HOST("libpi::AssignNewValue(&",now,",new libpi::Float(gettime()));");
       t[2]<<now;
       TimeSession(t,start);
      ^sync:
@@ -54,7 +54,7 @@ local service TimeService(timer (1 of 2) t)
     }
   )
   Float start=0.0;
-  HOST("",start,"->RemoveRef(); ", start, "=new libpi::Float(gettime());");
+  HOST("libpi::AssignNewValue(&",start,",new libpi::Float(gettime()));");
   TimeSession(t,start);
 )
 |

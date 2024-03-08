@@ -5,8 +5,8 @@
    ^arg: 2->1:Int; 1->2{^some: 1->2:String; $args; ^none: $args;} \
    ^end: $end; \
   }
-#define __ARGC(x) HOST("  ", x, "->RemoveRef(); ", x, "=new libpi::Int(_args.size());") pure
-#define __ARGV(x,i) HOST("  ", x, "->RemoveRef(); ", x, "=new libpi::String(_args[ mpz_get_ui(", i, "->GetValue())]);") pure
+#define __ARGC(x) HOST("  libpi::AssignNewValue((libpi::Value**)&", x, ", new libpi::Int(_args.size()));") pure
+#define __ARGV(x,i) HOST("  libpi::AssignNewValue((libpi::Value**)&", x, ", new libpi::String(_args[ mpz_get_ui(", i, "->GetValue())]));") pure
 Int argc=0;
 __ARGC(argc);
 global $args args(1 pure, 2);
