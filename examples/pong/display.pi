@@ -1,0 +1,115 @@
+#pragma once
+
+HOSTHEADER("#include <SDL/SDL.h>");
+HOSTHEADER("#include <SDL/SDL_gfxPrimitives.h>");
+HOSTHEADER("#include <SDL/SDL_image.h>");
+HOSTHEADER("int _init_sdl() { SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO); return 1; } int _init_sdl_var=_init_sdl();");
+#define $display rec $display; \
+  2->1 \
+  {^drawpixel: \
+    2->1: Int; /* x */ \
+    2->1: Int; /* y */ \
+    2->1: Int; /* r */ \
+    2->1: Int; /* g */ \
+    2->1: Int; /* b */ \
+    $display; \
+   ^drawrect: \
+    2->1: Int; /* x */ \
+    2->1: Int; /* y */ \
+    2->1: Int; /* w */ \
+    2->1: Int; /* h */ \
+    2->1: Int; /* r */ \
+    2->1: Int; /* g */ \
+    2->1: Int; /* b */ \
+    $display; \
+   ^update: \
+    $display; \
+   ^event: \
+    1->2 \
+    {^none: \
+      $display; \
+     ^keydown: \
+      1->2: Int; \
+      $display; \
+     ^keyup: \
+      1->2: Int; \
+      $display; \
+     ^other: \
+      $display; \
+    } \
+   ^end: \
+    $end; \
+  }
+#define $disp rec $disp; \
+  2->1: Int; /* width */ \
+  2->1: Int; /* height */ \
+  $display
+global $disp window(1,2);
+local Window()
+( s = new window(1 of 2);
+  s[2]>>width>>height;
+  Int winptr=0;
+  HOST("",winptr," = std::shared_ptr<libpi::Int>( new libpi::Int((unsigned long)(SDL_SetVideoMode(mpz_get_ui(((libpi::Int*)",width,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",height,".get())->GetValue()),24,SDL_HWSURFACE | SDL_DOUBLEBUF))));");
+  local WindowSession($display(1 of 1,2) this)
+  ( this[2]>>
+    {^drawpixel:
+      this[2]>>x>>y>>r>>g>>b;
+      HOST("pixelRGBA((SDL_Surface*)mpz_get_ui(((libpi::Int*)",
+           winptr,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           x,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           y,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           r,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           g,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           b,".get())->GetValue()),255);");
+      WindowSession(this);
+     ^drawrect:
+      this[2]>>x>>y>>w>>h>>r>>g>>b;
+      HOST("{ SDL_Rect _rect; _rect.x=mpz_get_ui(((libpi::Int*)",
+           x,".get())->GetValue()); _rect.y=mpz_get_ui(((libpi::Int*)",
+           y,".get())->GetValue()); _rect.w=mpz_get_ui(((libpi::Int*)",
+           w,".get())->GetValue()); _rect.h=mpz_get_ui(((libpi::Int*)",
+           h,".get())->GetValue()); SDL_FillRect((SDL_Surface*)mpz_get_ui(((libpi::Int*)",
+           winptr,".get())->GetValue()),&_rect,SDL_MapRGB(((SDL_Surface*)mpz_get_ui(((libpi::Int*)",
+           winptr,".get())->GetValue()))->format,mpz_get_ui(((libpi::Int*)",
+           r,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           g,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           b,".get())->GetValue()))); }");
+      WindowSession(this);
+     ^update:
+      HOST("SDL_Flip((SDL_Surface*)mpz_get_ui(((libpi::Int*)",
+            winptr,".get())->GetValue()));");
+      WindowSession(this);
+     ^event:
+      Bool hasEvent=false;
+      Int eventType=0;
+      Int eventKey=0;
+      Int eventX=0;
+      Int eventY=0;
+      HOST("{ SDL_Event event; ",
+           hasEvent, "=libpi::Bool::GetInstance(SDL_PollEvent(&event)); if (((libpi::Bool*)",
+           hasEvent, ".get())->GetValue()) { ",
+           eventType,"=std::shared_ptr<libpi::Int>( new libpi::Int((unsigned long)event.type)); if (event.type==SDL_KEYDOWN || event.type==SDL_KEYUP) {",
+           eventKey,"=std::shared_ptr<libpi::Int>( new libpi::Int((unsigned long)event.key.keysym.sym));} else if (event.type==SDL_MOUSEBUTTONDOWN || event.type==SDL_MOUSEBUTTONUP || event.type==SDL_MOUSEMOTION) {",
+           eventKey,"=std::shared_ptr<libpi::Int>( new libpi::Int((unsigned long)event.button.button));",
+           eventX,"=std::shared_ptr<libpi::Int>( new libpi::Int((unsigned long)event.button.x));",
+           eventY,"=std::shared_ptr<libpi::Int>( new libpi::Int((unsigned long)event.button.y));} } }");
+      if hasEvent
+      then if eventType=2 // KeyDown
+           then this[2]<<^keydown<<eventKey;
+                WindowSession(this);
+           else if eventType=3 //KeyUp
+           then this[2]<<^keyup<<eventKey;
+                WindowSession(this);
+           else // FIXME HANDLE OTHER EVENTS
+                this[2]<<^other;
+                WindowSession(this);
+      else this[2]<<^none;
+      WindowSession(this);
+     ^end:
+      HOST("SDL_FreeSurface((SDL_Surface*)mpz_get_ui(((libpi::Int*)",winptr,".get())->GetValue()));");
+      Window();
+    }
+  )
+  WindowSession(s);
+)
+Window(); |
