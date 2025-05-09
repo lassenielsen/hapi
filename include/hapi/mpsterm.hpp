@@ -119,6 +119,9 @@ namespace hapi
 class MpsTerm // {{{
 {
   public:
+    //! It is important to have a virtual destructor!
+    virtual ~MpsTerm() {}
+
     //! Make a deep copy of the object
     virtual MpsTerm *Copy() const = 0; // Make a deep copy
 
