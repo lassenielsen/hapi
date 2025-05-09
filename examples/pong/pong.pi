@@ -1,5 +1,6 @@
 #include "display.pi"
 #include <console.pi>
+HOSTHEADER("#include <unistd.h>");
 
 local Pong($display(2 of 1,2) w,
            Int p1pos, Int p1speed, Bool p1up, Bool p1down, Int p1score,
@@ -8,6 +9,8 @@ local Pong($display(2 of 1,2) w,
 ( w[1]<<^event;
   w[1]>>
   {^none:
+    c=new console(2 of 2);
+    c[1]<<^str<<"Stilling: "<<^int<<p1score<<^str<<" - "<<^int<<p2score<<^nl<<^end;
     w[1]<<^drawrect<<0<<0<<800<<600<<0<<0<<0;                 // Ryd Skærmen
     w[1]<<^drawrect<<0<<300+p1pos-50<<20<<101<<200<<0<<0;     // Tegn p1
     w[1]<<^drawrect<<780<<300+p2pos-50<<20<<101<<0<<0<<200;   // Tegn p2
@@ -19,13 +22,13 @@ local Pong($display(2 of 1,2) w,
     Bool p1hit=(pukX<=25) and (p1pos+300-50<=pukY) and (pukY<=p1pos+300+50);
     Bool p2hit=(775<=pukX) and (p2pos+300-50<=pukY) and (pukY<=p2pos+300+50);
     Int pukXspeed2=if p2point
-                   then (12-(99/(10+(p1score+p2score))))
+                   then (12-(99/(10+p2score/10)))
                    else if p1hit
-                   then (12-(99/(10+(p1score+p2score))))
+                   then (12-(99/(10+p2score/10)))
                    else if p1point
-                   then 0-(12-(99/(10+(p1score+p2score))))
+                   then 0-(12-(99/(10+p1score/10)))
                    else if p2hit
-                   then 0-(12-(99/(10+(p1score+p2score))))
+                   then 0-(12-(99/(10+p1score/10)))
                    else pukXspeed;
     Int pukYspeed2=if p1hit
                    then 0-(p1pos+300-pukY)/20
@@ -43,8 +46,8 @@ local Pong($display(2 of 1,2) w,
     Int p1pos3=if p1pos2<=0-250 then 0-250 else if 250<=p1pos2 then 250 else p1pos2;
     Int p2pos3=if p2pos2<=0-250 then 0-250 else if 250<=p2pos2 then 250 else p2pos2;
     Pong(w,
-         p1pos3,p1speed2,p1up,p1down,p1score+(if p1point then 1 else 0),
-         p2pos3,p2speed2,p2up,p2down,p2score+(if p2point then 1 else 0),
+         p1pos3,p1speed2,p1up,p1down,p1score+(if p1point then 10 else 0)+(if p1hit then 1 else 0),
+         p2pos3,p2speed2,p2up,p2down,p2score+(if p2point then 10 else 0)+(if p2hit then 1 else 0),
          pukX+pukXspeed2,pukY+pukYspeed2,pukXspeed2,pukYspeed2);
    ^keydown:
     w[1]>>key;
@@ -114,4 +117,4 @@ w[1]<<800<<600;
 Pong(w,
      0,0,false,false,0,
      0,0,false,false,0,
-     400,300,1,0);
+     400,300,3,0);
