@@ -22,6 +22,14 @@ HOSTHEADER("int _init_sdl() { SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO); return 
     2->1: Int; /* g */ \
     2->1: Int; /* b */ \
     $display; \
+   ^drawstring: \
+    2->1: Int; /* x */ \
+    2->1: Int; /* y */ \
+    2->1: String; /* text */ \
+    2->1: Int; /* r */ \
+    2->1: Int; /* g */ \
+    2->1: Int; /* b */ \
+    $display; \
    ^update: \
     $display; \
    ^event: \
@@ -74,6 +82,17 @@ local Window()
            r,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
            g,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
            b,".get())->GetValue()))); }");
+      WindowSession(this);
+     ^drawstring:
+      this[2]>>x>>y>>text>>r>>g>>b;
+      HOST("stringRGBA((SDL_Surface*)mpz_get_ui(((libpi::Int*)",
+           winptr,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           x,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           y,".get())->GetValue()),((libpi::String*)",
+           text,".get())->GetValue().c_str(),mpz_get_ui(((libpi::Int*)",
+           r,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           g,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
+           b,".get())->GetValue()),255);");
       WindowSession(this);
      ^update:
       HOST("SDL_Flip((SDL_Surface*)mpz_get_ui(((libpi::Int*)",
