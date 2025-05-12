@@ -1,27 +1,38 @@
 #include "display.pi"
-#include <console.pi>
+#include <convert.pi>
 HOSTHEADER("#include <unistd.h>");
 
 local Pong($display(2 of 1,2) w,
            Int p1pos, Int p1speed, Bool p1up, Bool p1down, Int p1score,
            Int p2pos, Int p2speed, Bool p2up, Bool p2down, Int p2score,
-           Int pukX, Int pukY, Int pukXspeed, Int pukYspeed)
+           Int puckX, Int puckY, Int puckXspeed, Int puckYspeed)
 ( w[1]<<^event;
   w[1]>>
   {^none:
-    c=new console(2 of 2);
-    c[1]<<^str<<"Stilling: "<<^int<<p1score<<^str<<" - "<<^int<<p2score<<^nl<<^end;
-    w[1]<<^drawrect<<0<<0<<800<<600<<0<<0<<0;                 // Ryd Skærmen
-    w[1]<<^drawrect<<0<<300+p1pos-50<<20<<101<<200<<0<<0;     // Tegn p1
-    w[1]<<^drawrect<<780<<300+p2pos-50<<20<<101<<0<<0<<200;   // Tegn p2
-    w[1]<<^drawrect<<pukX-5<<pukY-5<<11<<11<<0<<200<<0;       // Tegn puk
-    w[1]<<^update;
+    w[1]<<^drawrect<<0<<0<<800<<600<<0<<0<<0;                 // Clear Screen
+    w[1]<<^drawrect<<0<<300+p1pos-50<<20<<101<<200<<0<<0;     // Draw p1
+    w[1]<<^drawrect<<780<<300+p2pos-50<<20<<101<<0<<0<<200;   // Draw p2
+    w[1]<<^drawrect<<puckX-5<<puckY-5<<11<<11<<0<<200<<0;     // Draw puck
+    String p1scorestr="";
+    INT2STRING(p1score,p1scorestr);
+    w[1]<<^drawstring<<25<<5<<p1scorestr<<200<<0<<0;          // Show p1 score
+    String p2scorestr="";
+    INT2STRING(p2score,p2scorestr);
+    w[1]<<^drawstring<<775-8*p2scorestr&^length<<5<<p2scorestr<<0<<0<<200;// Show p2 score
+    w[1]<<^update;                                            // Update display
     HOST("usleep(10000);");
-    Bool p1point=(795<=pukX) and (1<=pukXspeed);
-    Bool p2point=(pukX<=5) and (pukXspeed<=0-1);
-    Bool p1hit=(pukX<=25) and (p1pos+300-50<=pukY) and (pukY<=p1pos+300+50);
-    Bool p2hit=(775<=pukX) and (p2pos+300-50<=pukY) and (pukY<=p2pos+300+50);
-    Int pukXspeed2=if p2point
+    // Update state
+    Int p1speed2=p1speed-p1speed/20 + (if p1down then 32 else 0) - (if p1up then 32 else 0);
+    Int p2speed2=p2speed-p2speed/20 + (if p2down then 32 else 0) - (if p2up then 32 else 0);
+    Int p1pos2=p1pos+p1speed2/100;
+    Int p2pos2=p2pos+p2speed2/100;
+    Int p1pos3=if p1pos2<=0-250 then 0-250 else if 250<=p1pos2 then 250 else p1pos2;
+    Int p2pos3=if p2pos2<=0-250 then 0-250 else if 250<=p2pos2 then 250 else p2pos2;
+    Bool p1point=(795<=puckX) and (1<=puckXspeed);
+    Bool p2point=(puckX<=5) and (puckXspeed<=0-1);
+    Bool p1hit=(puckX<=25) and (p1pos3+300-50<=puckY) and (puckY<=p1pos3+300+50) and (puckXspeed<=0-1);
+    Bool p2hit=(775<=puckX) and (p2pos3+300-50<=puckY) and (puckY<=p2pos3+300+50) and (1<=puckXspeed);
+    Int puckXspeed2=if p2point
                    then (12-(99/(10+p2score/10)))
                    else if p1hit
                    then (12-(99/(10+p2score/10)))
@@ -29,90 +40,86 @@ local Pong($display(2 of 1,2) w,
                    then 0-(12-(99/(10+p1score/10)))
                    else if p2hit
                    then 0-(12-(99/(10+p1score/10)))
-                   else pukXspeed;
-    Int pukYspeed2=if p1hit
-                   then 0-(p1pos+300-pukY)/20
+                   else puckXspeed;
+    Int puckYspeed2=if p1hit
+                   then puckYspeed+p1speed2/300-((p1pos+300-puckY)*puckXspeed2)/50
                    else if p2hit
-                   then 0-(p2pos+300-pukY)/20
-                   else if (pukY<=5) and (pukYspeed<=0-1)
-                   then 0-pukYspeed
-                   else if (595<=pukY) and (1<=pukYspeed)
-                   then 0-pukYspeed
-                   else pukYspeed;
-    Int p1speed2=p1speed-p1speed/20 + (if p1down then 32 else 0) - (if p1up then 32 else 0);
-    Int p2speed2=p2speed-p2speed/20 + (if p2down then 32 else 0) - (if p2up then 32 else 0);
-    Int p1pos2=p1pos+p1speed2/100;
-    Int p2pos2=p2pos+p2speed2/100;
-    Int p1pos3=if p1pos2<=0-250 then 0-250 else if 250<=p1pos2 then 250 else p1pos2;
-    Int p2pos3=if p2pos2<=0-250 then 0-250 else if 250<=p2pos2 then 250 else p2pos2;
+                   then puckYspeed+p2speed2/300+((p2pos+300-puckY)*puckXspeed2)/50
+                   else if (puckY<=5) and (puckYspeed<=0-1)
+                   then 0-puckYspeed
+                   else if (595<=puckY) and (1<=puckYspeed)
+                   then 0-puckYspeed
+                   else if p1point or p2point
+                   then puckYspeed/2
+                   else puckYspeed;
     Pong(w,
          p1pos3,p1speed2,p1up,p1down,p1score+(if p1point then 10 else 0)+(if p1hit then 1 else 0),
          p2pos3,p2speed2,p2up,p2down,p2score+(if p2point then 10 else 0)+(if p2hit then 1 else 0),
-         pukX+pukXspeed2,pukY+pukYspeed2,pukXspeed2,pukYspeed2);
-   ^keydown:
+         puckX+puckXspeed2,puckY+puckYspeed2,puckXspeed2,puckYspeed2);
+   ^keydown: // Handle keydown event
     w[1]>>key;
     if key=273 // up
     then Pong(w,
               p1pos,p1speed,p1up,p1down,p1score,
               p2pos,p2speed,true,p2down,p2score,
-              pukX,pukY,pukXspeed,pukYspeed);
+              puckX,puckY,puckXspeed,puckYspeed);
     else if key=274 // down
     then Pong(w,
               p1pos,p1speed,p1up,p1down,p1score,
               p2pos,p2speed,p2up,true,p2score,
-              pukX,pukY,pukXspeed,pukYspeed);
+              puckX,puckY,puckXspeed,puckYspeed);
     else if key="w"&0 // w
     then Pong(w,
               p1pos,p1speed,true,p1down,p1score,
               p2pos,p2speed,p2up,p2down,p2score,
-              pukX,pukY,pukXspeed,pukYspeed);
+              puckX,puckY,puckXspeed,puckYspeed);
     else if key="s"&0 // s
     then Pong(w,
               p1pos,p1speed,p1up,true,p1score,
               p2pos,p2speed,p2up,p2down,p2score,
-              pukX,pukY,pukXspeed,pukYspeed);
-    else if key=32
+              puckX,puckY,puckXspeed,puckYspeed);
+    else if key=32    // Space
     then w[1]<<^end;
     else Pong(w,
               p1pos,p1speed,p1up,p1down,p1score,
               p2pos,p2speed,p2up,p2down,p2score,
-              pukX,pukY,pukXspeed,pukYspeed);
-   ^keyup:
+              puckX,puckY,puckXspeed,puckYspeed);
+   ^keyup: // Handle keyup event
     w[1]>>key;
     if key=273 // up
     then Pong(w,
               p1pos,p1speed,p1up,p1down,p1score,
               p2pos,p2speed,false,p2down,p2score,
-              pukX,pukY,pukXspeed,pukYspeed);
+              puckX,puckY,puckXspeed,puckYspeed);
     else if key=274 // down
     then Pong(w,
               p1pos,p1speed,p1up,p1down,p1score,
               p2pos,p2speed,p2up,false,p2score,
-              pukX,pukY,pukXspeed,pukYspeed);
+              puckX,puckY,puckXspeed,puckYspeed);
     else if key="w"&0 // w
     then Pong(w,
               p1pos,p1speed,false,p1down,p1score,
               p2pos,p2speed,p2up,p2down,p2score,
-              pukX,pukY,pukXspeed,pukYspeed);
+              puckX,puckY,puckXspeed,puckYspeed);
     else if key="s"&0 // s
     then Pong(w,
               p1pos,p1speed,p1up,false,p1score,
               p2pos,p2speed,p2up,p2down,p2score,
-              pukX,pukY,pukXspeed,pukYspeed);
+              puckX,puckY,puckXspeed,puckYspeed);
     else
       Pong(w,
            p1pos,p1speed,p1up,p1down,p1score,
            p2pos,p2speed,p2up,p2down,p2score,
-           pukX,pukY,pukXspeed,pukYspeed);
+           puckX,puckY,puckXspeed,puckYspeed);
    ^other:
     Pong(w,
          p1pos,p1speed,p1up,p1down,p1score,
          p2pos,p2speed,p2up,p2down,p2score,
-         pukX,pukY,pukXspeed,pukYspeed);
+         puckX,puckY,puckXspeed,puckYspeed);
   }
 )
-// Lav vindue (800x600), og start Pong i starttilstanden
-w=new window(2 of 2);
+// Create display (800x600), and start Pong using a starting state
+w=new display(2 of 2);
 w[1]<<800<<600;
 Pong(w,
      0,0,false,false,0,
