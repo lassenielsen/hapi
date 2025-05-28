@@ -1,26 +1,53 @@
 #include "display.pi"
 #include <convert.pi>
+#include <console.pi>
 HOSTHEADER("#include <unistd.h>");
 
+local EndGame(Int p1score, Int p2score)
+( c=new console(2 of 2);
+  c[1]<<^str<<"Thank you for playing pong."<<^nl
+      <<^str<<"The final score was "<<^int<<p1score<<^str<<" to "<<^int<<p2score<<^str<<"."<<^nl
+      <<^str<<if p2score+1<=p1score
+              then "Congratulations to player 1."
+              else if p1score+1<=p2score
+              then "Congratulations to player 2."
+              else "It was a draw."
+      <<^nl<<^end;
+)
 local Pong($display(2 of 1,2) w,
            Int p1pos, Int p1speed, Bool p1up, Bool p1down, Int p1score,
            Int p2pos, Int p2speed, Bool p2up, Bool p2down, Int p2score,
            Int puckX, Int puckY, Int puckXspeed, Int puckYspeed)
-( w[1]<<^event;
+( if 200<=p1score or 200<=p2score
+  then w[1]<<^end;
+       EndGame(p1score,p2score);
+  else
+  w[1]<<^event;
   w[1]>>
   {^none:
     w[1]<<^drawrect<<0<<0<<800<<600<<0<<0<<0;                 // Clear Screen
-    w[1]<<^drawrect<<0<<300+p1pos-50<<20<<101<<200<<0<<0;     // Draw p1
-    w[1]<<^drawrect<<780<<300+p2pos-50<<20<<101<<0<<0<<200;   // Draw p2
-    w[1]<<^drawrect<<puckX-5<<puckY-5<<11<<11<<0<<200<<0;     // Draw puck
+    w[1]<<^drawrect<<0<<300+p1pos-50<<20<<101<<200<<0<<0;     // Draw p1 red
+    w[1]<<^drawrect<<780<<300+p2pos-50<<20<<101<<0<<0<<200;   // Draw p2 blue
+    w[1]<<^drawrect<<puckX-5<<puckY-5<<11<<11<<0<<200<<0;     // Draw puck green
     String p1scorestr="";
     INT2STRING(p1score,p1scorestr);
     w[1]<<^drawstring<<25<<5<<p1scorestr<<200<<0<<0;          // Show p1 score
     String p2scorestr="";
     INT2STRING(p2score,p2scorestr);
-    w[1]<<^drawstring<<775-8*p2scorestr&^length<<5<<p2scorestr<<0<<0<<200;// Show p2 score
+    w[1]<<^drawstring<<775-8*p2scorestr&^length<<5<<p2scorestr<<0<<0<<200; // Show p2 score
+
+    w[1]<<^drawstring<<5<<5<<"^"<<200<<0<<0;
+    w[1]<<^drawstring<<5<<13<<"W"<<200<<0<<0;
+    w[1]<<^drawstring<<5<<579<<"S"<<200<<0<<0;
+    w[1]<<^drawstring<<5<<587<<"v"<<200<<0<<0;
+
+    w[1]<<^drawstring<<787<<5<<"^"<<0<<0<<200;
+    w[1]<<^drawstring<<787<<13<<"|"<<0<<0<<200;
+    w[1]<<^drawstring<<787<<579<<"|"<<0<<0<<200;
+    w[1]<<^drawstring<<787<<587<<"v"<<0<<0<<200;
+
     w[1]<<^update;                                            // Update display
-    HOST("usleep(10000);");
+    HOST("usleep(10000);");                                   // Wait one step (FIXME hapi operation of service for this!)
     // Update state
     Int p1speed2=p1speed-p1speed/20 + (if p1down then 32 else 0) - (if p1up then 32 else 0);
     Int p2speed2=p2speed-p2speed/20 + (if p2down then 32 else 0) - (if p2up then 32 else 0);
@@ -32,22 +59,16 @@ local Pong($display(2 of 1,2) w,
     Bool p2point=(puckX<=5) and (puckXspeed<=0-1);
     Bool p1hit=(puckX<=25) and (p1pos3+300-50<=puckY) and (puckY<=p1pos3+300+50) and (puckXspeed<=0-1);
     Bool p2hit=(775<=puckX) and (p2pos3+300-50<=puckY) and (puckY<=p2pos3+300+50) and (1<=puckXspeed);
-    Int puckXspeed2=if p2point
+    Int puckXspeed2=if p2point or p1hit
                    then (12-(99/(10+p2score/10)))
-                   else if p1hit
-                   then (12-(99/(10+p2score/10)))
-                   else if p1point
-                   then 0-(12-(99/(10+p1score/10)))
-                   else if p2hit
+                   else if p1point or p2hit
                    then 0-(12-(99/(10+p1score/10)))
                    else puckXspeed;
     Int puckYspeed2=if p1hit
                    then puckYspeed+p1speed2/300-((p1pos+300-puckY)*puckXspeed2)/50
                    else if p2hit
                    then puckYspeed+p2speed2/300+((p2pos+300-puckY)*puckXspeed2)/50
-                   else if (puckY<=5) and (puckYspeed<=0-1)
-                   then 0-puckYspeed
-                   else if (595<=puckY) and (1<=puckYspeed)
+                   else if ((puckY<=5) and (puckYspeed<=0-1)) or ((595<=puckY) and (1<=puckYspeed))
                    then 0-puckYspeed
                    else if p1point or p2point
                    then puckYspeed/2
@@ -78,8 +99,9 @@ local Pong($display(2 of 1,2) w,
               p1pos,p1speed,p1up,true,p1score,
               p2pos,p2speed,p2up,p2down,p2score,
               puckX,puckY,puckXspeed,puckYspeed);
-    else if key=32    // Space
+    else if key=32 or 200<=p1score or 200<=p2score    // Space
     then w[1]<<^end;
+         EndGame(p1score,p2score);
     else Pong(w,
               p1pos,p1speed,p1up,p1down,p1score,
               p2pos,p2speed,p2up,p2down,p2score,
@@ -119,9 +141,18 @@ local Pong($display(2 of 1,2) w,
   }
 )
 // Create display (800x600), and start Pong using a starting state
-w=new display(2 of 2);
-w[1]<<800<<600;
-Pong(w,
-     0,0,false,false,0,
-     0,0,false,false,0,
-     400,300,3,0);
+c=new console(2 of 2);
+c[1]<<^str<<"Welcome to pong."<<^nl
+    <<^str<<"This is a two player game where player 1 controls the left paddle with the W and S keys"<<^nl
+    <<^str<<"and player 2 controls the right paddle with the <up> and <down> keys."<<^nl<<^nl
+    <<^str<<"The game will start shortly. The game ends when one player obtains more than 200 points, or when <space> is pressed."<<^nl<<^end;
+local Play()
+( HOST("usleep(5000000);");
+  w=new display(2 of 2);
+  w[1]<<800<<600;
+  Pong(w,
+       0,0,false,false,0,
+       0,0,false,false,0,
+       400,300,3,0);
+)
+Play();

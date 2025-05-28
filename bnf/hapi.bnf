@@ -187,24 +187,24 @@ Stypes2 ::= ::tuple_cont Stype , Stypes2
 # Expressions (value)
 Exp  ::= ::exp_if      if Exp then Exp else Exp
        | ::exp_lvl     Exp2
-Exp2 ::= ::exp_eq      Exp3 = Exp2
+Exp2 ::= ::exp_and     Exp3 and Exp2
        | ::exp_lvl     Exp3
-Exp3 ::= ::exp_leq     Exp4 <= Exp3
-       | ::exp_geq     Exp4 >= Exp3
-       | ::exp_lt      Exp4 < Exp3
+Exp3 ::= ::exp_or      Exp4 or Exp3
        | ::exp_lvl     Exp4
-Exp4 ::= ::exp_plus    Exp5 + Exp4
+Exp4 ::= ::exp_eq      Exp5 = Exp4
        | ::exp_lvl     Exp5
-Exp5 ::= ::exp_minus   Exp6 - Exp5
+Exp5 ::= ::exp_leq     Exp6 <= Exp5
+       | ::exp_geq     Exp6 >= Exp5
+       | ::exp_lt      Exp6 < Exp5
        | ::exp_lvl     Exp6
-Exp6 ::= ::exp_mult    Exp7 * Exp6
+Exp6 ::= ::exp_plus    Exp7 + Exp6
        | ::exp_lvl     Exp7
-Exp7 ::= ::exp_div     Exp8 / Exp7
-       | ::exp_mod     Exp8 % Exp7
+Exp7 ::= ::exp_minus   Exp8 - Exp7
        | ::exp_lvl     Exp8
-Exp8 ::= ::exp_and     Exp9 and Exp8
+Exp8 ::= ::exp_mult    Exp9 * Exp8
        | ::exp_lvl     Exp9
-Exp9 ::= ::exp_or      Exp10 or Exp9
+Exp9 ::= ::exp_div     Exp10 / Exp9
+       | ::exp_mod     Exp10 % Exp9
        | ::exp_lvl     Exp10
 Exp10 ::= ::exp_idx    Exp10 & Exp11
         | ::exp_att    Exp10 & bid
