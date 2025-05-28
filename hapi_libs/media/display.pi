@@ -3,7 +3,11 @@
 HOSTHEADER("#include <SDL/SDL.h>");
 HOSTHEADER("#include <SDL/SDL_gfxPrimitives.h>");
 HOSTHEADER("#include <SDL/SDL_image.h>");
+HOSTHEADER("#include <map>");
+HOSTHEADER("#include <string>");
 HOSTHEADER("int _init_sdl() { SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO); return 1; } int _init_sdl_var=_init_sdl();");
+HOSTHEADER("std::map<std::string,SDL_Surface*> _imglib;");
+
 #define $display rec $display; \
   2->1 \
   {^drawpixel: \
@@ -29,6 +33,11 @@ HOSTHEADER("int _init_sdl() { SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO); return 
     2->1: Int; /* r */ \
     2->1: Int; /* g */ \
     2->1: Int; /* b */ \
+    $display; \
+   ^drawimage: \
+    2->1: Int; /* x */ \
+    2->1: Int; /* y */ \
+    2->1: String; /* path */ \
     $display; \
    ^update: \
     $display; \
@@ -93,6 +102,20 @@ local Display()
            r,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
            g,".get())->GetValue()),mpz_get_ui(((libpi::Int*)",
            b,".get())->GetValue()),255);");
+      DisplaySession(this);
+     ^drawimage:
+      this[2]>>x>>y>>path;
+      HOST("if (_imglib.find(((libpi::String*)",
+           path,".get())->GetValue())==_imglib.end()) _imglib[((libpi::String*)",
+           path,".get())->GetValue()]=IMG_Load(((libpi::String*)",
+           path,".get())->GetValue().c_str());");
+      HOST("{ SDL_Rect _box; _box.w=_imglib[((libpi::String*)",
+           path,".get())->GetValue()]->w; _box.h=_imglib[((libpi::String*)",
+           path,".get())->GetValue()]->h; _box.x=mpz_get_ui(((libpi::Int*)",
+           x,".get())->GetValue()); _box.y=mpz_get_ui(((libpi::Int*)",
+           y,".get())->GetValue()); SDL_BlitSurface( _imglib[((libpi::String*)",
+           path,".get())->GetValue()], NULL, (SDL_Surface*)mpz_get_ui(((libpi::Int*)",
+           winptr,".get())->GetValue()), &_box ); }");
       DisplaySession(this);
      ^update:
       HOST("SDL_Flip((SDL_Surface*)mpz_get_ui(((libpi::Int*)",

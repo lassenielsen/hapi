@@ -28,7 +28,7 @@ build: $(name)
 
 $(name): $(name).cpp
 	@echo "=== Building executable from C++ code in $(name).cpp"
-	$(CC) $(Copt) $(name).cpp -o $(name) -lpi -lpthread -lSDL -lSDL_gfx -lgmp
+	$(CC) $(Copt) $(name).cpp -o $(name) -lpi -lpthread -lSDL -lSDL_gfx -lSDL_image -lgmp
 
 $(name).cpp: $(name).pip
 	@echo "=== Compiling $(name).pip to $(name).cpp"

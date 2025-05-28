@@ -12,6 +12,7 @@ local Pong($display(2 of 1,2) w,
     w[1]<<^drawrect<<0<<0<<800<<600<<0<<0<<0;                 // Clear Screen
     w[1]<<^drawrect<<0<<300+p1pos-50<<20<<101<<200<<0<<0;     // Draw p1
     w[1]<<^drawrect<<780<<300+p2pos-50<<20<<101<<0<<0<<200;   // Draw p2
+    //w[1]<<^drawimage<<puckX-5<<puckY-5<<"granat.png";     // Draw puck
     w[1]<<^drawrect<<puckX-5<<puckY-5<<11<<11<<0<<200<<0;     // Draw puck
     String p1scorestr="";
     INT2STRING(p1score,p1scorestr);
