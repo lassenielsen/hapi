@@ -37,3 +37,5 @@ local pure service ServiceInt2String(int2string (1 of 2) s)
 #define STRING2FLOAT(str,val) HOST("{ ", val, ".reset(new libpi::Float(((libpi::String*)", str, ".get())->GetValue())); }")
 
 #define INT2FLOAT(ival,fval) HOST("{ ", fval, ".reset(new libpi::Float(((libpi::Int*)", ival, ".get())->GetValue())); }")
+
+#define FLOAT2STRING(i,val) HOST("{ ", val, ".reset(new libpi::String(((libpi::Float*)", i, ".get())->ToString())); }")
