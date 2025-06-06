@@ -51,6 +51,20 @@ HOSTHEADER("std::map<std::string,SDL_Surface*> _imglib;");
      ^keyup: \
       1->2: Int; \
       $display; \
+     ^mousedown: \
+      1->2: Int; /* x */ \
+      1->2: Int; /* y */ \
+      1->2: String; /* button */ \
+      $display; \
+     ^mouseup: \
+      1->2: Int; /* x */ \
+      1->2: Int; /* y */ \
+      1->2: String; /* button */ \
+      $display; \
+     ^mouseto: \
+      1->2: Int; /* x */ \
+      1->2: Int; /* y */ \
+      $display; \
      ^other: \
       $display; \
     } \
@@ -141,6 +155,23 @@ local Display()
                 DisplaySession(this);
            else if eventType=3 //KeyUp
            then this[2]<<^keyup<<eventKey;
+                DisplaySession(this);
+           else if eventType=4 //MouseMotion
+           then this[2]<<^mouseto<<eventX<<eventY;
+                DisplaySession(this);
+           else if eventType=5 //MouseButtonDown
+           then this[2]<<^mousedown<<eventX<<eventY
+                       <<if eventKey=1 then "left" else
+                         if eventKey=2 then "middle" else
+                         if eventKey=3 then "right" else
+                        "other";
+                DisplaySession(this);
+           else if eventType=6 //MouseButtonUpwn
+           then this[2]<<^mouseup<<eventX<<eventY
+                       <<if eventKey=1 then "left" else
+                         if eventKey=2 then "middle" else
+                         if eventKey=3 then "right" else
+                        "other";
                 DisplaySession(this);
            else // FIXME HANDLE OTHER EVENTS
                 this[2]<<^other;

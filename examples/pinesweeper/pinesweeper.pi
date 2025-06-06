@@ -6,23 +6,23 @@
 HOSTHEADER("#include <unistd.h>");
 HOST("srand (static_cast <unsigned> (time(0)));");
 
-#define $mapres \
-  1->2:$list(Int)(2 of 1 pure,2); /* map */ \
+#define $fieldres \
+  1->2:$list(Int)(2 of 1 pure,2); /* field */ \
   $end;
 #define $countmines \
-  2->1:$list(Int)(2 of 1 pure,2); /* map */ \
-  2->1:Int; /* map width */ \
-  2->1:Int; /* map height */ \
+  2->1:$list(Int)(2 of 1 pure,2); /* field */ \
+  2->1:Int; /* field width */ \
+  2->1:Int; /* field height */ \
   2->1:Int; /* minx */ \
   2->1:Int; /* maxx */ \
   2->1:Int; /* miny */ \
   2->1:Int; /* maxy */ \
   1->2:Int; /* count */ \
-  $mapres
+  $fieldres
 global $countmines countmines(1 pure,2);
 local pure service CountMines(countmines (1 of 2) this)
 ( this[2]>>tiles>>width>>height>>minx>>maxx>>miny>>maxy;
-  local pure Count(1->2:Int;$mapres(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) tiles, Int x, Int y, Int c)
+  local pure Count(1->2:Int;$fieldres(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) tiles, Int x, Int y, Int c)
   ( if maxy+1<=y
     then this[2]<<c<<tiles;
     else if maxx+1<=x
@@ -41,15 +41,15 @@ local pure service CountMines(countmines (1 of 2) this)
   Count(this,tiles,minx,miny,0);
 )
 |
-#define $mkmap \
+#define $mkfield \
   2->1:Int; /* width */ \
   2->1:Int; /* height */ \
   2->1:Int; /* mines */ \
-  $mapres
-global $mkmap mkmap(1 pure,2);
-local pure service MkMap(mkmap (1 of 2) this)
+  $fieldres
+global $mkfield mkfield(1 pure,2);
+local pure service MkMap(mkfield (1 of 2) this)
 ( this[2]>>width>>height>>mines;
-  local pure CalcCloseMines($mapres(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) tiles, Int x, Int y)
+  local pure CalcCloseMines($fieldres(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) tiles, Int x, Int y)
   ( if height<=y
     then this[2]<<tiles;
     else if width<=x
@@ -73,7 +73,7 @@ local pure service MkMap(mkmap (1 of 2) this)
         CalcCloseMines(this,tiles,x+1,y);
       }
   )
-  local pure MakeMap($mapres(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) tiles, Int remainingTiles, Int remainingMines)
+  local pure MakeMap($fieldres(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) tiles, Int remainingTiles, Int remainingMines)
   ( if remainingTiles<=0
     then CalcCloseMines(this,tiles,0,0);
     else if remainingMines<=0
@@ -96,8 +96,8 @@ local pure service MkMap(mkmap (1 of 2) this)
 )
 |
   
-#define $pinemap \
-  rec $pinemap; \
+#define $pinefield \
+  rec $pinefield; \
   2->1 \
   {^clear: \
     2->1: Int; /* x */ \
@@ -108,80 +108,86 @@ local pure service MkMap(mkmap (1 of 2) this)
      ^done: \
       $end; \
      ^ok: \
-      $pinemap; \
+      $pinefield; \
     } \
    ^togglemark: \
     2->1: Int; /* x */ \
     2->1: Int; /* y */ \
-    $pinemap; \
+    $pinefield; \
    ^draw: \
     2->1: $display(2 of 1,2); \
     1->2: $display(2 of 1,2); \
-    $pinemap; \
+    $pinefield; \
    ^end: \
     $end; \
   }
-#define $initpinemap \
+#define $initpinefield \
   2->1: Int; /* width */ \
   2->1: Int; /* height */ \
   2->1: Int; /* mines */ \
-  $pinemap
-global $initpinemap pinemap(1,2);
-local service PinemapService(pinemap (1 of 2) s)
+  $pinefield
+global $initpinefield pinefield(1,2);
+local service PinefieldService(pinefield (1 of 2) s)
 ( s[2]>>width>>height>>mines;
-  local Pinemap($pinemap(1 of 1,2) this, $list(Int)(2 of 1 pure,2) tiles)
+  local Pinefield($pinefield(1 of 1,2) this, $list(Int)(2 of 1 pure,2) tiles)
   ( this[2]>>
     {^clear:
       this[2]>>x>>y;
-      tiles[1]<<^get<<y*width+x;
-      tiles[1]>>
-      {^err:
-        tiles[1]>>msg;
-        this[2]<<^bang;
-        tiles[1]<<^end;
-       ^val:
-        tiles[1]>>v;
-        Int closemines=v-(v/16)*16; // First eight bits is close mines
-        Int props=v/16;
-        Bool mine=1<=props-(props/2)*2;
-        Bool hasflag=1<=(props/2)-(props/4)*2;
-        Bool cleared=1<=(props/4)-(props/8)*4;
-        if mine
-        then this[2]<<^bang;
-             tiles[1]<<^end;
-        else tiles[1]<<^set<<y*width+x<<closemines+(if mine then 16 else 0)+(if hasflag then 32 else 0)+(if not cleared then 64 else 0);
-             local CheckDone(1->2{^bang:$end;^done:$end;^ok:$pinemap}(1 of 1,2) this, $list(Int)(2 of 1 pure,2) tiles, Int pos)
-             ( if width*height<=pos
-               then this[2]<<^done;
-                    tiles[1]<<^end;
-               else tiles[1]<<^get<<pos;
-                    tiles[1]>>
-                    {^err:
-                      tiles[1]>>err;
-                      this[2]<<^ok;
-                      Pinemap(this,tiles);
-                     ^val:
-                      tiles[1]>>v2;
-                      Int closemines2=v2-(v2/16)*16; // First eight bits is close mines
-                      Int props2=v2/16;
-                      Bool mine2=1<=props2-(props2/2)*2;
-                      Bool hasflag2=1<=(props2/2)-(props2/4)*2;
-                      Bool cleared2=1<=(props2/4)-(props2/8)*4;
-                      if not mine2 and not cleared2
-                      then this[2]<<^ok;
-                           Pinemap(this,tiles);
-                      else CheckDone(this,tiles,pos+1);
-                    }
-             )
-             CheckDone(this,tiles,0);
-      }
+      if width<=x or height<=y
+      then this[2]<<^ok;
+           Pinefield(this,tiles);
+      else tiles[1]<<^get<<y*width+x;
+           tiles[1]>>
+           {^err:
+             tiles[1]>>msg;
+             this[2]<<^ok;
+             Pinefield(this,tiles);
+            ^val:
+             tiles[1]>>v;
+             Int closemines=v-(v/16)*16; // First eight bits is close mines
+             Int props=v/16;
+             Bool mine=1<=props-(props/2)*2;
+             Bool hasflag=1<=(props/2)-(props/4)*2;
+             Bool cleared=1<=(props/4)-(props/8)*4;
+             if hasflag
+             then this[2]<<^ok;
+                  Pinefield(this,tiles);
+             else if mine
+             then this[2]<<^bang;
+                  tiles[1]<<^end;
+             else tiles[1]<<^set<<y*width+x<<closemines+(if mine then 16 else 0)+(if hasflag then 32 else 0)+64;
+                  local CheckDone(1->2{^bang:$end;^done:$end;^ok:$pinefield}(1 of 1,2) this, $list(Int)(2 of 1 pure,2) tiles, Int pos)
+                  ( if width*height<=pos
+                    then this[2]<<^done;
+                         tiles[1]<<^end;
+                    else tiles[1]<<^get<<pos;
+                         tiles[1]>>
+                         {^err:
+                           tiles[1]>>err;
+                           this[2]<<^ok;
+                           Pinefield(this,tiles);
+                          ^val:
+                           tiles[1]>>v2;
+                           Int closemines2=v2-(v2/16)*16; // First eight bits is close mines
+                           Int props2=v2/16;
+                           Bool mine2=1<=props2-(props2/2)*2;
+                           Bool hasflag2=1<=(props2/2)-(props2/4)*2;
+                           Bool cleared2=1<=(props2/4)-(props2/8)*4;
+                           if not mine2 and not cleared2
+                           then this[2]<<^ok;
+                                Pinefield(this,tiles);
+                           else CheckDone(this,tiles,pos+1);
+                         }
+                  )
+                  CheckDone(this,tiles,0);
+           }
      ^togglemark:
       this[2]>>x>>y;
       tiles[1]<<^get<<y*width+x;
       tiles[1]>>
       {^err:
         tiles[1]>>msg;
-        Pinemap(this,tiles);
+        Pinefield(this,tiles);
        ^val:
         tiles[1]>>v;
         Int closemines=v-(v/16)*16; // First eight bits is close mines
@@ -190,13 +196,13 @@ local service PinemapService(pinemap (1 of 2) s)
         Bool hasflag=1<=(props/2)-(props/4)*2;
         Bool cleared=1<=(props/4)-(props/8)*4;
         tiles[1]<<^set<<y*width+x<<closemines+(if mine then 16 else 0)+(if not hasflag then 32 else 0)+(if cleared then 64 else 0);
-        Pinemap(this,tiles);
+        Pinefield(this,tiles);
       }
      ^draw:
-      local Draw(1->2:$display(2 of 1,2);$pinemap(1 of 1,2) this, $list(Int)(2 of 1 pure,2) tiles, $display(2 of 1,2) d, Int x, Int y)
+      local Draw(1->2:$display(2 of 1,2);$pinefield(1 of 1,2) this, $list(Int)(2 of 1 pure,2) tiles, $display(2 of 1,2) d, Int x, Int y)
       ( if height<=y
         then this[2]<<d;
-             Pinemap(this,tiles);
+             Pinefield(this,tiles);
         else if width<=x
         then Draw(this,tiles,d,0,y+1);
         else tiles[1]<<^get<<y*width+x;
@@ -237,22 +243,49 @@ local service PinemapService(pinemap (1 of 2) s)
       tiles[1]<<^end;
     }
   )
-  mapgen=new mkmap(2 of 2);
-  mapgen[1]<<width<<height<<mines;
-  mapgen[1]>>tiles;
-  Pinemap(s,tiles);
+  fieldgen=new mkfield(2 of 2);
+  fieldgen[1]<<width<<height<<mines;
+  fieldgen[1]>>tiles;
+  Pinefield(s,tiles);
 )
 |
 local Play($display(2 of 1,2) w,
-           $pinemap(2 of 1,2) map,
+           $pinefield(2 of 1,2) field,
            $timer(2 of 1,2) t,
            Int mouseX, Int mouseY)
-( w[1]<<^event;
+( local ClearTile($display(2 of 1,2) w,
+                  $pinefield(2 of 1,2) field,
+                  $timer(2 of 1,2) t,
+                  Int mouseX, Int mouseY)
+  ( field[1]<<^clear<<(mouseX-20)/20<<(mouseY-20)/20;
+    field[1]>>
+    {^bang:
+      c=new console(2 of 2);
+      c[1]<<^str<<"You hit a mine!"<<^nl<<^end;
+      t[1]<<^wait<<2.0;
+      t[1]>>x;
+      w[1]<<^end;
+      t[1]<<^end;
+     ^done:
+      t[1]<<^read;
+      t[1]>>dur;
+      c=new console(2 of 2);
+      c[1]<<^str<<"Congratulations, you cleared the field in "
+          <<^flt<<dur<<^str<<" seconds."<<^nl<<^end;
+      t[1]<<^wait<<3.0;
+      t[1]>>x;
+      t[1]<<^end;
+      w[1]<<^end;
+     ^ok:
+      Play(w,field,t,mouseX,mouseY);
+    }
+  )
+  w[1]<<^event;
   w[1]>>
   {^none:
     w[1]<<^drawrect<<0<<0<<800<<600<<0<<0<<0;                 // Clear Screen
-    map[1]<<^draw<<w;
-    map[1]>>w;
+    field[1]<<^draw<<w;
+    field[1]>>w;
     w[1]<<^drawrect<<mouseX-5<<mouseY-5<<11<<11<<0<<200<<0;   // Draw mouse
     t[1]<<^read;
     t[1]>>dur;
@@ -262,62 +295,57 @@ local Play($display(2 of 1,2) w,
     w[1]<<^update;                                            // Update display
     t[1]<<^wait<<0.1;
     t[1]>>x;
-    Play(w,map,t,mouseX,mouseY);
+    Play(w,field,t,mouseX,mouseY);
    ^keydown: // Handle keydown event
     w[1]>>key;
     if key=273 // up
-    then Play(w,map,t,mouseX,mouseY-20);
+    then Play(w,field,t,mouseX,mouseY-20);
     else if key=274 // down
-    then Play(w,map,t,mouseX,mouseY+20);
+    then Play(w,field,t,mouseX,mouseY+20);
     else if key=276 // left
-    then Play(w,map,t,mouseX-20,mouseY);
+    then Play(w,field,t,mouseX-20,mouseY);
     else if key=275 // right
-    then Play(w,map,t,mouseX+20,mouseY);
+    then Play(w,field,t,mouseX+20,mouseY);
     else if key="x"&0 // mine
-    then map[1]<<^togglemark<<(mouseX-20)/20<<(mouseY-20)/20;
-         Play(w,map,t,mouseX,mouseY);
+    then field[1]<<^togglemark<<(mouseX-20)/20<<(mouseY-20)/20;
+         Play(w,field,t,mouseX,mouseY);
     else if key="."&0 // try field
-    then map[1]<<^clear<<(mouseX-20)/20<<(mouseY-20)/20;
-         map[1]>>
-         {^bang:
-           c=new console(2 of 2);
-           c[1]<<^str<<"You hit a mine!"<<^nl<<^end;
-           t[1]<<^wait<<2.0;
-           t[1]>>x;
-           w[1]<<^end;
-           t[1]<<^end;
-          ^done:
-           t[1]<<^read;
-           t[1]>>dur;
-           c=new console(2 of 2);
-           c[1]<<^str<<"Congratulations, you cleared the map in "
-               <<^flt<<dur<<^str<<" seconds."<<^nl<<^end;
-           t[1]<<^wait<<3.0;
-           t[1]>>x;
-           t[1]<<^end;
-           w[1]<<^end;
-          ^ok:
-           Play(w,map,t,mouseX,mouseY);
-         }
+    then ClearTile(w,field,t,mouseX,mouseY);
     else if key=32    // Space
     then w[1]<<^end;
-         map[1]<<^end;
+         field[1]<<^end;
          t[1]<<^end;
     else c=new console(2 of 2);
          c[1]<<^str<<"Keydown: "<<^int<<key<<^nl<<^end;
-         Play(w,map,t,mouseX,mouseY);
+         Play(w,field,t,mouseX,mouseY);
    ^keyup: // Handle keyup event
     w[1]>>key;
-    Play(w,map,t,mouseX,mouseY);
+    Play(w,field,t,mouseX,mouseY);
+   ^mousedown:
+    w[1]>>x>>y>>button;
+    if button="left"
+    then ClearTile(w,field,t,x,y);
+    else if button="right"
+    then field[1]<<^togglemark<<(x-20)/20<<(y-20)/20;
+         Play(w,field,t,mouseX,mouseY);
+    else c=new console(2 of 2);
+         c[1]<<^str<<"Unknown button: "+button<<^nl<<^end;
+         Play(w,field,t,x,y);
+   ^mouseup:
+    w[1]>>x>>y>>button;
+    Play(w,field,t,x,y);
+   ^mouseto:
+    w[1]>>x>>y;
+    Play(w,field,t,x,y);
    ^other:
-    Play(w,map,t,mouseX,mouseY);
+    Play(w,field,t,mouseX,mouseY);
   }
 )
 // Create display (800x600), and start Pong using a starting state
 w=new display(2 of 2);
 w[1]<<800<<600;
-pm=new pinemap(2 of 2);
-pm[1]<<10<<10<<10;
+pf=new pinefield(2 of 2);
+pf[1]<<10<<10<<10;
 t=new timer(2 of 2);
 t[1]<<^reset;
-Play(w,pm,t,400,300);
+Play(w,pf,t,400,300);
