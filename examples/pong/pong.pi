@@ -134,6 +134,24 @@ local Pong($display(2 of 1,2) w,
            p1pos,p1speed,p1up,p1down,p1score,
            p2pos,p2speed,p2up,p2down,p2score,
            puckX,puckY,puckXspeed,puckYspeed);
+   ^mousedown:
+    w[1]>>x>>y>>button;
+    Pong(w,
+         p1pos,p1speed,p1up,p1down,p1score,
+         p2pos,p2speed,p2up,p2down,p2score,
+         puckX,puckY,puckXspeed,puckYspeed);
+   ^mouseup:
+    w[1]>>x>>y>>button;
+    Pong(w,
+         p1pos,p1speed,p1up,p1down,p1score,
+         p2pos,p2speed,p2up,p2down,p2score,
+         puckX,puckY,puckXspeed,puckYspeed);
+   ^mouseto:
+    w[1]>>x>>y;
+    Pong(w,
+         p1pos,p1speed,p1up,p1down,p1score,
+         p2pos,p2speed,p2up,p2down,p2score,
+         puckX,puckY,puckXspeed,puckYspeed);
    ^other:
     Pong(w,
          p1pos,p1speed,p1up,p1down,p1score,
