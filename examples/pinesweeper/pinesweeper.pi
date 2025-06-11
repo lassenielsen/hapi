@@ -95,7 +95,6 @@ local pure service MkMap(mkfield (1 of 2) this)
   MakeMap(this,tiles,width*height,mines);
 )
 |
-  
 #define $pinefield \
   rec $pinefield; \
   2->1 \
@@ -108,6 +107,7 @@ local pure service MkMap(mkfield (1 of 2) this)
      ^done: \
       $end; \
      ^ok: \
+      1->2: Int; /* close mines */ \
       $pinefield; \
     } \
    ^togglemark: \
@@ -133,14 +133,16 @@ local service PinefieldService(pinefield (1 of 2) s)
   ( this[2]>>
     {^clear:
       this[2]>>x>>y;
-      if width<=x or height<=y
+      if width<=x or height<=y or x<=0-1 or y<=0-1
       then this[2]<<^ok;
+           this[2]<<0-1;
            Pinefield(this,tiles);
       else tiles[1]<<^get<<y*width+x;
            tiles[1]>>
            {^err:
              tiles[1]>>msg;
              this[2]<<^ok;
+             this[2]<<0-1;
              Pinefield(this,tiles);
             ^val:
              tiles[1]>>v;
@@ -151,12 +153,13 @@ local service PinefieldService(pinefield (1 of 2) s)
              Bool cleared=1<=(props/4)-(props/8)*4;
              if hasflag
              then this[2]<<^ok;
+                  this[2]<<0-1;
                   Pinefield(this,tiles);
              else if mine
              then this[2]<<^bang;
                   tiles[1]<<^end;
              else tiles[1]<<^set<<y*width+x<<closemines+(if mine then 16 else 0)+(if hasflag then 32 else 0)+64;
-                  local CheckDone(1->2{^bang:$end;^done:$end;^ok:$pinefield}(1 of 1,2) this, $list(Int)(2 of 1 pure,2) tiles, Int pos)
+                  local CheckDone(1->2{^bang:$end;^done:$end;^ok:1->2:Int;$pinefield}(1 of 1,2) this, $list(Int)(2 of 1 pure,2) tiles, Int pos)
                   ( if width*height<=pos
                     then this[2]<<^done;
                          tiles[1]<<^end;
@@ -165,6 +168,7 @@ local service PinefieldService(pinefield (1 of 2) s)
                          {^err:
                            tiles[1]>>err;
                            this[2]<<^ok;
+                           this[2]<<if cleared then 0-1 else closemines;
                            Pinefield(this,tiles);
                           ^val:
                            tiles[1]>>v2;
@@ -175,6 +179,7 @@ local service PinefieldService(pinefield (1 of 2) s)
                            Bool cleared2=1<=(props2/4)-(props2/8)*4;
                            if not mine2 and not cleared2
                            then this[2]<<^ok;
+                                this[2]<<if cleared then 0-1 else closemines;
                                 Pinefield(this,tiles);
                            else CheckDone(this,tiles,pos+1);
                          }
@@ -253,32 +258,73 @@ local Play($display(2 of 1,2) w,
            $pinefield(2 of 1,2) field,
            $timer(2 of 1,2) t,
            Int mouseX, Int mouseY)
-( local ClearTile($display(2 of 1,2) w,
+( local ClearTiles($display(2 of 1,2) w,
+                   $pinefield(2 of 1,2) field,
+                   $timer(2 of 1,2) t,
+                   $list(Int)(2 of 1 pure,2) xs,
+                   $list(Int)(2 of 1 pure,2) ys,
+                   Int mouseX,
+                   Int mouseY)
+  ( xs[1]<<^pop;
+    xs[1]>>
+    {^nil:
+      ys[1]<<^end;
+      Play(w,field,t,mouseX,mouseY);
+     ^cons:
+      xs[1]>>x1>>xs1;
+      ys[1]<<^pop;
+      ys[1]>>
+      {^nil:
+        xs1[1]<<^end;
+        Play(w,field,t,mouseX,mouseY);
+       ^cons:
+        ys[1]>>y1>>ys1;
+        field[1]<<^clear<<x1<<y1;
+        field[1]>>
+        {^bang:
+          c=new console(2 of 2);
+          c[1]<<^str<<"You hit a mine!"<<^nl<<^end;
+          t[1]<<^wait<<2.0;
+          t[1]>>x;
+          w[1]<<^end;
+          t[1]<<^end;
+          xs1[1]<<^end;
+          ys1[1]<<^end;
+         ^done:
+          t[1]<<^read;
+          t[1]>>dur;
+          c=new console(2 of 2);
+          c[1]<<^str<<"Congratulations, you cleared the field in "
+              <<^flt<<dur<<^str<<" seconds."<<^nl<<^end;
+          t[1]<<^wait<<3.0;
+          t[1]>>x;
+          t[1]<<^end;
+          w[1]<<^end;
+          xs1[1]<<^end;
+          ys1[1]<<^end;
+         ^ok:
+          field[1]>>close;
+          if close<=0 and 0<=close
+          then xs1[1]<<^cons<<x1-1<<^cons<<x1-1<<^cons<<x1-1<<^cons<<x1<<^cons<<x1<<^cons<<x1+1<<^cons<<x1+1<<^cons<<x1+1;
+               ys1[1]<<^cons<<y1-1<<^cons<<y1<<^cons<<y1+1<<^cons<<y1-1<<^cons<<y1+1<<^cons<<y1-1<<^cons<<y1<<^cons<<y1+1;
+               ClearTiles(w,field,t,xs1,ys1,mouseX,mouseY);
+          else ClearTiles(w,field,t,xs1,ys1,mouseX,mouseY);
+        }
+      }
+    }
+  )
+  local ClearTile($display(2 of 1,2) w,
                   $pinefield(2 of 1,2) field,
                   $timer(2 of 1,2) t,
-                  Int mouseX, Int mouseY)
-  ( field[1]<<^clear<<(mouseX-20)/20<<(mouseY-20)/20;
-    field[1]>>
-    {^bang:
-      c=new console(2 of 2);
-      c[1]<<^str<<"You hit a mine!"<<^nl<<^end;
-      t[1]<<^wait<<2.0;
-      t[1]>>x;
-      w[1]<<^end;
-      t[1]<<^end;
-     ^done:
-      t[1]<<^read;
-      t[1]>>dur;
-      c=new console(2 of 2);
-      c[1]<<^str<<"Congratulations, you cleared the field in "
-          <<^flt<<dur<<^str<<" seconds."<<^nl<<^end;
-      t[1]<<^wait<<3.0;
-      t[1]>>x;
-      t[1]<<^end;
-      w[1]<<^end;
-     ^ok:
-      Play(w,field,t,mouseX,mouseY);
-    }
+                  Int mouseX,
+                  Int mouseY)
+  ( xs=new list(2 of 2);
+    xs<<Int;
+    xs[1]<<^cons<<mouseX/20-1;
+    ys=new list(2 of 2);
+    ys<<Int;
+    ys[1]<<^cons<<mouseY/20-1;
+    ClearTiles(w,field,t,xs,ys,mouseX,mouseY);
   )
   w[1]<<^event;
   w[1]>>
@@ -286,12 +332,17 @@ local Play($display(2 of 1,2) w,
     w[1]<<^drawrect<<0<<0<<800<<600<<0<<0<<0;                 // Clear Screen
     field[1]<<^draw<<w;
     field[1]>>w;
-    w[1]<<^drawrect<<mouseX-5<<mouseY-5<<11<<11<<0<<200<<0;   // Draw mouse
+    w[1]<<^drawrect<<(mouseX/20)*20<<(mouseY/20)*20<<20<<1<<0<<200<<0;   // Highlight selected tile
+    w[1]<<^drawrect<<(mouseX/20)*20<<(mouseY/20)*20<<1<<20<<0<<200<<0;   // Highlight selected tile
+    w[1]<<^drawrect<<(1+mouseX/20)*20-1<<(mouseY/20)*20<<1<<20<<0<<200<<0;   // Highlight selected tile
+    w[1]<<^drawrect<<(mouseX/20)*20<<(1+mouseY/20)*20-1<<20<<1<<0<<200<<0;   // Highlight selected tile
     t[1]<<^read;
     t[1]>>dur;
-    String durstr="";
-    FLOAT2STRING(dur,durstr);
-    w[1]<<^drawstring<<25<<5<<durstr<<0<<200<<0;              // Show duration score
+    //Int durint=0;
+    //FLOAT2INT(dur,durint);
+    //String durstr="";
+    //INT2STRING(durint,durstr);
+    //w[1]<<^drawstring<<25<<5<<durstr<<0<<200<<0;              // Show duration score
     w[1]<<^update;                                            // Update display
     t[1]<<^wait<<0.1;
     t[1]>>x;
