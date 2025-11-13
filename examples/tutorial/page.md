@@ -1,7 +1,7 @@
-== Tutorial ==
-=== 1 Basics ===
-==== 1.1 Hello World ====
-'''Source code'''<br/>
+# Tutorial
+## 1 Basics
+### 1.1 Hello World
+#### Source code
 <pre>
 // Example 1.1 - Hello world
 // Includes console service, connects and makes it print the hello world string
@@ -16,7 +16,7 @@ c[1]<<^str<<"Hello World"<<^nl;
 // Finish console session (and release console io)
 c[1]<<^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./1.1-hello_world
 Hello World
