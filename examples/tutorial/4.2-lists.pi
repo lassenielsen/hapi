@@ -4,6 +4,43 @@
 #include<convert.pi>
 #include<succ.pi>
 
+// printlist: Print a list
+#define $printlist \
+  2:#elt; \
+  2->1:$convert(#elt,String)(1pure,2); \
+  2->1:$list(#elt)(2 of 1 pure,2); \
+  $end;
+global $printlist printlist(1,2);
+local service PrintList(printlist (1 of 2) this) // {{{
+( this>>#elt;
+  this[2]>>tostring;
+  this[2]>>l;
+  local Print($list(#elt)(2 of 1 pure,2) elts, $console(2 of 1,2) c, Bool first)
+  ( elts[1]<<^pop;
+    elts[1]>>
+    {^nil:
+      c[1]<<^str<<"]"<<^end;
+     ^cons:
+      elts[1]>>e>>rest;
+      ts=new tostring(2 of 2);
+      ts[1]<<e;
+      ts[1]>>
+      {^Error:
+        ts[1]>>err;
+        c[1]<<^str<<",<Error:"<<^str<<err<<^str<<">";
+        Print(rest,c,false);
+       ^Ok:
+        ts[1]>>estr;
+        c[1]<<^str<<(if first then "" else ",")<<^str<<estr;
+        Print(rest,c,false);
+      }
+    }
+  )
+  c = new console(2 of 2);
+  c[1]<<^str<<"[";
+  Print(l,c,true);
+)
+|
 // Working with lists
 ilist=new range(2 of 2);
 ilist<<Int;
@@ -15,5 +52,3 @@ ilist[1]<<^apply<<fib;          // ilist is now contains the 20 first fibonacci 
 print=new printlist(2 of 2);
 print<<Int;
 print[1]<<int2string<<ilist;
-c=new console(2 of 2);
-print[1]<<c;

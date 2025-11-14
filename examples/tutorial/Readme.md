@@ -1,7 +1,7 @@
-== Tutorial ==
-=== 1 Basics ===
-==== 1.1 Hello World ====
-'''Source code'''<br/>
+# Tutorial
+## 1 Basics
+### 1.1 Hello World
+#### Source code
 <pre>
 // Example 1.1 - Hello world
 // Includes console service, connects and makes it print the hello world string
@@ -16,13 +16,13 @@ c[1]<<^str<<"Hello World"<<^nl;
 // Finish console session (and release console io)
 c[1]<<^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./1.1-hello_world
 Hello World
 </pre>
-==== 1.2 Fork ====
-'''Source code'''<br/>
+### 1.2 Fork
+#### Source code
 <pre>
 // Example 1.2 - Introducing fork ( | )
 // Fork to 5 processes each printing a number to console, resulting in the
@@ -50,7 +50,7 @@ c[1]<<^int<<4<<^nl<<^end;
 c=new console(2 of 2);
 c[1]<<^int<<5<<^nl<<^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./1.2-fork
 1
@@ -59,8 +59,8 @@ c[1]<<^int<<5<<^nl<<^end;
 4
 5
 </pre>
-==== 1.3 Methods ====
-'''Source code'''<br/>
+### 1.3 Methods
+#### Source code
 <pre>
 // Example 1.3 - Introducing methods
 // Declares method, and uses it.
@@ -89,7 +89,7 @@ global PrintInts(Int i)
 // Now the declared methods can be used
 PrintInts(10);
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./1.3-methods
 10
@@ -97,15 +97,15 @@ PrintInts(10);
 8
 7
 6
-4
 5
+4
 3
 2
 1
 </pre>
-=== 2 Communication ===
-==== 2.1 Message ====
-'''Source code'''<br/>
+## 2 Communication
+### 2.1 Message
+#### Source code
 <pre>
 // Example 2.1 - Message passing
 // Two processes connect on channel, and
@@ -136,14 +136,14 @@ s[1]>>x;         // Receive value from participant 1 in session s, and store as 
 c=new console(2 of 2);
 c[1]<<^str<<"Received value: "<<^int<<x<<^nl<<^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./2.1-message
 Sending value: 5
 Received value: 5
 </pre>
-==== 2.2 Service ====
-'''Source code'''<br/>
+### 2.2 Service
+#### Source code
 <pre>
 // Example 2.2 - Service
 // The most basic design pattern in hapi is SOA - Implement functionality as
@@ -185,14 +185,14 @@ d[1]<<x;
 d[1]>>y;
 c[1]<<^str<<"Double "<<^int<<x<<^str<<" is "<<^int<<y<<^nl<<^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./2.2-service
 Double 1 is 2
 Double 2 is 4
 </pre>
-==== 2.3 Branch ====
-'''Source code'''<br/>
+### 2.3 Branch
+#### Source code
 <pre>
 // Example 2.3 - Branching
 // Two processes connect on channel, and the second participant selects how the
@@ -242,7 +242,7 @@ s[1]<<^Text;
 s[1]>>x;
 c[1]<<^str<<"Received: "<<^str<<x<<^nl<<^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./2.3-branch
 Requesting a number
@@ -250,8 +250,8 @@ Received: 5
 Requesting a text
 Received: five
 </pre>
-==== 2.4 Recursion ====
-'''Source code'''<br/>
+### 2.4 Recursion
+#### Source code
 <pre>
 // Example 2.4 - Recursive protocols
 // Two processes connect on channel, and transfer
@@ -298,7 +298,7 @@ local ReceiveInts($intmsgs(2 of 1,2) t)
 )
 ReceiveInts(s);
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./2.4-recursion
 Sending value: 10
@@ -322,8 +322,8 @@ Sending value: 1
 Received value: 2
 Received value: 1
 </pre>
-==== 2.5 Multiparty ====
-'''Source code'''<br/>
+### 2.5 Multiparty
+#### Source code
 <pre>
 // Example 2.5 - Multiparty protocols
 // Four processes connect on channel, and
@@ -385,7 +385,7 @@ c[1]<<^str<<"4: Received value: "<<^int<<x<<^nl
     <<^str<<"4: Sending value: "<<^int<<x<<^nl<<^end;
 s[1]<<x;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./2.5-multiparty
 1: Sending value: 5
@@ -397,9 +397,9 @@ s[1]<<x;
 4: Sending value: 5
 1: Received value: 5
 </pre>
-=== 3 Polymorphism ===
-==== 3.1 Pair Service ====
-'''Source code'''<br/>
+## 3 Polymorphism
+### 3.1 Pair Service
+#### Source code
 <pre>
 // This serves as an instructive example, but definition, decleration and
 // implementation can also be included from strct/pair.pi,
@@ -472,14 +472,14 @@ c[1]<<^str<<"p=("<<^int<<p_fst<<^str<<","<<^str<<p_snd<<^str<<")"<<^nl<<^end;
 // Remember to delete objects, or type checker will tell you!
 p[1]<<^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./3.1-pair
 p=(5,six)
 </pre>
-=== 4 Structs ===
-==== 4.1 Pairs ====
-'''Source code'''<br/>
+## 4 Structs
+### 4.1 Pairs
+#### Source code
 <pre>
 // Same as tutorial 3.1, but using struct from library
 #include<console.pi>
@@ -498,19 +498,57 @@ c[1]<<^str<<"p=("<<^int<<p_fst<<^str<<","<<^str<<p_snd<<^str<<")"<<^nl<<^end;
 // Remember to delete objects, or type checker will tell you!
 p[1]<<^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./4.1-pairs
 p=(5,six)
 </pre>
-==== 4.2 Lists ====
-'''Source code'''<br/>
+### 4.2 Lists
+#### Source code
 <pre>
 #include<console.pi>
 #include<struct/list.pi>
 #include<math/fib.pi>
 #include<convert.pi>
 #include<succ.pi>
+
+// printlist: Print a list // {{{
+#define $printlist \
+  2:#elt; \
+  2->1:$convert(#elt,String)(1pure,2); \
+  2->1:$list(#elt)(2 of 1 pure,2); \
+  $end;
+global $printlist printlist(1,2);
+local service PrintList(printlist (1 of 2) this) // {{{
+( this>>#elt;
+  this[2]>>tostring;
+  this[2]>>l;
+  local Print($list(#elt)(2 of 1 pure,2) elts, $console(2 of 1,2) c, Bool first) // {{{
+  ( elts[1]<<^pop;
+    elts[1]>>
+    {^nil:
+      c[1]<<^str<<"]"<<^end;
+     ^cons:
+      elts[1]>>e>>rest;
+      ts=new tostring(2 of 2);
+      ts[1]<<e;
+      ts[1]>>
+      {^Error:
+        ts[1]>>err;
+        c[1]<<^str<<",<Error:"<<^str<<err<<^str<<">";
+        Print(rest,c,false);
+       ^Ok:
+        ts[1]>>estr;
+        c[1]<<^str<<(if first then "" else ",")<<^str<<estr;
+        Print(rest,c,false);
+      }
+    }
+  ) // }}}
+  c = new console(2 of 2);
+  c[1]<<^str<<"[";
+  Print(l,c,true);
+) // }}}
+| // }}}
 
 // Working with lists
 ilist=new range(2 of 2);
@@ -523,17 +561,14 @@ ilist[1]<<^apply<<fib;          // ilist is now contains the 20 first fibonacci 
 print=new printlist(2 of 2);
 print<<Int;
 print[1]<<int2string<<ilist;
-c=new console(2 of 2);
-print[1]<<c;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./4.2-lists
-[1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946]
-</pre>
-=== 5 Standard libraries ===
-==== 5.1 Args ====
-'''Source code'''<br/>
+[1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765,10946]</pre>
+## 5 Standard libraries
+### 5.1 Args
+#### Source code
 <pre>
 // Example 3.1 - Introducing args service
 // Iterates over program arguments
@@ -563,15 +598,15 @@ local PrintArgs(Int i, $console(2 of 1,2) c, $args(2 of 1 pure,2) s)
 )
 PrintArgs(0,c,s); // Print all args
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./5.1-args arg
 Number of args is 2
 ./5.1-args
 arg
 </pre>
-==== 5.2 Timer ====
-'''Source code'''<br/>
+### 5.2 Timer
+#### Source code
 <pre>
 // Example 3.2 - Introducing timer service
 // Process sleeping and timing.
@@ -597,14 +632,14 @@ c[1]<<^str<<"Timer says the wait took "<<^flt<<secs<<^str<<" seconds."<<^nl;
 t[1]<<^end;
 c[1]<<^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./5.2-timer
 Waiting 5 seconds
-Timer says the wait took 5.000999927520751953125 seconds.
+Timer says the wait took 5.0010001659393310546875 seconds.
 </pre>
-==== 5.3 File ====
-'''Source code'''<br/>
+### 5.3 File
+#### Source code
 <pre>
 // Example 3.3 - Introducing the file service
 // Read write and delete local files
@@ -651,15 +686,15 @@ f[1]>>
   }
 }
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./5.3-file
 File written with content: Hello World
 Read content: Hello World
 Remove Error:: Not implemented
 </pre>
-==== 5.4 Convert ====
-'''Source code'''<br/>
+### 5.4 Convert
+#### Source code
 <pre>
 // Exampe 3.4 - Introduconig the convert service
 // Converting between string and int
@@ -681,14 +716,14 @@ s[1]>>
   c[1]<<^str<<"The result of converting 123 to an integer is: "<<^int<<n<<^nl<<^end;
 }
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./5.4-convert
 The result of converting 123 to an integer is: 123
 </pre>
-=== 6 Purity ===
-==== 6.1 Purity ====
-'''Source code'''<br/>
+## 6 Purity
+### 6.1 Purity
+#### Source code
 <pre>
 // Example 6.1 - Introducing notion of purity
 // Pure methods and services separate functionality by guaranteeing not to
@@ -781,12 +816,12 @@ StartFact(1);
 // highly (and customizably) concurrent programs from sequentially defined
 // processes.
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./6.1-purity
 </pre>
-==== 6.2 Fib ====
-'''Source code'''<br/>
+### 6.2 Fib
+#### Source code
 <pre>
 // Example 6.2 - Calculating fibonacchi numbers
 // Utilizinf pure services to automatically obtain concurrency
@@ -838,13 +873,13 @@ c=new console(2 of 2);
 c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl;     // Print result
 c[1]<<^end;                              // Release access to console
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >echo 20 | ./6.2-fib
 Input n: Fib(n)=10946
 </pre>
-==== 6.3 Fib Time ====
-'''Source code'''<br/>
+### 6.3 Fib Time
+#### Source code
 <pre>
 // Example 6.3 - Calculating fibonacchi numbers, and measuring the time used
 // Utilizing pure services to automatically obtain concurrency
@@ -914,14 +949,14 @@ c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl      // Print result
     <<^str<<"Time: "<<^flt<<secs<<^nl    // Print time used
     <<^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >echo 20 | ./6.3-fib_time
 Input n: Fib(n)=10946
-Time: 0.00480000972747802734375
+Time: 0.210999965667724609375
 </pre>
-==== 6.4 Fact ====
-'''Source code'''<br/>
+### 6.4 Fact
+#### Source code
 <pre>
 // Example 6.4 - Factorial service
 // Implement pure prodseq service, and use to compute factorial.
@@ -965,14 +1000,14 @@ c[1] << ^str << "Fact of n is"
      << ^int << r << ^nl
      << ^end;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >echo 20 | ./6.4-fact
 What is n? Fact of n is2432902008176640000
 </pre>
-=== 7 Extras ===
-==== 7.1 Assertions ====
-'''Source code'''<br/>
+## 7 Extras
+### 7.1 Assertions
+#### Source code
 <pre>
 // Example 7.1 - Assertions
 // Create session with assertions, and observe the sent messages respect them
@@ -1012,14 +1047,14 @@ s[1]>>q2;
 // from the used protocol, and hence q1 or q2 will always evaluate to true.
 s[1]<<q1 or q2;
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >echo true | ./7.1-assertions
 Input bool x: We know that z is true - it has been proven!
 z=true
 </pre>
-==== 7.2 Host ====
-'''Source code'''<br/>
+### 7.2 Host
+#### Source code
 <pre>
 // Example 7.2 - The HOST and HOSTHEADER statements.
 // Hoists the full power of the host language (c++), mixing hapi and host
@@ -1056,14 +1091,14 @@ Bool x9=true;
   HOST("", res, ".reset(new libpi::String(((libpi::String*)", str1, ".get())->GetValue() + ((libpi::String*)", space, ".get())->GetValue() + ((libpi::String*)", str2, ".get())->GetValue()));");
   HOST("std::cout << ((libpi::String*)", res, ".get())->GetValue() << std::endl;"); // Outputs "Hello World"
 </pre>
-'''Output'''<br/>
+#### Output
 <pre>
 >./7.2-host
-Hello World7
-45false
-812true
-true
+12true
+45Hello Worldfalse
+
+78true
 1
-7
 5
+7
 </pre>
