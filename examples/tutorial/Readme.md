@@ -7,14 +7,14 @@
 // Includes console service, connects and makes it print the hello world string
 
 // Include console functionality like printing
-#include <console.pi>
+#include &lt;console.pi>
 
 // Create console session (and get uninterupted access to console io)
 c=new console(2 of 2);
 // Print string and newline
-c[1]<<^str<<"Hello World"<<^nl;
+c[1]&lt;&lt;^str&lt;&lt;"Hello World"&lt;&lt;^nl;
 // Finish console session (and release console io)
-c[1]<<^end;
+c[1]&lt;&lt;^end;
 </pre>
 #### Output
 <pre>
@@ -28,27 +28,27 @@ Hello World
 // Fork to 5 processes each printing a number to console, resulting in the
 // numbers 1 to 5 being printed, although not necessarily in order!
 
-#include <console.pi>
+#include &lt;console.pi>
 
 // Print 1
 c=new console(2 of 2);
-c[1]<<^int<<1<<^nl<<^end;
+c[1]&lt;&lt;^int&lt;&lt;1&lt;&lt;^nl&lt;&lt;^end;
 | // fork
 // Print 2
 c=new console(2 of 2);
-c[1]<<^int<<2<<^nl<<^end;
+c[1]&lt;&lt;^int&lt;&lt;2&lt;&lt;^nl&lt;&lt;^end;
 | // fork
 // Print 3
 c=new console(2 of 2);
-c[1]<<^int<<3<<^nl<<^end;
+c[1]&lt;&lt;^int&lt;&lt;3&lt;&lt;^nl&lt;&lt;^end;
 | // fork
 // Print 4
 c=new console(2 of 2);
-c[1]<<^int<<4<<^nl<<^end;
+c[1]&lt;&lt;^int&lt;&lt;4&lt;&lt;^nl&lt;&lt;^end;
 | // fork
 // Print 5
 c=new console(2 of 2);
-c[1]<<^int<<5<<^nl<<^end;
+c[1]&lt;&lt;^int&lt;&lt;5&lt;&lt;^nl&lt;&lt;^end;
 </pre>
 #### Output
 <pre>
@@ -68,21 +68,21 @@ c[1]<<^int<<5<<^nl<<^end;
 // if non-tail recursive functionality is required, use a
 // service as introduced in tutorial 2.2.
 
-#include <console.pi>
+#include &lt;console.pi>
 
 // Implement the method PrintInt
 local PrintInt(Int i)
 ( // Print i to console
   c=new console(2 of 2);
-  c[1]<<^int 
-      <<i
-      <<^nl
-      <<^end;
+  c[1]&lt;&lt;^int 
+      &lt;&lt;i
+      &lt;&lt;^nl
+      &lt;&lt;^end;
 )
 // Implement the method PrintInts
 global PrintInts(Int i)
 ( // Print 1,2,...,i
-  if i<=0
+  if i&lt;=0
   then
   else ( PrintInt(i); | PrintInts(i-1); )
 )
@@ -111,7 +111,7 @@ PrintInts(10);
 // Two processes connect on channel, and
 // transfer a value over the resulting session.
 
-#include <console.pi>
+#include &lt;console.pi>
 
 // Define thee $intmsg protocol (session type)
 // where participant 1 sends an integer to participant 2.
@@ -125,8 +125,8 @@ global $intmsg a(1,2);
 // First process implementation
 s=new a(1 of 2); // Connect on channel a as participant 1 of 2, resulting in session s
 c=new console(2 of 2);
-c[1]<<^str<<"Sending value: "<<^int<<5<<^nl<<^end;
-s[2]<<5;         // Send value 5 to participant 2 in sesssion s
+c[1]&lt;&lt;^str&lt;&lt;"Sending value: "&lt;&lt;^int&lt;&lt;5&lt;&lt;^nl&lt;&lt;^end;
+s[2]&lt;&lt;5;         // Send value 5 to participant 2 in sesssion s
 
 | // Fork
 
@@ -134,7 +134,7 @@ s[2]<<5;         // Send value 5 to participant 2 in sesssion s
 s=new a(2 of 2); // Connect on channel a as participant 2 of 2, resulting in session s
 s[1]>>x;         // Receive value from participant 1 in session s, and store as x.
 c=new console(2 of 2);
-c[1]<<^str<<"Received value: "<<^int<<x<<^nl<<^end;
+c[1]&lt;&lt;^str&lt;&lt;"Received value: "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl&lt;&lt;^end;
 </pre>
 #### Output
 <pre>
@@ -152,7 +152,7 @@ Received value: 5
 // service as a participant and have client invoke service to use
 // functionality.
 
-#include <console.pi>
+#include &lt;console.pi>
 
 // Define the $intfun protocol (session type)
 // where participant 2 sends an integer to participant 1 (call arguent),
@@ -170,20 +170,20 @@ local Double()
   Double();                    // Keep service available
   |                            // Fork process to handle request
   s[2]>>x;                     // Receive argument
-  s[2]<<x+x;                   // Send result
+  s[2]&lt;&lt;x+x;                   // Send result
 )
 Double();                      // Start service
 |
 // Implement a client using service
 c=new console(2 of 2);
 d=new double(2 of 2);
-d[1]<<1;
+d[1]&lt;&lt;1;
 d[1]>>x;
-c[1]<<^str<<"Double "<<^int<<1<<^str<<" is "<<^int<<x<<^nl;
+c[1]&lt;&lt;^str&lt;&lt;"Double "&lt;&lt;^int&lt;&lt;1&lt;&lt;^str&lt;&lt;" is "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl;
 d=new double(2 of 2);
-d[1]<<x;
+d[1]&lt;&lt;x;
 d[1]>>y;
-c[1]<<^str<<"Double "<<^int<<x<<^str<<" is "<<^int<<y<<^nl<<^end;
+c[1]&lt;&lt;^str&lt;&lt;"Double "&lt;&lt;^int&lt;&lt;x&lt;&lt;^str&lt;&lt;" is "&lt;&lt;^int&lt;&lt;y&lt;&lt;^nl&lt;&lt;^end;
 </pre>
 #### Output
 <pre>
@@ -198,7 +198,7 @@ Double 2 is 4
 // Two processes connect on channel, and the second participant selects how the
 // session proceeds.
 
-#include <console.pi>
+#include &lt;console.pi>
 
 // Define the $branch protocol (session type)
 // Participant 2 selects either number or text
@@ -218,9 +218,9 @@ local A2()
   A2(); |
   s[2]>>
   {^Number:
-    s[2]<<5;
+    s[2]&lt;&lt;5;
    ^Text:
-    s[2]<<"five";
+    s[2]&lt;&lt;"five";
   }
 )
 A2();
@@ -228,19 +228,19 @@ A2();
 // Implementation of client (selecting number)
 c=new console(2 of 2);
 s=new a(2 of 2);
-c[1]<<^str<<"Requesting a number"<<^nl;
-s[1]<<^Number;
+c[1]&lt;&lt;^str&lt;&lt;"Requesting a number"&lt;&lt;^nl;
+s[1]&lt;&lt;^Number;
 s[1]>>x;
-c[1]<<^str<<"Received: "<<^int<<x<<^nl;
-c[1]<<^end;
+c[1]&lt;&lt;^str&lt;&lt;"Received: "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl;
+c[1]&lt;&lt;^end;
 |
 // Implementation of client (selecting text)
 c=new console(2 of 2);
 s=new a(2 of 2);
-c[1]<<^str<<"Requesting a text"<<^nl;
-s[1]<<^Text;
+c[1]&lt;&lt;^str&lt;&lt;"Requesting a text"&lt;&lt;^nl;
+s[1]&lt;&lt;^Text;
 s[1]>>x;
-c[1]<<^str<<"Received: "<<^str<<x<<^nl<<^end;
+c[1]&lt;&lt;^str&lt;&lt;"Received: "&lt;&lt;^str&lt;&lt;x&lt;&lt;^nl&lt;&lt;^end;
 </pre>
 #### Output
 <pre>
@@ -257,7 +257,7 @@ Received: five
 // Two processes connect on channel, and transfer
 // a number of values over the resulting session.
 
-#include <console.pi>
+#include &lt;console.pi>
 
 // Define thee $intsmsg protocol (session type)
 // where participant 1 sends an unspecified
@@ -275,11 +275,11 @@ global $intmsgs a(1,2);
 // First process implementation
 s=new a(1 of 2); // Connect on channel a as participant 1 of 2, resulting in session s
 local SendInts($intmsgs(1 of 1,2) t, Int i)
-( if i<=0
-  then t[2]<<^Done;
+( if i&lt;=0
+  then t[2]&lt;&lt;^Done;
   else c=new console(2 of 2);
-       c[1]<<^str<<"Sending value: "<<^int<<i<<^nl<<^end;
-       t[2]<<^More<<i; SendInts(t,i-1);
+       c[1]&lt;&lt;^str&lt;&lt;"Sending value: "&lt;&lt;^int&lt;&lt;i&lt;&lt;^nl&lt;&lt;^end;
+       t[2]&lt;&lt;^More&lt;&lt;i; SendInts(t,i-1);
 )
 SendInts(s,10);
 
@@ -292,7 +292,7 @@ local ReceiveInts($intmsgs(2 of 1,2) t)
   {^Done:
    ^More: t[1]>>x;
           c=new console(2 of 2);
-          c[1]<<^str<<"Received value: "<<^int<<x<<^nl<<^end;
+          c[1]&lt;&lt;^str&lt;&lt;"Received value: "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl&lt;&lt;^end;
           ReceiveInts(t);
   }
 )
@@ -329,7 +329,7 @@ Received value: 1
 // Four processes connect on channel, and
 // transfer a value roundrobin over the resulting session.
 
-#include <console.pi>
+#include &lt;console.pi>
 
 // Define the $rr4 protocol (session type)
 // where participant 1 sends an integer to participant 2
@@ -349,11 +349,11 @@ global $rr4 a(1,2,3,4);
 // First process implementation
 s=new a(1 of 4); // Connect on channel a as participant 1 of 4, resulting in session s
 c=new console(2 of 2);
-c[1]<<^str<<"1: Sending value: "<<^int<<5<<^nl<<^end;
-s[2]<<5;
+c[1]&lt;&lt;^str&lt;&lt;"1: Sending value: "&lt;&lt;^int&lt;&lt;5&lt;&lt;^nl&lt;&lt;^end;
+s[2]&lt;&lt;5;
 s[4]>>x;
 c=new console(2 of 2);
-c[1]<<^str<<"1: Received value: "<<^int<<x<<^nl<<^end;
+c[1]&lt;&lt;^str&lt;&lt;"1: Received value: "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl&lt;&lt;^end;
 
 | // Fork
 
@@ -361,9 +361,9 @@ c[1]<<^str<<"1: Received value: "<<^int<<x<<^nl<<^end;
 s=new a(2 of 4); // Connect on channel a as participant 2 of 4, resulting in session s
 s[1]>>x;
 c=new console(2 of 2);
-c[1]<<^str<<"2: Received value: "<<^int<<x<<^nl
-    <<^str<<"2: Sending value: "<<^int<<x<<^nl<<^end;
-s[3]<<x;
+c[1]&lt;&lt;^str&lt;&lt;"2: Received value: "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl
+    &lt;&lt;^str&lt;&lt;"2: Sending value: "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl&lt;&lt;^end;
+s[3]&lt;&lt;x;
 
 | // Fork
 
@@ -371,9 +371,9 @@ s[3]<<x;
 s=new a(3 of 4); // Connect on channel a as participant 3 of 4, resulting in session s
 s[2]>>x;
 c=new console(2 of 2);
-c[1]<<^str<<"3: Received value: "<<^int<<x<<^nl
-    <<^str<<"3: Sending value: "<<^int<<x<<^nl<<^end;
-s[4]<<x;
+c[1]&lt;&lt;^str&lt;&lt;"3: Received value: "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl
+    &lt;&lt;^str&lt;&lt;"3: Sending value: "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl&lt;&lt;^end;
+s[4]&lt;&lt;x;
 
 | // Fork
 
@@ -381,9 +381,9 @@ s[4]<<x;
 s=new a(4 of 4); // Connect on channel a as participant 4 of 4, resulting in session s
 s[3]>>x;
 c=new console(2 of 2);
-c[1]<<^str<<"4: Received value: "<<^int<<x<<^nl
-    <<^str<<"4: Sending value: "<<^int<<x<<^nl<<^end;
-s[1]<<x;
+c[1]&lt;&lt;^str&lt;&lt;"4: Received value: "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl
+    &lt;&lt;^str&lt;&lt;"4: Sending value: "&lt;&lt;^int&lt;&lt;x&lt;&lt;^nl&lt;&lt;^end;
+s[1]&lt;&lt;x;
 </pre>
 #### Output
 <pre>
@@ -404,7 +404,7 @@ s[1]<<x;
 // This serves as an instructive example, but definition, decleration and
 // implementation can also be included from strct/pair.pi,
 // as shown in tutorial 4.1.
-#include<console.pi>
+#include&lt;console.pi>
 // Definition of abstract pair as protocol
 #define $instpair(_fst,_snd) \
   rec $instpair; \
@@ -441,10 +441,10 @@ local pure service Pair(pair (1 of 2) s)
   local pure InstPair(#fst fst, #snd snd, $instpair(#fst,#snd)(1 of 1 pure, 2) this)
   ( this[2]>>
     {^get_fst:
-      this[2]<<fst;
+      this[2]&lt;&lt;fst;
       InstPair(fst,snd,this);
      ^get_snd:
-      this[2]<<snd;
+      this[2]&lt;&lt;snd;
       InstPair(fst,snd,this);
      ^set_fst:
       this[2]>>x;
@@ -460,17 +460,17 @@ local pure service Pair(pair (1 of 2) s)
 |
 // Testing pair
 p=new pair(2 of 2);
-p<<Int;
-p<<String;
-p[1]<<5<<"five";
-p[1]<<^get_fst;
+p&lt;&lt;Int;
+p&lt;&lt;String;
+p[1]&lt;&lt;5&lt;&lt;"five";
+p[1]&lt;&lt;^get_fst;
 p[1]>>p_fst;
-p[1]<<^set_snd<<"six"<<^get_snd;
+p[1]&lt;&lt;^set_snd&lt;&lt;"six"&lt;&lt;^get_snd;
 p[1]>>p_snd;
 c=new console(2 of 2);
-c[1]<<^str<<"p=("<<^int<<p_fst<<^str<<","<<^str<<p_snd<<^str<<")"<<^nl<<^end;
+c[1]&lt;&lt;^str&lt;&lt;"p=("&lt;&lt;^int&lt;&lt;p_fst&lt;&lt;^str&lt;&lt;","&lt;&lt;^str&lt;&lt;p_snd&lt;&lt;^str&lt;&lt;")"&lt;&lt;^nl&lt;&lt;^end;
 // Remember to delete objects, or type checker will tell you!
-p[1]<<^end;
+p[1]&lt;&lt;^end;
 </pre>
 #### Output
 <pre>
@@ -482,21 +482,21 @@ p=(5,six)
 #### Source code
 <pre>
 // Same as tutorial 3.1, but using struct from library
-#include<console.pi>
-#include<struct/pair.pi>
+#include&lt;console.pi>
+#include&lt;struct/pair.pi>
 // Testing pair
 p=new pair(2 of 2);
-p<<Int;
-p<<String;
-p[1]<<5<<"five";
-p[1]<<^get_fst;
+p&lt;&lt;Int;
+p&lt;&lt;String;
+p[1]&lt;&lt;5&lt;&lt;"five";
+p[1]&lt;&lt;^get_fst;
 p[1]>>p_fst;
-p[1]<<^set_snd<<"six"<<^get_snd;
+p[1]&lt;&lt;^set_snd&lt;&lt;"six"&lt;&lt;^get_snd;
 p[1]>>p_snd;
 c=new console(2 of 2);
-c[1]<<^str<<"p=("<<^int<<p_fst<<^str<<","<<^str<<p_snd<<^str<<")"<<^nl<<^end;
+c[1]&lt;&lt;^str&lt;&lt;"p=("&lt;&lt;^int&lt;&lt;p_fst&lt;&lt;^str&lt;&lt;","&lt;&lt;^str&lt;&lt;p_snd&lt;&lt;^str&lt;&lt;")"&lt;&lt;^nl&lt;&lt;^end;
 // Remember to delete objects, or type checker will tell you!
-p[1]<<^end;
+p[1]&lt;&lt;^end;
 </pre>
 #### Output
 <pre>
@@ -506,13 +506,13 @@ p=(5,six)
 ### 4.2 Lists
 #### Source code
 <pre>
-#include<console.pi>
-#include<struct/list.pi>
-#include<math/fib.pi>
-#include<convert.pi>
-#include<succ.pi>
+#include&lt;console.pi>
+#include&lt;struct/list.pi>
+#include&lt;math/fib.pi>
+#include&lt;convert.pi>
+#include&lt;succ.pi>
 
-// printlist: Print a list // {{{
+// printlist: Print a list
 #define $printlist \
   2:#elt; \
   2->1:$convert(#elt,String)(1pure,2); \
@@ -523,44 +523,43 @@ local service PrintList(printlist (1 of 2) this) // {{{
 ( this>>#elt;
   this[2]>>tostring;
   this[2]>>l;
-  local Print($list(#elt)(2 of 1 pure,2) elts, $console(2 of 1,2) c, Bool first) // {{{
-  ( elts[1]<<^pop;
+  local Print($list(#elt)(2 of 1 pure,2) elts, $console(2 of 1,2) c, Bool first)
+  ( elts[1]&lt;&lt;^pop;
     elts[1]>>
     {^nil:
-      c[1]<<^str<<"]"<<^end;
+      c[1]&lt;&lt;^str&lt;&lt;"]"&lt;&lt;^end;
      ^cons:
       elts[1]>>e>>rest;
       ts=new tostring(2 of 2);
-      ts[1]<<e;
+      ts[1]&lt;&lt;e;
       ts[1]>>
       {^Error:
         ts[1]>>err;
-        c[1]<<^str<<",<Error:"<<^str<<err<<^str<<">";
+        c[1]&lt;&lt;^str&lt;&lt;",&lt;Error:"&lt;&lt;^str&lt;&lt;err&lt;&lt;^str&lt;&lt;">";
         Print(rest,c,false);
        ^Ok:
         ts[1]>>estr;
-        c[1]<<^str<<(if first then "" else ",")<<^str<<estr;
+        c[1]&lt;&lt;^str&lt;&lt;(if first then "" else ",")&lt;&lt;^str&lt;&lt;estr;
         Print(rest,c,false);
       }
     }
-  ) // }}}
+  )
   c = new console(2 of 2);
-  c[1]<<^str<<"[";
+  c[1]&lt;&lt;^str&lt;&lt;"[";
   Print(l,c,true);
-) // }}}
-| // }}}
-
+)
+|
 // Working with lists
 ilist=new range(2 of 2);
-ilist<<Int;
+ilist&lt;&lt;Int;
 isucc=new stdsucc_Int(2 of 2);
 iorder=new stdorder_Int(2 of 2);
-ilist[1]<<isucc<<iorder<<0<<20; // ilist is now the range [1;20]
-ilist[1]<<^apply<<fib;          // ilist is now contains the 20 first fibonacci numbers
+ilist[1]&lt;&lt;isucc&lt;&lt;iorder&lt;&lt;0&lt;&lt;20; // ilist is now the range [1;20]
+ilist[1]&lt;&lt;^apply&lt;&lt;fib;          // ilist is now contains the 20 first fibonacci numbers
 // Print list
 print=new printlist(2 of 2);
-print<<Int;
-print[1]<<int2string<<ilist;
+print&lt;&lt;Int;
+print[1]&lt;&lt;int2string&lt;&lt;ilist;
 </pre>
 #### Output
 <pre>
@@ -573,27 +572,27 @@ print[1]<<int2string<<ilist;
 // Example 3.1 - Introducing args service
 // Iterates over program arguments
 
-#include <console.pi>
+#include &lt;console.pi>
 c = new console(2 of 2);
 // Include sys servicee
-#include <sys/args.pi>
+#include &lt;sys/args.pi>
 // Connect to sys service
 s = new args(2 of 2);
 
 // Obtain and print the number of program arguments
-s[1]<<^count;
+s[1]&lt;&lt;^count;
 s[1]>>argc;
-c[1]<<^str<<"Number of args is "<<^int<<argc<<^nl;
+c[1]&lt;&lt;^str&lt;&lt;"Number of args is "&lt;&lt;^int&lt;&lt;argc&lt;&lt;^nl;
 // Method taking open sessions as arguments
 // Method prints program args i, i+1, ..., argc-1
 local PrintArgs(Int i, $console(2 of 1,2) c, $args(2 of 1 pure,2) s)
-( s[1]<<^arg<<i;
+( s[1]&lt;&lt;^arg&lt;&lt;i;
   s[1]>>
   {^some: s[1]>>a;
-          c[1]<<^str<<a<<^nl;
+          c[1]&lt;&lt;^str&lt;&lt;a&lt;&lt;^nl;
           PrintArgs(i+1,c,s);
-   ^none: s[1]<<^end;
-          c[1]<<^end;
+   ^none: s[1]&lt;&lt;^end;
+          c[1]&lt;&lt;^end;
   }
 )
 PrintArgs(0,c,s); // Print all args
@@ -611,77 +610,77 @@ arg
 // Example 3.2 - Introducing timer service
 // Process sleeping and timing.
 
-#include <console.pi>
+#include &lt;console.pi>
 // Include timer service
-#include <sys/timer.pi>
+#include &lt;sys/timer.pi>
 c = new console(2 of 2);
 // Connect to timer service
 t = new timer(2 of 2);
 
 // Start message
-c[1]<<^str<<"Waiting 5 seconds"<<^nl;
+c[1]&lt;&lt;^str&lt;&lt;"Waiting 5 seconds"&lt;&lt;^nl;
 // Wait 5 secs
-t[1]<<^wait<<5.0;
+t[1]&lt;&lt;^wait&lt;&lt;5.0;
 t[1]>>x;
 // Read timer (should be roughly 5 seconds)
-t[1]<<^read;
+t[1]&lt;&lt;^read;
 t[1]>>secs;
 // Print result
-c[1]<<^str<<"Timer says the wait took "<<^flt<<secs<<^str<<" seconds."<<^nl;
+c[1]&lt;&lt;^str&lt;&lt;"Timer says the wait took "&lt;&lt;^flt&lt;&lt;secs&lt;&lt;^str&lt;&lt;" seconds."&lt;&lt;^nl;
 // Clean up
-t[1]<<^end;
-c[1]<<^end;
+t[1]&lt;&lt;^end;
+c[1]&lt;&lt;^end;
 </pre>
 #### Output
 <pre>
 >./5.2-timer
 Waiting 5 seconds
-Timer says the wait took 5.0010001659393310546875 seconds.
+Timer says the wait took 5.0 seconds.
 </pre>
 ### 5.3 File
 #### Source code
 <pre>
 // Example 3.3 - Introducing the file service
 // Read write and delete local files
-#include <console.pi>
+#include &lt;console.pi>
 // Include file service
-#include <sys/file.pi>
+#include &lt;sys/file.pi>
 
 // Error handling
 local FError(String s, $console(2 of 1,2) c, 1->2:String;$end;(2 of 1,2) f)
 ( f[1]>>e;
-  c[1]<<^str<<s<<^str<<": "<<^str<<e<<^nl<<^end;
+  c[1]&lt;&lt;^str&lt;&lt;s&lt;&lt;^str&lt;&lt;": "&lt;&lt;^str&lt;&lt;e&lt;&lt;^nl&lt;&lt;^end;
 )
  
 c = new console(2 of 2);
 // Create file with content: Hello World
 f = new file(2 of 2);
-f[1]<<^Create;
-f[1]<<"test.txt";
+f[1]&lt;&lt;^Create;
+f[1]&lt;&lt;"test.txt";
 f[1]>>
 {^Error:
   FError("Write Error:",c,f);
  ^OK:
-  f[1]<<^Write<<"Hello World"<<^Close;
-  c[1]<<^str<<"File written with content: Hello World"<<^nl;
+  f[1]&lt;&lt;^Write&lt;&lt;"Hello World"&lt;&lt;^Close;
+  c[1]&lt;&lt;^str&lt;&lt;"File written with content: Hello World"&lt;&lt;^nl;
   // Open created file, and read content
   f = new file(2 of 2);
-  f[1]<<^Read<<"test.txt";
+  f[1]&lt;&lt;^Read&lt;&lt;"test.txt";
   f[1]>>
   {^Error:
     FError("Read Error:",c,f);
    ^OK:
-    f[1]<<^All;
+    f[1]&lt;&lt;^All;
     f[1]>>s;
-    c[1]<<^str<<"Read content: "<<^str<<s<<^nl;
+    c[1]&lt;&lt;^str&lt;&lt;"Read content: "&lt;&lt;^str&lt;&lt;s&lt;&lt;^nl;
     // Remove file
     f = new file(2 of 2);
-    f[1]<<^Remove<<"file.txt";
+    f[1]&lt;&lt;^Remove&lt;&lt;"file.txt";
     f[1]>>
     {^Error:
       FError("Remove Error:",c,f);
      ^OK:
-      c[1]<<^str<<"Removed file"<<^nl<<^end;
+      c[1]&lt;&lt;^str&lt;&lt;"Removed file"&lt;&lt;^nl&lt;&lt;^end;
     }
   }
 }
@@ -699,21 +698,21 @@ Remove Error:: Not implemented
 // Exampe 3.4 - Introduconig the convert service
 // Converting between string and int
 
-#include <console.pi>
+#include &lt;console.pi>
 // Include convertion services like string2int
-#include <convert.pi>
+#include &lt;convert.pi>
 
 c=new console(2 of 2);
 // Connect to string2int service
 s=new string2int(2 of 2);
-s[1]<<"123";
+s[1]&lt;&lt;"123";
 s[1]>>
 {^Error:
   s[1]>>e;
-  c[1]<<^str<<"Error: "<<^str<<e<<^nl<<^end;
+  c[1]&lt;&lt;^str&lt;&lt;"Error: "&lt;&lt;^str&lt;&lt;e&lt;&lt;^nl&lt;&lt;^end;
  ^Ok:
   s[1]>>n;
-  c[1]<<^str<<"The result of converting 123 to an integer is: "<<^int<<n<<^nl<<^end;
+  c[1]&lt;&lt;^str&lt;&lt;"The result of converting 123 to an integer is: "&lt;&lt;^int&lt;&lt;n&lt;&lt;^nl&lt;&lt;^end;
 }
 </pre>
 #### Output
@@ -732,7 +731,7 @@ The result of converting 123 to an integer is: 123
 // of concurrency while providing strong semantics preservation properties.
 // We give examples of pure and impure services and methods.
 
-#include <console.pi>
+#include &lt;console.pi>
 
 // Example 1: Counter service
 // Not pure, because different connections will get different answers from service
@@ -744,7 +743,7 @@ local Counter(Int i)
 ( global s=new counter(1 of 2);
   Counter(i+1);
   |
-  s[2]<<i;
+  s[2]&lt;&lt;i;
 )
 Counter(1);
 |
@@ -758,7 +757,7 @@ local Random1()
 ( global s=new random(1 of 2);
   Random1();
   |
-  s[2]<<true;
+  s[2]&lt;&lt;true;
 )
 Random1();
 |
@@ -766,7 +765,7 @@ local Random2()
 ( global s=new random(1 of 2);
   Random2();
   |
-  s[2]<<false;
+  s[2]&lt;&lt;false;
 )
 Random2();
 |
@@ -776,7 +775,7 @@ Random2();
   2->1:Int; \
   1->2:Int; \
   $end;
-HOSTHEADER("#include <iostream>");
+HOSTHEADER("#include &lt;iostream>");
 global $fun fun(1,2);
 local Fun()
 ( global s=new fun(1 of 2);
@@ -785,8 +784,8 @@ local Fun()
   s[2]>>x;
   c=new counter(2 of 2); //! Inharited impurity
   c[1]>>val;
-  HOST("std::cout << ((libpi::String*)", val, ".get())->GetValue() << std::endl;"); // HOST impurity
-  s[2]<<5*x*x-3*x;
+  HOST("std::cout &lt;&lt; ((libpi::String*)", val, ".get())->GetValue() &lt;&lt; std::endl;"); // HOST impurity
+  s[2]&lt;&lt;5*x*x-3*x;
 )
 Fun();
 |
@@ -799,14 +798,14 @@ local pure Fact()           // Notice pure declaration of method
   s[2]>>n;
   // Can use pure services (itself or others)
   f=new fact(2 of 2);
-  f[1]<<n-1;
+  f[1]&lt;&lt;n-1;
   f[1]>>res;
   // Can use HOST statements, but must be 'pure'
   HOST(";") pure; // Notice pure declaration
-  s[2]<<res*n;
+  s[2]&lt;&lt;res*n;
 )
 local pure StartFact(Int n)
-( if n<=0
+( if n&lt;=0
   then Fact();
   else (Fact(); | StartFact(n-1);)
 )
@@ -826,7 +825,7 @@ StartFact(1);
 // Example 6.2 - Calculating fibonacchi numbers
 // Utilizinf pure services to automatically obtain concurrency
 // Include console functionality like printing
-#include <console.pi>
+#include &lt;console.pi>
 
 // Define api for service
 #define $fib \
@@ -843,18 +842,18 @@ local pure Fib()
   Fib();                                 // Maintain number of processes waiting for clients
   |                                      // Start process to serve the request
   s[2]>>n;                               // Receive n from client
-  if n<=1
-  then s[2]<<1;                          // Simple case
+  if n&lt;=1
+  then s[2]&lt;&lt;1;                          // Simple case
   else f1=new fib(2 of 2);               // Recursive case
-       f1[1]<<n-1;
+       f1[1]&lt;&lt;n-1;
        f1[1]>>r1;                        // r1 = fib(n-1)
        f2=new fib(2 of 2);
-       f2[1]<<n-2;
+       f2[1]&lt;&lt;n-2;
        f2[1]>>r2;                        // r2 = fib(n-2)
-       s[2]<<r1+r2;                      // return r1+r2
+       s[2]&lt;&lt;r1+r2;                      // return r1+r2
 )
 local pure StartFib(Int n)               // Start n copies of service
-( if n<=0
+( if n&lt;=0
   then Fib();
   else ( Fib(); | StartFib(n-1); )
 )
@@ -863,15 +862,15 @@ StartFib(SYSTEM & "tprocs");             // Start as many processes as the targe
 
 // Main program
 c=new console(2 of 2);                   // Get access to console
-c[1]<<^str<<"Input n: "<<^input<<^int;   // Ask for n
+c[1]&lt;&lt;^str&lt;&lt;"Input n: "&lt;&lt;^input&lt;&lt;^int;   // Ask for n
 c[1]>>n;                                 // Read n
-c[1]<<^end;                              // Release access to console
+c[1]&lt;&lt;^end;                              // Release access to console
 s=new fib(2 of 2);                       // Call fib(n)
-s[1]<<n;
+s[1]&lt;&lt;n;
 s[1]>>f;                                 // Get result
 c=new console(2 of 2);
-c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl;     // Print result
-c[1]<<^end;                              // Release access to console
+c[1]&lt;&lt;^str&lt;&lt;"Fib(n)="&lt;&lt;^int&lt;&lt;f&lt;&lt;^nl;     // Print result
+c[1]&lt;&lt;^end;                              // Release access to console
 </pre>
 #### Output
 <pre>
@@ -885,9 +884,9 @@ Input n: Fib(n)=10946
 // Utilizing pure services to automatically obtain concurrency
 // Avoid optimization corrupting time measurements
 // Include console functionality like printing
-#include <console.pi>
+#include &lt;console.pi>
 // Include timer functionality like measuring time spent
-#include <sys/timer.pi>
+#include &lt;sys/timer.pi>
 
 // Macro that pretends to use n in an impure way.
 // This stops impure actions, and actions using n
@@ -911,18 +910,18 @@ local pure Fib()
   Fib();                                 // Maintain number of processes waiting for clients
   |                                      // Start process to serve the request
   s[2]>>n;                               // Receive n from client
-  if n<=1
-  then s[2]<<1;                          // Simple case
+  if n&lt;=1
+  then s[2]&lt;&lt;1;                          // Simple case
   else f1=new fib(2 of 2);               // Recursive case
-       f1[1]<<n-1;
+       f1[1]&lt;&lt;n-1;
        f1[1]>>r1;                        // r1 = fib(n-1)
        f2=new fib(2 of 2);
-       f2[1]<<n-2;
+       f2[1]&lt;&lt;n-2;
        f2[1]>>r2;                        // r2 = fib(n-2)
-       s[2]<<r1+r2;                      // return r1+r2
+       s[2]&lt;&lt;r1+r2;                      // return r1+r2
 )
 local pure StartFib(Int n)
-( if n<=0
+( if n&lt;=0
   then Fib();
   else ( Fib(); | StartFib(n-1); )
 )
@@ -931,29 +930,29 @@ StartFib(SYSTEM & "tprocs");             // Start as many processes as the targe
 
 // Main program
 c=new console(2 of 2);                   // Get access to console
-c[1]<<^str<<"Input n: "<<^input<<^int;   // Ask for n
+c[1]&lt;&lt;^str&lt;&lt;"Input n: "&lt;&lt;^input&lt;&lt;^int;   // Ask for n
 c[1]>>n;                                 // Read n
-c[1]<<^end;                              // Release access to console
+c[1]&lt;&lt;^end;                              // Release access to console
 
 t=new timer(2 of 2);                     // Start timer
 s=new fib(2 of 2);                       // Call fib(n)
-s[1]<<n;
+s[1]&lt;&lt;n;
 s[1]>>f;                                 // Get result
-t[1]<<^sync;t<<Int;t[1]<<f;              // Make timer wait for result (avoids optimizing timer to not wait for result)
+t[1]&lt;&lt;^sync;t&lt;&lt;Int;t[1]&lt;&lt;f;              // Make timer wait for result (avoids optimizing timer to not wait for result)
 //require(f);                            // A more generic method to avoid optimizing timer, but also avoids other optimizations
-t[1]<<^read;                             // Get used time
+t[1]&lt;&lt;^read;                             // Get used time
 t[1]>>secs;                              // secs = used time
-t[1]<<^end;                              // Stop / release timer
+t[1]&lt;&lt;^end;                              // Stop / release timer
 c=new console(2 of 2);
-c[1]<<^str<<"Fib(n)="<<^int<<f<<^nl      // Print result
-    <<^str<<"Time: "<<^flt<<secs<<^nl    // Print time used
-    <<^end;
+c[1]&lt;&lt;^str&lt;&lt;"Fib(n)="&lt;&lt;^int&lt;&lt;f&lt;&lt;^nl      // Print result
+    &lt;&lt;^str&lt;&lt;"Time: "&lt;&lt;^flt&lt;&lt;secs&lt;&lt;^nl    // Print time used
+    &lt;&lt;^end;
 </pre>
 #### Output
 <pre>
 >echo 20 | ./6.3-fib_time
 Input n: Fib(n)=10946
-Time: 0.210999965667724609375
+Time: 0.1979999542236328125
 </pre>
 ### 6.4 Fact
 #### Source code
@@ -961,7 +960,7 @@ Time: 0.210999965667724609375
 // Example 6.4 - Factorial service
 // Implement pure prodseq service, and use to compute factorial.
 
-#include <console.pi>
+#include &lt;console.pi>
 
 #define $prodseq \
   2->1:Int; \
@@ -973,32 +972,32 @@ global $prodseq prodseq(1 pure ,2);
 local pure service Prodseq(prodseq (1 of 2) s)
 ( s[2]>>x1;
   s[2]>>x2;
-  if x2+1 <= x1
-  then s[2]<<1;
-  else if x2 <= x1
-  then s[2]<<x1;
+  if x2+1 &lt;= x1
+  then s[2]&lt;&lt;1;
+  else if x2 &lt;= x1
+  then s[2]&lt;&lt;x1;
   else s1 = new prodseq(2 of 2);
        Int mid=(x1+x2)/2;
-       s1[1]<<x1;
-       s1[1]<<mid;
+       s1[1]&lt;&lt;x1;
+       s1[1]&lt;&lt;mid;
        s1[1]>>r1;
        s2 = new prodseq(2 of 2);
-       s2[1]<<mid+1;
-       s2[1]<<x2;
+       s2[1]&lt;&lt;mid+1;
+       s2[1]&lt;&lt;x2;
        s2[1]>>r2;
-       s[2]<<r1*r2;
+       s[2]&lt;&lt;r1*r2;
 )
 |
 c = new console(2 of 2);
-c[1] << ^str << "What is n? "
-     << ^input<<^int;
+c[1] &lt;&lt; ^str &lt;&lt; "What is n? "
+     &lt;&lt; ^input&lt;&lt;^int;
 c[1] >> n;
 s = new prodseq(2 of 2);
-s[1] << 1 << n;
+s[1] &lt;&lt; 1 &lt;&lt; n;
 s[1] >> r;
-c[1] << ^str << "Fact of n is"
-     << ^int << r << ^nl
-     << ^end;
+c[1] &lt;&lt; ^str &lt;&lt; "Fact of n is"
+     &lt;&lt; ^int &lt;&lt; r &lt;&lt; ^nl
+     &lt;&lt; ^end;
 </pre>
 #### Output
 <pre>
@@ -1013,7 +1012,7 @@ What is n? Fact of n is2432902008176640000
 // Create session with assertions, and observe the sent messages respect them
 // - trying to change program to break them would result in typechecking errors.
 
-#include <console.pi>
+#include &lt;console.pi>
 
 // Define protocol $type as three booleans with propositional assertions
 #define $type \
@@ -1026,18 +1025,18 @@ What is n? Fact of n is2432902008176640000
 global $type a(1,2);
 
 c=new console(2 of 2);
-c[1]<<^str<<"Input bool x: "<<^input<<^str;
+c[1]&lt;&lt;^str&lt;&lt;"Input bool x: "&lt;&lt;^input&lt;&lt;^str;
 c[1]>>x_str;
 Bool x=(x_str="true");
-c[1]<<^end;
+c[1]&lt;&lt;^end;
 s=new a(1 of 2);
-s[2]<<x;
-s[2]<<not x;
+s[2]&lt;&lt;x;
+s[2]&lt;&lt;not x;
 s[2]>>z;
 c=new console(2 of 2);
-c[1]<<^str<<"We know that z is true - it has been proven!"<<^nl
-    <<^str<<"z="<<^str<<(if z then "true" else "false")<<^nl
-    <<^end;
+c[1]&lt;&lt;^str&lt;&lt;"We know that z is true - it has been proven!"&lt;&lt;^nl
+    &lt;&lt;^str&lt;&lt;"z="&lt;&lt;^str&lt;&lt;(if z then "true" else "false")&lt;&lt;^nl
+    &lt;&lt;^end;
 
 |
 s=new a(2 of 2);
@@ -1045,7 +1044,7 @@ s[1]>>q1;
 s[1]>>q2;
 // Type checking verifies that this message will always fulfill the assertion
 // from the used protocol, and hence q1 or q2 will always evaluate to true.
-s[1]<<q1 or q2;
+s[1]&lt;&lt;q1 or q2;
 </pre>
 #### Output
 <pre>
@@ -1062,7 +1061,7 @@ z=true
 
 // HOSTHEADER is added to generated c++ code header. Even though HOSTHEADER
 // statement may be 'executed' many times, the header is only added once.
-HOSTHEADER("#include <iostream>");
+HOSTHEADER("#include &lt;iostream>");
 // Use assorted types of values
 Int x1=1;
 String x2="2";
@@ -1075,13 +1074,13 @@ String x8="8";
 Bool x9=true;
 ( // Simple printing, although be aware the pitfalls of using raw c++ io
   // ie no coordination with other outputting processes.
-  HOST("std::cout << ((libpi::Int*)", x1, ".get())->ToString() << std::flush << ((libpi::String*)", x2, ".get())->GetValue() << std::flush << ((libpi::Bool*)", x3, ".get())->ToString() << std::endl;");
-| HOST("std::cout << ((libpi::Int*)", x4, ".get())->ToString() << std::flush << ((libpi::String*)", x5, ".get())->GetValue() << std::flush << ((libpi::Bool*)", x6, ".get())->ToString() << std::endl;");
-| HOST("std::cout << ((libpi::Int*)", x7, ".get())->ToString() << std::flush << ((libpi::String*)", x8, ".get())->GetValue() << std::flush << ((libpi::Bool*)", x9, ".get())->ToString() << std::endl;");
+  HOST("std::cout &lt;&lt; ((libpi::Int*)", x1, ".get())->ToString() &lt;&lt; std::flush &lt;&lt; ((libpi::String*)", x2, ".get())->GetValue() &lt;&lt; std::flush &lt;&lt; ((libpi::Bool*)", x3, ".get())->ToString() &lt;&lt; std::endl;");
+| HOST("std::cout &lt;&lt; ((libpi::Int*)", x4, ".get())->ToString() &lt;&lt; std::flush &lt;&lt; ((libpi::String*)", x5, ".get())->GetValue() &lt;&lt; std::flush &lt;&lt; ((libpi::Bool*)", x6, ".get())->ToString() &lt;&lt; std::endl;");
+| HOST("std::cout &lt;&lt; ((libpi::Int*)", x7, ".get())->ToString() &lt;&lt; std::flush &lt;&lt; ((libpi::String*)", x8, ".get())->GetValue() &lt;&lt; std::flush &lt;&lt; ((libpi::Bool*)", x9, ".get())->ToString() &lt;&lt; std::endl;");
 | // Use host language (c++) functionality in output
-  HOST("std::cout << (((libpi::Bool*)", x3, ".get())->GetValue()?((libpi::Int*)", x1, ".get())->ToString():((libpi::String*)", x2, ".get())->GetValue()) << std::endl;");
-| HOST("std::cout << (((libpi::Bool*)", x6, ".get())->GetValue()?((libpi::Int*)", x4, ".get())->ToString():((libpi::String*)", x5, ".get())->GetValue()) << std::endl;");
-| HOST("std::cout << (((libpi::Bool*)", x9, ".get())->GetValue()?((libpi::Int*)", x7, ".get())->ToString():((libpi::String*)", x8, ".get())->GetValue()) << std::endl;");
+  HOST("std::cout &lt;&lt; (((libpi::Bool*)", x3, ".get())->GetValue()?((libpi::Int*)", x1, ".get())->ToString():((libpi::String*)", x2, ".get())->GetValue()) &lt;&lt; std::endl;");
+| HOST("std::cout &lt;&lt; (((libpi::Bool*)", x6, ".get())->GetValue()?((libpi::Int*)", x4, ".get())->ToString():((libpi::String*)", x5, ".get())->GetValue()) &lt;&lt; std::endl;");
+| HOST("std::cout &lt;&lt; (((libpi::Bool*)", x9, ".get())->GetValue()?((libpi::Int*)", x7, ".get())->ToString():((libpi::String*)", x8, ".get())->GetValue()) &lt;&lt; std::endl;");
 )
 | // Retrieve/import values from host language to hapi process
   String str1="Hello";
@@ -1089,14 +1088,14 @@ Bool x9=true;
   String str2="World";
   String res="";
   HOST("", res, ".reset(new libpi::String(((libpi::String*)", str1, ".get())->GetValue() + ((libpi::String*)", space, ".get())->GetValue() + ((libpi::String*)", str2, ".get())->GetValue()));");
-  HOST("std::cout << ((libpi::String*)", res, ".get())->GetValue() << std::endl;"); // Outputs "Hello World"
+  HOST("std::cout &lt;&lt; ((libpi::String*)", res, ".get())->GetValue() &lt;&lt; std::endl;"); // Outputs "Hello World"
 </pre>
 #### Output
 <pre>
 >./7.2-host
-12true
-45Hello Worldfalse
-
+Hello World1
+2true
+45false
 78true
 1
 5
