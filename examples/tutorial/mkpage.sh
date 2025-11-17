@@ -3,7 +3,7 @@ std_example() {
 echo "### $1"
 echo "#### Source code"
 echo "<pre>"
-cat $2.pi
+cat $2.pi | sed 's/</\&lt;/g'
 echo "</pre>"
 echo "#### Output"
 echo "<pre>"
@@ -16,7 +16,7 @@ inp_example() {
 echo "### $1"
 echo "#### Source code"
 echo "<pre>"
-cat $2.pi
+cat $2.pi | sed 's/</\&lt;/g'
 echo "</pre>"
 echo "#### Output"
 echo "<pre>"
@@ -29,7 +29,7 @@ arg_example() {
 echo "### $1"
 echo "#### Source code"
 echo "<pre>"
-cat $2.pi
+cat $2.pi | sed 's/</\&lt;/g'
 echo "</pre>"
 echo "#### Output"
 echo "<pre>"
@@ -42,7 +42,7 @@ slw_example() {
 echo "### $1"
 echo "#### Source code"
 echo "<pre>"
-cat $2.pi
+cat $2.pi | sed 's/</\&lt;/g'
 echo "</pre>"
 echo "#### Output"
 echo "<pre>"
