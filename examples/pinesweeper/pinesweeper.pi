@@ -3,6 +3,7 @@
 #include <console.pi>
 #include <struct/list.pi>
 #include <sys/timer.pi>
+#include <sys/args.pi>
 HOSTHEADER("#include <unistd.h>");
 HOST("srand (static_cast <unsigned> (time(0)));");
 
@@ -392,11 +393,38 @@ local Play($display(2 of 1,2) w,
     Play(w,field,t,mouseX,mouseY);
   }
 )
-// Create display (800x600), and start Pong using a starting state
-w=new display(2 of 2);
-w[1]<<800<<600;
-pf=new pinefield(2 of 2);
-pf[1]<<10<<10<<10;
-t=new timer(2 of 2);
-t[1]<<^reset;
-Play(w,pf,t,400,300);
+local Pinesweeper(Int width, Int height, Int pines)
+( // Create display (800x600), and start Pong using a starting state
+  w=new display(2 of 2);
+  w[1]<<800<<600;
+  pf=new pinefield(2 of 2);
+  pf[1]<<width<<height<<pines;
+  t=new timer(2 of 2);
+  t[1]<<^reset;
+  Play(w,pf,t,400,300);
+)
+// Game config
+Int width=10;
+Int height=10;
+Int pines=10;
+// Read config from args
+a=new args(2 of 2);
+a[1]<<^count;
+a[1]>>argc;
+a[1]<<^end;
+if argc<=1
+then Pinesweeper(width,height,pines);
+else String widthstr="";
+     __ARGV(widthstr,1);
+     STRING2INT(widthstr,width);
+     if argc<=2
+then Pinesweeper(width,height,pines);
+else String heightstr="";
+     __ARGV(heightstr,2);
+     STRING2INT(heightstr,height);
+     if argc<=3
+then Pinesweeper(width,height,pines);
+else String pinesstr="";
+     __ARGV(pinesstr,3);
+     STRING2INT(pinesstr,pines);
+     Pinesweeper(width,height,pines);
